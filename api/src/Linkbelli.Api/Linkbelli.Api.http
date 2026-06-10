@@ -1,0 +1,6 @@
+@Linkbelli.Api_HostAddress = http://localhost:5205
+
+GET {{Linkbelli.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

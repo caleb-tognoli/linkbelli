@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Linkbelli.Api/Linkbelli.Api.csproj" />
+    <Project Path="src/Linkbelli.Core/Linkbelli.Core.csproj" />
+    <Project Path="src/Linkbelli.Infrastructure/Linkbelli.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Linkbelli.IntegrationTests/Linkbelli.IntegrationTests.csproj" />
+    <Project Path="tests/Linkbelli.Tests/Linkbelli.Tests.csproj" />
+  </Folder>
+</Solution>
