@@ -4,6 +4,7 @@ using Linkbelli.Api.OpenApi;
 using Linkbelli.Core.Auth;
 using Linkbelli.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Threading.RateLimiting;
@@ -30,6 +31,10 @@ builder.Services
 
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<LinkbelliDbContext>();
+
+// Usernames are always unique in Identity; require emails to be unique too so
+// login-by-email resolves to a single account.
+builder.Services.Configure<IdentityOptions>(options => options.User.RequireUniqueEmail = true);
 
 // Default policy carries requirements only — no schemes. Each endpoint names the
 // scheme(s) it accepts; if schemes lived here they'd be unioned into every
@@ -83,7 +88,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapGet("/", () => Results.Ok(new { name = "Linkbelli API", version = "v1" }));
 
-app.MapGroup("/auth").MapIdentityApi<ApplicationUser>();
+app.MapAuthEndpoints();
 app.MapMeEndpoints();
 app.MapApiKeyEndpoints();
 
