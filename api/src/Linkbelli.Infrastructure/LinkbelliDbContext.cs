@@ -1,10 +1,14 @@
 using Linkbelli.Core.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Infrastructure;
 
-public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options) : DbContext(options)
+public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<Playlist> Playlists => Set<Playlist>();
     public DbSet<Host> Hosts => Set<Host>();
     public DbSet<Link> Links => Set<Link>();
@@ -15,22 +19,34 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options) : 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Unique indexes are partial ("DeletionTime" IS NULL) so a soft-deleted
-        // row never blocks re-creating the same playlist slug, link, etc.
+        base.OnModelCreating(modelBuilder); // Identity tables
+
+        // Soft-delete conventions are applied via HasSoftDeleteFilter() (query filter)
+        // and ExcludeSoftDeleted() (partial unique index) — see SoftDeleteModelExtensions.
+        modelBuilder.Entity<ApiKey>(e =>
+        {
+            e.Property(k => k.Name).HasMaxLength(200);
+            e.Property(k => k.Prefix).HasMaxLength(64);
+            e.Property(k => k.Hash).HasMaxLength(64);
+            e.HasIndex(k => k.Prefix).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(k => k.UserId);
+            e.HasSoftDeleteFilter();
+        });
+
         modelBuilder.Entity<Playlist>(e =>
         {
             e.Property(p => p.Name).HasMaxLength(200);
             e.Property(p => p.Slug).HasMaxLength(200);
             e.Property(p => p.Description).HasMaxLength(2000);
-            e.HasIndex(p => new { p.OwnerId, p.Slug }).IsUnique().HasFilter("\"DeletionTime\" IS NULL");
-            e.HasQueryFilter(p => p.DeletionTime == null);
+            e.HasIndex(p => new { p.OwnerId, p.Slug }).IsUnique().ExcludeSoftDeleted();
+            e.HasSoftDeleteFilter();
         });
 
         modelBuilder.Entity<Host>(e =>
         {
             e.Property(h => h.Hostname).HasMaxLength(253); // DNS hostname limit
-            e.HasIndex(h => h.Hostname).IsUnique().HasFilter("\"DeletionTime\" IS NULL");
-            e.HasQueryFilter(h => h.DeletionTime == null);
+            e.HasIndex(h => h.Hostname).IsUnique().ExcludeSoftDeleted();
+            e.HasSoftDeleteFilter();
         });
 
         modelBuilder.Entity<Link>(e =>
@@ -38,20 +54,20 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options) : 
             e.Property(l => l.CanonicalUrl).HasMaxLength(2048);
             e.Property(l => l.UrlHash).HasMaxLength(64);
             e.Property(l => l.Metadata).HasColumnType("jsonb");
-            e.HasIndex(l => l.UrlHash).IsUnique().HasFilter("\"DeletionTime\" IS NULL");
+            e.HasIndex(l => l.UrlHash).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(l => l.HostId);
             e.HasOne(l => l.Host).WithMany().OnDelete(DeleteBehavior.Restrict);
-            e.HasQueryFilter(l => l.DeletionTime == null);
+            e.HasSoftDeleteFilter();
         });
 
         modelBuilder.Entity<PlaylistItem>(e =>
         {
-            e.HasIndex(i => new { i.PlaylistId, i.LinkId }).IsUnique().HasFilter("\"DeletionTime\" IS NULL");
+            e.HasIndex(i => new { i.PlaylistId, i.LinkId }).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(i => new { i.PlaylistId, i.Position });
             e.HasOne(i => i.Playlist).WithMany(p => p.Items).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(i => i.Link).WithMany().OnDelete(DeleteBehavior.Restrict);
             e.HasOne(i => i.Source).WithMany().OnDelete(DeleteBehavior.SetNull);
-            e.HasQueryFilter(i => i.DeletionTime == null);
+            e.HasSoftDeleteFilter();
         });
 
         modelBuilder.Entity<Source>(e =>
@@ -61,23 +77,23 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options) : 
             e.Property(s => s.Config).HasColumnType("jsonb");
             e.Property(s => s.State).HasColumnType("jsonb");
             e.HasIndex(s => s.OwnerId);
-            e.HasQueryFilter(s => s.DeletionTime == null);
+            e.HasSoftDeleteFilter();
         });
 
         modelBuilder.Entity<PlaylistSource>(e =>
         {
-            e.HasIndex(ps => new { ps.PlaylistId, ps.SourceId }).IsUnique().HasFilter("\"DeletionTime\" IS NULL");
+            e.HasIndex(ps => new { ps.PlaylistId, ps.SourceId }).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(ps => ps.SourceId);
             e.HasOne(ps => ps.Playlist).WithMany(p => p.Sources).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(ps => ps.Source).WithMany(s => s.Playlists).OnDelete(DeleteBehavior.Cascade);
-            e.HasQueryFilter(ps => ps.DeletionTime == null);
+            e.HasSoftDeleteFilter();
         });
 
         modelBuilder.Entity<SourceRun>(e =>
         {
             e.HasIndex(r => new { r.SourceId, r.CreationTime });
             e.HasOne(r => r.Source).WithMany(s => s.Runs).OnDelete(DeleteBehavior.Cascade);
-            e.HasQueryFilter(r => r.DeletionTime == null);
+            e.HasSoftDeleteFilter();
         });
     }
 
