@@ -59,8 +59,10 @@ public class LinkEnricher(
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Transient (network/timeout/SSRF-block/oversize): leave EnrichedAt null for a future retry.
+            // Transient (network/timeout/SSRF-block/oversize): rethrow so the job runner
+            // retries with backoff. Permanent failures are stamped above and return normally.
             logger.LogWarning(ex, "Enrichment failed for link {LinkId} ({Url})", linkId, link.CanonicalUrl);
+            throw;
         }
     }
 

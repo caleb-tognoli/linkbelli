@@ -4,6 +4,7 @@ using Linkbelli.Application.Auth;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Http;
 using Linkbelli.Application.Services;
+using Linkbelli.Application.Sources;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Linkbelli.Application;
@@ -18,11 +19,14 @@ public static class DependencyInjection
         services.AddScoped<IApiKeyService, ApiKeyService>();
         services.AddScoped<IApiKeyAuthenticator, ApiKeyAuthenticator>();
 
-        // --- Link enrichment ---
+        // --- Link enrichment --- (ILinkEnrichmentQueue is implemented in Infrastructure via Hangfire)
         services.AddSingleton<LinkMetadataExtractor>();
-        services.AddSingleton<ILinkEnrichmentQueue, ChannelLinkEnrichmentQueue>();
         services.AddScoped<ILinkEnricher, LinkEnricher>();
-        services.AddHostedService<LinkEnrichmentWorker>();
+
+        // --- Sources --- (ISourceScheduler is implemented in Infrastructure via Hangfire)
+        services.AddScoped<ISourceService, SourceService>();
+        services.AddScoped<ISourceRunner, SourceRunner>();
+        services.AddScoped<ISourceInterpreter, RssSourceInterpreter>();
 
         // SSRF-protected outbound client: connects only to public IPs (validated per hop).
         services.AddHttpClient(EnrichmentHttpClient.Name, client =>

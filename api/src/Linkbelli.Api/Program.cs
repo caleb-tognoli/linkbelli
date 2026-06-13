@@ -81,6 +81,8 @@ if (app.Environment.IsDevelopment())
         .WithTheme(ScalarTheme.Default));
 }
 
+app.UseLinkbelliDashboard(); // Hangfire dashboard at /hangfire (dev only)
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -94,6 +96,7 @@ app.MapApiKeyEndpoints();
 app.MapPlaylistEndpoints();
 app.MapPlaylistItemEndpoints();
 app.MapLinkEndpoints();
+app.MapSourceEndpoints();
 
 app.Run();
 
