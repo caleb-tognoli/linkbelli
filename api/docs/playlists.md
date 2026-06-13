@@ -28,7 +28,8 @@ curl -X POST http://localhost:5180/playlists \
 `POST /links` ensures a link exists in the system and returns it. Because links are global
 and deduplicated, this is a get-or-create: the URL is canonicalized (lowercased host,
 tracking params and fragment stripped, query sorted) and an existing match is returned
-rather than duplicated. New links come back `enriched: false`.
+rather than duplicated. New links come back `enriched: false` and are enriched
+asynchronously (title/thumbnail/etc.) shortly after.
 
 ```bash
 curl -X POST http://localhost:5180/links \
@@ -44,8 +45,9 @@ curl -X POST http://localhost:5180/links \
 
 A link is added by URL; the URL is canonicalized (lowercased host, tracking params and
 fragment stripped, query sorted) and deduplicated globally. Adding a URL already present in
-the playlist returns **409**. New links come back with `enriched: false` — title/thumbnail
-metadata is filled in asynchronously (milestone 3).
+the playlist returns **409**. New links come back with `enriched: false`; a background
+worker then fetches the page (through an SSRF-protected client) and fills in
+title/description/thumbnail/site, flipping `enriched` to `true` — usually within seconds.
 
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|

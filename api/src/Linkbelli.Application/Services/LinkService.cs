@@ -1,5 +1,6 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Mapping;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Services;
 
-public class LinkService(IAppDbContext db) : ILinkService
+public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue) : ILinkService
 {
     public async Task<LinkResponse> CreateAsync(CreateLinkRequest request, CancellationToken cancellationToken = default)
     {
@@ -44,11 +45,13 @@ public class LinkService(IAppDbContext db) : ILinkService
         try
         {
             await db.SaveChangesAsync(cancellationToken);
+            enrichmentQueue.Enqueue(link.Id); // newly created → fetch metadata asynchronously
             return link;
         }
         catch (DbUpdateException)
         {
-            // Lost a race on the unique UrlHash — the other writer's row is authoritative.
+            // Lost a race on the unique UrlHash — the other writer's row is authoritative
+            // (and already enqueued by the winner), so we don't enqueue again.
             db.Entry(link).State = EntityState.Detached;
             return await db.Links.Include(l => l.Host)
                 .FirstAsync(l => l.UrlHash == canonical.Hash, cancellationToken);
