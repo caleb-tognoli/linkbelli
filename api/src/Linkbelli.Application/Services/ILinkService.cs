@@ -11,4 +11,7 @@ public interface ILinkService
 
     /// <summary>Validates and canonicalizes a raw URL, then get-or-creates the Link and returns its DTO.</summary>
     Task<LinkResponse> CreateAsync(CreateLinkRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Canonicalizes a URL and fetches its metadata without saving (preview before save).</summary>
+    Task<LinkPreviewResponse> PreviewAsync(string url, CancellationToken cancellationToken = default);
 }

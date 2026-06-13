@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Services;
 
-public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue) : ILinkService
+public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue, LinkMetadataFetcher metadataFetcher) : ILinkService
 {
     public async Task<LinkResponse> CreateAsync(CreateLinkRequest request, CancellationToken cancellationToken = default)
     {
@@ -20,6 +20,19 @@ public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue)
 
         var link = await GetOrCreateAsync(canonical, cancellationToken);
         return link.ToResponse();
+    }
+
+    public async Task<LinkPreviewResponse> PreviewAsync(string url, CancellationToken cancellationToken = default)
+    {
+        if (!UrlCanonicalizer.TryCanonicalize(url, out var canonical))
+        {
+            throw new ValidationException("url", "A valid http(s) URL is required.");
+        }
+
+        var metadata = await metadataFetcher.TryFetchAsync(canonical.Url, cancellationToken);
+        return new LinkPreviewResponse(
+            canonical.Url, canonical.Host,
+            metadata?.Title, metadata?.Description, metadata?.ImageUrl, metadata?.SiteName);
     }
 
     public async Task<Link> GetOrCreateAsync(CanonicalUrl canonical, CancellationToken cancellationToken = default)

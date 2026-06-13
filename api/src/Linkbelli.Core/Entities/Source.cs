@@ -7,6 +7,16 @@ public enum SourceType
     JsonApi = 2,
 }
 
+/// <summary>Who may attach a source to their playlists. Set at creation and immutable.</summary>
+public enum SourceVisibility
+{
+    /// <summary>Only the owner can attach it to their own playlists.</summary>
+    Private = 0,
+
+    /// <summary>Any user can subscribe it to their own playlists.</summary>
+    Shared = 1,
+}
+
 /// <summary>
 /// A user-configured automatic link source ("worker"): declarative config,
 /// interpreted by the matching ISourceInterpreter on a schedule.
@@ -17,6 +27,8 @@ public class Source : BaseEntity<Guid>
     public Guid OwnerId { get; set; }
     public required string Name { get; set; }
     public SourceType Type { get; set; }
+    /// <summary>Set at creation, never changed: governs who can subscribe it to playlists.</summary>
+    public SourceVisibility Visibility { get; set; } = SourceVisibility.Private;
     /// <summary>Type-specific declarative config (jsonb), validated per type.</summary>
     public required string Config { get; set; }
     /// <summary>Cron expression; enforced minimum interval applies.</summary>

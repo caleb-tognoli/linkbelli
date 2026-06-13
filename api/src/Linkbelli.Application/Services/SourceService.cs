@@ -54,6 +54,7 @@ public class SourceService(
             Type = request.Type,
             Config = JsonSerializer.Serialize(secrets.Encrypt(request.Type, request.Config, stored: null)),
             Schedule = request.Schedule.Trim(),
+            Visibility = request.Visibility ?? SourceVisibility.Private, // immutable after creation
             Enabled = true,
         };
         db.Sources.Add(source);
@@ -223,11 +224,28 @@ public class SourceService(
         await db.Sources.FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == ownerId, ct)
         ?? throw new NotFoundException("Source not found.");
 
+    public async Task<IReadOnlyList<SharedSourceSummary>> ListSharedAsync(string? q, CancellationToken ct = default)
+    {
+        var query = db.Sources.Where(s => s.Visibility == SourceVisibility.Shared);
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var needle = q.Trim().ToLower();
+            query = query.Where(s => s.Name.ToLower().Contains(needle));
+        }
+
+        return await (from s in query
+                      join u in db.Users on s.OwnerId equals u.Id
+                      orderby s.CreationTime descending
+                      select new SharedSourceSummary(s.Id, s.Name, s.Type, u.UserName!, s.CreationTime))
+            .Take(100)
+            .ToListAsync(ct);
+    }
+
     private SourceResponse ToResponse(Source source, Guid[] playlistIds)
     {
         var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
-            source.Schedule, source.Enabled, source.LastRunAt, source.CreationTime, playlistIds);
+            source.Schedule, source.Enabled, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds);
     }
 }

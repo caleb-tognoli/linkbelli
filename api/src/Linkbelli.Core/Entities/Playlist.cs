@@ -17,4 +17,5 @@ public class Playlist : BaseEntity<Guid>
 
     public List<PlaylistItem> Items { get; set; } = [];
     public List<PlaylistSource> Sources { get; set; } = [];
+    public List<PlaylistTag> Tags { get; set; } = [];
 }

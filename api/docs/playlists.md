@@ -12,18 +12,38 @@ All paths are under **`/api/v1`**. Reads require the `playlists:read` scope and 
 
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
-| `GET`    | `/api/v1/playlists`       | — (`?limit=`, `?cursor=`) | List your playlists (newest first) |
-| `POST`   | `/api/v1/playlists`       | `name`, `description?`, `visibility?` | Create (slug auto-generated, unique per user) |
+| `GET`    | `/api/v1/playlists`       | — (`?limit=`, `?cursor=`, `?tag=`) | List your playlists (recently updated first) |
+| `POST`   | `/api/v1/playlists`       | `name`, `description?`, `visibility?`, `tags?` | Create (slug auto-generated, unique per user) |
 | `GET`    | `/api/v1/playlists/{id}`  | — | Get one |
-| `PATCH`  | `/api/v1/playlists/{id}`  | `name?`, `description?`, `visibility?` | Update provided fields (slug is stable) |
+| `PATCH`  | `/api/v1/playlists/{id}`  | `name?`, `description?`, `visibility?`, `tags?` | Update provided fields (slug is stable) |
 | `DELETE` | `/api/v1/playlists/{id}`  | — | Soft delete |
+
+- **Ordering:** the list is sorted by *recent activity* — the later of the playlist's creation
+  and its newest item — so playlists that just received links float to the top.
+- **`tags`** are free text; they're normalized (trimmed, lowercased, de-duplicated, max 25). On
+  update, sending `tags` **replaces** the whole set. Filter your list with `?tag=`.
 
 ```bash
 curl -X POST http://localhost:5180/api/v1/playlists \
   -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
-  -d '{"name":"My Reading List","visibility":"Public"}'
+  -d '{"name":"My Reading List","visibility":"Public","tags":["tech","ai"]}'
 # -> { "id":"...", "name":"My Reading List", "slug":"my-reading-list",
-#      "visibility":"Public", "itemCount":0, "creationTime":"..." }
+#      "visibility":"Public", "itemCount":0, "creationTime":"...", "tags":["tech","ai"] }
+```
+
+### Tags
+
+Tags are stored normalized and shared across the system (deduplicated by name), so they can be
+listed and counted globally.
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/api/v1/tags`        | yours       | Tags across **your** playlists, with counts (`?q=` prefix filter) |
+| `GET` | `/api/v1/public/tags` | anonymous   | Tags across **public** playlists, with counts (`?q=` prefix filter) |
+
+```bash
+curl "http://localhost:5180/api/v1/tags?q=te" -H "Authorization: Bearer <token>"
+# -> [ { "name":"tech", "playlistCount":3 }, ... ]
 ```
 
 ## Links (create-only)
@@ -43,6 +63,20 @@ curl -X POST http://localhost:5180/api/v1/links \
 ```
 
 > Path case is significant: `/Article` and `/article` are different links.
+
+### Preview (before saving)
+
+`POST /api/v1/links/preview` fetches a URL's metadata **without saving anything** — for a
+paste → preview → confirm flow. Best-effort: if the page can't be fetched (blocked, offline,
+non-HTML) you still get the canonical URL back with `null` metadata. Rate-limited; `links:write`.
+
+```bash
+curl -X POST http://localhost:5180/api/v1/links/preview \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/article"}'
+# -> { "canonicalUrl":"https://example.com/article", "host":"example.com",
+#      "title":"…", "description":"…", "imageUrl":"…", "siteName":"…" }
+```
 
 ## Items
 
@@ -84,10 +118,35 @@ way; it simply isn't surfaced in any listing, so it acts as a share-by-link.
 
 | Method | Path | Purpose |
 |--------|------|---------|
+| `GET` | `/api/v1/public/playlists`                         | **Discover**: search/browse public playlists (`?q=` name, `?tag=`, paginated) |
 | `GET` | `/api/v1/public/playlists/{username}/{slug}`       | Read a non-private playlist |
 | `GET` | `/api/v1/public/playlists/{username}/{slug}/items` | Read its items (paginated) |
 
+Discovery returns only **Public** playlists (Unlisted is share-by-link, never listed). Each
+result carries `ownerUsername` + `slug` so you can deep-link to the read endpoint.
+
 ```bash
+curl "http://localhost:5180/api/v1/public/playlists?q=cooking&tag=recipes"
 curl http://localhost:5180/api/v1/public/playlists/alice/my-reading-list
 curl http://localhost:5180/api/v1/public/playlists/alice/my-reading-list/items
+```
+
+## Source subscriptions
+
+A playlist can be fed by **sources** (see [sources.md](sources.md)). You attach a source to a
+playlist you own; when that source runs, its links flow into the playlist.
+
+| Method | Path | Body | Purpose |
+|--------|------|------|---------|
+| `POST`   | `/api/v1/playlists/{id}/sources`            | `sourceId` | Subscribe a source to your playlist |
+| `DELETE` | `/api/v1/playlists/{id}/sources/{sourceId}` | — | Unsubscribe |
+
+You can attach **your own** sources (any visibility) and **anyone's `Shared`** sources; a
+private source you don't own returns **404**. Browse subscribable sources via
+`GET /api/v1/sources/shared` (see [sources.md](sources.md)).
+
+```bash
+curl -X POST http://localhost:5180/api/v1/playlists/<id>/sources \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"sourceId":"<sourceId>"}'
 ```

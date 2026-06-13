@@ -19,6 +19,11 @@ public static class SourceEndpoints
             Results.Ok(await svc.ListAsync(user.GetUserId(), ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead));
 
+        // Browse shared sources (any owner) so they can be subscribed to a playlist.
+        group.MapGet("/shared", async (ISourceService svc, string? q, CancellationToken ct) =>
+            Results.Ok(await svc.ListSharedAsync(q, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead));
+
         group.MapPost("/", async (CreateSourceRequest req, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
         {
             var created = await svc.CreateAsync(user.GetUserId(), req, ct);

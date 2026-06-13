@@ -20,6 +20,8 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<PlaylistSource> PlaylistSources => Set<PlaylistSource>();
     public DbSet<SourceRun> SourceRuns => Set<SourceRun>();
     public DbSet<UserQuota> UserQuotas => Set<UserQuota>();
+    public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<PlaylistTag> PlaylistTags => Set<PlaylistTag>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -103,6 +105,22 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         modelBuilder.Entity<UserQuota>(e =>
         {
             e.HasIndex(q => q.UserId).IsUnique().ExcludeSoftDeleted();
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<Tag>(e =>
+        {
+            e.Property(t => t.Name).HasMaxLength(64);
+            e.HasIndex(t => t.Name).IsUnique().ExcludeSoftDeleted();
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<PlaylistTag>(e =>
+        {
+            e.HasIndex(pt => new { pt.PlaylistId, pt.TagId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(pt => pt.TagId); // tag → playlists (global search, counts)
+            e.HasOne(pt => pt.Playlist).WithMany(p => p.Tags).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(pt => pt.Tag).WithMany(t => t.Playlists).OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 

@@ -15,8 +15,8 @@ public static class PlaylistEndpoints
             .RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = AuthSchemes.BearerOrApiKey })
             .WithTags("Playlists");
 
-        group.MapGet("/", async (ClaimsPrincipal user, IPlaylistService svc, int? limit, string? cursor, CancellationToken ct) =>
-            Results.Ok(await svc.ListAsync(user.GetUserId(), limit, cursor, ct)))
+        group.MapGet("/", async (ClaimsPrincipal user, IPlaylistService svc, int? limit, string? cursor, string? tag, CancellationToken ct) =>
+            Results.Ok(await svc.ListAsync(user.GetUserId(), limit, cursor, tag, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
 
         group.MapPost("/", async (CreatePlaylistRequest req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
@@ -37,6 +37,21 @@ public static class PlaylistEndpoints
         group.MapDelete("/{id:guid}", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
         {
             await svc.DeleteAsync(user.GetUserId(), id, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
+
+        // Subscribe/unsubscribe a source to this playlist (own source, or any shared one).
+        group.MapPost("/{id:guid}/sources", async (Guid id, SubscribeSourceRequest req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        {
+            await svc.SubscribeSourceAsync(user.GetUserId(), id, req.SourceId, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
+
+        group.MapDelete("/{id:guid}/sources/{sourceId:guid}", async (Guid id, Guid sourceId, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        {
+            await svc.UnsubscribeSourceAsync(user.GetUserId(), id, sourceId, ct);
             return Results.NoContent();
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));

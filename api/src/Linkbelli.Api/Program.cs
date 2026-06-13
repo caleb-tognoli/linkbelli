@@ -148,6 +148,7 @@ v1.MapPlaylistEndpoints();
 v1.MapPlaylistItemEndpoints();
 v1.MapLinkEndpoints();
 v1.MapSourceEndpoints();
+v1.MapTagEndpoints();
 v1.MapAdminEndpoints();
 v1.MapPublicPlaylistEndpoints();
 

@@ -10,9 +10,9 @@ public static class Mappers
         link.Id, link.CanonicalUrl, link.Host?.Hostname ?? string.Empty, link.Title, link.Description,
         link.ThumbnailUrl, link.SiteName, link.EnrichedAt != null);
 
-    public static PlaylistResponse ToResponse(this Playlist playlist, int itemCount) => new(
+    public static PlaylistResponse ToResponse(this Playlist playlist, int itemCount, IEnumerable<string> tags) => new(
         playlist.Id, playlist.Name, playlist.Slug, playlist.Description,
-        playlist.Visibility, itemCount, playlist.CreationTime);
+        playlist.Visibility, itemCount, playlist.CreationTime, tags.ToArray());
 
     public static ApiKeyResponse ToResponse(this ApiKey key) => new(
         key.Id, key.Name, key.Prefix, key.Scopes, key.CreationTime, key.LastUsedAt, key.ExpiresAt);

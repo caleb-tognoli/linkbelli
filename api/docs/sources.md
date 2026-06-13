@@ -41,7 +41,8 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
 | `GET`    | `/api/v1/sources`          | — | List your sources |
-| `POST`   | `/api/v1/sources`          | `name, type, config, schedule, playlistIds?` | Create (enabled, scheduled immediately) |
+| `POST`   | `/api/v1/sources`          | `name, type, config, schedule, playlistIds?, visibility?` | Create (enabled, scheduled immediately) |
+| `GET`    | `/api/v1/sources/shared`   | — (`?q=`) | Browse **shared** sources (any owner) to subscribe |
 | `POST`   | `/api/v1/sources/preview`  | `type, config` | Dry-run a config (live fetch, no save); returns up to 10 sample links. Rate-limited. |
 | `GET`    | `/api/v1/sources/{id}`     | — | Get one |
 | `PATCH`  | `/api/v1/sources/{id}`     | `name?, config?, schedule?, enabled?, playlistIds?` | Update (reschedules) |
@@ -52,6 +53,16 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 - `schedule` is a standard **5-field cron** expression (e.g. `*/15 * * * *`), validated to run
   **no more than once every 5 minutes**.
 - `playlistIds` must be playlists you own; discovered links are appended to each.
+
+### Visibility & subscriptions
+
+- `visibility` is `Private` (default) or `Shared`, **set at creation and immutable** afterward.
+- A `Shared` source can be subscribed by **other users** to their own playlists; a `Private`
+  source can only be attached by its owner. Either way, the source still runs on its owner's
+  schedule and quota — subscribers just receive its links.
+- Discover shareable sources with `GET /api/v1/sources/shared` (returns id, name, type, owner
+  username — never config, which may hold secrets). Subscribe/unsubscribe from the **playlist**
+  side: `POST|DELETE /api/v1/playlists/{id}/sources` (see [playlists.md](playlists.md#source-subscriptions)).
 
 ## Quotas
 

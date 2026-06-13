@@ -7,7 +7,8 @@ public record CreateSourceRequest(
     SourceType Type,
     IReadOnlyDictionary<string, string> Config,
     string Schedule,
-    Guid[]? PlaylistIds);
+    Guid[]? PlaylistIds,
+    SourceVisibility? Visibility);
 
 public record UpdateSourceRequest(
     string? Name,
@@ -18,7 +19,15 @@ public record UpdateSourceRequest(
 
 public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,
-    string Schedule, bool Enabled, DateTimeOffset? LastRunAt, DateTimeOffset CreationTime, Guid[] PlaylistIds);
+    string Schedule, bool Enabled, SourceVisibility Visibility,
+    DateTimeOffset? LastRunAt, DateTimeOffset CreationTime, Guid[] PlaylistIds);
+
+/// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
+public record SharedSourceSummary(
+    Guid Id, string Name, SourceType Type, string OwnerUsername, DateTimeOffset CreationTime);
+
+/// <summary>Attach an existing source (your own, or any shared one) to a playlist you own.</summary>
+public record SubscribeSourceRequest(Guid SourceId);
 
 public record SourceRunResponse(
     Guid Id, DateTimeOffset StartedAt, DateTimeOffset? FinishedAt,

@@ -21,5 +21,12 @@ public static class LinkEndpoints
             return Results.Created($"{ApiRoutes.V1}/links/{link.Id}", link);
         })
             .RequireAuthorization(Scopes.Policy(Scopes.LinksWrite));
+
+        // Preview metadata for a URL without saving (paste → preview → confirm).
+        // Live outbound fetch, so rate-limit it like other outbound endpoints.
+        group.MapPost("/preview", async (CreateLinkRequest req, ILinkService links, CancellationToken ct) =>
+            Results.Ok(await links.PreviewAsync(req.Url, ct)))
+            .RequireRateLimiting("sensitive")
+            .RequireAuthorization(Scopes.Policy(Scopes.LinksWrite));
     }
 }
