@@ -17,6 +17,7 @@ public class SourceService(
     public async Task<IReadOnlyList<SourceResponse>> ListAsync(Guid ownerId, CancellationToken ct = default)
     {
         var sources = await db.Sources
+            .AsNoTracking()
             .Where(s => s.OwnerId == ownerId)
             .OrderByDescending(s => s.CreationTime)
             .ToListAsync(ct);

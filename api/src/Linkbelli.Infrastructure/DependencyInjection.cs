@@ -62,4 +62,12 @@ public static class DependencyInjection
             app.UseHangfireDashboard("/hangfire");
         }
     }
+
+    /// <summary>Applies pending EF migrations (opt-in via config "Database:MigrateAtStartup").</summary>
+    public static async Task MigrateDatabaseAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+        await db.Database.MigrateAsync();
+    }
 }

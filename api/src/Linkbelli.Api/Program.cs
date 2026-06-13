@@ -23,6 +23,16 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AppExceptionHandler>();
 
+// CORS for browser frontends. Origins come from config "Cors:AllowedOrigins" (empty = none).
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+{
+    if (corsOrigins.Length > 0)
+    {
+        policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+    }
+}));
+
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<SecuritySchemeDocumentTransformer>();
@@ -71,6 +81,11 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+if (builder.Configuration.GetValue<bool>("Database:MigrateAtStartup"))
+{
+    await app.MigrateDatabaseAsync();
+}
+
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -80,9 +95,16 @@ if (app.Environment.IsDevelopment())
         .WithTitle("Linkbelli API")
         .WithTheme(ScalarTheme.Default));
 }
+else
+{
+    // Tokens/keys are bearer credentials — never serve them over cleartext in production.
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
 
 app.UseLinkbelliDashboard(); // Hangfire dashboard at /hangfire (dev only)
 
+app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();

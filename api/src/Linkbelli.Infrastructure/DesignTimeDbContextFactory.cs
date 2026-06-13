@@ -8,8 +8,12 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<LinkbelliD
 {
     public LinkbelliDbContext CreateDbContext(string[] args)
     {
+        // Design-time only (used by `dotnet ef`). Prefer an env var; fall back to local dev.
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Default")
+            ?? "Host=localhost;Port=5433;Database=linkbelli;Username=linkbelli;Password=linkbelli";
+
         var options = new DbContextOptionsBuilder<LinkbelliDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=linkbelli;Username=linkbelli;Password=linkbelli")
+            .UseNpgsql(connectionString)
             .Options;
         return new LinkbelliDbContext(options);
     }

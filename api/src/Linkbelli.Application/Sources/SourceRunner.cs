@@ -51,38 +51,48 @@ public sealed class SourceRunner(
                 .Select(ps => ps.PlaylistId)
                 .ToListAsync(cancellationToken);
 
-            var added = 0;
+            // Resolve/dedup the links first (get-or-create persists genuinely new ones).
+            var resolved = new List<Link>();
             foreach (var discoveredLink in discovered)
             {
-                if (!UrlCanonicalizer.TryCanonicalize(discoveredLink.Url, out var canonical))
+                if (UrlCanonicalizer.TryCanonicalize(discoveredLink.Url, out var canonical))
                 {
-                    continue;
+                    resolved.Add(await links.GetOrCreateAsync(canonical, cancellationToken));
                 }
+            }
 
-                var link = await links.GetOrCreateAsync(canonical, cancellationToken);
+            // Append to each playlist in memory (existing link ids + next position preloaded
+            // once per playlist), then persist all new items in a single SaveChanges (the finally).
+            var added = 0;
+            foreach (var playlistId in playlistIds)
+            {
+                var present = (await db.PlaylistItems
+                        .Where(i => i.PlaylistId == playlistId)
+                        .Select(i => i.LinkId)
+                        .ToListAsync(cancellationToken))
+                    .ToHashSet();
+                var nextPosition = await db.PlaylistItems
+                    .Where(i => i.PlaylistId == playlistId)
+                    .MaxAsync(i => (long?)i.Position, cancellationToken) ?? 0;
 
-                foreach (var playlistId in playlistIds)
+                foreach (var link in resolved)
                 {
-                    if (await db.PlaylistItems.AnyAsync(i => i.PlaylistId == playlistId && i.LinkId == link.Id, cancellationToken))
+                    if (!present.Add(link.Id)) // also dedups repeats within this run
                     {
                         continue;
                     }
 
-                    var maxPos = await db.PlaylistItems.Where(i => i.PlaylistId == playlistId)
-                        .MaxAsync(i => (long?)i.Position, cancellationToken) ?? 0;
-
+                    nextPosition += PlaylistOrdering.Gap;
                     db.PlaylistItems.Add(new PlaylistItem
                     {
                         PlaylistId = playlistId,
                         LinkId = link.Id,
-                        Position = maxPos + PlaylistOrdering.Gap,
+                        Position = nextPosition,
                         SourceId = sourceId,
                         Status = PlaylistItemStatus.Active,
                     });
                     added++;
                 }
-
-                await db.SaveChangesAsync(cancellationToken);
             }
 
             run.ItemsAdded = added;

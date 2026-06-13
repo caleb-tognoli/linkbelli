@@ -1,6 +1,27 @@
-@Linkbelli.Api_HostAddress = http://localhost:5205
+@host = http://localhost:5180
 
-GET {{Linkbelli.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Service info
+GET {{host}}/
 
-###
+### Health
+GET {{host}}/health
+
+### Register
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{ "username": "alice", "email": "alice@example.com", "password": "Passw0rd!23" }
+
+### Login (username or email)
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "login": "alice", "password": "Passw0rd!23" }
+
+### Who am I (paste the accessToken)
+GET {{host}}/me
+Authorization: Bearer {{accessToken}}
+
+### My quota
+GET {{host}}/me/quota
+Authorization: Bearer {{accessToken}}

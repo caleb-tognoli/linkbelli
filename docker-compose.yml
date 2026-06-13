@@ -16,5 +16,18 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build: ./api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Development here so the local full-stack run keeps Scalar and skips HTTPS redirection.
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=linkbelli;Username=linkbelli;Password=linkbelli
+      Database__MigrateAtStartup: "true"
+    ports:
+      - "5180:8080"
+
 volumes:
   pgdata:

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      # Unit tests run without external infrastructure. Integration tests (Testcontainers)
+      # are added in M5 and will run in a separate job with Docker.
+      - name: Unit tests
+        run: dotnet test tests/Linkbelli.Tests/Linkbelli.Tests.csproj --no-build -c Release
