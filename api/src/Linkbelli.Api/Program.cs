@@ -97,6 +97,7 @@ app.MapPlaylistEndpoints();
 app.MapPlaylistItemEndpoints();
 app.MapLinkEndpoints();
 app.MapSourceEndpoints();
+app.MapAdminEndpoints();
 
 app.Run();
 

@@ -28,8 +28,43 @@ on demand via the run endpoint. Each execution is logged as a *run*.
 | `POST`   | `/sources/{id}/run` | — | Trigger a run now (202) |
 | `GET`    | `/sources/{id}/runs`| — | Recent run history |
 
-- `schedule` is a standard **5-field cron** expression (validated; e.g. `*/15 * * * *`).
+- `schedule` is a standard **5-field cron** expression (e.g. `*/15 * * * *`), validated to run
+  **no more than once every 5 minutes**.
 - `playlistIds` must be playlists you own; discovered links are appended to each.
+
+## Quotas
+
+Each user has limits (stored per-user, with defaults; see `GET /me/quota`):
+
+| Quota | Default | Enforced |
+|-------|---------|----------|
+| Max sources | 5 | At `POST /sources` → **429** when reached |
+| Max runs / day | 10 | Every run — manual (`POST .../run` → **429**) and scheduled (silently skipped). Counts executions in the trailing 24h |
+| Max items / run | 100 | A run processes at most this many discovered links |
+
+```bash
+curl http://localhost:5180/me/quota -H "Authorization: Bearer <token>"
+# -> { "maxSources":5, "sourcesUsed":3, "maxRunsPerDay":10, "runsUsedToday":2, "maxItemsPerRun":100 }
+```
+
+### Admin quota management
+
+Admins (users in the `Admin` role) can view and override any user's limits. Admin endpoints
+require a **bearer token** whose user holds the Admin role (API keys are rejected).
+
+| Method | Path | Body | Purpose |
+|--------|------|------|---------|
+| `GET` | `/admin/users/{userId}/quota` | — | View a user's limits + usage |
+| `PUT` | `/admin/users/{userId}/quota` | `maxSources, maxRunsPerDay, maxItemsPerRun` | Override a user's limits |
+
+Granting admin: list usernames under config `Admin:Usernames`; on startup the app ensures the
+`Admin` role exists and grants it to those (already-registered) users.
+
+```bash
+curl -X PUT http://localhost:5180/admin/users/<userId>/quota \
+  -H "Authorization: Bearer <admin-token>" -H "Content-Type: application/json" \
+  -d '{ "maxSources": 25, "maxRunsPerDay": 500, "maxItemsPerRun": 200 }'
+```
 
 ```bash
 # Create an RSS source feeding a playlist every 15 minutes

@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddHealthChecks().AddDbContextCheck<LinkbelliDbContext>("database");
 
         services.AddIdentityApiEndpoints<ApplicationUser>()
+            .AddRoles<IdentityRole<Guid>>() // enables RoleManager + role claims in the bearer principal
             .AddEntityFrameworkStores<LinkbelliDbContext>();
 
         // Usernames are unique in Identity; require unique emails too so login-by-email is unambiguous.
@@ -48,6 +49,7 @@ public static class DependencyInjection
         services.AddSingleton<ILinkEnrichmentQueue, HangfireLinkEnrichmentQueue>();
         services.AddSingleton<ISourceScheduler, HangfireSourceScheduler>();
         services.AddHostedService<SourceScheduleSyncService>();
+        services.AddHostedService<AdminRoleSeeder>();
 
         return services;
     }

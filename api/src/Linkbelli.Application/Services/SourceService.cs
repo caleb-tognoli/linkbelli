@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Cronos;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Sources;
@@ -12,7 +11,8 @@ namespace Linkbelli.Application.Services;
 public class SourceService(
     IAppDbContext db,
     IEnumerable<ISourceInterpreter> interpreters,
-    ISourceScheduler scheduler) : ISourceService
+    ISourceScheduler scheduler,
+    IUserQuotaService quotas) : ISourceService
 {
     public async Task<IReadOnlyList<SourceResponse>> ListAsync(Guid ownerId, CancellationToken ct = default)
     {
@@ -41,6 +41,7 @@ public class SourceService(
         var interpreter = ResolveInterpreter(request.Type);
         Validate(request.Name, request.Schedule, request.Config, interpreter);
         await EnsurePlaylistsOwnedAsync(ownerId, request.PlaylistIds, ct);
+        await quotas.EnsureCanCreateSourceAsync(ownerId, ct);
 
         var source = new Source
         {
@@ -135,6 +136,7 @@ public class SourceService(
     public async Task RunNowAsync(Guid ownerId, Guid id, CancellationToken ct = default)
     {
         var source = await FindOwnedAsync(ownerId, id, ct);
+        await quotas.EnsureCanRunAsync(ownerId, ct);
         scheduler.TriggerNow(source.Id);
     }
 
@@ -166,11 +168,15 @@ public class SourceService(
         interpreter.ValidateConfig(config);
     }
 
+    public const int MinIntervalMinutes = 5;
+
     private static void ValidateCron(string schedule)
     {
-        if (string.IsNullOrWhiteSpace(schedule) || CronExpression.TryParse(schedule.Trim(), out _) is false)
+        if (!CronSchedule.IsValid(schedule, MinIntervalMinutes))
         {
-            throw new ValidationException("schedule", "A valid 5-field cron expression is required.");
+            throw new ValidationException(
+                "schedule",
+                $"A valid 5-field cron expression is required, running no more than once every {MinIntervalMinutes} minutes.");
         }
     }
 

@@ -12,6 +12,7 @@ public sealed class SourceRunner(
     IAppDbContext db,
     ILinkService links,
     IEnumerable<ISourceInterpreter> interpreters,
+    IUserQuotaService quotas,
     ILogger<SourceRunner> logger) : ISourceRunner
 {
     public async Task RunAsync(Guid sourceId, CancellationToken cancellationToken = default)
@@ -19,6 +20,15 @@ public sealed class SourceRunner(
         var source = await db.Sources.FirstOrDefaultAsync(s => s.Id == sourceId, cancellationToken);
         if (source is null || !source.Enabled)
         {
+            return;
+        }
+
+        // Quota applies to every run (manual or scheduled — both reach here). Over-quota runs
+        // are skipped silently (no run row) so they don't count against the window themselves.
+        var quota = await quotas.GetOrCreateAsync(source.OwnerId, cancellationToken);
+        if (await quotas.CountRunsTodayAsync(source.OwnerId, cancellationToken) >= quota.MaxRunsPerDay)
+        {
+            logger.LogInformation("Run skipped for source {SourceId}: daily run quota reached.", sourceId);
             return;
         }
 
@@ -31,7 +41,9 @@ public sealed class SourceRunner(
             var interpreter = interpreters.FirstOrDefault(i => i.Type == source.Type)
                 ?? throw new InvalidOperationException($"No interpreter for source type {source.Type}.");
 
-            var discovered = await interpreter.FetchAsync(source, cancellationToken);
+            var discovered = (await interpreter.FetchAsync(source, cancellationToken))
+                .Take(quota.MaxItemsPerRun)
+                .ToList();
             run.ItemsFound = discovered.Count;
 
             var playlistIds = await db.PlaylistSources

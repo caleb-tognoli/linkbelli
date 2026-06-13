@@ -6,6 +6,9 @@ public class NotFoundException(string message = "Resource not found.") : Excepti
 /// <summary>The request conflicts with current state (duplicate, concurrent edit). Maps to 409.</summary>
 public class ConflictException(string message) : Exception(message);
 
+/// <summary>A per-user quota would be exceeded. Maps to 429.</summary>
+public class QuotaExceededException(string message) : Exception(message);
+
 /// <summary>Input validation failed. Maps to 400 ProblemDetails with field errors.</summary>
 public class ValidationException(IDictionary<string, string[]> errors)
     : Exception("One or more validation errors occurred.")

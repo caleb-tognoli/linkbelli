@@ -13,6 +13,7 @@ public sealed class AppExceptionHandler : IExceptionHandler
         {
             NotFoundException => Results.Problem(exception.Message, statusCode: StatusCodes.Status404NotFound),
             ConflictException => Results.Problem(exception.Message, statusCode: StatusCodes.Status409Conflict),
+            QuotaExceededException => Results.Problem(exception.Message, statusCode: StatusCodes.Status429TooManyRequests),
             ValidationException validation => Results.ValidationProblem(validation.Errors),
             _ => null,
         };

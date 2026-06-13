@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IPlaylistItemService, PlaylistItemService>();
         services.AddScoped<IApiKeyService, ApiKeyService>();
         services.AddScoped<IApiKeyAuthenticator, ApiKeyAuthenticator>();
+        services.AddScoped<IUserQuotaService, UserQuotaService>();
 
         // --- Link enrichment --- (ILinkEnrichmentQueue is implemented in Infrastructure via Hangfire)
         services.AddSingleton<LinkMetadataExtractor>();

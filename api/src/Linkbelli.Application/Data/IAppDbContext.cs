@@ -19,6 +19,7 @@ public interface IAppDbContext
     DbSet<Source> Sources { get; }
     DbSet<PlaylistSource> PlaylistSources { get; }
     DbSet<SourceRun> SourceRuns { get; }
+    DbSet<UserQuota> UserQuotas { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

@@ -19,6 +19,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<Source> Sources => Set<Source>();
     public DbSet<PlaylistSource> PlaylistSources => Set<PlaylistSource>();
     public DbSet<SourceRun> SourceRuns => Set<SourceRun>();
+    public DbSet<UserQuota> UserQuotas => Set<UserQuota>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,6 +97,12 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         {
             e.HasIndex(r => new { r.SourceId, r.CreationTime });
             e.HasOne(r => r.Source).WithMany(s => s.Runs).OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<UserQuota>(e =>
+        {
+            e.HasIndex(q => q.UserId).IsUnique().ExcludeSoftDeleted();
             e.HasSoftDeleteFilter();
         });
 
