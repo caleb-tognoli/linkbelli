@@ -1,3 +1,6 @@
+using Linkbelli.Application.Common;
+using Linkbelli.Application.Data;
+using Linkbelli.Application.Identity;
 using Linkbelli.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -6,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Linkbelli.Infrastructure;
 
 public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
-    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options), IAppDbContext
 {
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<Playlist> Playlists => Set<Playlist>();
@@ -95,18 +98,46 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasOne(r => r.Source).WithMany(s => s.Runs).OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
+
+        // Optimistic concurrency for every domain entity via Postgres's xmin system
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                    .Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .HasColumnType("xmin")
+                    .ValueGeneratedOnAddOrUpdate()
+                    .IsConcurrencyToken();
+            }
+        }
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         ApplyAuditRules();
-        return base.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictException("The resource was modified concurrently. Reload and try again.");
+        }
     }
 
     public override int SaveChanges()
     {
         ApplyAuditRules();
-        return base.SaveChanges();
+        try
+        {
+            return base.SaveChanges();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictException("The resource was modified concurrently. Reload and try again.");
+        }
     }
 
     /// <summary>Stamps CreationTime on inserts and converts hard deletes into soft deletes.</summary>

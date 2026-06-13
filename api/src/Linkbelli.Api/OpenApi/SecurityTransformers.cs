@@ -1,5 +1,5 @@
 using Linkbelli.Api.Auth;
-using Linkbelli.Core.Auth;
+using Linkbelli.Application.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OpenApi;

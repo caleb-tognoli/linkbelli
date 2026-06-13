@@ -1,4 +1,4 @@
-namespace Linkbelli.Api.Endpoints;
+namespace Linkbelli.Contracts;
 
 public record RegisterRequest(string Username, string Email, string Password);
 

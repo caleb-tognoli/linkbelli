@@ -19,14 +19,20 @@ linkbelli/                        # repo root
   .agents/                        # docs intended for LLM agents (this plan, conventions)
   docker-compose.yml              # postgres (+ api later); root-level because it spans areas
   api/
-    Linkbelli.sln
+    Linkbelli.slnx
     src/
-      Linkbelli.Api/              # host: endpoints, auth, rate limiting, OpenAPI
-      Linkbelli.Core/             # domain: entities, source interpreters, services (no EF/Hangfire refs)
-      Linkbelli.Infrastructure/   # EF Core DbContext + migrations, Hangfire wiring, SafeHttpClient
+      Linkbelli.Api/              # host (composition root): endpoints, auth handlers, rate limiting, OpenAPI
+      Linkbelli.Contracts/        # request/response DTOs (manual mapping); refs Core for shared enums
+      Linkbelli.Application/      # use-case services, IAppDbContext, ApplicationUser, ApiKeyToken, exceptions
+      Linkbelli.Core/             # domain: entities, enums, canonicalization, ordering (no infra refs)
+      Linkbelli.Infrastructure/   # EF Core DbContext (impl IAppDbContext) + migrations, Identity, SafeHttpClient (later)
     tests/
-      Linkbelli.Tests/            # unit tests (canonicalization, interpreters, SSRF guard)
+      Linkbelli.Tests/            # unit tests (canonicalization, ordering, api-key token)
       Linkbelli.IntegrationTests/ # API + DB tests via Testcontainers
+
+  # Layering: Api -> Application + Contracts (+ Infrastructure only at the composition root for DI).
+  # Application -> Core + Contracts (+ EF Core pkg). Infrastructure -> Application + Core.
+  # Application reaches the DB via IAppDbContext (implemented by the EF DbContext); manual entity->DTO mapping.
   web/                            # SvelteKit app (later)
   extension/                      # browser extension — the "player" (later)
   shared/                         # cross-area artifacts, e.g. OpenAPI-generated TS client (later)

@@ -1,21 +1,27 @@
 using Linkbelli.Api.Auth;
+using Linkbelli.Api.Common;
 using Linkbelli.Api.Endpoints;
 using Linkbelli.Api.OpenApi;
-using Linkbelli.Core.Auth;
+using Linkbelli.Application;
+using Linkbelli.Application.Auth;
 using Linkbelli.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<LinkbelliDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+// Composition root: Infrastructure (persistence + Identity) and Application (use cases).
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
 
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<LinkbelliDbContext>("database");
+// Serialize enums as strings (e.g. visibility "Public") in requests, responses, and the OpenAPI schema.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<AppExceptionHandler>();
 
 builder.Services.AddOpenApi(options =>
 {
@@ -23,26 +29,19 @@ builder.Services.AddOpenApi(options =>
     options.AddOperationTransformer<SecurityRequirementOperationTransformer>();
 });
 
-// --- Authentication: Identity bearer (interactive) + API key (programmatic) ---
+// --- Authentication: Identity bearer (registered by AddInfrastructure) + API key ---
 builder.Services
     .AddAuthentication()
     .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationDefaults.Scheme, _ => { });
-
-builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
-    .AddEntityFrameworkStores<LinkbelliDbContext>();
-
-// Usernames are always unique in Identity; require emails to be unique too so
-// login-by-email resolves to a single account.
-builder.Services.Configure<IdentityOptions>(options => options.User.RequireUniqueEmail = true);
 
 // Default policy carries requirements only — no schemes. Each endpoint names the
 // scheme(s) it accepts; if schemes lived here they'd be unioned into every
 // endpoint's policy, defeating per-endpoint restrictions like "bearer only".
 builder.Services.AddAuthorizationBuilder()
     .SetDefaultPolicy(new AuthorizationPolicyBuilder()
-    .RequireAuthenticatedUser()
-    .Build());
+        .RequireAuthenticatedUser()
+        .Build());
 
 // --- Rate limiting skeleton: token bucket partitioned by API key, else by IP ---
 builder.Services.AddRateLimiter(options =>
@@ -72,10 +71,11 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    // Interactive API reference UI at /scalar, served from the OpenAPI document.
     app.MapScalarApiReference(options => options
         .WithTitle("Linkbelli API")
         .WithTheme(ScalarTheme.Default));
@@ -91,6 +91,9 @@ app.MapGet("/", () => Results.Ok(new { name = "Linkbelli API", version = "v1" })
 app.MapAuthEndpoints();
 app.MapMeEndpoints();
 app.MapApiKeyEndpoints();
+app.MapPlaylistEndpoints();
+app.MapPlaylistItemEndpoints();
+app.MapLinkEndpoints();
 
 app.Run();
 
@@ -105,3 +108,5 @@ static string ResolvePartitionKey(HttpContext http)
 
     return $"ip:{http.Connection.RemoteIpAddress}";
 }
+
+public partial class Program; // exposed for WebApplicationFactory in integration tests

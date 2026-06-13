@@ -1,4 +1,5 @@
-using Linkbelli.Infrastructure;
+using Linkbelli.Application.Identity;
+using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Linkbelli.Api.Endpoints;
 
 /// <summary>
-/// Custom auth endpoints replacing MapIdentityApi so users can register with a
+/// Custom auth endpoints (replacing MapIdentityApi) so users can register with a
 /// username and log in with either their username or email. Bearer access/refresh
 /// tokens are still issued by Identity's bearer-token handler via Results.SignIn.
 /// </summary>
@@ -14,7 +15,7 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/auth");
+        var group = app.MapGroup("/auth").WithTags("Auth");
 
         group.MapPost("/register", async (RegisterRequest req, UserManager<ApplicationUser> users) =>
         {
@@ -46,7 +47,6 @@ public static class AuthEndpoints
                 return Results.Problem("Login and password are required.", statusCode: StatusCodes.Status401Unauthorized);
             }
 
-            // Resolve by username first, then email.
             var user = await users.FindByNameAsync(req.Login) ?? await users.FindByEmailAsync(req.Login);
             if (user is null)
             {
@@ -60,7 +60,6 @@ public static class AuthEndpoints
                 return Results.Problem(reason, statusCode: StatusCodes.Status401Unauthorized);
             }
 
-            // Results.SignIn against the bearer scheme makes the handler emit the access/refresh token JSON.
             var principal = await signIn.CreateUserPrincipalAsync(user);
             return Results.SignIn(principal, authenticationScheme: IdentityConstants.BearerScheme);
         }).AllowAnonymous().WithName("Login");

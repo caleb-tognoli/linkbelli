@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Linkbelli.Core\Linkbelli.Core.csproj" />
-    <ProjectReference Include="..\..\src\Linkbelli.Infrastructure\Linkbelli.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Linkbelli.Application\Linkbelli.Application.csproj" />
   </ItemGroup>
 
 </Project>

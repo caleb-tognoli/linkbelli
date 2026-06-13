@@ -1,4 +1,4 @@
-namespace Linkbelli.Api.Endpoints;
+namespace Linkbelli.Contracts;
 
 public record CreateApiKeyRequest(string Name, string[]? Scopes, DateTimeOffset? ExpiresAt);
 

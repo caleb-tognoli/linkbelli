@@ -1,4 +1,4 @@
-using Linkbelli.Core.Auth;
+using Linkbelli.Application.Auth;
 
 namespace Linkbelli.Tests;
 
