@@ -1,3 +1,4 @@
+using Linkbelli.Application.Identity;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -11,6 +12,7 @@ namespace Linkbelli.Application.Data;
 /// </summary>
 public interface IAppDbContext
 {
+    DbSet<ApplicationUser> Users { get; }
     DbSet<ApiKey> ApiKeys { get; }
     DbSet<Playlist> Playlists { get; }
     DbSet<Host> Hosts { get; }

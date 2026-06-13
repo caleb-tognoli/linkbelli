@@ -105,6 +105,21 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task<PlaylistResponse> GetPublicAsync(string username, string slug, CancellationToken ct = default)
+    {
+        var normalized = username.ToUpperInvariant();
+        var playlist = await db.Playlists
+            .Where(p => p.Slug == slug
+                && p.Visibility != PlaylistVisibility.Private
+                && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
+            .Select(p => new PlaylistResponse(
+                p.Id, p.Name, p.Slug, p.Description, p.Visibility, p.Items.Count(), p.CreationTime))
+            .FirstOrDefaultAsync(ct);
+
+        // Private (or missing) playlists are indistinguishable to anonymous callers.
+        return playlist ?? throw new NotFoundException("Playlist not found.");
+    }
+
     private async Task<string> GenerateUniqueSlugAsync(Guid ownerId, string name, CancellationToken ct)
     {
         var baseSlug = Slugify(name);

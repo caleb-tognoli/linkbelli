@@ -35,16 +35,19 @@ All types discover up to 100 links per run (then capped again by your `maxItemsP
 
 ## Endpoints
 
+All paths are under **`/api/v1`**. Reads require the `sources:read` scope and writes the
+`sources:write` scope (only relevant for scoped API keys — see [auth.md](auth.md#scopes)).
+
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
-| `GET`    | `/sources`          | — | List your sources |
-| `POST`   | `/sources`          | `name, type, config, schedule, playlistIds?` | Create (enabled, scheduled immediately) |
-| `POST`   | `/sources/preview`  | `type, config` | Dry-run a config (live fetch, no save); returns up to 10 sample links. Rate-limited. |
-| `GET`    | `/sources/{id}`     | — | Get one |
-| `PATCH`  | `/sources/{id}`     | `name?, config?, schedule?, enabled?, playlistIds?` | Update (reschedules) |
-| `DELETE` | `/sources/{id}`     | — | Soft delete + unschedule |
-| `POST`   | `/sources/{id}/run` | — | Trigger a run now (202) |
-| `GET`    | `/sources/{id}/runs`| — | Recent run history |
+| `GET`    | `/api/v1/sources`          | — | List your sources |
+| `POST`   | `/api/v1/sources`          | `name, type, config, schedule, playlistIds?` | Create (enabled, scheduled immediately) |
+| `POST`   | `/api/v1/sources/preview`  | `type, config` | Dry-run a config (live fetch, no save); returns up to 10 sample links. Rate-limited. |
+| `GET`    | `/api/v1/sources/{id}`     | — | Get one |
+| `PATCH`  | `/api/v1/sources/{id}`     | `name?, config?, schedule?, enabled?, playlistIds?` | Update (reschedules) |
+| `DELETE` | `/api/v1/sources/{id}`     | — | Soft delete + unschedule |
+| `POST`   | `/api/v1/sources/{id}/run` | — | Trigger a run now (202) |
+| `GET`    | `/api/v1/sources/{id}/runs`| — | Recent run history |
 
 - `schedule` is a standard **5-field cron** expression (e.g. `*/15 * * * *`), validated to run
   **no more than once every 5 minutes**.
@@ -61,7 +64,7 @@ Each user has limits (stored per-user, with defaults; see `GET /me/quota`):
 | Max items / run | 100 | A run processes at most this many discovered links |
 
 ```bash
-curl http://localhost:5180/me/quota -H "Authorization: Bearer <token>"
+curl http://localhost:5180/api/v1/me/quota -H "Authorization: Bearer <token>"
 # -> { "maxSources":5, "sourcesUsed":3, "maxRunsPerDay":10, "runsUsedToday":2, "maxItemsPerRun":100 }
 ```
 
@@ -72,21 +75,21 @@ require a **bearer token** whose user holds the Admin role (API keys are rejecte
 
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
-| `GET` | `/admin/users/{userId}/quota` | — | View a user's limits + usage |
-| `PUT` | `/admin/users/{userId}/quota` | `maxSources, maxRunsPerDay, maxItemsPerRun` | Override a user's limits |
+| `GET` | `/api/v1/admin/users/{userId}/quota` | — | View a user's limits + usage |
+| `PUT` | `/api/v1/admin/users/{userId}/quota` | `maxSources, maxRunsPerDay, maxItemsPerRun` | Override a user's limits |
 
 Granting admin: list usernames under config `Admin:Usernames`; on startup the app ensures the
 `Admin` role exists and grants it to those (already-registered) users.
 
 ```bash
-curl -X PUT http://localhost:5180/admin/users/<userId>/quota \
+curl -X PUT http://localhost:5180/api/v1/admin/users/<userId>/quota \
   -H "Authorization: Bearer <admin-token>" -H "Content-Type: application/json" \
   -d '{ "maxSources": 25, "maxRunsPerDay": 500, "maxItemsPerRun": 200 }'
 ```
 
 ```bash
 # Create an RSS source feeding a playlist every 15 minutes
-curl -X POST http://localhost:5180/sources \
+curl -X POST http://localhost:5180/api/v1/sources \
   -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
   -d '{
         "name": "BBC News",
@@ -97,17 +100,17 @@ curl -X POST http://localhost:5180/sources \
       }'
 
 # Preview a config before saving (no source created)
-curl -X POST http://localhost:5180/sources/preview \
+curl -X POST http://localhost:5180/api/v1/sources/preview \
   -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
   -d '{ "type": "Scraper",
         "config": { "url": "https://news.example", "itemSelector": "a.headline" } }'
 # -> { "count": 10, "links": [ { "url": "...", "title": "..." }, ... ] }
 
 # Run it immediately instead of waiting for the schedule
-curl -X POST http://localhost:5180/sources/<id>/run -H "Authorization: Bearer <token>"
+curl -X POST http://localhost:5180/api/v1/sources/<id>/run -H "Authorization: Bearer <token>"
 
 # Inspect what happened
-curl http://localhost:5180/sources/<id>/runs -H "Authorization: Bearer <token>"
+curl http://localhost:5180/api/v1/sources/<id>/runs -H "Authorization: Bearer <token>"
 # -> [ { "status":"Succeeded", "itemsFound":37, "itemsAdded":35, "finishedAt":"...", ... } ]
 ```
 

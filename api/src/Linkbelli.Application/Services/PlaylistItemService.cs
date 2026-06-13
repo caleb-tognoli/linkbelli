@@ -145,6 +145,41 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links) : IPlayli
         return await ProjectAsync(itemId, ct);
     }
 
+    public async Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(
+        string username, string slug, int? limit, string? cursor, CancellationToken ct = default)
+    {
+        var normalized = username.ToUpperInvariant();
+        var playlistId = await db.Playlists
+            .Where(p => p.Slug == slug
+                && p.Visibility != PlaylistVisibility.Private
+                && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
+            .Select(p => (Guid?)p.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (playlistId is null)
+        {
+            throw new NotFoundException("Playlist not found.");
+        }
+
+        var take = Math.Clamp(limit ?? 50, 1, 100);
+        var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId.Value);
+        if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))
+        {
+            query = query.Where(i => i.Position > afterPos);
+        }
+
+        var rows = await query.OrderBy(i => i.Position).Take(take + 1).Select(ToResponse).ToListAsync(ct);
+
+        string? next = null;
+        if (rows.Count > take)
+        {
+            rows.RemoveAt(take);
+            next = Cursor.Encode(rows[^1].Position.ToString());
+        }
+
+        return new PagedResult<PlaylistItemResponse>(rows, next);
+    }
+
     private Task<PlaylistItemResponse> ProjectAsync(Guid itemId, CancellationToken ct) =>
         db.PlaylistItems.Where(i => i.Id == itemId).Select(ToResponse).FirstAsync(ct);
 

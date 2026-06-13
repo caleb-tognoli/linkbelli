@@ -48,15 +48,41 @@ builder.Services
 // Default policy carries requirements only — no schemes. Each endpoint names the
 // scheme(s) it accepts; if schemes lived here they'd be unioned into every
 // endpoint's policy, defeating per-endpoint restrictions like "bearer only".
-builder.Services.AddAuthorizationBuilder()
+var authz = builder.Services.AddAuthorizationBuilder()
     .SetDefaultPolicy(new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build());
+
+// One policy per API-key scope. Bearer principals and unscoped keys pass; a scoped key must
+// hold the named scope (enforced by ScopeAuthorizationHandler).
+foreach (var scope in Scopes.All)
+{
+    authz.AddPolicy(Scopes.Policy(scope), policy => policy
+        .RequireAuthenticatedUser()
+        .AddRequirements(new ScopeRequirement(scope)));
+}
+
+builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
 
 // --- Rate limiting skeleton: token bucket partitioned by API key, else by IP ---
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Tell clients when to retry. Buckets replenish every minute, so advertise that.
+    options.OnRejected = (context, _) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+        }
+        else
+        {
+            context.HttpContext.Response.Headers.RetryAfter = "60";
+        }
+
+        return ValueTask.CompletedTask;
+    };
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
         RateLimitPartition.GetTokenBucketLimiter(ResolvePartitionKey(http), _ => new TokenBucketRateLimiterOptions
         {
@@ -112,14 +138,18 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapGet("/", () => Results.Ok(new { name = "Linkbelli API", version = "v1" }));
 
-app.MapAuthEndpoints();
-app.MapMeEndpoints();
-app.MapApiKeyEndpoints();
-app.MapPlaylistEndpoints();
-app.MapPlaylistItemEndpoints();
-app.MapLinkEndpoints();
-app.MapSourceEndpoints();
-app.MapAdminEndpoints();
+// All business endpoints are versioned under /api/v1. Infra routes (/, /health, /openapi,
+// /scalar, /hangfire) stay unversioned.
+var v1 = app.MapGroup(ApiRoutes.V1);
+v1.MapAuthEndpoints();
+v1.MapMeEndpoints();
+v1.MapApiKeyEndpoints();
+v1.MapPlaylistEndpoints();
+v1.MapPlaylistItemEndpoints();
+v1.MapLinkEndpoints();
+v1.MapSourceEndpoints();
+v1.MapAdminEndpoints();
+v1.MapPublicPlaylistEndpoints();
 
 app.Run();
 

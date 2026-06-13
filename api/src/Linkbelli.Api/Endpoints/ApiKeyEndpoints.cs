@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Linkbelli.Api.Auth;
+using Linkbelli.Api.Common;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -25,7 +26,7 @@ public static class ApiKeyEndpoints
         group.MapPost("/", async (CreateApiKeyRequest req, ClaimsPrincipal user, IApiKeyService keys, CancellationToken ct) =>
         {
             var created = await keys.CreateAsync(user.GetUserId(), req, ct);
-            return Results.Created($"/me/apikeys/{created.Id}", created);
+            return Results.Created($"{ApiRoutes.V1}/me/apikeys/{created.Id}", created);
         });
 
         group.MapDelete("/{id:guid}", async (Guid id, ClaimsPrincipal user, IApiKeyService keys, CancellationToken ct) =>

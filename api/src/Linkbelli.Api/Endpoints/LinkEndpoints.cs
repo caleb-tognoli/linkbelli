@@ -1,4 +1,5 @@
 using Linkbelli.Api.Auth;
+using Linkbelli.Api.Common;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -17,7 +18,8 @@ public static class LinkEndpoints
         group.MapPost("/", async (CreateLinkRequest req, ILinkService links, CancellationToken ct) =>
         {
             var link = await links.CreateAsync(req, ct);
-            return Results.Created($"/links/{link.Id}", link);
-        });
+            return Results.Created($"{ApiRoutes.V1}/links/{link.Id}", link);
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.LinksWrite));
     }
 }
