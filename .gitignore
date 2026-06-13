@@ -402,3 +402,6 @@ FodyWeavers.xsd
 
 # Claude Code local settings
 .claude/
+
+# Agent docs (local only)
+.agents/
