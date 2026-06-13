@@ -23,6 +23,11 @@ public static class SourceEndpoints
             return Results.Created($"/sources/{created.Id}", created);
         });
 
+        // Dry-run a config (live outbound fetch) — rate-limited stricter than ordinary reads.
+        group.MapPost("/preview", async (PreviewSourceRequest req, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
+            Results.Ok(await svc.PreviewAsync(user.GetUserId(), req, ct)))
+            .RequireRateLimiting("sensitive");
+
         group.MapGet("/{id:guid}", async (Guid id, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.GetAsync(user.GetUserId(), id, ct)));
 

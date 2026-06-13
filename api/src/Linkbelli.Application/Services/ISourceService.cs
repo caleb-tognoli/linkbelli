@@ -11,4 +11,5 @@ public interface ISourceService
     Task DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task RunNowAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<SourceRunResponse>> ListRunsAsync(Guid ownerId, Guid id, CancellationToken ct = default);
+    Task<PreviewSourceResponse> PreviewAsync(Guid ownerId, PreviewSourceRequest request, CancellationToken ct = default);
 }

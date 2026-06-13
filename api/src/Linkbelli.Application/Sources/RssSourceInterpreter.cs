@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using CodeHollow.FeedReader;
@@ -10,7 +11,8 @@ namespace Linkbelli.Application.Sources;
 
 /// <summary>
 /// RSS/Atom source: fetches a feed (through the SSRF-protected client) and yields each
-/// entry's link. Config: { "feedUrl": "https://…" }.
+/// entry's link. Config: { "feedUrl": "https://…" }. Uses conditional GET (ETag /
+/// Last-Modified, persisted in <see cref="Source.State"/>) to skip unchanged feeds.
 /// </summary>
 public sealed class RssSourceInterpreter(IHttpClientFactory httpClientFactory) : ISourceInterpreter
 {
@@ -27,15 +29,41 @@ public sealed class RssSourceInterpreter(IHttpClientFactory httpClientFactory) :
         }
     }
 
-    public async Task<IReadOnlyList<DiscoveredLink>> FetchAsync(Source source, CancellationToken cancellationToken = default)
+    /// <summary>Conditional-GET validators persisted between runs.</summary>
+    private record FeedState(string? ETag, string? LastModified);
+
+    public async Task<SourceFetchResult> FetchAsync(
+        IReadOnlyDictionary<string, string> config, string? state, CancellationToken cancellationToken = default)
     {
-        var config = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
         var feedUrl = config[FeedUrlKey];
+        var prior = state is null ? null : JsonSerializer.Deserialize<FeedState>(state);
 
         var client = httpClientFactory.CreateClient(EnrichmentHttpClient.Name);
-        var xml = await client.GetStringAsync(feedUrl, cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Get, feedUrl);
+        if (!string.IsNullOrEmpty(prior?.ETag))
+        {
+            request.Headers.TryAddWithoutValidation("If-None-Match", prior.ETag);
+        }
 
-        return ParseFeed(xml);
+        if (!string.IsNullOrEmpty(prior?.LastModified))
+        {
+            request.Headers.TryAddWithoutValidation("If-Modified-Since", prior.LastModified);
+        }
+
+        using var response = await client.SendAsync(request, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotModified)
+        {
+            return new SourceFetchResult([], state, NotModified: true);
+        }
+
+        response.EnsureSuccessStatusCode();
+        var xml = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        var newState = JsonSerializer.Serialize(new FeedState(
+            response.Headers.ETag?.ToString(),
+            response.Content.Headers.LastModified?.ToString("R")));
+
+        return new SourceFetchResult(ParseFeed(xml), newState);
     }
 
     /// <summary>Pure parse of feed XML into discovered links — unit-testable from fixtures.</summary>

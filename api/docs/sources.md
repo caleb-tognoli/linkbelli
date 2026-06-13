@@ -10,11 +10,28 @@ on demand via the run endpoint. Each execution is logged as a *run*.
 
 ## Source types
 
+All types discover up to 100 links per run (then capped again by your `maxItemsPerRun` quota).
+
 | Type | Config keys | Notes |
 |------|-------------|-------|
-| `Rss` | `feedUrl` | RSS or Atom feed. Up to 100 newest entries per run. |
+| `Rss` | `feedUrl` | RSS or Atom feed. Uses conditional GET (ETag/Last-Modified) to skip unchanged feeds. |
+| `Scraper` | `url`, `itemSelector`, `linkAttribute?`, `titleSelector?` | Scrapes a page with CSS selectors. `itemSelector` selects link-bearing elements; `linkAttribute` (default `href`) holds the URL; `titleSelector` (within each element) or the element text supplies the title. Relative URLs resolve against `url`. |
+| `JsonApi` | `url`, `itemsPath`, `urlPath`, `titlePath?`, `header.*` | Fetches JSON and extracts links via JSONPath. `itemsPath` selects item nodes; `urlPath`/`titlePath` are evaluated relative to each item. Any `header.<Name>` key is sent as a request header **and treated as a secret** (encrypted at rest, shown as `***` in responses). |
 
-(More types — scraper, JSON API — arrive later; the model is the same.)
+```jsonc
+// Scraper config
+{ "url": "https://news.example/section",
+  "itemSelector": "a.headline", "titleSelector": null }
+
+// JSON-API config (with an auth header secret)
+{ "url": "https://api.example/v1/posts",
+  "itemsPath": "$.data.posts[*]", "urlPath": "permalink", "titlePath": "title",
+  "header.Authorization": "Bearer <token>" }
+```
+
+> **Secrets:** `header.*` values are encrypted with ASP.NET Core Data Protection before storage
+> and returned redacted (`***`). On update, re-send `***` (or omit the key) to keep the existing
+> secret; send a new value to replace it.
 
 ## Endpoints
 
@@ -22,6 +39,7 @@ on demand via the run endpoint. Each execution is logged as a *run*.
 |--------|------|------|---------|
 | `GET`    | `/sources`          | — | List your sources |
 | `POST`   | `/sources`          | `name, type, config, schedule, playlistIds?` | Create (enabled, scheduled immediately) |
+| `POST`   | `/sources/preview`  | `type, config` | Dry-run a config (live fetch, no save); returns up to 10 sample links. Rate-limited. |
 | `GET`    | `/sources/{id}`     | — | Get one |
 | `PATCH`  | `/sources/{id}`     | `name?, config?, schedule?, enabled?, playlistIds?` | Update (reschedules) |
 | `DELETE` | `/sources/{id}`     | — | Soft delete + unschedule |
@@ -77,6 +95,13 @@ curl -X POST http://localhost:5180/sources \
         "schedule": "*/15 * * * *",
         "playlistIds": ["<playlistId>"]
       }'
+
+# Preview a config before saving (no source created)
+curl -X POST http://localhost:5180/sources/preview \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{ "type": "Scraper",
+        "config": { "url": "https://news.example", "itemSelector": "a.headline" } }'
+# -> { "count": 10, "links": [ { "url": "...", "title": "..." }, ... ] }
 
 # Run it immediately instead of waiting for the schedule
 curl -X POST http://localhost:5180/sources/<id>/run -H "Authorization: Bearer <token>"

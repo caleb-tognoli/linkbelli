@@ -3,8 +3,10 @@ using Hangfire.PostgreSql;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Identity;
+using Linkbelli.Application.Security;
 using Linkbelli.Application.Sources;
 using Linkbelli.Infrastructure.Jobs;
+using Linkbelli.Infrastructure.Security;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +32,10 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<LinkbelliDbContext>());
 
         services.AddHealthChecks().AddDbContextCheck<LinkbelliDbContext>("database");
+
+        // Encrypts source-config secrets (e.g. JSON-API headers) at rest.
+        services.AddDataProtection();
+        services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
 
         services.AddIdentityApiEndpoints<ApplicationUser>()
             .AddRoles<IdentityRole<Guid>>() // enables RoleManager + role claims in the bearer principal

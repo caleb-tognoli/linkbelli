@@ -13,6 +13,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.9" />
+    <!-- JSONPath (SelectTokens) for the JSON-API source interpreter; version pinned to match Infrastructure. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <PropertyGroup>

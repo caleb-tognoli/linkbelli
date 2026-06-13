@@ -1,0 +1,95 @@
+using System.Net.Http;
+using AngleSharp.Html.Parser;
+using Linkbelli.Application.Common;
+using Linkbelli.Application.Http;
+using Linkbelli.Core.Entities;
+using Linkbelli.Core.Url;
+
+namespace Linkbelli.Application.Sources;
+
+/// <summary>
+/// Scrapes a web page for links via CSS selectors (through the SSRF-protected client).
+/// Config: { url, itemSelector, linkAttribute?, titleSelector? }.
+/// <c>itemSelector</c> selects the link-bearing elements; <c>linkAttribute</c> (default
+/// <c>href</c>) holds each URL; <c>titleSelector</c> (optional, searched within each element)
+/// or the element's text supplies the title. Relative URLs resolve against <c>url</c>.
+/// </summary>
+public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactory) : ISourceInterpreter
+{
+    public const string UrlKey = "url";
+    public const string ItemSelectorKey = "itemSelector";
+    public const string LinkAttributeKey = "linkAttribute";
+    public const string TitleSelectorKey = "titleSelector";
+    private const int MaxItemsPerRun = 100;
+    private static readonly HtmlParser Parser = new();
+
+    public SourceType Type => SourceType.Scraper;
+
+    public void ValidateConfig(IReadOnlyDictionary<string, string> config)
+    {
+        if (!config.TryGetValue(UrlKey, out var url) || !UrlCanonicalizer.TryCanonicalize(url, out _))
+        {
+            throw new ValidationException($"config.{UrlKey}", "A valid http(s) page URL is required.");
+        }
+
+        if (!config.TryGetValue(ItemSelectorKey, out var selector) || string.IsNullOrWhiteSpace(selector))
+        {
+            throw new ValidationException($"config.{ItemSelectorKey}", "A CSS selector for items is required.");
+        }
+    }
+
+    public async Task<SourceFetchResult> FetchAsync(
+        IReadOnlyDictionary<string, string> config, string? state, CancellationToken cancellationToken = default)
+    {
+        var pageUrl = config[UrlKey];
+        var client = httpClientFactory.CreateClient(EnrichmentHttpClient.Name);
+        var html = await client.GetStringAsync(pageUrl, cancellationToken);
+        return new SourceFetchResult(Parse(html, pageUrl, config));
+    }
+
+    /// <summary>Pure HTML → links extraction; unit-testable from fixtures.</summary>
+    public static IReadOnlyList<DiscoveredLink> Parse(string html, string baseUrl, IReadOnlyDictionary<string, string> config)
+    {
+        var itemSelector = config[ItemSelectorKey];
+        var linkAttribute = config.GetValueOrDefault(LinkAttributeKey) is { Length: > 0 } a ? a : "href";
+        var titleSelector = config.GetValueOrDefault(TitleSelectorKey);
+        var baseUri = Uri.TryCreate(baseUrl, UriKind.Absolute, out var b) ? b : null;
+
+        var doc = Parser.ParseDocument(html);
+        var results = new List<DiscoveredLink>();
+        var seen = new HashSet<string>();
+        foreach (var el in doc.QuerySelectorAll(itemSelector))
+        {
+            var raw = el.GetAttribute(linkAttribute);
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                continue;
+            }
+
+            var resolved = baseUri is not null && Uri.TryCreate(baseUri, raw, out var abs) ? abs.ToString() : raw.Trim();
+            if (!seen.Add(resolved))
+            {
+                continue;
+            }
+
+            string? title = null;
+            if (!string.IsNullOrWhiteSpace(titleSelector))
+            {
+                title = el.QuerySelector(titleSelector)?.TextContent.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = string.IsNullOrWhiteSpace(el.TextContent) ? null : el.TextContent.Trim();
+            }
+
+            results.Add(new DiscoveredLink(resolved, string.IsNullOrWhiteSpace(title) ? null : title));
+            if (results.Count >= MaxItemsPerRun)
+            {
+                break;
+            }
+        }
+
+        return results;
+    }
+}

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Services;
 using Linkbelli.Core.Entities;
@@ -12,6 +13,7 @@ public sealed class SourceRunner(
     IAppDbContext db,
     ILinkService links,
     IEnumerable<ISourceInterpreter> interpreters,
+    SourceConfigSecrets secrets,
     IUserQuotaService quotas,
     ILogger<SourceRunner> logger) : ISourceRunner
 {
@@ -41,7 +43,16 @@ public sealed class SourceRunner(
             var interpreter = interpreters.FirstOrDefault(i => i.Type == source.Type)
                 ?? throw new InvalidOperationException($"No interpreter for source type {source.Type}.");
 
-            var discovered = (await interpreter.FetchAsync(source, cancellationToken))
+            var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
+            var config = secrets.Decrypt(source.Type, stored);
+
+            var fetch = await interpreter.FetchAsync(config, source.State, cancellationToken);
+            if (fetch.State is not null)
+            {
+                source.State = fetch.State; // persist ETag/cursor for the next run
+            }
+
+            var discovered = fetch.Links
                 .Take(quota.MaxItemsPerRun)
                 .ToList();
             run.ItemsFound = discovered.Count;

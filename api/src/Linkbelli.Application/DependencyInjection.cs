@@ -24,10 +24,13 @@ public static class DependencyInjection
         services.AddSingleton<LinkMetadataExtractor>();
         services.AddScoped<ILinkEnricher, LinkEnricher>();
 
-        // --- Sources --- (ISourceScheduler is implemented in Infrastructure via Hangfire)
+        // --- Sources --- (ISourceScheduler / ISecretProtector are implemented in Infrastructure)
         services.AddScoped<ISourceService, SourceService>();
         services.AddScoped<ISourceRunner, SourceRunner>();
+        services.AddScoped<SourceConfigSecrets>();
         services.AddScoped<ISourceInterpreter, RssSourceInterpreter>();
+        services.AddScoped<ISourceInterpreter, ScraperSourceInterpreter>();
+        services.AddScoped<ISourceInterpreter, JsonApiSourceInterpreter>();
 
         // SSRF-protected outbound client: connects only to public IPs (validated per hop).
         services.AddHttpClient(EnrichmentHttpClient.Name, client =>

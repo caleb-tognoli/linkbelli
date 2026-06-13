@@ -11,9 +11,12 @@ namespace Linkbelli.Application.Services;
 public class SourceService(
     IAppDbContext db,
     IEnumerable<ISourceInterpreter> interpreters,
+    SourceConfigSecrets secrets,
     ISourceScheduler scheduler,
     IUserQuotaService quotas) : ISourceService
 {
+    private const int PreviewLimit = 10;
+
     public async Task<IReadOnlyList<SourceResponse>> ListAsync(Guid ownerId, CancellationToken ct = default)
     {
         var sources = await db.Sources
@@ -49,7 +52,7 @@ public class SourceService(
             OwnerId = ownerId,
             Name = request.Name.Trim(),
             Type = request.Type,
-            Config = JsonSerializer.Serialize(request.Config),
+            Config = JsonSerializer.Serialize(secrets.Encrypt(request.Type, request.Config, stored: null)),
             Schedule = request.Schedule.Trim(),
             Enabled = true,
         };
@@ -84,7 +87,8 @@ public class SourceService(
         if (request.Config is not null)
         {
             interpreter.ValidateConfig(request.Config);
-            source.Config = JsonSerializer.Serialize(request.Config);
+            var existing = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
+            source.Config = JsonSerializer.Serialize(secrets.Encrypt(source.Type, request.Config, existing));
         }
 
         if (request.Schedule is not null)
@@ -154,6 +158,21 @@ public class SourceService(
             .ToListAsync(ct);
     }
 
+    public async Task<PreviewSourceResponse> PreviewAsync(Guid ownerId, PreviewSourceRequest request, CancellationToken ct = default)
+    {
+        var interpreter = ResolveInterpreter(request.Type);
+        interpreter.ValidateConfig(request.Config);
+
+        // Config comes straight from the request (plaintext secrets), no decryption needed.
+        var fetch = await interpreter.FetchAsync(request.Config, state: null, ct);
+        var links = fetch.Links
+            .Take(PreviewLimit)
+            .Select(l => new DiscoveredLinkDto(l.Url, l.Title))
+            .ToList();
+
+        return new PreviewSourceResponse(links.Count, links);
+    }
+
     private ISourceInterpreter ResolveInterpreter(SourceType type) =>
         interpreters.FirstOrDefault(i => i.Type == type)
         ?? throw new ValidationException("type", $"Unsupported source type '{type}'.");
@@ -204,8 +223,11 @@ public class SourceService(
         await db.Sources.FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == ownerId, ct)
         ?? throw new NotFoundException("Source not found.");
 
-    private static SourceResponse ToResponse(Source source, Guid[] playlistIds) => new(
-        source.Id, source.Name, source.Type,
-        JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new(),
-        source.Schedule, source.Enabled, source.LastRunAt, source.CreationTime, playlistIds);
+    private SourceResponse ToResponse(Source source, Guid[] playlistIds)
+    {
+        var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
+        return new(
+            source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
+            source.Schedule, source.Enabled, source.LastRunAt, source.CreationTime, playlistIds);
+    }
 }
