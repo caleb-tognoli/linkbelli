@@ -8,7 +8,8 @@ public record CreateSourceRequest(
     IReadOnlyDictionary<string, string> Config,
     string Schedule,
     Guid[]? PlaylistIds,
-    SourceVisibility? Visibility);
+    SourceVisibility? Visibility,
+    bool? Nsfw);
 
 public record UpdateSourceRequest(
     string? Name,
@@ -16,11 +17,12 @@ public record UpdateSourceRequest(
     string? Schedule,
     bool? Enabled,
     Guid[]? PlaylistIds,
-    SourceVisibility? Visibility);
+    SourceVisibility? Visibility,
+    bool? Nsfw);
 
 public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,
-    string Schedule, bool Enabled, SourceVisibility Visibility,
+    string Schedule, bool Enabled, SourceVisibility Visibility, bool Nsfw,
     DateTimeOffset? LastRunAt, DateTimeOffset CreationTime, Guid[] PlaylistIds);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>

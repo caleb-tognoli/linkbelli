@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Linkbelli.Api.Auth;
 using Linkbelli.Application.Services;
 
 namespace Linkbelli.Api.Endpoints;
@@ -13,18 +15,19 @@ public static class PublicPlaylistEndpoints
     {
         var group = app.MapGroup("/public").WithTags("Public");
 
-        // Discover: search/browse public playlists (by name query and/or tag).
-        group.MapGet("/playlists", async (IPlaylistService svc, string? q, string[]? tag, int? limit, string? cursor, CancellationToken ct) =>
-            Results.Ok(await svc.DiscoverPublicAsync(q, tag, limit, cursor, ct)))
+        // Discover: search/browse public playlists (by name query and/or tag). NSFW filtered by
+        // the viewer's preference if authenticated, otherwise hidden.
+        group.MapGet("/playlists", async (ClaimsPrincipal user, IPlaylistService svc, string? q, string[]? tag, int? limit, string? cursor, CancellationToken ct) =>
+            Results.Ok(await svc.DiscoverPublicAsync(q, tag, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
 
-        group.MapGet("/playlists/{username}/{slug}", async (string username, string slug, IPlaylistService svc, CancellationToken ct) =>
-            Results.Ok(await svc.GetPublicAsync(username, slug, ct)))
+        group.MapGet("/playlists/{username}/{slug}", async (ClaimsPrincipal user, string username, string slug, IPlaylistService svc, CancellationToken ct) =>
+            Results.Ok(await svc.GetPublicAsync(username, slug, ViewerId(user), ct)))
             .AllowAnonymous();
 
         group.MapGet("/playlists/{username}/{slug}/items", async (
-            string username, string slug, IPlaylistItemService svc, int? limit, string? cursor, CancellationToken ct) =>
-            Results.Ok(await svc.ListPublicAsync(username, slug, limit, cursor, ct)))
+            ClaimsPrincipal user, string username, string slug, IPlaylistItemService svc, int? limit, string? cursor, CancellationToken ct) =>
+            Results.Ok(await svc.ListPublicAsync(username, slug, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
 
         // Public tag cloud: tags used across public playlists, with counts.
@@ -32,4 +35,8 @@ public static class PublicPlaylistEndpoints
             Results.Ok(await svc.ListPublicTagsAsync(q, ct)))
             .AllowAnonymous();
     }
+
+    /// <summary>The authenticated viewer's id, or null for anonymous callers.</summary>
+    private static Guid? ViewerId(ClaimsPrincipal user) =>
+        user.Identity?.IsAuthenticated == true ? user.GetUserId() : null;
 }

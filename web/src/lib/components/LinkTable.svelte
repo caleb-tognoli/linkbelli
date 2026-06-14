@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { dndzone } from 'svelte-dnd-action';
 	import { api } from '$lib/api/client';
+	import NsfwBadge from './NsfwBadge.svelte';
 	import type { PlaylistItem } from '$lib/types';
 
 	let { items = $bindable() }: { items: PlaylistItem[] } = $props();
@@ -76,6 +77,7 @@
 						<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="hover:underline">
 							{item.link.title ?? item.link.url}
 						</a>
+						{#if item.link.nsfw}<NsfwBadge />{/if}
 						{#if !item.link.enriched}
 							<span class="ml-1 text-xs" style="color: var(--color-muted)" title="Fetching metadata…">·</span>
 						{/if}

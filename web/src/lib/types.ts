@@ -7,6 +7,7 @@ export interface User {
 	userId: string;
 	authMethod: string;
 	scopes: string[];
+	showNsfw: boolean;
 }
 
 export interface Playlist {
@@ -18,6 +19,7 @@ export interface Playlist {
 	itemCount: number;
 	creationTime: string;
 	tags: string[];
+	nsfw: boolean;
 }
 
 export interface Paged<T> {
@@ -38,6 +40,7 @@ export interface PublicPlaylistSummary {
 	itemCount: number;
 	creationTime: string;
 	tags: string[];
+	nsfw: boolean;
 }
 
 export type SourceType = 'Rss' | 'Scraper' | 'JsonApi';
@@ -52,6 +55,7 @@ export interface LinkSummary {
 	thumbnailUrl: string | null;
 	siteName: string | null;
 	enriched: boolean;
+	nsfw: boolean;
 }
 
 export interface PlaylistItem {
@@ -78,6 +82,7 @@ export interface SourceSummary {
 	name: string;
 	type: SourceType;
 	visibility: SourceVisibility;
+	nsfw: boolean;
 	playlistIds: string[];
 }
 
@@ -105,6 +110,7 @@ export interface Source {
 	schedule: string;
 	enabled: boolean;
 	visibility: SourceVisibility;
+	nsfw: boolean;
 	lastRunAt: string | null;
 	creationTime: string;
 	playlistIds: string[];

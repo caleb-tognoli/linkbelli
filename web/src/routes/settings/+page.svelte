@@ -1,9 +1,17 @@
 <script lang="ts">
+	import { api } from '$lib/api/client';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	let showNsfw = $state(data.user?.showNsfw ?? false);
+
+	async function setNsfw(value: boolean) {
+		showNsfw = value;
+		await api.put('/me/preferences', { showNsfw: value });
+	}
 
 	function pct(used: number, max: number) {
 		return max > 0 ? Math.min(100, Math.round((used / max) * 100)) : 0;
@@ -19,6 +27,17 @@
 		<div class="mt-3">
 			<ThemeToggle initial={data.theme} />
 		</div>
+	</div>
+
+	<div>
+		<h2 class="font-medium">Content</h2>
+		<label class="mt-3 flex items-center gap-2 text-sm">
+			<input type="checkbox" checked={showNsfw} onchange={(e) => setNsfw(e.currentTarget.checked)} />
+			Show NSFW content
+		</label>
+		<p class="mt-1 text-sm" style="color: var(--color-muted)">
+			When off (default), playlists and links marked adult are hidden everywhere.
+		</p>
 	</div>
 
 	<div>

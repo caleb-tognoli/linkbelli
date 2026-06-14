@@ -62,13 +62,20 @@ public sealed class SourceRunner(
                 .Select(ps => ps.PlaylistId)
                 .ToListAsync(cancellationToken);
 
-            // Resolve/dedup the links first (get-or-create persists genuinely new ones).
+            // Resolve/dedup the links first (get-or-create persists genuinely new ones, queued
+            // for async enrichment). A NSFW source marks the links it ingests as NSFW.
             var resolved = new List<Link>();
             foreach (var discoveredLink in discovered)
             {
                 if (UrlCanonicalizer.TryCanonicalize(discoveredLink.Url, out var canonical))
                 {
-                    resolved.Add(await links.GetOrCreateAsync(canonical, cancellationToken));
+                    var link = await links.GetOrCreateAsync(canonical, immediate: false, cancellationToken);
+                    if (source.Nsfw && !link.Nsfw)
+                    {
+                        link.Nsfw = true;
+                    }
+
+                    resolved.Add(link);
                 }
             }
 

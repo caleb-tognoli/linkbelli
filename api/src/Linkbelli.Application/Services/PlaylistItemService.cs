@@ -9,14 +9,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Services;
 
-public class PlaylistItemService(IAppDbContext db, ILinkService links) : IPlaylistItemService
+public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPreferenceService prefs) : IPlaylistItemService
 {
     private static readonly Expression<Func<PlaylistItem, PlaylistItemResponse>> ToResponse = i =>
         new PlaylistItemResponse(
             i.Id, i.Position, i.Note, i.Status,
             new LinkResponse(
                 i.Link!.Id, i.Link.CanonicalUrl, i.Link.Host!.Hostname, i.Link.Title,
-                i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null),
+                i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw),
             i.CreationTime);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
@@ -25,7 +25,14 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links) : IPlayli
         await EnsureOwnsPlaylistAsync(playlistId, ownerId, ct);
 
         var take = Math.Clamp(limit ?? 50, 1, 100);
-        var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId);
+        var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
+        // Only enriched items are shown; NSFW items hidden unless the user opted in.
+        var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId && i.Link!.EnrichedAt != null);
+        if (!showNsfw)
+        {
+            query = query.Where(i => !i.Link!.Nsfw);
+        }
+
         if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))
         {
             query = query.Where(i => i.Position > afterPos);
@@ -53,7 +60,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links) : IPlayli
             throw new ValidationException("url", "A valid http(s) URL is required.");
         }
 
-        var link = await links.GetOrCreateAsync(canonical, ct);
+        var link = await links.GetOrCreateAsync(canonical, immediate: true, ct);
 
         if (await db.PlaylistItems.AnyAsync(i => i.PlaylistId == playlistId && i.LinkId == link.Id, ct))
         {
@@ -146,23 +153,29 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links) : IPlayli
     }
 
     public async Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(
-        string username, string slug, int? limit, string? cursor, CancellationToken ct = default)
+        string username, string slug, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default)
     {
         var normalized = username.ToUpperInvariant();
-        var playlistId = await db.Playlists
+        var playlist = await db.Playlists
             .Where(p => p.Slug == slug
                 && p.Visibility != PlaylistVisibility.Private
                 && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
-            .Select(p => (Guid?)p.Id)
+            .Select(p => new { p.Id, Nsfw = p.Items.Any(i => i.Link!.Nsfw) })
             .FirstOrDefaultAsync(ct);
 
-        if (playlistId is null)
+        var showNsfw = await prefs.ShowNsfwAsync(viewerId, ct);
+        if (playlist is null || (playlist.Nsfw && !showNsfw))
         {
             throw new NotFoundException("Playlist not found.");
         }
 
         var take = Math.Clamp(limit ?? 50, 1, 100);
-        var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId.Value);
+        var query = db.PlaylistItems.Where(i => i.PlaylistId == playlist.Id && i.Link!.EnrichedAt != null);
+        if (!showNsfw)
+        {
+            query = query.Where(i => !i.Link!.Nsfw);
+        }
+
         if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))
         {
             query = query.Where(i => i.Position > afterPos);

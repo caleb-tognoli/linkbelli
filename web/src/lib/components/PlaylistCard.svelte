@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NsfwBadge from './NsfwBadge.svelte';
 	import type { Playlist } from '$lib/types';
 
 	let { playlist }: { playlist: Playlist } = $props();
@@ -19,11 +20,14 @@
 >
 	<div class="flex items-start justify-between gap-2">
 		<span class="font-medium">{playlist.name}</span>
-		<span
-			class="shrink-0 rounded-full border px-2 py-0.5 text-xs"
-			style="border-color: var(--color-border); color: var(--color-muted)"
-		>
-			{playlist.visibility}
+		<span class="flex shrink-0 items-center gap-1">
+			{#if playlist.nsfw}<NsfwBadge />{/if}
+			<span
+				class="rounded-full border px-2 py-0.5 text-xs"
+				style="border-color: var(--color-border); color: var(--color-muted)"
+			>
+				{playlist.visibility}
+			</span>
 		</span>
 	</div>
 

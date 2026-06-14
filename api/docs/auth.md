@@ -103,7 +103,15 @@ auth method, and scopes — handy for verifying a token or key works.
 
 ```bash
 curl http://localhost:5180/api/v1/me -H "X-Api-Key: lbk_ab12..._xxxxx"
-# -> { "userId": "...", "authMethod": "apikey", "scopes": ["playlists:read"] }
+# -> { "userId": "...", "authMethod": "apikey", "scopes": ["playlists:read"], "showNsfw": false }
+```
+
+Update preferences (currently just the NSFW content filter, default off):
+
+```bash
+curl -X PUT http://localhost:5180/api/v1/me/preferences \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{ "showNsfw": true }'
 ```
 
 ## Rate limiting

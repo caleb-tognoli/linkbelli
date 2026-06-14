@@ -8,11 +8,11 @@ public static class Mappers
 {
     public static LinkResponse ToResponse(this Link link) => new(
         link.Id, link.CanonicalUrl, link.Host?.Hostname ?? string.Empty, link.Title, link.Description,
-        link.ThumbnailUrl, link.SiteName, link.EnrichedAt != null);
+        link.ThumbnailUrl, link.SiteName, link.EnrichedAt != null, link.Nsfw);
 
-    public static PlaylistResponse ToResponse(this Playlist playlist, int itemCount, IEnumerable<string> tags) => new(
+    public static PlaylistResponse ToResponse(this Playlist playlist, int itemCount, IEnumerable<string> tags, bool nsfw) => new(
         playlist.Id, playlist.Name, playlist.Slug, playlist.Description,
-        playlist.Visibility, itemCount, playlist.CreationTime, tags.ToArray());
+        playlist.Visibility, itemCount, playlist.CreationTime, tags.ToArray(), nsfw);
 
     public static ApiKeyResponse ToResponse(this ApiKey key) => new(
         key.Id, key.Name, key.Prefix, key.Scopes, key.CreationTime, key.LastUsedAt, key.ExpiresAt);

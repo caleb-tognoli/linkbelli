@@ -37,7 +37,7 @@
 			<SourceListItem
 				name={src.name}
 				href={`/sources/${src.id}`}
-				subtitle={`${src.type} · ${src.schedule} · ${src.visibility} · last run ${lastRun(src.lastRunAt)}`}
+				subtitle={`${src.type} · ${src.schedule} · ${src.visibility}${src.nsfw ? ' · NSFW' : ''} · last run ${lastRun(src.lastRunAt)}`}
 			>
 				{#snippet actions()}
 					<label class="flex items-center gap-1 text-xs" style="color: var(--color-muted)">

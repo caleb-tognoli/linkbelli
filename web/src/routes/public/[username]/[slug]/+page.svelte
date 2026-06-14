@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
 	import type { Paged, PlaylistItem } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -76,6 +77,7 @@
 							<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="hover:underline">
 								{item.link.title ?? item.link.url}
 							</a>
+							{#if item.link.nsfw}<NsfwBadge />{/if}
 						</td>
 						<td class="py-2 pr-3" style="color: var(--color-muted)">{item.link.host}</td>
 						<td class="py-2" style="color: var(--color-muted)">{added(item.creationTime)}</td>

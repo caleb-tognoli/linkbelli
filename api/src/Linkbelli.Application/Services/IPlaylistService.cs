@@ -10,11 +10,11 @@ public interface IPlaylistService
     Task<PlaylistResponse> UpdateAsync(Guid ownerId, Guid id, UpdatePlaylistRequest request, CancellationToken ct = default);
     Task DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default);
 
-    /// <summary>Anonymous read of a non-private playlist addressed by owner username + slug.</summary>
-    Task<PlaylistResponse> GetPublicAsync(string username, string slug, CancellationToken ct = default);
+    /// <summary>Anonymous read of a non-private playlist by owner username + slug. NSFW playlists 404 unless the viewer opted in.</summary>
+    Task<PlaylistResponse> GetPublicAsync(string username, string slug, Guid? viewerId, CancellationToken ct = default);
 
-    /// <summary>Anonymous discovery of public playlists, optionally filtered by name query and/or tag.</summary>
-    Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(string? q, string[]? tags, int? limit, string? cursor, CancellationToken ct = default);
+    /// <summary>Discovery of public playlists, filtered by name/tag and the viewer's NSFW preference.</summary>
+    Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default);
 
     /// <summary>Tags used across the caller's own playlists, with counts (autocomplete/management).</summary>
     Task<IReadOnlyList<TagSummary>> ListOwnTagsAsync(Guid ownerId, string? q, CancellationToken ct = default);

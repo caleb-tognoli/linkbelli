@@ -55,5 +55,19 @@ public class LinkMetadataExtractorTests
         Assert.Null(meta.Title);
         Assert.Null(meta.Description);
         Assert.Empty(meta.Raw);
+        Assert.False(meta.Nsfw);
+    }
+
+    [Theory]
+    [InlineData("adult", true)]
+    [InlineData("Mature", true)]
+    [InlineData("RTA-5042-1996-1400-1577-RTA", true)]
+    [InlineData("general", false)]
+    [InlineData("", false)]
+    public void Detects_nsfw_from_rating_meta(string rating, bool expected)
+    {
+        var html = $"<html><head><meta name=\"rating\" content=\"{rating}\"><title>t</title></head><body></body></html>";
+
+        Assert.Equal(expected, _extractor.Extract(html).Nsfw);
     }
 }

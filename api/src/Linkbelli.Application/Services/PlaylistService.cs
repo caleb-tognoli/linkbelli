@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Services;
 
-public class PlaylistService(IAppDbContext db) : IPlaylistService
+public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : IPlaylistService
 {
     private const int MaxTagResults = 200;
 
@@ -36,21 +36,29 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
 
         var query = FilterByTags(db.Playlists.Where(p => p.OwnerId == ownerId), tags);
 
+        var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
+        if (!showNsfw)
+        {
+            query = query.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+        }
+
         // "Recently updated" = most recent of the playlist's own creation and its newest item.
         // (Items are always created after their playlist, so coalesce == greatest.)
+        // ItemCount counts only enriched items (the only ones the UI shows).
         var rows = await query
             .Select(p => new
             {
                 Playlist = p,
                 LastActivity = p.Items.Max(i => (DateTimeOffset?)i.CreationTime) ?? p.CreationTime,
-                ItemCount = p.Items.Count(),
+                ItemCount = p.Items.Count(i => i.Link!.EnrichedAt != null),
                 Tags = p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                Nsfw = p.Items.Any(i => i.Link!.Nsfw),
             })
             .OrderByDescending(x => x.LastActivity).ThenByDescending(x => x.Playlist.Id)
             .Skip(offset).Take(take + 1)
             .Select(x => new PlaylistResponse(
                 x.Playlist.Id, x.Playlist.Name, x.Playlist.Slug, x.Playlist.Description,
-                x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags))
+                x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags, x.Nsfw))
             .ToListAsync(ct);
 
         string? next = null;
@@ -88,7 +96,7 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
 
         await db.SaveChangesAsync(ct);
 
-        return playlist.ToResponse(0, tags.Select(t => t.Name));
+        return playlist.ToResponse(0, tags.Select(t => t.Name), nsfw: false);
     }
 
     public async Task<PlaylistResponse> GetAsync(Guid ownerId, Guid id, CancellationToken ct = default)
@@ -96,8 +104,9 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
         var playlist = await db.Playlists
             .Where(p => p.Id == id && p.OwnerId == ownerId)
             .Select(p => new PlaylistResponse(
-                p.Id, p.Name, p.Slug, p.Description, p.Visibility, p.Items.Count(), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray()))
+                p.Id, p.Name, p.Slug, p.Description, p.Visibility,
+                p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");
@@ -141,9 +150,10 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
 
         await db.SaveChangesAsync(ct);
 
-        var count = await db.PlaylistItems.CountAsync(i => i.PlaylistId == id, ct);
+        var count = await db.PlaylistItems.CountAsync(i => i.PlaylistId == id && i.Link!.EnrichedAt != null, ct);
+        var nsfw = await db.PlaylistItems.AnyAsync(i => i.PlaylistId == id && i.Link!.Nsfw, ct);
         var tagNames = await db.PlaylistTags.Where(pt => pt.PlaylistId == id).Select(pt => pt.Tag!.Name).ToArrayAsync(ct);
-        return playlist.ToResponse(count, tagNames);
+        return playlist.ToResponse(count, tagNames, nsfw);
     }
 
     public async Task DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default)
@@ -155,7 +165,7 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<PlaylistResponse> GetPublicAsync(string username, string slug, CancellationToken ct = default)
+    public async Task<PlaylistResponse> GetPublicAsync(string username, string slug, Guid? viewerId, CancellationToken ct = default)
     {
         var normalized = username.ToUpperInvariant();
         var playlist = await db.Playlists
@@ -163,16 +173,22 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
                 && p.Visibility != PlaylistVisibility.Private
                 && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
             .Select(p => new PlaylistResponse(
-                p.Id, p.Name, p.Slug, p.Description, p.Visibility, p.Items.Count(), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray()))
+                p.Id, p.Name, p.Slug, p.Description, p.Visibility,
+                p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
             .FirstOrDefaultAsync(ct);
 
-        // Private (or missing) playlists are indistinguishable to anonymous callers.
-        return playlist ?? throw new NotFoundException("Playlist not found.");
+        // Private/missing — and NSFW for viewers who haven't opted in — are all indistinguishable.
+        if (playlist is null || (playlist.Nsfw && !await prefs.ShowNsfwAsync(viewerId, ct)))
+        {
+            throw new NotFoundException("Playlist not found.");
+        }
+
+        return playlist;
     }
 
     public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
-        string? q, string[]? tags, int? limit, string? cursor, CancellationToken ct = default)
+        string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default)
     {
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
@@ -187,13 +203,18 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
 
         query = FilterByTags(query, tags);
 
+        if (!await prefs.ShowNsfwAsync(viewerId, ct))
+        {
+            query = query.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+        }
+
         var rows = await (from p in query
                           join u in db.Users on p.OwnerId equals u.Id
                           orderby p.CreationTime descending, p.Id descending
                           select new PublicPlaylistSummary(
                               u.UserName!, p.Slug, p.Name, p.Description,
-                              p.Items.Count(), p.CreationTime,
-                              p.Tags.Select(pt => pt.Tag!.Name).ToArray()))
+                              p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
             .Skip(offset).Take(take + 1)
             .ToListAsync(ct);
 

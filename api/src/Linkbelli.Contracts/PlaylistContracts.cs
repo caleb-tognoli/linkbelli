@@ -9,12 +9,12 @@ public record UpdatePlaylistRequest(string? Name, string? Description, PlaylistV
 
 public record PlaylistResponse(
     Guid Id, string Name, string Slug, string? Description,
-    PlaylistVisibility Visibility, int ItemCount, DateTimeOffset CreationTime, string[] Tags);
+    PlaylistVisibility Visibility, int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw);
 
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(
     string OwnerUsername, string Slug, string Name, string? Description,
-    int ItemCount, DateTimeOffset CreationTime, string[] Tags);
+    int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw);
 
 /// <summary>A tag and how many playlists carry it (within the queried scope).</summary>
 public record TagSummary(string Name, int PlaylistCount);
@@ -35,7 +35,7 @@ public record CreateLinkRequest(string Url);
 
 public record LinkResponse(
     Guid Id, string Url, string Host, string? Title, string? Description,
-    string? ThumbnailUrl, string? SiteName, bool Enriched);
+    string? ThumbnailUrl, string? SiteName, bool Enriched, bool Nsfw);
 
 /// <summary>Metadata fetched for a URL without saving anything (paste → preview → confirm).</summary>
 public record LinkPreviewResponse(

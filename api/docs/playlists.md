@@ -110,6 +110,21 @@ curl -X POST http://localhost:5180/api/v1/items/<itemId>/move \
 Item ordering uses gapped integer positions, so a move is normally a single-row update; the
 server transparently renumbers a playlist if a gap runs out.
 
+> **Only enriched items are listed.** Manual adds enrich **immediately** (so they appear at once);
+> source-ingested links appear once their metadata has been fetched asynchronously. `itemCount`
+> reflects enriched items.
+
+## NSFW
+
+Links can be flagged adult **automatically** (via the page's `rating`/RTA meta tag during
+enrichment, or by being ingested from an [NSFW source](sources.md#nsfw-sources)) — there is no
+manual per-link flag. A **playlist is NSFW** if it contains any NSFW item.
+
+Each user has a **Show NSFW** preference (default **off**): `GET /api/v1/me` returns `showNsfw`,
+`PUT /api/v1/me/preferences { "showNsfw": true|false }` updates it. While off, NSFW playlists and
+items are hidden everywhere — your own lists, item lists, discovery, and public views (a NSFW public
+playlist returns 404). Anonymous viewers are always treated as off.
+
 ## Public (anonymous) reads
 
 `Public` and `Unlisted` playlists can be read **without authentication**, addressed by the

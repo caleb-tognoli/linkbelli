@@ -41,7 +41,7 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
 | `GET`    | `/api/v1/sources`          | — | List your sources |
-| `POST`   | `/api/v1/sources`          | `name, type, config, schedule, playlistIds?, visibility?` | Create (enabled, scheduled immediately) |
+| `POST`   | `/api/v1/sources`          | `name, type, config, schedule, playlistIds?, visibility?, nsfw?` | Create (enabled, scheduled immediately) |
 | `GET`    | `/api/v1/sources/shared`   | — (`?q=`) | Browse **shared** sources (any owner) to subscribe |
 | `POST`   | `/api/v1/sources/preview`  | `type, config` | Dry-run a config (live fetch, no save); returns up to 10 sample links. Rate-limited. |
 | `GET`    | `/api/v1/sources/{id}`     | — | Get one |
@@ -65,6 +65,13 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 - Discover shareable sources with `GET /api/v1/sources/shared` (returns id, name, type, owner
   username — never config, which may hold secrets). Subscribe/unsubscribe from the **playlist**
   side: `POST|DELETE /api/v1/playlists/{id}/sources` (see [playlists.md](playlists.md#source-subscriptions)).
+
+### NSFW sources
+
+- `nsfw` (manual, editable) marks a source as adult. Every link it ingests is flagged NSFW, so
+  playlists fed by it become NSFW and are hidden from users who haven't opted in (see
+  [playlists.md](playlists.md#nsfw)). Links can otherwise only become NSFW **automatically** during
+  enrichment (via the page's `rating`/RTA meta tag) — there is no manual per-link NSFW flag.
 
 ## Quotas
 

@@ -10,6 +10,6 @@ public interface IPlaylistItemService
     Task DeleteAsync(Guid ownerId, Guid itemId, CancellationToken ct = default);
     Task<PlaylistItemResponse> MoveAsync(Guid ownerId, Guid itemId, MoveItemRequest request, CancellationToken ct = default);
 
-    /// <summary>Anonymous read of items in a non-private playlist addressed by owner username + slug.</summary>
-    Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(string username, string slug, int? limit, string? cursor, CancellationToken ct = default);
+    /// <summary>Anonymous read of items in a non-private playlist (owner username + slug). Respects the viewer's NSFW preference.</summary>
+    Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(string username, string slug, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default);
 }

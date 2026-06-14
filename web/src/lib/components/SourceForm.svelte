@@ -39,6 +39,7 @@
 	let visibility = $state<SourceVisibility>(source?.visibility ?? 'Private');
 	let schedule = $state(source?.schedule ?? '0 * * * *');
 	let enabled = $state(source?.enabled ?? true);
+	let nsfw = $state(source?.nsfw ?? false);
 
 	// Config field values (non-header) for the current type.
 	let values = $state<Record<string, string>>(initValues());
@@ -114,9 +115,9 @@
 			const playlistIds = [...selected];
 			let res: Response;
 			if (mode === 'create') {
-				res = await api.post('/sources', { name, type, config, schedule, playlistIds, visibility });
+				res = await api.post('/sources', { name, type, config, schedule, playlistIds, visibility, nsfw });
 			} else {
-				res = await api.patch(`/sources/${source!.id}`, { name, schedule, enabled, config, playlistIds, visibility });
+				res = await api.patch(`/sources/${source!.id}`, { name, schedule, enabled, config, playlistIds, visibility, nsfw });
 			}
 			if (!res.ok) {
 				error =
@@ -178,6 +179,10 @@
 				<input type="checkbox" bind:checked={enabled} /> Enabled
 			</label>
 		{/if}
+
+		<label class="flex items-center gap-2 self-end text-sm">
+			<input type="checkbox" bind:checked={nsfw} /> NSFW
+		</label>
 	</div>
 
 	<fieldset class="flex flex-col gap-3 rounded-lg border p-3" style="border-color: var(--color-border)">

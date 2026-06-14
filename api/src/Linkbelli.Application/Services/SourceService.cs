@@ -54,7 +54,8 @@ public class SourceService(
             Type = request.Type,
             Config = JsonSerializer.Serialize(secrets.Encrypt(request.Type, request.Config, stored: null)),
             Schedule = request.Schedule.Trim(),
-            Visibility = request.Visibility ?? SourceVisibility.Private, // immutable after creation
+            Visibility = request.Visibility ?? SourceVisibility.Private,
+            Nsfw = request.Nsfw ?? false,
             Enabled = true,
         };
         db.Sources.Add(source);
@@ -101,6 +102,11 @@ public class SourceService(
         if (request.Enabled is not null)
         {
             source.Enabled = request.Enabled.Value;
+        }
+
+        if (request.Nsfw is not null)
+        {
+            source.Nsfw = request.Nsfw.Value;
         }
 
         if (request.Visibility is not null && request.Visibility.Value != source.Visibility)
@@ -266,6 +272,6 @@ public class SourceService(
         var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
-            source.Schedule, source.Enabled, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds);
+            source.Schedule, source.Enabled, source.Visibility, source.Nsfw, source.LastRunAt, source.CreationTime, playlistIds);
     }
 }

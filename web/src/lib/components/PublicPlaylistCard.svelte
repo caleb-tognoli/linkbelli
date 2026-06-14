@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NsfwBadge from './NsfwBadge.svelte';
 	import type { PublicPlaylistSummary } from '$lib/types';
 
 	let { playlist }: { playlist: PublicPlaylistSummary } = $props();
@@ -9,7 +10,10 @@
 	class="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:border-[var(--color-accent)]"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
-	<span class="font-medium">{playlist.name}</span>
+	<span class="flex items-center gap-2">
+		<span class="font-medium">{playlist.name}</span>
+		{#if playlist.nsfw}<NsfwBadge />{/if}
+	</span>
 	<span class="text-xs" style="color: var(--color-muted)">by @{playlist.ownerUsername}</span>
 
 	{#if playlist.description}
