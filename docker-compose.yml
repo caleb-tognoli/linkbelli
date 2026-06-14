@@ -29,5 +29,19 @@ services:
     ports:
       - "5180:8080"
 
+  web:
+    build: ./web
+    depends_on:
+      - api
+    environment:
+      # BFF talks to the API over the compose network; the browser only ever sees the web app.
+      API_BASE_URL: http://api:8080
+      # adapter-node's public origin (for form-action CSRF checks) = how the browser reaches it.
+      ORIGIN: http://localhost:5173
+      # Local run is plain HTTP, so don't mark auth cookies Secure (browser would drop them).
+      COOKIE_SECURE: "false"
+    ports:
+      - "5173:3000"
+
 volumes:
   pgdata:
