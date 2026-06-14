@@ -26,8 +26,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=linkbelli;Username=linkbelli;Password=linkbelli
       Database__MigrateAtStartup: "true"
+      # Persist the Data Protection key ring so tokens/secrets survive container restarts.
+      DataProtection__KeyRingPath: /keys
     ports:
       - "5180:8080"
+    volumes:
+      - dpkeys:/keys
 
   web:
     build: ./web
@@ -45,3 +49,4 @@ services:
 
 volumes:
   pgdata:
+  dpkeys:

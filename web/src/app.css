@@ -49,3 +49,12 @@ body {
 	font-family:
 		ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+/* App-wide keyboard focus ring. Custom controls are styled with inline `style`
+   attributes and carry no Tailwind focus utilities, so they relied on the UA outline
+   (often invisible against the accent fill). :focus-visible keeps it keyboard-only. */
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+	border-radius: 2px;
+}

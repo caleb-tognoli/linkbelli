@@ -86,6 +86,7 @@
 				<input
 					bind:value={query}
 					placeholder="Search tags…"
+					aria-label="Search tags"
 					class="w-full rounded-md border px-2 py-1.5 text-sm"
 					style="border-color: var(--color-border); background: var(--color-bg)"
 					onkeydown={(e) => e.key === 'Enter' && add(query)}

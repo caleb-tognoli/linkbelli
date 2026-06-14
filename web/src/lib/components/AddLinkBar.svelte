@@ -67,6 +67,7 @@
 		<input
 			bind:value={url}
 			placeholder="Paste a URL…"
+			aria-label="Link URL"
 			class="{fieldClass} flex-1 min-w-[12rem]"
 			style={fieldStyle}
 			onkeydown={(e) => e.key === 'Enter' && doAdd()}
@@ -74,6 +75,7 @@
 		<input
 			bind:value={note}
 			placeholder="Note (optional)"
+			aria-label="Note"
 			class="{fieldClass} w-40"
 			style={fieldStyle}
 		/>

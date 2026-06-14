@@ -41,6 +41,7 @@
 	<input
 		bind:value={input}
 		placeholder="add tag…"
+		aria-label="Add tag"
 		disabled={busy}
 		class="w-24 rounded border px-1.5 py-0.5 text-xs"
 		style="border-color: var(--color-border); background: var(--color-bg)"

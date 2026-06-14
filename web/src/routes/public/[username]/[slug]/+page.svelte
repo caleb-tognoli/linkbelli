@@ -62,7 +62,8 @@
 	{#if items.length === 0}
 		<p class="mt-8 text-sm" style="color: var(--color-muted)">This playlist has no links yet.</p>
 	{:else}
-		<table class="mt-6 w-full border-collapse text-sm">
+		<div class="mt-6 overflow-x-auto">
+		<table class="w-full border-collapse text-sm">
 			<thead>
 				<tr class="text-left" style="color: var(--color-muted)">
 					<th class="py-2 font-medium">Title</th>
@@ -85,6 +86,7 @@
 				{/each}
 			</tbody>
 		</table>
+		</div>
 		{#if nextCursor}
 			<div class="mt-4 text-center">
 				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border px-3 py-1.5 text-sm disabled:opacity-60" style="border-color: var(--color-border)">

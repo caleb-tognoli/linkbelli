@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using Hangfire.Dashboard;
 
@@ -40,13 +41,21 @@ public sealed class HangfireDashboardAuthFilter(bool allowAll, string? username,
         {
             var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(header["Basic ".Length..].Trim()));
             var separator = decoded.IndexOf(':');
-            return separator > 0
-                && decoded[..separator] == username
-                && decoded[(separator + 1)..] == password;
+            if (separator <= 0)
+            {
+                return false;
+            }
+
+            // Fixed-time compare both fields so dashboard credentials aren't leaked via timing.
+            return FixedTimeEquals(decoded[..separator], username!)
+                & FixedTimeEquals(decoded[(separator + 1)..], password!);
         }
         catch (FormatException)
         {
             return false;
         }
     }
+
+    private static bool FixedTimeEquals(string a, string b) =>
+        CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(a), Encoding.UTF8.GetBytes(b));
 }

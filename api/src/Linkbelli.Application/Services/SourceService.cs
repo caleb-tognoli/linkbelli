@@ -25,13 +25,20 @@ public class SourceService(
             .OrderByDescending(s => s.CreationTime)
             .ToListAsync(ct);
 
-        var result = new List<SourceResponse>(sources.Count);
-        foreach (var source in sources)
-        {
-            result.Add(ToResponse(source, await PlaylistIdsAsync(source.Id, ct)));
-        }
+        // Fetch every source's playlist attachments in one grouped query instead of N round-trips.
+        var sourceIds = sources.Select(s => s.Id).ToList();
+        var playlistIdsBySource = (await db.PlaylistSources
+                .Where(ps => sourceIds.Contains(ps.SourceId))
+                .Select(ps => new { ps.SourceId, ps.PlaylistId })
+                .ToListAsync(ct))
+            .GroupBy(ps => ps.SourceId)
+            .ToDictionary(g => g.Key, g => g.Select(ps => ps.PlaylistId).ToArray());
 
-        return result;
+        return sources
+            .Select(source => ToResponse(
+                source,
+                playlistIdsBySource.TryGetValue(source.Id, out var ids) ? ids : []))
+            .ToList();
     }
 
     public async Task<SourceResponse> GetAsync(Guid ownerId, Guid id, CancellationToken ct = default)

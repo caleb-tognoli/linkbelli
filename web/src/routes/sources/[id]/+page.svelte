@@ -64,7 +64,8 @@
 		{#if data.runs.length === 0}
 			<p class="mt-2 text-sm" style="color: var(--color-muted)">No runs yet.</p>
 		{:else}
-			<table class="mt-2 w-full border-collapse text-sm">
+			<div class="mt-2 overflow-x-auto">
+			<table class="w-full border-collapse text-sm">
 				<thead>
 					<tr class="text-left" style="color: var(--color-muted)">
 						<th class="py-1 font-medium">Status</th>
@@ -86,6 +87,7 @@
 					{/each}
 				</tbody>
 			</table>
+			</div>
 		{/if}
 	</div>
 </section>

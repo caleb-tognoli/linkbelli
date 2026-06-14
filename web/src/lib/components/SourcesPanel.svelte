@@ -102,6 +102,7 @@
 			<input
 				bind:value={query}
 				placeholder="search shared…"
+				aria-label="Search shared sources"
 				class="flex-1 rounded border px-2 py-1 text-sm"
 				style="border-color: var(--color-border); background: var(--color-bg)"
 				onkeydown={(e) => e.key === 'Enter' && searchShared()}

@@ -18,6 +18,18 @@
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 	let createdToken = $state<ApiKeyCreated | null>(null);
+	let copied = $state(false);
+
+	async function copyToken() {
+		if (!createdToken) return;
+		try {
+			await navigator.clipboard.writeText(createdToken.token);
+			copied = true;
+			setTimeout(() => (copied = false), 2000);
+		} catch {
+			/* clipboard blocked — user can still select the text manually */
+		}
+	}
 
 	function toggleScope(scope: string, checked: boolean) {
 		const next = new Set(selectedScopes);
@@ -77,7 +89,17 @@
 		<div class="rounded-md border p-3 text-sm" style="border-color: var(--color-accent)">
 			<p class="font-medium">Copy your new key now — it won't be shown again:</p>
 			<code class="mt-2 block break-all rounded p-2" style="background: var(--color-surface)">{createdToken.token}</code>
-			<button type="button" class="mt-2 text-xs underline" onclick={() => (createdToken = null)}>Dismiss</button>
+			<div class="mt-2 flex items-center gap-3">
+				<button
+					type="button"
+					class="rounded-md px-3 py-1.5 text-xs font-medium"
+					style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					onclick={copyToken}
+				>
+					{copied ? 'Copied ✓' : 'Copy key'}
+				</button>
+				<button type="button" class="text-xs underline" onclick={() => (createdToken = null)}>Dismiss</button>
+			</div>
 		</div>
 	{/if}
 

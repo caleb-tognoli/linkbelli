@@ -13,6 +13,11 @@ namespace Linkbelli.Api.Endpoints;
 /// </summary>
 public static class AuthEndpoints
 {
+    // A precomputed hash of a random password, used to spend hashing time on the
+    // user-not-found login path so timing doesn't reveal whether a login exists.
+    private static readonly string DummyPasswordHash =
+        new PasswordHasher<ApplicationUser>().HashPassword(new ApplicationUser(), Guid.NewGuid().ToString());
+
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/auth").WithTags("Auth");
@@ -50,6 +55,9 @@ public static class AuthEndpoints
             var user = await users.FindByNameAsync(req.Login) ?? await users.FindByEmailAsync(req.Login);
             if (user is null)
             {
+                // Run a hash verification against a throwaway hash so a non-existent login takes
+                // roughly the same time as a real one — closes the username-enumeration timing gap.
+                users.PasswordHasher.VerifyHashedPassword(new ApplicationUser(), DummyPasswordHash, req.Password);
                 return Results.Problem("Invalid credentials.", statusCode: StatusCodes.Status401Unauthorized);
             }
 

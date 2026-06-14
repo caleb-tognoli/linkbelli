@@ -54,6 +54,7 @@
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">Paste a URL above to add the first.</p>
 	</div>
 {:else}
+	<div class="overflow-x-auto">
 	<table class="w-full border-collapse text-sm">
 		<thead>
 			<tr class="text-left" style="color: var(--color-muted)">
@@ -72,7 +73,9 @@
 		>
 			{#each items as item (item.id)}
 				<tr class="border-t align-top" style="border-color: var(--color-border)">
-					<td class="cursor-grab select-none py-2 pr-1" style="color: var(--color-muted)" title="Drag to reorder">⋮⋮</td>
+					<td class="cursor-grab select-none py-2 pr-1" style="color: var(--color-muted)" title="Drag to reorder">
+						<span role="img" aria-label="Drag to reorder">⋮⋮</span>
+					</td>
 					<td class="py-2 pr-3">
 						<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="hover:underline">
 							{item.link.title ?? item.link.url}
@@ -122,4 +125,5 @@
 			{/each}
 		</tbody>
 	</table>
+	</div>
 {/if}

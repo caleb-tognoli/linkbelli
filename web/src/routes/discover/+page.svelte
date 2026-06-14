@@ -50,6 +50,7 @@
 			name="q"
 			value={data.q}
 			placeholder="Search public playlists…"
+			aria-label="Search public playlists"
 			class="flex-1 rounded-md border px-3 py-2 text-sm"
 			style="border-color: var(--color-border); background: var(--color-bg)"
 		/>

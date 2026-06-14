@@ -8,6 +8,7 @@ using Linkbelli.Application.Sources;
 using Linkbelli.Infrastructure.Jobs;
 using Linkbelli.Infrastructure.Security;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -33,8 +34,21 @@ public static class DependencyInjection
 
         services.AddHealthChecks().AddDbContextCheck<LinkbelliDbContext>("database");
 
-        // Encrypts source-config secrets (e.g. JSON-API headers) at rest.
-        services.AddDataProtection();
+        // Protects Identity bearer/refresh tokens AND encrypts source-config secrets at rest.
+        // The key ring MUST be persisted: without it, keys regenerate on every restart, which
+        // logs out all users and makes previously-encrypted secrets permanently undecryptable.
+        // Set DataProtection:KeyRingPath to a stable, shared volume in production (a single
+        // path is also what lets multiple instances share one key ring). A fixed application
+        // name keeps the purpose isolation stable across deploys.
+        var dataProtection = services.AddDataProtection()
+            .SetApplicationName(configuration["DataProtection:ApplicationName"] ?? "Linkbelli");
+
+        var keyRingPath = configuration["DataProtection:KeyRingPath"];
+        if (!string.IsNullOrWhiteSpace(keyRingPath))
+        {
+            dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyRingPath));
+        }
+
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
 
         services.AddIdentityApiEndpoints<ApplicationUser>()
