@@ -138,6 +138,7 @@ playlist you own; when that source runs, its links flow into the playlist.
 
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
+| `GET`    | `/api/v1/playlists/{id}/sources`            | — | List sources feeding this playlist (incl. shared ones you subscribed; `ownedByMe` flag) |
 | `POST`   | `/api/v1/playlists/{id}/sources`            | `sourceId` | Subscribe a source to your playlist |
 | `DELETE` | `/api/v1/playlists/{id}/sources/{sourceId}` | — | Unsubscribe |
 

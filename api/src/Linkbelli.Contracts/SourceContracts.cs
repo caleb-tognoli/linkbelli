@@ -26,6 +26,10 @@ public record SourceResponse(
 public record SharedSourceSummary(
     Guid Id, string Name, SourceType Type, string OwnerUsername, DateTimeOffset CreationTime);
 
+/// <summary>A source attached to a playlist (no config). <c>OwnedByMe</c> = the caller owns the source.</summary>
+public record AttachedSourceSummary(
+    Guid Id, string Name, SourceType Type, string OwnerUsername, SourceVisibility Visibility, bool OwnedByMe);
+
 /// <summary>Attach an existing source (your own, or any shared one) to a playlist you own.</summary>
 public record SubscribeSourceRequest(Guid SourceId);
 

@@ -167,8 +167,14 @@ public class SourceSubscriptionTests(PostgresApiFactory factory)
         Assert.Contains(sharedList!, s => s.Id == shared.Id && s.OwnerUsername == aName);
         Assert.DoesNotContain(sharedList!, s => s.Id == priv.Id);
 
-        // Unsubscribe is idempotent and succeeds.
+        // B sees the shared source attached to its playlist (not owned by B).
+        var attached = await userB.GetFromJsonAsync<List<AttachedSourceDto>>($"/api/v1/playlists/{pb.Id}/sources");
+        Assert.Contains(attached!, s => s.Id == shared.Id && !s.OwnedByMe && s.OwnerUsername == aName);
+
+        // Unsubscribe is idempotent and succeeds, and the source is gone from the list.
         var unsub = await userB.DeleteAsync($"/api/v1/playlists/{pb.Id}/sources/{shared.Id}");
         Assert.Equal(HttpStatusCode.NoContent, unsub.StatusCode);
+        var afterUnsub = await userB.GetFromJsonAsync<List<AttachedSourceDto>>($"/api/v1/playlists/{pb.Id}/sources");
+        Assert.DoesNotContain(afterUnsub!, s => s.Id == shared.Id);
     }
 }

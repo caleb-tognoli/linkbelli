@@ -41,5 +41,7 @@ public static class ApiTestHelpers
 
     public record SharedSourceDto(Guid Id, string Name, string Type, string OwnerUsername);
 
+    public record AttachedSourceDto(Guid Id, string Name, string Type, string OwnerUsername, string Visibility, bool OwnedByMe);
+
     public record LinkPreviewDto(string CanonicalUrl, string Host, string? Title, string? Description, string? ImageUrl, string? SiteName);
 }

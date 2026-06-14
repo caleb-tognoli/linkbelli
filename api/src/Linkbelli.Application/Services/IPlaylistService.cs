@@ -27,4 +27,7 @@ public interface IPlaylistService
 
     /// <summary>Detach a source from a playlist the caller owns.</summary>
     Task UnsubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default);
+
+    /// <summary>Sources currently attached to a playlist the caller owns.</summary>
+    Task<IReadOnlyList<AttachedSourceSummary>> ListAttachedSourcesAsync(Guid ownerId, Guid playlistId, CancellationToken ct = default);
 }

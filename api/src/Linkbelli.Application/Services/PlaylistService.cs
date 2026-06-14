@@ -264,6 +264,22 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
         }
     }
 
+    public async Task<IReadOnlyList<AttachedSourceSummary>> ListAttachedSourcesAsync(
+        Guid ownerId, Guid playlistId, CancellationToken ct = default)
+    {
+        _ = await db.Playlists.FirstOrDefaultAsync(p => p.Id == playlistId && p.OwnerId == ownerId, ct)
+            ?? throw new NotFoundException("Playlist not found.");
+
+        return await (from ps in db.PlaylistSources
+                      where ps.PlaylistId == playlistId
+                      join s in db.Sources on ps.SourceId equals s.Id
+                      join u in db.Users on s.OwnerId equals u.Id
+                      orderby s.Name
+                      select new AttachedSourceSummary(
+                          s.Id, s.Name, s.Type, u.UserName!, s.Visibility, s.OwnerId == ownerId))
+            .ToListAsync(ct);
+    }
+
     /// <summary>Get-or-create tags by normalized name (race-safe, like Host/Link).</summary>
     private async Task<List<Tag>> ResolveTagsAsync(IReadOnlyList<string> names, CancellationToken ct)
     {

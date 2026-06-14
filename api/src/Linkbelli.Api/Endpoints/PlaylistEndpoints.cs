@@ -41,6 +41,11 @@ public static class PlaylistEndpoints
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
 
+        // Sources currently feeding this playlist (incl. cross-user shared subscriptions).
+        group.MapGet("/{id:guid}/sources", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListAttachedSourcesAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
+
         // Subscribe/unsubscribe a source to this playlist (own source, or any shared one).
         group.MapPost("/{id:guid}/sources", async (Guid id, SubscribeSourceRequest req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
         {

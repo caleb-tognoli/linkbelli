@@ -1,24 +1,55 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
+	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
+	import type { PageData, ActionData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
-<section class="mx-auto max-w-3xl">
-	<h1 class="text-2xl font-semibold">Home</h1>
-	<p class="mt-2" style="color: var(--color-muted)">
-		You're signed in. Your playlists will appear here (B2).
-	</p>
+<section class="mx-auto max-w-5xl">
+	<header class="flex items-center justify-between">
+		<h1 class="text-2xl font-semibold">Your playlists</h1>
+		<NewPlaylistDialog {form} />
+	</header>
 
-	<dl
-		class="mt-6 grid grid-cols-[8rem_1fr] gap-y-2 rounded-lg border p-4 text-sm"
-		style="border-color: var(--color-border); background: var(--color-surface)"
-	>
-		<dt style="color: var(--color-muted)">User ID</dt>
-		<dd class="font-mono">{data.user?.userId}</dd>
-		<dt style="color: var(--color-muted)">Auth method</dt>
-		<dd>{data.user?.authMethod}</dd>
-		<dt style="color: var(--color-muted)">Scopes</dt>
-		<dd>{data.user?.scopes.length ? data.user.scopes.join(', ') : '(full access)'}</dd>
-	</dl>
+	{#if data.tags.length}
+		<nav class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+			<a
+				href="/"
+				class="rounded-full border px-2.5 py-1"
+				style={`border-color: var(--color-border); ${data.activeTag === null ? 'background: var(--color-accent); color: var(--color-accent-contrast)' : 'color: var(--color-muted)'}`}
+			>
+				All
+			</a>
+			{#each data.tags as tag (tag.name)}
+				<a
+					href={`/?tag=${encodeURIComponent(tag.name)}`}
+					class="rounded-full border px-2.5 py-1"
+					style={`border-color: var(--color-border); ${data.activeTag === tag.name ? 'background: var(--color-accent); color: var(--color-accent-contrast)' : 'color: var(--color-muted)'}`}
+				>
+					#{tag.name} <span class="opacity-70">{tag.playlistCount}</span>
+				</a>
+			{/each}
+		</nav>
+	{/if}
+
+	{#if data.playlists.items.length === 0}
+		<div
+			class="mt-8 rounded-lg border border-dashed p-10 text-center"
+			style="border-color: var(--color-border)"
+		>
+			<p class="font-medium">
+				{data.activeTag ? `No playlists tagged #${data.activeTag}.` : 'No playlists yet.'}
+			</p>
+			<p class="mt-1 text-sm" style="color: var(--color-muted)">
+				Create your first playlist to start collecting links.
+			</p>
+		</div>
+	{:else}
+		<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			{#each data.playlists.items as playlist (playlist.id)}
+				<PlaylistCard {playlist} />
+			{/each}
+		</div>
+	{/if}
 </section>
