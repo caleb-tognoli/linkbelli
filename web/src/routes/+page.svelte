@@ -2,6 +2,7 @@
 	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
 	import SourcesList from '$lib/components/SourcesList.svelte';
+	import TagFilter from '$lib/components/TagFilter.svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -14,31 +15,14 @@
 			<NewPlaylistDialog {form} />
 		</header>
 
-		{#if data.tags.length}
-			<nav class="mt-4 flex flex-wrap items-center gap-2 text-sm">
-				<a
-					href="/"
-					class="rounded-full border px-2.5 py-1"
-					style={`border-color: var(--color-border); ${data.activeTag === null ? 'background: var(--color-accent); color: var(--color-accent-contrast)' : 'color: var(--color-muted)'}`}
-				>
-					All
-				</a>
-				{#each data.tags as tag (tag.name)}
-					<a
-						href={`/?tag=${encodeURIComponent(tag.name)}`}
-						class="rounded-full border px-2.5 py-1"
-						style={`border-color: var(--color-border); ${data.activeTag === tag.name ? 'background: var(--color-accent); color: var(--color-accent-contrast)' : 'color: var(--color-muted)'}`}
-					>
-						#{tag.name} <span class="opacity-70">{tag.playlistCount}</span>
-					</a>
-				{/each}
-			</nav>
-		{/if}
+		<div class="mt-4">
+			<TagFilter active={data.activeTags} basePath="/" suggestPath="/tags" />
+		</div>
 
 		{#if data.playlists.items.length === 0}
 			<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 				<p class="font-medium">
-					{data.activeTag ? `No playlists tagged #${data.activeTag}.` : 'No playlists yet.'}
+					{data.activeTags.length ? 'No playlists match those tags.' : 'No playlists yet.'}
 				</p>
 				<p class="mt-1 text-sm" style="color: var(--color-muted)">
 					Create your first playlist to start collecting links.

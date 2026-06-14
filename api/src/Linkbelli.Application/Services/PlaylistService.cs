@@ -13,18 +13,28 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
 {
     private const int MaxTagResults = 200;
 
+    /// <summary>Applies an AND tag filter: the playlist must carry every (normalized) tag.</summary>
+    private static IQueryable<Playlist> FilterByTags(IQueryable<Playlist> query, string[]? tags)
+    {
+        foreach (var raw in tags ?? [])
+        {
+            var name = TagNormalizer.NormalizeOne(raw);
+            if (name.Length > 0)
+            {
+                query = query.Where(p => p.Tags.Any(pt => pt.Tag!.Name == name));
+            }
+        }
+
+        return query;
+    }
+
     public async Task<PagedResult<PlaylistResponse>> ListAsync(
-        Guid ownerId, int? limit, string? cursor, string? tag, CancellationToken ct = default)
+        Guid ownerId, int? limit, string? cursor, string[]? tags, CancellationToken ct = default)
     {
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
 
-        var query = db.Playlists.Where(p => p.OwnerId == ownerId);
-        if (!string.IsNullOrWhiteSpace(tag))
-        {
-            var normalized = TagNormalizer.NormalizeOne(tag);
-            query = query.Where(p => p.Tags.Any(pt => pt.Tag!.Name == normalized));
-        }
+        var query = FilterByTags(db.Playlists.Where(p => p.OwnerId == ownerId), tags);
 
         // "Recently updated" = most recent of the playlist's own creation and its newest item.
         // (Items are always created after their playlist, so coalesce == greatest.)
@@ -162,7 +172,7 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
     }
 
     public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
-        string? q, string? tag, int? limit, string? cursor, CancellationToken ct = default)
+        string? q, string[]? tags, int? limit, string? cursor, CancellationToken ct = default)
     {
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
@@ -175,11 +185,7 @@ public class PlaylistService(IAppDbContext db) : IPlaylistService
             query = query.Where(p => p.Name.ToLower().Contains(needle));
         }
 
-        if (!string.IsNullOrWhiteSpace(tag))
-        {
-            var normalized = TagNormalizer.NormalizeOne(tag);
-            query = query.Where(p => p.Tags.Any(pt => pt.Tag!.Name == normalized));
-        }
+        query = FilterByTags(query, tags);
 
         var rows = await (from p in query
                           join u in db.Users on p.OwnerId equals u.Id

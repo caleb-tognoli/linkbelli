@@ -30,6 +30,16 @@ export interface TagSummary {
 	playlistCount: number;
 }
 
+export interface PublicPlaylistSummary {
+	ownerUsername: string;
+	slug: string;
+	name: string;
+	description: string | null;
+	itemCount: number;
+	creationTime: string;
+	tags: string[];
+}
+
 export type SourceType = 'Rss' | 'Scraper' | 'JsonApi';
 export type SourceVisibility = 'Private' | 'Shared';
 
@@ -113,6 +123,34 @@ export interface SourceRun {
 export interface DiscoveredLink {
 	url: string;
 	title: string | null;
+}
+
+export interface Quota {
+	maxSources: number;
+	sourcesUsed: number;
+	maxRunsPerDay: number;
+	runsUsedToday: number;
+	maxItemsPerRun: number;
+}
+
+export interface ApiKey {
+	id: string;
+	name: string;
+	prefix: string;
+	scopes: string[];
+	creationTime: string;
+	lastUsedAt: string | null;
+	expiresAt: string | null;
+}
+
+/** Returned once at creation — the only time the full token is exposed. */
+export interface ApiKeyCreated {
+	id: string;
+	name: string;
+	prefix: string;
+	token: string;
+	scopes: string[];
+	expiresAt: string | null;
 }
 
 export interface PreviewResult {

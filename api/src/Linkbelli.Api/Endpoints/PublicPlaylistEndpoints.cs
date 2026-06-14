@@ -14,7 +14,7 @@ public static class PublicPlaylistEndpoints
         var group = app.MapGroup("/public").WithTags("Public");
 
         // Discover: search/browse public playlists (by name query and/or tag).
-        group.MapGet("/playlists", async (IPlaylistService svc, string? q, string? tag, int? limit, string? cursor, CancellationToken ct) =>
+        group.MapGet("/playlists", async (IPlaylistService svc, string? q, string[]? tag, int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.DiscoverPublicAsync(q, tag, limit, cursor, ct)))
             .AllowAnonymous();
 

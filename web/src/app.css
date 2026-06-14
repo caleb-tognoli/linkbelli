@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
-/* Notion-ish, minimal design tokens. Light by default; dark via prefers-color-scheme.
-   Referenced directly as var(--color-*) (not as generated Tailwind utilities), so plain
-   :root custom properties are all we need. A manual theme toggle arrives in B2. */
+/* Notion-ish, minimal design tokens. Light by default; dark via the [data-theme] attribute
+   (set server-side from the lb_theme cookie). `system` follows the OS preference.
+   Referenced directly as var(--color-*) (not generated Tailwind utilities). */
 :root {
 	--color-bg: #ffffff;
 	--color-surface: #f7f7f5;
@@ -14,8 +14,19 @@
 	--color-danger: #dc2626;
 }
 
+:root[data-theme='dark'] {
+	--color-bg: #191919;
+	--color-surface: #202020;
+	--color-border: #2f2f2f;
+	--color-text: #ededed;
+	--color-muted: #9a9a9a;
+	--color-accent: #3b82f6;
+	--color-accent-contrast: #ffffff;
+	--color-danger: #ef4444;
+}
+
 @media (prefers-color-scheme: dark) {
-	:root {
+	:root[data-theme='system'] {
 		--color-bg: #191919;
 		--color-surface: #202020;
 		--color-border: #2f2f2f;

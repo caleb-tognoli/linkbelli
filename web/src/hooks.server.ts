@@ -2,12 +2,15 @@ import { redirect, type Handle } from '@sveltejs/kit';
 import { API_BASE } from '$lib/server/config';
 import { ACCESS_COOKIE, REFRESH_COOKIE, clearTokens, setTokens } from '$lib/server/auth';
 
-// Routes reachable without authentication. Everything else requires a session.
-const PUBLIC_PATHS = ['/login', '/register'];
+// Auth pages: redirect already-signed-in users away from these.
+const AUTH_PAGES = ['/login', '/register'];
 
-function isPublic(pathname: string): boolean {
-	return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
-}
+// Anonymous-viewable areas. The /api/v1 proxy is included so anonymous browsers can read public
+// endpoints; the API still enforces per-endpoint auth (protected calls get 401).
+const ANON_PREFIXES = ['/discover', '/public', '/api/v1'];
+
+const startsWithSegment = (path: string, prefix: string) =>
+	path === prefix || path.startsWith(prefix + '/');
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const { cookies, fetch } = event;
@@ -54,13 +57,21 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.authenticated = Boolean(cookies.get(ACCESS_COOKIE));
 
 	const { pathname } = event.url;
-	if (!event.locals.authenticated && !isPublic(pathname)) {
+	const isAuthPage = AUTH_PAGES.includes(pathname);
+	const anonAllowed = isAuthPage || ANON_PREFIXES.some((p) => startsWithSegment(pathname, p));
+
+	if (!event.locals.authenticated && !anonAllowed) {
 		const redirectTo = encodeURIComponent(pathname + event.url.search);
 		throw redirect(303, `/login?redirectTo=${redirectTo}`);
 	}
-	if (event.locals.authenticated && isPublic(pathname)) {
+	if (event.locals.authenticated && isAuthPage) {
 		throw redirect(303, '/');
 	}
 
-	return resolve(event);
+	// Theme preference (light/dark/system) from a cookie, injected into <html data-theme> so the
+	// server-rendered markup matches the client (no flash of the wrong theme).
+	const theme = cookies.get('lb_theme') ?? 'system';
+	return resolve(event, {
+		transformPageChunk: ({ html }) => html.replace('__THEME__', theme)
+	});
 };

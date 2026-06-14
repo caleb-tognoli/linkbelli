@@ -15,7 +15,7 @@ public static class PlaylistEndpoints
             .RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = AuthSchemes.BearerOrApiKey })
             .WithTags("Playlists");
 
-        group.MapGet("/", async (ClaimsPrincipal user, IPlaylistService svc, int? limit, string? cursor, string? tag, CancellationToken ct) =>
+        group.MapGet("/", async (ClaimsPrincipal user, IPlaylistService svc, int? limit, string? cursor, string[]? tag, CancellationToken ct) =>
             Results.Ok(await svc.ListAsync(user.GetUserId(), limit, cursor, tag, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
 

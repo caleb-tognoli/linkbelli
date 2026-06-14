@@ -6,10 +6,16 @@ using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Url;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Linkbelli.Application.Services;
 
-public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue, LinkMetadataFetcher metadataFetcher) : ILinkService
+public class LinkService(
+    IAppDbContext db,
+    ILinkEnrichmentQueue enrichmentQueue,
+    ILinkEnricher enricher,
+    LinkMetadataFetcher metadataFetcher,
+    ILogger<LinkService> logger) : ILinkService
 {
     public async Task<LinkResponse> CreateAsync(CreateLinkRequest request, CancellationToken cancellationToken = default)
     {
@@ -18,7 +24,7 @@ public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue,
             throw new ValidationException("url", "A valid http(s) URL is required.");
         }
 
-        var link = await GetOrCreateAsync(canonical, cancellationToken);
+        var link = await GetOrCreateAsync(canonical, immediate: true, cancellationToken);
         return link.ToResponse();
     }
 
@@ -35,7 +41,7 @@ public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue,
             metadata?.Title, metadata?.Description, metadata?.ImageUrl, metadata?.SiteName);
     }
 
-    public async Task<Link> GetOrCreateAsync(CanonicalUrl canonical, CancellationToken cancellationToken = default)
+    public async Task<Link> GetOrCreateAsync(CanonicalUrl canonical, bool immediate = false, CancellationToken cancellationToken = default)
     {
         var existing = await db.Links
             .Include(l => l.Host)
@@ -58,7 +64,7 @@ public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue,
         try
         {
             await db.SaveChangesAsync(cancellationToken);
-            enrichmentQueue.Enqueue(link.Id); // newly created → fetch metadata asynchronously
+            await EnrichNewLinkAsync(link, immediate, cancellationToken);
             return link;
         }
         catch (DbUpdateException)
@@ -68,6 +74,30 @@ public class LinkService(IAppDbContext db, ILinkEnrichmentQueue enrichmentQueue,
             db.Entry(link).State = EntityState.Detached;
             return await db.Links.Include(l => l.Host)
                 .FirstAsync(l => l.UrlHash == canonical.Hash, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Enriches a just-created link. Manual adds (<paramref name="immediate"/>) enrich synchronously
+    /// so the link appears right away; on a transient failure we fall back to the queue so it still
+    /// gets enriched (and shown) later. Source ingestion always queues.
+    /// </summary>
+    private async Task EnrichNewLinkAsync(Link link, bool immediate, CancellationToken cancellationToken)
+    {
+        if (!immediate)
+        {
+            enrichmentQueue.Enqueue(link.Id);
+            return;
+        }
+
+        try
+        {
+            await enricher.EnrichAsync(link.Id, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Immediate enrichment failed for {LinkId}; queuing for retry.", link.Id);
+            enrichmentQueue.Enqueue(link.Id);
         }
     }
 

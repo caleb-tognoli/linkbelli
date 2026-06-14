@@ -6,6 +6,11 @@
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	const onHome = $derived(page.url.pathname === '/');
+	const onDiscover = $derived(page.url.pathname.startsWith('/discover'));
+	const onSettings = $derived(page.url.pathname.startsWith('/settings'));
+	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
+	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
+	const isAuthPage = $derived(['/login', '/register'].includes(page.url.pathname));
 </script>
 
 {#if data.user}
@@ -33,8 +38,22 @@
 					Sources
 				</a>
 
-				<span class="cursor-default rounded px-2 py-1.5" style="color: var(--color-muted)" title="Coming soon">Discover</span>
-				<span class="cursor-default rounded px-2 py-1.5" style="color: var(--color-muted)" title="Coming soon">Settings</span>
+				<a
+					href="/discover"
+					class="rounded px-2 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={onDiscover}
+					aria-current={onDiscover ? 'page' : undefined}
+				>
+					Discover
+				</a>
+				<a
+					href="/settings"
+					class="rounded px-2 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={onSettings}
+					aria-current={onSettings ? 'page' : undefined}
+				>
+					Settings
+				</a>
 			</nav>
 
 			<div class="mt-auto border-t pt-3 text-sm" style="border-color: var(--color-border)">
@@ -56,8 +75,18 @@
 			{@render children()}
 		</main>
 	</div>
-{:else}
+{:else if isAuthPage}
 	<main class="flex min-h-screen items-center justify-center p-6">
 		{@render children()}
 	</main>
+{:else}
+	<div class="flex min-h-screen flex-col">
+		<header class="flex items-center justify-between border-b px-6 py-3" style="border-color: var(--color-border)">
+			<a href="/discover" class="text-lg font-semibold">Linkbelli</a>
+			<a href="/login" class="text-sm font-medium" style="color: var(--color-accent)">Sign in</a>
+		</header>
+		<main class="mx-auto w-full max-w-5xl flex-1 p-6">
+			{@render children()}
+		</main>
+	</div>
 {/if}

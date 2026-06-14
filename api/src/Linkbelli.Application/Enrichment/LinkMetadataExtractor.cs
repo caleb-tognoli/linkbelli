@@ -8,6 +8,7 @@ public record LinkMetadata(
     string? Description,
     string? ImageUrl,
     string? SiteName,
+    bool Nsfw,
     IReadOnlyDictionary<string, string> Raw);
 
 /// <summary>Pure HTML → metadata extraction (no I/O), so it's unit-testable from fixtures.</summary>
@@ -39,7 +40,31 @@ public class LinkMetadataExtractor
         // Fall back to the page <title> when the site doesn't declare og:site_name.
         var siteName = Clean(raw.GetValueOrDefault("og:site_name")) ?? docTitle;
 
-        return new LinkMetadata(title, description, image, siteName, raw);
+        return new LinkMetadata(title, description, image, siteName, DetectNsfw(doc), raw);
+    }
+
+    /// <summary>
+    /// Automatic adult-content detection via standard machine-readable rating signals: the
+    /// <c>&lt;meta name="rating"&gt;</c> tag (adult/mature/restricted) and the RTA label. These are
+    /// the conventional self-declared signals; a richer classifier could be layered on later.
+    /// </summary>
+    private static bool DetectNsfw(AngleSharp.Dom.IDocument doc)
+    {
+        foreach (var meta in doc.QuerySelectorAll("meta[name]"))
+        {
+            if (!string.Equals(meta.GetAttribute("name"), "rating", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var content = meta.GetAttribute("content")?.Trim().ToLowerInvariant() ?? string.Empty;
+            if (content is "adult" or "mature" or "restricted" || content.Contains("rta-5042"))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string? Clean(string? value)

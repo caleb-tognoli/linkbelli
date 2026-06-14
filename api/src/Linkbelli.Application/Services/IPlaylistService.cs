@@ -4,7 +4,7 @@ namespace Linkbelli.Application.Services;
 
 public interface IPlaylistService
 {
-    Task<PagedResult<PlaylistResponse>> ListAsync(Guid ownerId, int? limit, string? cursor, string? tag, CancellationToken ct = default);
+    Task<PagedResult<PlaylistResponse>> ListAsync(Guid ownerId, int? limit, string? cursor, string[]? tags, CancellationToken ct = default);
     Task<PlaylistResponse> CreateAsync(Guid ownerId, CreatePlaylistRequest request, CancellationToken ct = default);
     Task<PlaylistResponse> GetAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task<PlaylistResponse> UpdateAsync(Guid ownerId, Guid id, UpdatePlaylistRequest request, CancellationToken ct = default);
@@ -14,7 +14,7 @@ public interface IPlaylistService
     Task<PlaylistResponse> GetPublicAsync(string username, string slug, CancellationToken ct = default);
 
     /// <summary>Anonymous discovery of public playlists, optionally filtered by name query and/or tag.</summary>
-    Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(string? q, string? tag, int? limit, string? cursor, CancellationToken ct = default);
+    Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(string? q, string[]? tags, int? limit, string? cursor, CancellationToken ct = default);
 
     /// <summary>Tags used across the caller's own playlists, with counts (autocomplete/management).</summary>
     Task<IReadOnlyList<TagSummary>> ListOwnTagsAsync(Guid ownerId, string? q, CancellationToken ct = default);

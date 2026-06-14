@@ -17,6 +17,8 @@ public class Link : BaseEntity<Guid>
     /// <summary>Raw scraped/OpenGraph metadata (jsonb).</summary>
     public string? Metadata { get; set; }
     public DateTimeOffset? EnrichedAt { get; set; }
+    /// <summary>Adult content. Set automatically only (content rating tags or ingestion from an NSFW source).</summary>
+    public bool Nsfw { get; set; }
 
     public Host? Host { get; set; }
 }

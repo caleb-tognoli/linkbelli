@@ -21,7 +21,8 @@ All paths are under **`/api/v1`**. Reads require the `playlists:read` scope and 
 - **Ordering:** the list is sorted by *recent activity* — the later of the playlist's creation
   and its newest item — so playlists that just received links float to the top.
 - **`tags`** are free text; they're normalized (trimmed, lowercased, de-duplicated, max 25). On
-  update, sending `tags` **replaces** the whole set. Filter your list with `?tag=`.
+  update, sending `tags` **replaces** the whole set. Filter your list with `?tag=` — repeat it
+  (`?tag=a&tag=b`) to require **all** of them (AND).
 
 ```bash
 curl -X POST http://localhost:5180/api/v1/playlists \
@@ -118,7 +119,7 @@ way; it simply isn't surfaced in any listing, so it acts as a share-by-link.
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/api/v1/public/playlists`                         | **Discover**: search/browse public playlists (`?q=` name, `?tag=`, paginated) |
+| `GET` | `/api/v1/public/playlists`                         | **Discover**: search/browse public playlists (`?q=` name, `?tag=` repeatable=AND, paginated) |
 | `GET` | `/api/v1/public/playlists/{username}/{slug}`       | Read a non-private playlist |
 | `GET` | `/api/v1/public/playlists/{username}/{slug}/items` | Read its items (paginated) |
 

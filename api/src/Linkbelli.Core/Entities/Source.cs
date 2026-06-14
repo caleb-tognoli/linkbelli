@@ -35,6 +35,8 @@ public class Source : BaseEntity<Guid>
     /// <summary>Cron expression; enforced minimum interval applies.</summary>
     public required string Schedule { get; set; }
     public bool Enabled { get; set; } = true;
+    /// <summary>Adult source: set manually by the owner. Marks the links it ingests as NSFW.</summary>
+    public bool Nsfw { get; set; }
     /// <summary>Interpreter persistence between runs: ETag, Last-Modified, cursor… (jsonb).</summary>
     public string? State { get; set; }
     public DateTimeOffset? LastRunAt { get; set; }

@@ -54,6 +54,11 @@ public class LinkEnricher(
             link.ThumbnailUrl = metadata.ImageUrl;
             link.SiteName = metadata.SiteName;
             link.Metadata = metadata.Raw.Count > 0 ? JsonSerializer.Serialize(metadata.Raw) : null;
+            if (metadata.Nsfw)
+            {
+                link.Nsfw = true; // automatic; never cleared
+            }
+
             link.EnrichedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
         }
