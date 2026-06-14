@@ -60,13 +60,19 @@ public static class DependencyInjection
         return services;
     }
 
-    /// <summary>Maps the Hangfire dashboard at /hangfire (development only for now).</summary>
+    /// <summary>
+    /// Maps the Hangfire dashboard at /hangfire. Open in Development; in other environments it
+    /// requires HTTP Basic credentials from config ("Hangfire:Dashboard:Username"/"Password") and
+    /// is closed entirely if none are set.
+    /// </summary>
     public static void UseLinkbelliDashboard(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseHangfireDashboard("/hangfire");
-        }
+        var authFilter = new HangfireDashboardAuthFilter(
+            allowAll: app.Environment.IsDevelopment(),
+            username: app.Configuration["Hangfire:Dashboard:Username"],
+            password: app.Configuration["Hangfire:Dashboard:Password"]);
+
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions { Authorization = [authFilter] });
     }
 
     /// <summary>Applies pending EF migrations (opt-in via config "Database:MigrateAtStartup").</summary>

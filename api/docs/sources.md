@@ -88,18 +88,35 @@ curl http://localhost:5180/api/v1/me/quota -H "Authorization: Bearer <token>"
 # -> { "maxSources":5, "sourcesUsed":3, "maxRunsPerDay":10, "runsUsedToday":2, "maxItemsPerRun":100 }
 ```
 
-### Admin quota management
+### Admin & moderation
 
-Admins (users in the `Admin` role) can view and override any user's limits. Admin endpoints
+Admins (users in the `Admin` role) manage other users and the host blocklist. Admin endpoints
 require a **bearer token** whose user holds the Admin role (API keys are rejected).
 
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
+| `GET` | `/api/v1/admin/users` | — (`?q=`, `?limit=`) | Search users by username/email (id + counts) |
 | `GET` | `/api/v1/admin/users/{userId}/quota` | — | View a user's limits + usage |
 | `PUT` | `/api/v1/admin/users/{userId}/quota` | `maxSources, maxRunsPerDay, maxItemsPerRun` | Override a user's limits |
+| `GET` | `/api/v1/admin/hosts` | — (`?q=`, `?blocked=`) | List hosts + blocked flag + link counts |
+| `PUT` | `/api/v1/admin/hosts` | `hostname, blocked` | Block/unblock a host (created if not yet seen) |
 
-Granting admin: list usernames under config `Admin:Usernames`; on startup the app ensures the
-`Admin` role exists and grants it to those (already-registered) users.
+- **Host blocklist:** a blocked host refuses new links — manual adds (`POST /links`, `POST /items`)
+  return **403**, and source ingestion silently skips them. You can block a hostname before it's
+  ever seen; future links from it are then refused.
+- Granting admin: list usernames under config `Admin:Usernames`; on startup the app ensures the
+  `Admin` role exists and grants it to those (already-registered) users.
+
+```bash
+# Find a user, then block a site
+curl "http://localhost:5180/api/v1/admin/users?q=alice" -H "Authorization: Bearer <admin-token>"
+curl -X PUT http://localhost:5180/api/v1/admin/hosts \
+  -H "Authorization: Bearer <admin-token>" -H "Content-Type: application/json" \
+  -d '{ "hostname": "spam.example", "blocked": true }'
+```
+
+> **Hangfire dashboard** (`/hangfire`): open in Development; in other environments it requires HTTP
+> Basic credentials from config `Hangfire:Dashboard:Username`/`Password` (and is closed if unset).
 
 ```bash
 curl -X PUT http://localhost:5180/api/v1/admin/users/<userId>/quota \

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Services;
 using Linkbelli.Core.Entities;
@@ -69,13 +70,20 @@ public sealed class SourceRunner(
             {
                 if (UrlCanonicalizer.TryCanonicalize(discoveredLink.Url, out var canonical))
                 {
-                    var link = await links.GetOrCreateAsync(canonical, immediate: false, cancellationToken);
-                    if (source.Nsfw && !link.Nsfw)
+                    try
                     {
-                        link.Nsfw = true;
-                    }
+                        var link = await links.GetOrCreateAsync(canonical, immediate: false, cancellationToken);
+                        if (source.Nsfw && !link.Nsfw)
+                        {
+                            link.Nsfw = true;
+                        }
 
-                    resolved.Add(link);
+                        resolved.Add(link);
+                    }
+                    catch (BlockedHostException)
+                    {
+                        // Moderation-blocked host — silently skip this link.
+                    }
                 }
             }
 

@@ -48,10 +48,20 @@ public class LinkService(
             .FirstOrDefaultAsync(l => l.UrlHash == canonical.Hash, cancellationToken);
         if (existing is not null)
         {
+            if (existing.Host!.Blocked)
+            {
+                throw new BlockedHostException($"Links from '{existing.Host.Hostname}' are blocked.");
+            }
+
             return existing;
         }
 
         var host = await GetOrCreateHostAsync(canonical.Host, cancellationToken);
+        if (host.Blocked)
+        {
+            throw new BlockedHostException($"Links from '{host.Hostname}' are blocked.");
+        }
+
         var link = new Link
         {
             CanonicalUrl = canonical.Url,

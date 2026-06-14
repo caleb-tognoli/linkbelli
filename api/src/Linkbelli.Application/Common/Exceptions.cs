@@ -9,6 +9,9 @@ public class ConflictException(string message) : Exception(message);
 /// <summary>A per-user quota would be exceeded. Maps to 429.</summary>
 public class QuotaExceededException(string message) : Exception(message);
 
+/// <summary>The link's host is on the moderation blocklist. Maps to 403.</summary>
+public class BlockedHostException(string message) : Exception(message);
+
 /// <summary>Input validation failed. Maps to 400 ProblemDetails with field errors.</summary>
 public class ValidationException(IDictionary<string, string[]> errors)
     : Exception("One or more validation errors occurred.")
