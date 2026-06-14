@@ -86,3 +86,36 @@ export interface AttachedSource {
 	visibility: SourceVisibility;
 	ownedByMe: boolean;
 }
+
+export interface Source {
+	id: string;
+	name: string;
+	type: SourceType;
+	config: Record<string, string>;
+	schedule: string;
+	enabled: boolean;
+	visibility: SourceVisibility;
+	lastRunAt: string | null;
+	creationTime: string;
+	playlistIds: string[];
+}
+
+export interface SourceRun {
+	id: string;
+	startedAt: string;
+	finishedAt: string | null;
+	status: string;
+	itemsFound: number;
+	itemsAdded: number;
+	error: string | null;
+}
+
+export interface DiscoveredLink {
+	url: string;
+	title: string | null;
+}
+
+export interface PreviewResult {
+	count: number;
+	links: DiscoveredLink[];
+}

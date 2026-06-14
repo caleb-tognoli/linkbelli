@@ -44,7 +44,7 @@ public class LinkMetadataExtractorTests
         Assert.Equal("Just a Title", meta.Title); // trimmed
         Assert.Equal("plain description", meta.Description);
         Assert.Null(meta.ImageUrl);
-        Assert.Null(meta.SiteName);
+        Assert.Equal("Just a Title", meta.SiteName); // falls back to <title> when no og:site_name
     }
 
     [Fact]

@@ -103,11 +103,31 @@ public class SourceService(
             source.Enabled = request.Enabled.Value;
         }
 
+        if (request.Visibility is not null && request.Visibility.Value != source.Visibility)
+        {
+            // Shared → Private: drop every subscription from playlists the owner doesn't own.
+            if (request.Visibility.Value == SourceVisibility.Private)
+            {
+                var foreign = await db.PlaylistSources
+                    .Where(ps => ps.SourceId == id
+                        && !db.Playlists.Any(p => p.Id == ps.PlaylistId && p.OwnerId == ownerId))
+                    .ToListAsync(ct);
+                db.PlaylistSources.RemoveRange(foreign);
+            }
+
+            source.Visibility = request.Visibility.Value;
+        }
+
         if (request.PlaylistIds is not null)
         {
             await EnsurePlaylistsOwnedAsync(ownerId, request.PlaylistIds, ct);
-            var existing = await db.PlaylistSources.Where(ps => ps.SourceId == id).ToListAsync(ct);
-            db.PlaylistSources.RemoveRange(existing);
+            // Replace only attachments to the OWNER's own playlists — never touch other users'
+            // cross-user subscriptions to this (shared) source.
+            var existingOwned = await db.PlaylistSources
+                .Where(ps => ps.SourceId == id
+                    && db.Playlists.Any(p => p.Id == ps.PlaylistId && p.OwnerId == ownerId))
+                .ToListAsync(ct);
+            db.PlaylistSources.RemoveRange(existingOwned);
             foreach (var playlistId in request.PlaylistIds)
             {
                 db.PlaylistSources.Add(new PlaylistSource { SourceId = id, PlaylistId = playlistId });

@@ -31,11 +31,13 @@ public class LinkMetadataExtractor
             }
         }
 
-        var title = Clean(raw.GetValueOrDefault("og:title")) ?? Clean(doc.QuerySelector("title")?.TextContent);
+        var docTitle = Clean(doc.QuerySelector("title")?.TextContent);
+        var title = Clean(raw.GetValueOrDefault("og:title")) ?? docTitle;
         var description = Clean(raw.GetValueOrDefault("og:description"))
                           ?? Clean(doc.QuerySelector("meta[name='description']")?.GetAttribute("content"));
         var image = Clean(raw.GetValueOrDefault("og:image"));
-        var siteName = Clean(raw.GetValueOrDefault("og:site_name"));
+        // Fall back to the page <title> when the site doesn't declare og:site_name.
+        var siteName = Clean(raw.GetValueOrDefault("og:site_name")) ?? docTitle;
 
         return new LinkMetadata(title, description, image, siteName, raw);
     }

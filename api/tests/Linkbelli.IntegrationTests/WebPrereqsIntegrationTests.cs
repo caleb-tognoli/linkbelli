@@ -171,10 +171,47 @@ public class SourceSubscriptionTests(PostgresApiFactory factory)
         var attached = await userB.GetFromJsonAsync<List<AttachedSourceDto>>($"/api/v1/playlists/{pb.Id}/sources");
         Assert.Contains(attached!, s => s.Id == shared.Id && !s.OwnedByMe && s.OwnerUsername == aName);
 
+        // The owner editing the shared source must NOT wipe B's subscription.
+        var edit = await userA.PatchAsJsonAsync($"/api/v1/sources/{shared.Id}",
+            new { name = $"Shared {aName} (renamed)" });
+        Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
+        var stillAttached = await userB.GetFromJsonAsync<List<AttachedSourceDto>>($"/api/v1/playlists/{pb.Id}/sources");
+        Assert.Contains(stillAttached!, s => s.Id == shared.Id);
+
         // Unsubscribe is idempotent and succeeds, and the source is gone from the list.
         var unsub = await userB.DeleteAsync($"/api/v1/playlists/{pb.Id}/sources/{shared.Id}");
         Assert.Equal(HttpStatusCode.NoContent, unsub.StatusCode);
         var afterUnsub = await userB.GetFromJsonAsync<List<AttachedSourceDto>>($"/api/v1/playlists/{pb.Id}/sources");
         Assert.DoesNotContain(afterUnsub!, s => s.Id == shared.Id);
+    }
+
+    [Fact]
+    public async Task Switching_shared_to_private_drops_foreign_subscriptions_but_keeps_owners()
+    {
+        var aName = NewUsername();
+        var userA = await Bearer.NewUserAsync(factory, aName);
+        var shared = await (await userA.PostAsJsonAsync("/api/v1/sources", SourceBody($"Feed {aName}", "Shared")))
+            .Content.ReadFromJsonAsync<SourceDto>();
+
+        // Owner attaches it to their own playlist.
+        var pa = await (await userA.PostAsJsonAsync("/api/v1/playlists", new { name = "Mine" }))
+            .Content.ReadFromJsonAsync<PlaylistDto>();
+        await userA.PostAsJsonAsync($"/api/v1/playlists/{pa!.Id}/sources", new { sourceId = shared!.Id });
+
+        // Another user subscribes it to theirs.
+        var userB = await Bearer.NewUserAsync(factory, NewUsername());
+        var pb = await (await userB.PostAsJsonAsync("/api/v1/playlists", new { name = "Theirs" }))
+            .Content.ReadFromJsonAsync<PlaylistDto>();
+        await userB.PostAsJsonAsync($"/api/v1/playlists/{pb!.Id}/sources", new { sourceId = shared.Id });
+
+        // Owner flips it to Private.
+        var patch = await userA.PatchAsJsonAsync($"/api/v1/sources/{shared.Id}", new { visibility = "Private" });
+        Assert.Equal(HttpStatusCode.OK, patch.StatusCode);
+
+        // The foreign subscription is dropped; the owner's own attachment survives.
+        var bAttached = await userB.GetFromJsonAsync<List<AttachedSourceDto>>($"/api/v1/playlists/{pb.Id}/sources");
+        Assert.DoesNotContain(bAttached!, s => s.Id == shared.Id);
+        var aAttached = await userA.GetFromJsonAsync<List<AttachedSourceDto>>($"/api/v1/playlists/{pa.Id}/sources");
+        Assert.Contains(aAttached!, s => s.Id == shared.Id);
     }
 }

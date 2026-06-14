@@ -7,6 +7,8 @@ using Linkbelli.Application.Auth;
 using Linkbelli.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
@@ -86,9 +88,11 @@ builder.Services.AddRateLimiter(options =>
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
         RateLimitPartition.GetTokenBucketLimiter(ResolvePartitionKey(http), _ => new TokenBucketRateLimiterOptions
         {
-            TokenLimit = 100,
-            TokensPerPeriod = 100,
-            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+            // Per user session (see ResolvePartitionKey). A single page load fans out to several
+            // API calls, so allow generous bursts; replenish steadily.
+            TokenLimit = 300,
+            TokensPerPeriod = 150,
+            ReplenishmentPeriod = TimeSpan.FromSeconds(10),
             QueueLimit = 0,
             AutoReplenishment = true,
         }));
@@ -154,13 +158,23 @@ v1.MapPublicPlaylistEndpoints();
 
 app.Run();
 
-// Prefer the API key's public prefix as the partition; fall back to client IP.
+// Partition per credential so callers don't share a bucket. Critically, the web BFF proxies every
+// request from one server IP, so partitioning by IP alone would lump all users into a single bucket;
+// keying on the bearer token (per user session) keeps each user independent.
 static string ResolvePartitionKey(HttpContext http)
 {
     if (http.Request.Headers.TryGetValue(ApiKeyToken.HeaderName, out var header)
         && ApiKeyToken.TryParse(header.ToString(), out var publicId, out _))
     {
         return $"key:{publicId}";
+    }
+
+    var auth = http.Request.Headers.Authorization.ToString();
+    if (auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    {
+        var token = auth["Bearer ".Length..];
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+        return $"bearer:{hash[..16]}";
     }
 
     return $"ip:{http.Connection.RemoteIpAddress}";

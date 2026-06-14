@@ -15,7 +15,8 @@ public record UpdateSourceRequest(
     IReadOnlyDictionary<string, string>? Config,
     string? Schedule,
     bool? Enabled,
-    Guid[]? PlaylistIds);
+    Guid[]? PlaylistIds,
+    SourceVisibility? Visibility);
 
 public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,

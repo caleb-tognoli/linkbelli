@@ -140,10 +140,12 @@ public class RateLimitTests(PostgresApiFactory factory)
         var keyed = factory.CreateClient();
         keyed.DefaultRequestHeaders.Add("X-Api-Key", key!.Token);
 
+        // Hit the stricter "sensitive" policy (10/min) — deterministic and cheap. The URL is
+        // SSRF-blocked so each preview returns fast without real network I/O.
         HttpResponseMessage? throttled = null;
-        for (var i = 0; i < 150; i++)
+        for (var i = 0; i < 15; i++)
         {
-            var response = await keyed.GetAsync("/api/v1/me");
+            var response = await keyed.PostAsJsonAsync("/api/v1/links/preview", new { url = "http://localhost/x" });
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 throttled = response;

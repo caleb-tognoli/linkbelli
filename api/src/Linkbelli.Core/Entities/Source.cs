@@ -27,7 +27,8 @@ public class Source : BaseEntity<Guid>
     public Guid OwnerId { get; set; }
     public required string Name { get; set; }
     public SourceType Type { get; set; }
-    /// <summary>Set at creation, never changed: governs who can subscribe it to playlists.</summary>
+    /// <summary>Governs who can subscribe it to playlists. Editable: switching Shared→Private
+    /// drops other users' subscriptions (handled in SourceService.UpdateAsync).</summary>
     public SourceVisibility Visibility { get; set; } = SourceVisibility.Private;
     /// <summary>Type-specific declarative config (jsonb), validated per type.</summary>
     public required string Config { get; set; }

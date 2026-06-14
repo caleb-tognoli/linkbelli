@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import SourceListItem from './SourceListItem.svelte';
 	import type { AttachedSource, SharedSource, SourceSummary } from '$lib/types';
 
 	let {
@@ -58,41 +59,38 @@
 		Sources feed new links into this playlist automatically.
 	</p>
 
-	<ul class="mt-3 flex flex-col gap-1">
-		{#each attached as src (src.id)}
-			<li class="flex items-center justify-between gap-2 text-sm">
-				<span class="truncate">
-					{src.name}
-					<span class="text-xs" style="color: var(--color-muted)">
-						· {src.type}{src.ownedByMe ? '' : ` · @${src.ownerUsername}`}
-					</span>
-				</span>
-				<button
-					type="button"
-					onclick={() => detach(src.id)}
-					disabled={busy}
-					class="text-xs hover:underline"
-					style="color: var(--color-danger)"
+	{#if attached.length}
+		<ul class="mt-3 flex flex-col gap-2">
+			{#each attached as src (src.id)}
+				<SourceListItem
+					name={src.name}
+					href={src.ownedByMe ? `/sources/${src.id}` : undefined}
+					subtitle={`${src.type}${src.ownedByMe ? '' : ` · @${src.ownerUsername}`}`}
 				>
-					Detach
-				</button>
-			</li>
-		{:else}
-			<li class="text-sm" style="color: var(--color-muted)">No sources attached.</li>
-		{/each}
-	</ul>
+					{#snippet actions()}
+						<button type="button" onclick={() => detach(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-danger)">
+							Unsubscribe
+						</button>
+					{/snippet}
+				</SourceListItem>
+			{/each}
+		</ul>
+	{:else}
+		<p class="mt-3 text-sm" style="color: var(--color-muted)">No sources attached.</p>
+	{/if}
 
 	{#if ownUnattached.length}
 		<div class="mt-4">
 			<div class="text-xs font-medium" style="color: var(--color-muted)">Attach one of yours</div>
-			<ul class="mt-1 flex flex-col gap-1">
+			<ul class="mt-2 flex flex-col gap-2">
 				{#each ownUnattached as src (src.id)}
-					<li class="flex items-center justify-between gap-2 text-sm">
-						<span class="truncate">{src.name} <span class="text-xs" style="color: var(--color-muted)">· {src.type}</span></span>
-						<button type="button" onclick={() => subscribe(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-accent)">
-							Attach
-						</button>
-					</li>
+					<SourceListItem name={src.name} href={`/sources/${src.id}`} subtitle={src.type}>
+						{#snippet actions()}
+							<button type="button" onclick={() => subscribe(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-accent)">
+								Attach
+							</button>
+						{/snippet}
+					</SourceListItem>
 				{/each}
 			</ul>
 		</div>
@@ -113,14 +111,15 @@
 			</button>
 		</div>
 		{#if sharedResults.length}
-			<ul class="mt-1 flex flex-col gap-1">
+			<ul class="mt-2 flex flex-col gap-2">
 				{#each sharedResults as src (src.id)}
-					<li class="flex items-center justify-between gap-2 text-sm">
-						<span class="truncate">{src.name} <span class="text-xs" style="color: var(--color-muted)">· {src.type} · @{src.ownerUsername}</span></span>
-						<button type="button" onclick={() => subscribe(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-accent)">
-							Subscribe
-						</button>
-					</li>
+					<SourceListItem name={src.name} subtitle={`${src.type} · @${src.ownerUsername}`}>
+						{#snippet actions()}
+							<button type="button" onclick={() => subscribe(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-accent)">
+								Subscribe
+							</button>
+						{/snippet}
+					</SourceListItem>
 				{/each}
 			</ul>
 		{/if}

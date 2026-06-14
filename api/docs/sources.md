@@ -56,7 +56,9 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 
 ### Visibility & subscriptions
 
-- `visibility` is `Private` (default) or `Shared`, **set at creation and immutable** afterward.
+- `visibility` is `Private` (default) or `Shared`, and **can be changed** (PATCH `visibility`).
+  Going `Private → Shared` is free; going `Shared → Private` **unsubscribes every other user's
+  playlist** that was following it (the owner's own attachments are kept) — warn before doing it.
 - A `Shared` source can be subscribed by **other users** to their own playlists; a `Private`
   source can only be attached by its owner. Either way, the source still runs on its owner's
   schedule and quota — subscribers just receive its links.

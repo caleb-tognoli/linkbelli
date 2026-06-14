@@ -5,12 +5,7 @@
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
-	const nav = [
-		{ href: '/', label: 'Home', enabled: true },
-		{ href: '/discover', label: 'Discover', enabled: false },
-		{ href: '/playlists', label: 'Playlists', enabled: false },
-		{ href: '/settings', label: 'Settings', enabled: false }
-	];
+	const onHome = $derived(page.url.pathname === '/');
 </script>
 
 {#if data.user}
@@ -22,26 +17,24 @@
 			<div class="px-2 pb-4 text-lg font-semibold">Linkbelli</div>
 
 			<nav class="flex flex-col gap-0.5 text-sm">
-				{#each nav as item (item.href)}
-					{#if item.enabled}
-						<a
-							href={item.href}
-							class="rounded px-2 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-							class:font-medium={page.url.pathname === item.href}
-							aria-current={page.url.pathname === item.href ? 'page' : undefined}
-						>
-							{item.label}
-						</a>
-					{:else}
-						<span
-							class="cursor-default rounded px-2 py-1.5"
-							style="color: var(--color-muted)"
-							title="Coming soon"
-						>
-							{item.label}
-						</span>
-					{/if}
-				{/each}
+				<a
+					href="/"
+					class="rounded px-2 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={onHome}
+					aria-current={onHome ? 'page' : undefined}
+				>
+					Home
+				</a>
+				<!-- Home subsections: scroll to the matching section. -->
+				<a href="/#playlists" class="rounded px-2 py-1.5 pl-5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-muted)">
+					Playlists
+				</a>
+				<a href="/#sources" class="rounded px-2 py-1.5 pl-5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-muted)">
+					Sources
+				</a>
+
+				<span class="cursor-default rounded px-2 py-1.5" style="color: var(--color-muted)" title="Coming soon">Discover</span>
+				<span class="cursor-default rounded px-2 py-1.5" style="color: var(--color-muted)" title="Coming soon">Settings</span>
 			</nav>
 
 			<div class="mt-auto border-t pt-3 text-sm" style="border-color: var(--color-border)">

@@ -1,17 +1,28 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { createPlaylist, listOwnTags, listPlaylists } from '$lib/api/playlists';
-import type { Visibility } from '$lib/types';
+import { createPlaylist } from '$lib/api/playlists';
+import type { Paged, Playlist, Source, TagSummary, Visibility } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 const VISIBILITIES: Visibility[] = ['Private', 'Unlisted', 'Public'];
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const tag = url.searchParams.get('tag') ?? undefined;
-	const [playlists, tags] = await Promise.all([
-		listPlaylists(locals.api, { tag }),
-		listOwnTags(locals.api)
+	const playlistsPath = `/api/v1/playlists${tag ? `?tag=${encodeURIComponent(tag)}` : ''}`;
+
+	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
+	const [plRes, tagRes, srcRes] = await Promise.all([
+		locals.api(playlistsPath),
+		locals.api('/api/v1/tags'),
+		locals.api('/api/v1/sources')
 	]);
-	return { playlists, tags, activeTag: tag ?? null };
+
+	const playlists = plRes.ok
+		? ((await plRes.json()) as Paged<Playlist>)
+		: { items: [], nextCursor: null };
+	const tags = tagRes.ok ? ((await tagRes.json()) as TagSummary[]) : [];
+	const sources = srcRes.ok ? ((await srcRes.json()) as Source[]) : [];
+
+	return { playlists, tags, sources, activeTag: tag ?? null };
 };
 
 export const actions: Actions = {
