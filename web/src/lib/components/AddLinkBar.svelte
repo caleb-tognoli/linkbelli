@@ -1,18 +1,32 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import { Plus } from '@lucide/svelte';
 	import type { LinkPreview, PlaylistItem } from '$lib/types';
 
 	let { playlistId, onAdded }: { playlistId: string; onAdded: (item: PlaylistItem) => void } =
 		$props();
 
 	let url = $state('');
-	let note = $state('');
 	let preview = $state<LinkPreview | null>(null);
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 
 	const fieldClass = 'rounded-md border px-3 py-2 text-sm';
 	const fieldStyle = 'border-color: var(--color-border); background: var(--color-bg)';
+
+	let previewTimer: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		const trimmed = url.trim();
+		clearTimeout(previewTimer);
+		if (!trimmed) {
+			preview = null;
+			error = null;
+			return;
+		}
+		previewTimer = setTimeout(doPreview, 700);
+		return () => clearTimeout(previewTimer);
+	});
 
 	async function doPreview() {
 		if (!url.trim() || busy) return;
@@ -38,7 +52,7 @@
 		busy = true;
 		error = null;
 		try {
-			const res = await api.post(`/playlists/${playlistId}/items`, { url, note: note || null });
+			const res = await api.post(`/playlists/${playlistId}/items`, { url });
 			if (res.status === 409) {
 				error = 'That link is already in this playlist.';
 				return;
@@ -49,7 +63,6 @@
 			}
 			onAdded((await res.json()) as PlaylistItem);
 			url = '';
-			note = '';
 			preview = null;
 		} catch {
 			error = 'Could not reach the server.';
@@ -63,7 +76,7 @@
 	class="rounded-lg border p-3"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
-	<div class="flex flex-wrap gap-2">
+	<div class="flex gap-2">
 		<input
 			bind:value={url}
 			placeholder="Paste a URL…"
@@ -72,30 +85,16 @@
 			style={fieldStyle}
 			onkeydown={(e) => e.key === 'Enter' && doAdd()}
 		/>
-		<input
-			bind:value={note}
-			placeholder="Note (optional)"
-			aria-label="Note"
-			class="{fieldClass} w-40"
-			style={fieldStyle}
-		/>
-		<button
-			type="button"
-			onclick={doPreview}
-			disabled={busy}
-			class="rounded-md border px-3 py-2 text-sm disabled:opacity-60"
-			style="border-color: var(--color-border)"
-		>
-			Preview
-		</button>
 		<button
 			type="button"
 			onclick={doAdd}
 			disabled={busy}
-			class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
+			class="rounded-md p-2 disabled:opacity-60"
 			style="background: var(--color-accent); color: var(--color-accent-contrast)"
+			title="Add link"
+			aria-label="Add link"
 		>
-			Add
+			<Plus size={16} aria-hidden="true" />
 		</button>
 	</div>
 

@@ -2,6 +2,7 @@
 	import { Popover } from 'bits-ui';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { X, Tag } from '@lucide/svelte';
 	import type { TagSummary } from '$lib/types';
 
 	let {
@@ -65,22 +66,26 @@
 			class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1"
 			style="border-color: var(--color-accent); color: var(--color-accent)"
 		>
-			#{tag}
-			<button type="button" onclick={() => remove(tag)} aria-label={`Remove ${tag} filter`}>×</button>
+			{tag}
+			<button type="button" onclick={() => remove(tag)} aria-label={`Remove ${tag} filter`} title={`Remove ${tag} filter`} class="inline-flex items-center rounded p-0.5 hover:bg-black/10 dark:hover:bg-white/20">
+				<X size={11} aria-hidden="true" />
+			</button>
 		</span>
 	{/each}
 
 	<Popover.Root bind:open>
 		<Popover.Trigger
-			class="rounded-full border border-dashed px-2.5 py-1"
+			class="inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1"
 			style="border-color: var(--color-border); color: var(--color-muted)"
+			title="Filter by tag"
+			aria-label="Filter by tag"
 		>
-			+ Filter by tag
+			<Tag size={13} aria-hidden="true" />
+			Filter by tag
 		</Popover.Trigger>
 		<Popover.Portal>
 			<Popover.Content
-				class="z-50 w-64 rounded-lg border p-2 shadow-2xl"
-				style="border-color: var(--color-border); background: var(--color-bg); box-shadow: 0 10px 30px rgba(0,0,0,0.25)"
+				class="popover-surface z-50 w-64 rounded-lg border p-2 shadow-2xl"
 				sideOffset={6}
 			>
 				<input
@@ -99,7 +104,7 @@
 								onclick={() => add(t.name)}
 								class="flex w-full items-center justify-between rounded px-2 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
 							>
-								<span>#{t.name}</span>
+								<span>{t.name}</span>
 								<span class="text-xs" style="color: var(--color-muted)">{t.playlistCount}</span>
 							</button>
 						</li>

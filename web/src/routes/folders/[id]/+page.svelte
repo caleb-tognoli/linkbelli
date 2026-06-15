@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { Pencil, Trash2 } from '@lucide/svelte';
 	import FolderCard from '$lib/components/FolderCard.svelte';
 	import FolderPlaylistCard from '$lib/components/FolderPlaylistCard.svelte';
 	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
@@ -65,14 +66,14 @@
 			<NewFolderDialog
 				parentId={folder.id}
 				label="New subfolder"
-				triggerClass="rounded-md border px-3 py-1.5 text-sm font-medium"
+				triggerClass="rounded-md px-3 py-1.5 text-sm font-medium"
 			/>
-			<button type="button" onclick={rename} disabled={busy} class="rounded-md border px-3 py-1.5" style="border-color: var(--color-border)">
-				Rename
+			<button type="button" onclick={rename} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Rename folder" aria-label="Rename folder">
+				<Pencil size={15} aria-hidden="true" />
 			</button>
 			<MoveFolderDialog folderId={folder.id} currentParentId={folder.parentId} />
-			<button type="button" onclick={remove} disabled={busy} class="rounded-md border px-3 py-1.5" style="border-color: var(--color-border); color: var(--color-danger)">
-				Delete
+			<button type="button" onclick={remove} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" style="color: var(--color-danger)" title="Delete folder" aria-label="Delete folder">
+				<Trash2 size={15} aria-hidden="true" />
 			</button>
 		</div>
 	</header>

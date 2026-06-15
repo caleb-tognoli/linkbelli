@@ -23,7 +23,7 @@
 	{#if playlist.tags.length}
 		<div class="flex flex-wrap gap-1">
 			{#each playlist.tags as tag (tag)}
-				<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-bg); color: var(--color-muted)">#{tag}</span>
+				<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-bg); color: var(--color-muted)">{tag}</span>
 			{/each}
 		</div>
 	{/if}

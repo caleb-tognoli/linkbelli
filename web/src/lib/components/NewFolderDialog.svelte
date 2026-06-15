@@ -2,12 +2,14 @@
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { FolderPlus, X, Check } from '@lucide/svelte';
 
 	let {
 		parentId = null,
 		label = 'New folder',
-		triggerClass = 'rounded-md px-3 py-2 text-sm font-medium'
-	}: { parentId?: string | null; label?: string; triggerClass?: string } = $props();
+		triggerClass = 'rounded-md px-3 py-2 text-sm font-medium',
+		triggerStyle = 'background: var(--color-accent); color: var(--color-accent-contrast)'
+	}: { parentId?: string | null; label?: string; triggerClass?: string; triggerStyle?: string } = $props();
 
 	let open = $state(false);
 	let name = $state('');
@@ -38,8 +40,11 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger class={triggerClass} style="background: var(--color-accent); color: var(--color-accent-contrast)">
-		{label}
+	<Dialog.Trigger class={triggerClass} style={triggerStyle} title={label || 'New folder'} aria-label={label || 'New folder'}>
+		<span class="inline-flex items-center gap-1.5">
+			<FolderPlus size={16} aria-hidden="true" />
+			{#if label}{label}{/if}
+		</span>
 	</Dialog.Trigger>
 
 	<Dialog.Portal>
@@ -65,16 +70,18 @@
 				{/if}
 
 				<div class="mt-2 flex justify-end gap-2">
-					<Dialog.Close class="rounded-md border px-3 py-2 text-sm" style="border-color: var(--color-border)">
-						Cancel
+					<Dialog.Close class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Cancel" aria-label="Cancel">
+						<X size={15} aria-hidden="true" />
 					</Dialog.Close>
 					<button
 						type="submit"
 						disabled={submitting}
-						class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
+						class="inline-flex items-center rounded-md p-2 disabled:opacity-60"
 						style="background: var(--color-accent); color: var(--color-accent-contrast)"
+						title={submitting ? 'Creating…' : 'Create'}
+						aria-label="Create folder"
 					>
-						{submitting ? 'Creating…' : 'Create'}
+						<Check size={15} aria-hidden="true" />
 					</button>
 				</div>
 			</form>

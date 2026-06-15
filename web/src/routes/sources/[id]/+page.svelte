@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { Play, Trash2, RotateCcw } from '@lucide/svelte';
 	import SourceForm from '$lib/components/SourceForm.svelte';
 	import type { PageData } from './$types';
 
@@ -37,11 +38,11 @@
 	<header class="mt-3 flex items-center justify-between gap-3">
 		<h1 class="text-2xl font-semibold">{data.source.name}</h1>
 		<div class="flex shrink-0 gap-2 text-sm">
-			<button type="button" onclick={runNow} disabled={busy} class="rounded-md border px-3 py-1.5" style="border-color: var(--color-border)">
-				Run now
+			<button type="button" onclick={runNow} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Run now" aria-label="Run now">
+				<Play size={15} aria-hidden="true" />
 			</button>
-			<button type="button" onclick={remove} disabled={busy} class="rounded-md border px-3 py-1.5" style="border-color: var(--color-border); color: var(--color-danger)">
-				Delete
+			<button type="button" onclick={remove} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" style="color: var(--color-danger)" title="Delete source" aria-label="Delete source">
+				<Trash2 size={15} aria-hidden="true" />
 			</button>
 		</div>
 	</header>
@@ -59,7 +60,9 @@
 	<div class="mt-8">
 		<div class="flex items-center justify-between">
 			<h2 class="font-medium">Run history</h2>
-			<button type="button" onclick={() => invalidateAll()} class="text-xs" style="color: var(--color-muted)">Refresh</button>
+			<button type="button" onclick={() => invalidateAll()} class="inline-flex items-center rounded p-1" style="color: var(--color-muted)" title="Refresh" aria-label="Refresh run history">
+				<RotateCcw size={13} aria-hidden="true" />
+			</button>
 		</div>
 		{#if data.runs.length === 0}
 			<p class="mt-2 text-sm" style="color: var(--color-muted)">No runs yet.</p>

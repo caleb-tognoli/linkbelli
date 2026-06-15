@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import { Search, ChevronDown } from '@lucide/svelte';
 	import PublicPlaylistCard from '$lib/components/PublicPlaylistCard.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';
 	import type { Paged, PublicPlaylistSummary } from '$lib/types';
@@ -54,8 +55,8 @@
 			class="flex-1 rounded-md border px-3 py-2 text-sm"
 			style="border-color: var(--color-border); background: var(--color-bg)"
 		/>
-		<button type="submit" class="rounded-md px-3 py-2 text-sm font-medium" style="background: var(--color-accent); color: var(--color-accent-contrast)">
-			Search
+		<button type="submit" class="rounded-md p-2" style="background: var(--color-accent); color: var(--color-accent-contrast)" title="Search" aria-label="Search">
+			<Search size={16} aria-hidden="true" />
 		</button>
 	</form>
 
@@ -78,8 +79,8 @@
 		</div>
 		{#if nextCursor}
 			<div class="mt-4 text-center">
-				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border px-3 py-1.5 text-sm disabled:opacity-60" style="border-color: var(--color-border)">
-					{loadingMore ? 'Loading…' : 'Load more'}
+				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border p-1.5 disabled:opacity-60" style="border-color: var(--color-border)" title="Load more" aria-label="Load more">
+					<ChevronDown size={16} aria-hidden="true" />
 				</button>
 			</div>
 		{/if}

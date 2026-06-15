@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import { Globe, Lock, Play } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import type { Source } from '$lib/types';
 
@@ -7,10 +8,8 @@
 	let sources = $state(initial);
 	let toast = $state<string | null>(null);
 
-	async function toggle(src: Source) {
-		const next = !src.enabled;
-		const res = await api.patch(`/sources/${src.id}`, { enabled: next });
-		if (res.ok) sources = sources.map((s) => (s.id === src.id ? { ...s, enabled: next } : s));
+	function displayType(type: string) {
+		return type === 'Rss' ? 'RSS' : type;
 	}
 
 	async function run(src: Source) {
@@ -19,8 +18,18 @@
 		setTimeout(() => (toast = null), 3000);
 	}
 
-	function lastRun(iso: string | null) {
-		return iso ? new Date(iso).toLocaleString() : 'never';
+	function lastRun(iso: string | null): string {
+		if (!iso) return 'never';
+		const diff = Date.now() - new Date(iso).getTime();
+		const mins = Math.floor(diff / 60000);
+		if (mins < 1) return 'just now';
+		if (mins < 60) return `${mins}m ago`;
+		const hours = Math.floor(mins / 60);
+		if (hours < 24) return `${hours}h ago`;
+		const days = Math.floor(hours / 24);
+		if (days < 30) return `${days}d ago`;
+		const months = Math.floor(days / 30);
+		return months < 12 ? `${months}mo ago` : `${Math.floor(months / 12)}y ago`;
 	}
 </script>
 
@@ -36,15 +45,20 @@
 		{#each sources as src (src.id)}
 			<SourceListItem
 				name={src.name}
+				badge={displayType(src.type)}
 				href={`/sources/${src.id}`}
-				subtitle={`${src.type} · ${src.schedule} · ${src.visibility}${src.nsfw ? ' · NSFW' : ''} · last run ${lastRun(src.lastRunAt)}`}
+				subtitle={`last run ${lastRun(src.lastRunAt)}${src.nsfw ? ' · NSFW' : ''}`}
 			>
 				{#snippet actions()}
-					<label class="flex items-center gap-1 text-xs" style="color: var(--color-muted)">
-						<input type="checkbox" checked={src.enabled} onchange={() => toggle(src)} /> enabled
-					</label>
-					<button type="button" onclick={() => run(src)} class="rounded border px-2 py-1 text-xs" style="border-color: var(--color-border)">
-						Run now
+					<span title={src.visibility} aria-label={src.visibility} style="color: var(--color-muted)">
+						{#if src.visibility === 'Private'}
+							<Lock size={13} aria-hidden="true" />
+						{:else}
+							<Globe size={13} aria-hidden="true" />
+						{/if}
+					</span>
+					<button type="button" onclick={() => run(src)} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Run now" aria-label={`Run ${src.name} now`}>
+						<Play size={13} aria-hidden="true" />
 					</button>
 				{/snippet}
 			</SourceListItem>

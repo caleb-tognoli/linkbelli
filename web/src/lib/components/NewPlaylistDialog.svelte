@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui';
 	import { enhance } from '$app/forms';
+	import { Plus, X, Check } from '@lucide/svelte';
 
 	type CreateForm = {
 		error?: string;
@@ -26,10 +27,11 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Trigger
-		class="rounded-md px-3 py-2 text-sm font-medium"
-		style="background: var(--color-accent); color: var(--color-accent-contrast)"
+		class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+		title="New playlist"
+		aria-label="New playlist"
 	>
-		New playlist
+		<Plus size={16} aria-hidden="true" />
 	</Dialog.Trigger>
 
 	<Dialog.Portal>
@@ -91,18 +93,21 @@
 
 				<div class="mt-2 flex justify-end gap-2">
 					<Dialog.Close
-						class="rounded-md border px-3 py-2 text-sm"
-						style="border-color: var(--color-border)"
+						class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+						title="Cancel"
+						aria-label="Cancel"
 					>
-						Cancel
+						<X size={15} aria-hidden="true" />
 					</Dialog.Close>
 					<button
 						type="submit"
 						disabled={submitting}
-						class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
+						class="inline-flex items-center rounded-md p-2 disabled:opacity-60"
 						style="background: var(--color-accent); color: var(--color-accent-contrast)"
+						title={submitting ? 'Creating…' : 'Create'}
+						aria-label="Create playlist"
 					>
-						{submitting ? 'Creating…' : 'Create'}
+						<Check size={15} aria-hidden="true" />
 					</button>
 				</div>
 			</form>

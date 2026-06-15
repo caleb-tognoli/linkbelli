@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
+	import { LogOut, Menu } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import type { LayoutData } from './$types';
@@ -66,9 +67,11 @@
 		<form method="post" action="/logout">
 			<button
 				type="submit"
-				class="w-full rounded px-2 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
+				class="flex w-full items-center justify-center rounded p-2 hover:bg-black/5 dark:hover:bg-white/10"
+				title="Sign out"
+				aria-label="Sign out"
 			>
-				Sign out
+				<LogOut size={16} aria-hidden="true" />
 			</button>
 		</form>
 	</div>
@@ -86,11 +89,7 @@
 					class="-ml-1 rounded p-2 hover:bg-black/5 dark:hover:bg-white/10"
 					aria-label="Open navigation menu"
 				>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-						<line x1="3" y1="6" x2="21" y2="6" />
-						<line x1="3" y1="12" x2="21" y2="12" />
-						<line x1="3" y1="18" x2="21" y2="18" />
-					</svg>
+					<Menu size={20} aria-hidden="true" />
 				</Dialog.Trigger>
 				<Dialog.Portal>
 					<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />

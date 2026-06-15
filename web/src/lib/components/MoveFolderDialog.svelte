@@ -2,6 +2,7 @@
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
+	import { FolderInput, X } from '@lucide/svelte';
 	import type { Folder } from '$lib/types';
 
 	let {
@@ -71,8 +72,8 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger class="rounded-md border px-3 py-1.5 text-sm" style="border-color: var(--color-border)">
-		Move
+	<Dialog.Trigger class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Move folder" aria-label="Move folder">
+		<FolderInput size={15} aria-hidden="true" />
 	</Dialog.Trigger>
 
 	<Dialog.Portal>
@@ -120,7 +121,9 @@
 			{/if}
 
 			<div class="mt-4 flex justify-end">
-				<Dialog.Close class="rounded-md border px-3 py-2 text-sm" style="border-color: var(--color-border)">Cancel</Dialog.Close>
+				<Dialog.Close class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Cancel" aria-label="Cancel">
+					<X size={15} aria-hidden="true" />
+				</Dialog.Close>
 			</div>
 		</Dialog.Content>
 	</Dialog.Portal>

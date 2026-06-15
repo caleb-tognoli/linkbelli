@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import { Copy, Check, X, Key, Ban } from '@lucide/svelte';
 	import type { ApiKey, ApiKeyCreated } from '$lib/types';
 
 	let { keys: initial }: { keys: ApiKey[] } = $props();
@@ -92,13 +93,21 @@
 			<div class="mt-2 flex items-center gap-3">
 				<button
 					type="button"
-					class="rounded-md px-3 py-1.5 text-xs font-medium"
+					class="inline-flex items-center rounded-md p-1.5"
 					style="background: var(--color-accent); color: var(--color-accent-contrast)"
 					onclick={copyToken}
+					title={copied ? 'Copied!' : 'Copy key'}
+					aria-label={copied ? 'Copied!' : 'Copy key'}
 				>
-					{copied ? 'Copied ✓' : 'Copy key'}
+					{#if copied}
+						<Check size={13} aria-hidden="true" />
+					{:else}
+						<Copy size={13} aria-hidden="true" />
+					{/if}
 				</button>
-				<button type="button" class="text-xs underline" onclick={() => (createdToken = null)}>Dismiss</button>
+				<button type="button" onclick={() => (createdToken = null)} title="Dismiss" aria-label="Dismiss" class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10">
+					<X size={13} aria-hidden="true" />
+				</button>
 			</div>
 		</div>
 	{/if}
@@ -123,8 +132,8 @@
 			</div>
 		</fieldset>
 		{#if error}<p class="mt-2 text-sm" style="color: var(--color-danger)">{error}</p>{/if}
-		<button type="button" onclick={create} disabled={busy || !name.trim()} class="mt-3 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60" style="background: var(--color-accent); color: var(--color-accent-contrast)">
-			Create key
+		<button type="button" onclick={create} disabled={busy || !name.trim()} class="mt-3 inline-flex items-center rounded-md p-2 disabled:opacity-60" style="background: var(--color-accent); color: var(--color-accent-contrast)" title="Create key" aria-label="Create key">
+			<Key size={15} aria-hidden="true" />
 		</button>
 	</div>
 
@@ -140,8 +149,8 @@
 							{key.scopes.length ? key.scopes.join(', ') : 'full access'} · created {fmt(key.creationTime)} · last used {fmt(key.lastUsedAt)}
 						</div>
 					</div>
-					<button type="button" onclick={() => revoke(key)} class="shrink-0 text-xs hover:underline" style="color: var(--color-danger)">
-						Revoke
+					<button type="button" onclick={() => revoke(key)} title={`Revoke ${key.name}`} aria-label={`Revoke ${key.name}`} class="shrink-0 inline-flex items-center rounded p-1 hover:opacity-70" style="color: var(--color-danger)">
+						<Ban size={14} aria-hidden="true" />
 					</button>
 				</li>
 			{/each}

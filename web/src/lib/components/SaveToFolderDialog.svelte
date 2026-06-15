@@ -2,7 +2,8 @@
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
-	import type { Folder } from '$lib/types';
+	import { Folder, Check, FolderMinus, X } from '@lucide/svelte';
+	import type { Folder as FolderType } from '$lib/types';
 
 	let {
 		playlistId,
@@ -17,18 +18,18 @@
 	const filed = $derived(currentFolderId !== null);
 
 	let open = $state(false);
-	let folders = $state<Folder[]>([]);
+	let folders = $state<FolderType[]>([]);
 	let loading = $state(false);
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 	let newName = $state('');
 
 	// Render folders as an indented tree reflecting nesting depth.
-	type Row = { folder: Folder; depth: number };
+	type Row = { folder: FolderType; depth: number };
 	const rows = $derived(buildRows(folders));
 
-	function buildRows(all: Folder[]): Row[] {
-		const byParent = new Map<string | null, Folder[]>();
+	function buildRows(all: FolderType[]): Row[] {
+		const byParent = new Map<string | null, FolderType[]>();
 		for (const f of all) (byParent.get(f.parentId) ?? byParent.set(f.parentId, []).get(f.parentId)!).push(f);
 		for (const list of byParent.values()) list.sort((a, b) => a.name.localeCompare(b.name));
 		const out: Row[] = [];
@@ -48,7 +49,7 @@
 			loading = true;
 			api
 				.get('/folders')
-				.then((res) => (res.ok ? json<Folder[]>(res) : []))
+				.then((res) => (res.ok ? json<FolderType[]>(res) : []))
 				.then((f) => (folders = f))
 				.finally(() => (loading = false));
 		}
@@ -102,7 +103,7 @@
 		try {
 			const res = await api.post('/folders', { name: newName.trim(), parentId: null });
 			if (res.ok || res.status === 201) {
-				const created = await json<Folder>(res);
+				const created = await json<FolderType>(res);
 				newName = '';
 				await saveTo(created.id);
 			} else {
@@ -121,9 +122,7 @@
 		style="border-color: var(--color-border)"
 		title={filed ? `In folder: ${currentFolderName}` : 'Not in a folder'}
 	>
-		<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--color-muted)">
-			<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-		</svg>
+		<Folder size={15} aria-hidden="true" style="color: var(--color-muted)" />
 		{#if filed}
 			<span class="max-w-[12rem] truncate">{currentFolderName}</span>
 		{:else}
@@ -180,10 +179,12 @@
 				<button
 					type="submit"
 					disabled={busy || !newName.trim()}
-					class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
+					class="inline-flex items-center rounded-md p-2 disabled:opacity-60"
 					style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					title={filed ? 'Move' : 'Save'}
+					aria-label={filed ? 'Move to folder' : 'Save to folder'}
 				>
-					Create & {filed ? 'move' : 'save'}
+					<Check size={15} aria-hidden="true" />
 				</button>
 			</form>
 
@@ -197,16 +198,18 @@
 						type="button"
 						onclick={removeFromFolder}
 						disabled={busy}
-						class="rounded-md border px-3 py-2 text-sm disabled:opacity-60"
-						style="border-color: var(--color-border); color: var(--color-danger)"
+						class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
+						style="color: var(--color-danger)"
+						title="Remove from folder"
+						aria-label="Remove from folder"
 					>
-						Remove from folder
+						<FolderMinus size={15} aria-hidden="true" />
 					</button>
 				{:else}
 					<span></span>
 				{/if}
-				<Dialog.Close class="rounded-md border px-3 py-2 text-sm" style="border-color: var(--color-border)">
-					Close
+				<Dialog.Close class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Close" aria-label="Close">
+					<X size={15} aria-hidden="true" />
 				</Dialog.Close>
 			</div>
 		</Dialog.Content>

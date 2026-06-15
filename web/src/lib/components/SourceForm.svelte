@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { X, Plus, Save, Eye } from '@lucide/svelte';
 	import type { Playlist, PreviewResult, Source, SourceType, SourceVisibility } from '$lib/types';
 
 	let {
@@ -34,10 +35,32 @@
 
 	const HEADER_PREFIX = 'header.';
 
+	function parseCron(cron: string): { count: number; unit: 'minutes' | 'hours' | 'days' } {
+		const m = cron.match(/^\*\/(\d+) \* \* \* \*$/);
+		if (m) return { count: +m[1], unit: 'minutes' };
+		const h = cron.match(/^0 \*\/(\d+) \* \* \*$/);
+		if (h) return { count: +h[1], unit: 'hours' };
+		if (cron === '0 * * * *') return { count: 1, unit: 'hours' };
+		const d = cron.match(/^0 0 \*\/(\d+) \* \*$/);
+		if (d) return { count: +d[1], unit: 'days' };
+		if (cron === '0 0 * * *') return { count: 1, unit: 'days' };
+		return { count: 1, unit: 'hours' };
+	}
+
+	function buildCron(count: number, unit: 'minutes' | 'hours' | 'days'): string {
+		if (unit === 'minutes') return `*/${Math.max(5, count)} * * * *`;
+		if (unit === 'hours') return count === 1 ? '0 * * * *' : `0 */${count} * * *`;
+		return count === 1 ? '0 0 * * *' : `0 0 */${count} * *`;
+	}
+
+	const _sched = parseCron(source?.schedule ?? '0 * * * *');
+
 	let name = $state(source?.name ?? '');
 	let type = $state<SourceType>(source?.type ?? 'Rss');
 	let visibility = $state<SourceVisibility>(source?.visibility ?? 'Private');
-	let schedule = $state(source?.schedule ?? '0 * * * *');
+	let scheduleCount = $state(_sched.count);
+	let scheduleUnit = $state<'minutes' | 'hours' | 'days'>(_sched.unit);
+	const schedule = $derived(buildCron(scheduleCount, scheduleUnit));
 	let enabled = $state(source?.enabled ?? true);
 	let nsfw = $state(source?.nsfw ?? false);
 
@@ -123,7 +146,7 @@
 				error =
 					res.status === 429
 						? 'You have reached your source quota.'
-						: 'Could not save — check the name, schedule (min 5-minute cron) and config.';
+						: 'Could not save — check the name and config.';
 				return;
 			}
 			if (mode === 'create') {
@@ -157,14 +180,37 @@
 					<option value="JsonApi">JSON API</option>
 				</select>
 			{:else}
-				<span class="{fieldClass} inline-block" style={fieldStyle}>{type}</span>
+				<span class="{fieldClass} inline-block" style={fieldStyle}>{type === 'Rss' ? 'RSS' : type}</span>
 			{/if}
 		</label>
 
-		<label class="flex flex-col gap-1 text-sm">
-			<span>Schedule (cron)</span>
-			<input bind:value={schedule} class={fieldClass} style={fieldStyle} placeholder="*/15 * * * *" />
-		</label>
+		<div class="flex flex-col gap-1 text-sm">
+			<span>Check every</span>
+			<div class="flex items-center gap-2">
+				<input
+					type="number"
+					bind:value={scheduleCount}
+					min={scheduleUnit === 'minutes' ? 5 : 1}
+					max={scheduleUnit === 'minutes' ? 59 : scheduleUnit === 'hours' ? 23 : 30}
+					class="w-16 rounded-md border px-2 py-1.5 text-center text-sm"
+					style="border-color: var(--color-border); background: var(--color-bg)"
+				/>
+				<select
+					bind:value={scheduleUnit}
+					onchange={() => {
+						if (scheduleUnit === 'minutes' && scheduleCount < 5) scheduleCount = 5;
+						if (scheduleUnit === 'hours' && scheduleCount > 23) scheduleCount = 23;
+						if (scheduleUnit === 'days' && scheduleCount > 30) scheduleCount = 30;
+					}}
+					class="rounded-md border px-2 py-1.5 text-sm"
+					style="border-color: var(--color-border); background: var(--color-bg)"
+				>
+					<option value="minutes">minutes</option>
+					<option value="hours">hours</option>
+					<option value="days">days</option>
+				</select>
+			</div>
+		</div>
 
 		<label class="flex flex-col gap-1 text-sm">
 			<span>Visibility</span>
@@ -201,11 +247,13 @@
 					<div class="flex gap-2">
 						<input bind:value={header.name} placeholder="Authorization" class="{fieldClass} flex-1" style={fieldStyle} />
 						<input bind:value={header.value} placeholder="Bearer …" class="{fieldClass} flex-1" style={fieldStyle} />
-						<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="px-2" style="color: var(--color-danger)">✕</button>
+						<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
+							<X size={15} aria-hidden="true" />
+						</button>
 					</div>
 				{/each}
-				<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="self-start text-xs" style="color: var(--color-accent)">
-					+ Add header
+				<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center self-start rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
+					<Plus size={13} aria-hidden="true" />
 				</button>
 			</div>
 		{/if}
@@ -237,11 +285,11 @@
 	{/if}
 
 	<div class="flex items-center gap-2">
-		<button type="button" onclick={save} disabled={busy} class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60" style="background: var(--color-accent); color: var(--color-accent-contrast)">
-			{mode === 'create' ? 'Create source' : 'Save changes'}
+		<button type="button" onclick={save} disabled={busy} class="inline-flex items-center rounded-md p-2 disabled:opacity-60" style="background: var(--color-accent); color: var(--color-accent-contrast)" title={mode === 'create' ? 'Create source' : 'Save changes'} aria-label={mode === 'create' ? 'Create source' : 'Save changes'}>
+			<Save size={15} aria-hidden="true" />
 		</button>
-		<button type="button" onclick={doPreview} disabled={busy} class="rounded-md border px-3 py-2 text-sm disabled:opacity-60" style="border-color: var(--color-border)">
-			Preview
+		<button type="button" onclick={doPreview} disabled={busy} class="inline-flex items-center rounded-md p-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Preview source" aria-label="Preview source">
+			<Eye size={15} aria-hidden="true" />
 		</button>
 	</div>
 

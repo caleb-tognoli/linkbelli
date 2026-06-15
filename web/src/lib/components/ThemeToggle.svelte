@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Sun, Moon, Monitor } from '@lucide/svelte';
+
 	type Theme = 'light' | 'dark' | 'system';
 
 	let { initial }: { initial: Theme } = $props();
@@ -23,13 +25,17 @@
 		<button
 			type="button"
 			onclick={() => set(opt.value)}
-			class="px-3 py-1.5 text-sm"
+			class="p-1.5"
 			style={theme === opt.value
 				? 'background: var(--color-accent); color: var(--color-accent-contrast)'
 				: 'color: var(--color-muted)'}
 			aria-pressed={theme === opt.value}
+			aria-label={opt.label}
+			title={opt.label}
 		>
-			{opt.label}
+			{#if opt.value === 'light'}<Sun size={16} aria-hidden="true" />{/if}
+			{#if opt.value === 'dark'}<Moon size={16} aria-hidden="true" />{/if}
+			{#if opt.value === 'system'}<Monitor size={16} aria-hidden="true" />{/if}
 		</button>
 	{/each}
 </div>

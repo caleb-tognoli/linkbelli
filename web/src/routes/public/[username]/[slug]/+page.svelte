@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import { ChevronDown } from '@lucide/svelte';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
 	import SaveToFolderDialog from '$lib/components/SaveToFolderDialog.svelte';
 	import type { Paged, PlaylistItem } from '$lib/types';
@@ -63,7 +64,7 @@
 		{#if data.playlist.tags.length}
 			<div class="mt-3 flex flex-wrap gap-1">
 				{#each data.playlist.tags as tag (tag)}
-					<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-surface); color: var(--color-muted)">#{tag}</span>
+					<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-surface); color: var(--color-muted)">{tag}</span>
 				{/each}
 			</div>
 		{/if}
@@ -99,8 +100,8 @@
 		</div>
 		{#if nextCursor}
 			<div class="mt-4 text-center">
-				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border px-3 py-1.5 text-sm disabled:opacity-60" style="border-color: var(--color-border)">
-					{loadingMore ? 'Loading…' : 'Load more'}
+				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border p-1.5 disabled:opacity-60" style="border-color: var(--color-border)" title="Load more" aria-label="Load more">
+					<ChevronDown size={16} aria-hidden="true" />
 				</button>
 			</div>
 		{/if}

@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
+	import { Link, Play, Plus, Search, Unlink, UserPlus, X } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import type { AttachedSource, SharedSource, SourceSummary } from '$lib/types';
 
@@ -12,10 +14,31 @@
 	let query = $state('');
 	let sharedResults = $state<SharedSource[]>([]);
 	let searching = $state(false);
+	let searched = $state(false);
 	let busy = $state(false);
+	let addOpen = $state(false);
 
 	const attachedIds = $derived(new Set(attached.map((s) => s.id)));
+
 	const ownUnattached = $derived(ownSources.filter((s) => !attachedIds.has(s.id)));
+
+	const ownFiltered = $derived(
+		query.trim()
+			? ownUnattached.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()))
+			: ownUnattached
+	);
+
+	function displayType(type: string) {
+		return type === 'Rss' ? 'RSS' : type;
+	}
+
+	$effect(() => {
+		if (!addOpen) {
+			query = '';
+			sharedResults = [];
+			searched = false;
+		}
+	});
 
 	async function refresh() {
 		const res = await api.get(`/playlists/${playlistId}/sources`);
@@ -32,6 +55,10 @@
 		}
 	}
 
+	async function run(sourceId: string) {
+		await api.post(`/sources/${sourceId}/run`);
+	}
+
 	async function detach(sourceId: string) {
 		busy = true;
 		try {
@@ -43,86 +70,116 @@
 	}
 
 	async function searchShared() {
+		if (!query.trim()) { sharedResults = []; searched = false; return; }
 		searching = true;
 		try {
 			const res = await api.get(`/sources/shared?q=${encodeURIComponent(query.trim())}`);
 			if (res.ok) sharedResults = ((await res.json()) as SharedSource[]).filter((s) => !attachedIds.has(s.id));
 		} finally {
 			searching = false;
+			searched = true;
 		}
 	}
 </script>
 
-<div class="rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
-	<h2 class="font-medium">Sources</h2>
-	<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
-		Sources feed new links into this playlist automatically.
-	</p>
+<div class="rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
+	<div class="flex items-center justify-between">
+		<h2 class="font-medium">Sources</h2>
+		<Popover.Root bind:open={addOpen}>
+			<Popover.Trigger
+				class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+				title={addOpen ? 'Cancel' : 'Add source'}
+				aria-label={addOpen ? 'Cancel' : 'Add source'}
+			>
+				{#if addOpen}
+					<X size={14} aria-hidden="true" />
+				{:else}
+					<Plus size={14} aria-hidden="true" />
+				{/if}
+			</Popover.Trigger>
+			<Popover.Content
+				class="popover-surface z-30 w-72 max-h-96 overflow-y-auto rounded-lg border p-3 shadow-md"
+				align="end"
+				sideOffset={6}
+			>
+				<div class="flex gap-2">
+					<input
+						bind:value={query}
+						placeholder="Search sources..."
+						aria-label="Search sources"
+						class="flex-1 rounded border px-2 py-1 text-sm"
+						style="border-color: var(--color-border); background: var(--color-bg)"
+						onkeydown={(e) => e.key === 'Enter' && searchShared()}
+					/>
+					<button type="button" onclick={searchShared} disabled={searching} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Search shared" aria-label="Search shared sources">
+						<Search size={14} aria-hidden="true" />
+					</button>
+				</div>
+
+				{#if ownFiltered.length}
+					<div class="mt-3">
+						<div class="mb-1.5 text-xs font-medium" style="color: var(--color-muted)">Yours</div>
+						<ul class="flex flex-col gap-1.5">
+							{#each ownFiltered as src (src.id)}
+								<SourceListItem name={src.name} badge={displayType(src.type)} href={`/sources/${src.id}`}>
+									{#snippet actions()}
+										<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Attach source" aria-label="Attach source" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-accent)">
+											<Link size={13} aria-hidden="true" />
+										</button>
+									{/snippet}
+								</SourceListItem>
+							{/each}
+						</ul>
+					</div>
+				{:else if query.trim() && !ownFiltered.length}
+					<!-- no own results for query, skip "Yours" section -->
+				{/if}
+
+				{#if sharedResults.length}
+					<div class="mt-3">
+						<div class="mb-1.5 text-xs font-medium" style="color: var(--color-muted)">Shared</div>
+						<ul class="flex flex-col gap-1.5">
+							{#each sharedResults as src (src.id)}
+								<SourceListItem name={src.name} badge={displayType(src.type)} subtitle={`@${src.ownerUsername}`}>
+									{#snippet actions()}
+										<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Subscribe" aria-label="Subscribe to source" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-accent)">
+											<UserPlus size={14} aria-hidden="true" />
+										</button>
+									{/snippet}
+								</SourceListItem>
+							{/each}
+						</ul>
+					</div>
+				{:else if searched && !searching}
+					<p class="mt-2 text-xs" style="color: var(--color-muted)">No shared sources found.</p>
+				{/if}
+			</Popover.Content>
+		</Popover.Root>
+	</div>
 
 	{#if attached.length}
-		<ul class="mt-3 flex flex-col gap-2">
+		<ul class="mt-2 flex flex-col gap-2">
 			{#each attached as src (src.id)}
 				<SourceListItem
 					name={src.name}
+					badge={displayType(src.type)}
 					href={src.ownedByMe ? `/sources/${src.id}` : undefined}
-					subtitle={`${src.type}${src.ownedByMe ? '' : ` · @${src.ownerUsername}`}`}
+					subtitle={src.ownedByMe ? undefined : `@${src.ownerUsername}`}
 				>
 					{#snippet actions()}
-						<button type="button" onclick={() => detach(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-danger)">
-							Unsubscribe
+						{#if src.ownedByMe}
+							<button type="button" onclick={() => run(src.id)} disabled={busy} title="Run now" aria-label="Run now" class="inline-flex items-center rounded p-0.5 hover:opacity-70">
+								<Play size={13} aria-hidden="true" />
+							</button>
+						{/if}
+						<button type="button" onclick={() => detach(src.id)} disabled={busy} title="Unsubscribe" aria-label="Unsubscribe" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-danger)">
+							<Unlink size={13} aria-hidden="true" />
 						</button>
 					{/snippet}
 				</SourceListItem>
 			{/each}
 		</ul>
 	{:else}
-		<p class="mt-3 text-sm" style="color: var(--color-muted)">No sources attached.</p>
+		<p class="mt-2 text-sm" style="color: var(--color-muted)">No sources attached.</p>
 	{/if}
-
-	{#if ownUnattached.length}
-		<div class="mt-4">
-			<div class="text-xs font-medium" style="color: var(--color-muted)">Attach one of yours</div>
-			<ul class="mt-2 flex flex-col gap-2">
-				{#each ownUnattached as src (src.id)}
-					<SourceListItem name={src.name} href={`/sources/${src.id}`} subtitle={src.type}>
-						{#snippet actions()}
-							<button type="button" onclick={() => subscribe(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-accent)">
-								Attach
-							</button>
-						{/snippet}
-					</SourceListItem>
-				{/each}
-			</ul>
-		</div>
-	{/if}
-
-	<div class="mt-4">
-		<div class="text-xs font-medium" style="color: var(--color-muted)">Subscribe to a shared source</div>
-		<div class="mt-1 flex gap-2">
-			<input
-				bind:value={query}
-				placeholder="search shared…"
-				aria-label="Search shared sources"
-				class="flex-1 rounded border px-2 py-1 text-sm"
-				style="border-color: var(--color-border); background: var(--color-bg)"
-				onkeydown={(e) => e.key === 'Enter' && searchShared()}
-			/>
-			<button type="button" onclick={searchShared} disabled={searching} class="rounded border px-2 py-1 text-sm" style="border-color: var(--color-border)">
-				Search
-			</button>
-		</div>
-		{#if sharedResults.length}
-			<ul class="mt-2 flex flex-col gap-2">
-				{#each sharedResults as src (src.id)}
-					<SourceListItem name={src.name} subtitle={`${src.type} · @${src.ownerUsername}`}>
-						{#snippet actions()}
-							<button type="button" onclick={() => subscribe(src.id)} disabled={busy} class="text-xs hover:underline" style="color: var(--color-accent)">
-								Subscribe
-							</button>
-						{/snippet}
-					</SourceListItem>
-				{/each}
-			</ul>
-		{/if}
-	</div>
 </div>

@@ -3,10 +3,11 @@
 
 	let {
 		name,
+		badge,
 		subtitle,
 		href,
 		actions
-	}: { name: string; subtitle?: string; href?: string; actions?: Snippet } = $props();
+	}: { name: string; badge?: string; subtitle?: string; href?: string; actions?: Snippet } = $props();
 </script>
 
 <li
@@ -14,11 +15,16 @@
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	<div class="min-w-0">
-		{#if href}
-			<a {href} class="font-medium hover:underline">{name}</a>
-		{:else}
-			<span class="font-medium">{name}</span>
-		{/if}
+		<div class="flex items-baseline gap-1.5">
+			{#if href}
+				<a {href} class="font-medium hover:underline">{name}</a>
+			{:else}
+				<span class="font-medium">{name}</span>
+			{/if}
+			{#if badge}
+				<span class="text-xs" style="color: var(--color-muted)">· {badge}</span>
+			{/if}
+		</div>
 		{#if subtitle}
 			<div class="text-xs" style="color: var(--color-muted)">{subtitle}</div>
 		{/if}

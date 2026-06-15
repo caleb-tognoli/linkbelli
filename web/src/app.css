@@ -50,6 +50,18 @@ body {
 		ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* bits-ui popover — style prop is swallowed by the floating-layer pipeline;
+   background and border-color must come via class instead. */
+.popover-surface {
+	background: var(--color-surface);
+	border-color: var(--color-border);
+}
+
+button,
+[role='button'] {
+	cursor: pointer;
+}
+
 /* App-wide keyboard focus ring. Custom controls are styled with inline `style`
    attributes and carry no Tailwind focus utilities, so they relied on the UA outline
    (often invisible against the accent fill). :focus-visible keeps it keyboard-only. */
