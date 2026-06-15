@@ -20,6 +20,9 @@ export interface Playlist {
 	creationTime: string;
 	tags: string[];
 	nsfw: boolean;
+	/** The folder this playlist is filed in for the current user (null = unfiled / root). */
+	folderId: string | null;
+	folderName: string | null;
 }
 
 export interface Paged<T> {
@@ -30,6 +33,44 @@ export interface Paged<T> {
 export interface TagSummary {
 	name: string;
 	playlistCount: number;
+}
+
+/** A private folder node. The tree is built client-side from `parentId`. */
+export interface Folder {
+	id: string;
+	name: string;
+	parentId: string | null;
+	subfolderCount: number;
+	playlistCount: number;
+	creationTime: string;
+}
+
+export interface FolderBreadcrumb {
+	id: string;
+	name: string;
+}
+
+/** A playlist filed in a folder — either the user's own or a saved public one. */
+export interface FolderPlaylistEntry {
+	playlistId: string;
+	name: string;
+	slug: string;
+	description: string | null;
+	visibility: Visibility;
+	itemCount: number;
+	tags: string[];
+	nsfw: boolean;
+	ownedByMe: boolean;
+	ownerUsername: string;
+}
+
+export interface FolderDetail {
+	id: string;
+	name: string;
+	parentId: string | null;
+	breadcrumbs: FolderBreadcrumb[];
+	subfolders: Folder[];
+	playlists: FolderPlaylistEntry[];
 }
 
 export interface PublicPlaylistSummary {

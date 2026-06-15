@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
+	import SaveToFolderDialog from '$lib/components/SaveToFolderDialog.svelte';
 	import type { Paged, PlaylistItem } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -45,7 +46,16 @@
 	<a href="/discover" class="text-sm" style="color: var(--color-muted)">← Discover</a>
 
 	<header class="mt-3">
-		<h1 class="text-2xl font-semibold">{data.playlist.name}</h1>
+		<div class="flex flex-wrap items-start justify-between gap-3">
+			<h1 class="text-2xl font-semibold">{data.playlist.name}</h1>
+			{#if data.user}
+				<SaveToFolderDialog
+					playlistId={data.playlist.id}
+					currentFolderId={data.playlist.folderId}
+					currentFolderName={data.playlist.folderName}
+				/>
+			{/if}
+		</div>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">by @{data.username}</p>
 		{#if data.playlist.description}
 			<p class="mt-2" style="color: var(--color-muted)">{data.playlist.description}</p>

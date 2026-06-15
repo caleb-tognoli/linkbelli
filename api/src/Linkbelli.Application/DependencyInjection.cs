@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<ILinkService, LinkService>();
         services.AddScoped<IPlaylistService, PlaylistService>();
         services.AddScoped<IPlaylistItemService, PlaylistItemService>();
+        services.AddScoped<IFolderService, FolderService>();
         services.AddScoped<IApiKeyService, ApiKeyService>();
         services.AddScoped<IApiKeyAuthenticator, ApiKeyAuthenticator>();
         services.AddScoped<IUserQuotaService, UserQuotaService>();

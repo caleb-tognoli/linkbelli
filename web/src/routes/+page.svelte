@@ -1,4 +1,6 @@
 <script lang="ts">
+	import FolderCard from '$lib/components/FolderCard.svelte';
+	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
 	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
 	import SourcesList from '$lib/components/SourcesList.svelte';
@@ -6,34 +8,55 @@
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	// Folders are an organization aid for browsing; hide them while filtering by tag so the
+	// filtered result set (root playlists matching the tag) stays the focus.
+	const showFolders = $derived(data.rootFolders.length > 0 && data.activeTags.length === 0);
+	const isEmpty = $derived(data.playlists.items.length === 0 && !showFolders);
 </script>
 
 <div class="mx-auto flex max-w-5xl flex-col gap-12">
 	<section id="playlists" class="scroll-mt-6">
-		<header class="flex items-center justify-between">
+		<header class="flex items-center justify-between gap-2">
 			<h1 class="text-2xl font-semibold">Playlists</h1>
-			<NewPlaylistDialog {form} />
+			<div class="flex shrink-0 gap-2">
+				<NewFolderDialog
+					label="New folder"
+					triggerClass="rounded-md border px-3 py-2 text-sm font-medium"
+				/>
+				<NewPlaylistDialog {form} />
+			</div>
 		</header>
 
 		<div class="mt-4">
 			<TagFilter active={data.activeTags} basePath="/" suggestPath="/tags" />
 		</div>
 
-		{#if data.playlists.items.length === 0}
+		{#if isEmpty}
 			<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 				<p class="font-medium">
-					{data.activeTags.length ? 'No playlists match those tags.' : 'No playlists yet.'}
+					{data.activeTags.length ? 'No playlists match those tags.' : 'No folders or playlists yet.'}
 				</p>
 				<p class="mt-1 text-sm" style="color: var(--color-muted)">
-					Create your first playlist to start collecting links.
+					Create a folder to organize things, or a playlist to start collecting links.
 				</p>
 			</div>
 		{:else}
-			<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-				{#each data.playlists.items as playlist (playlist.id)}
-					<PlaylistCard {playlist} />
-				{/each}
-			</div>
+			{#if showFolders}
+				<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					{#each data.rootFolders as folder (folder.id)}
+						<FolderCard {folder} />
+					{/each}
+				</div>
+			{/if}
+
+			{#if data.playlists.items.length}
+				<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					{#each data.playlists.items as playlist (playlist.id)}
+						<PlaylistCard {playlist} />
+					{/each}
+				</div>
+			{/if}
 		{/if}
 	</section>
 

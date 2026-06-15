@@ -150,6 +150,7 @@ v1.MapMeEndpoints();
 v1.MapApiKeyEndpoints();
 v1.MapPlaylistEndpoints();
 v1.MapPlaylistItemEndpoints();
+v1.MapFolderEndpoints();
 v1.MapLinkEndpoints();
 v1.MapSourceEndpoints();
 v1.MapTagEndpoints();

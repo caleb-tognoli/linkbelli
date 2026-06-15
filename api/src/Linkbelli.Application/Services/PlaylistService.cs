@@ -29,12 +29,18 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
     }
 
     public async Task<PagedResult<PlaylistResponse>> ListAsync(
-        Guid ownerId, int? limit, string? cursor, string[]? tags, CancellationToken ct = default)
+        Guid ownerId, int? limit, string? cursor, string[]? tags, bool unfiled = false, CancellationToken ct = default)
     {
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
 
         var query = FilterByTags(db.Playlists.Where(p => p.OwnerId == ownerId), tags);
+
+        // The home "root" view shows only playlists not filed in any of the caller's folders.
+        if (unfiled)
+        {
+            query = query.Where(p => !db.FolderPlaylists.Any(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id));
+        }
 
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
         if (!showNsfw)
@@ -53,12 +59,19 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                 ItemCount = p.Items.Count(i => i.Link!.EnrichedAt != null),
                 Tags = p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
                 Nsfw = p.Items.Any(i => i.Link!.Nsfw),
+                FolderId = db.FolderPlaylists
+                    .Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
+                    .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
+                FolderName = db.FolderPlaylists
+                    .Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
+                    .Select(fp => fp.Folder!.Name).FirstOrDefault(),
             })
             .OrderByDescending(x => x.LastActivity).ThenByDescending(x => x.Playlist.Id)
             .Skip(offset).Take(take + 1)
             .Select(x => new PlaylistResponse(
                 x.Playlist.Id, x.Playlist.Name, x.Playlist.Slug, x.Playlist.Description,
-                x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags, x.Nsfw))
+                x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags, x.Nsfw,
+                x.FolderId, x.FolderName))
             .ToListAsync(ct);
 
         string? next = null;
@@ -106,7 +119,11 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             .Select(p => new PlaylistResponse(
                 p.Id, p.Name, p.Slug, p.Description, p.Visibility,
                 p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw),
+                db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
+                    .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
+                db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
+                    .Select(fp => fp.Folder!.Name).FirstOrDefault()))
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");
@@ -153,7 +170,11 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         var count = await db.PlaylistItems.CountAsync(i => i.PlaylistId == id && i.Link!.EnrichedAt != null, ct);
         var nsfw = await db.PlaylistItems.AnyAsync(i => i.PlaylistId == id && i.Link!.Nsfw, ct);
         var tagNames = await db.PlaylistTags.Where(pt => pt.PlaylistId == id).Select(pt => pt.Tag!.Name).ToArrayAsync(ct);
-        return playlist.ToResponse(count, tagNames, nsfw);
+        var folder = await db.FolderPlaylists
+            .Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == id)
+            .Select(fp => new { fp.FolderId, fp.Folder!.Name })
+            .FirstOrDefaultAsync(ct);
+        return playlist.ToResponse(count, tagNames, nsfw, folder?.FolderId, folder?.Name);
     }
 
     public async Task DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default)
@@ -175,7 +196,12 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             .Select(p => new PlaylistResponse(
                 p.Id, p.Name, p.Slug, p.Description, p.Visibility,
                 p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw),
+                // The viewer's own private folder placement (if they saved this playlist); null when anonymous.
+                db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
+                    .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
+                db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
+                    .Select(fp => fp.Folder!.Name).FirstOrDefault()))
             .FirstOrDefaultAsync(ct);
 
         // Private/missing — and NSFW for viewers who haven't opted in — are all indistinguishable.

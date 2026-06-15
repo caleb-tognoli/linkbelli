@@ -22,6 +22,8 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<UserQuota> UserQuotas => Set<UserQuota>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PlaylistTag> PlaylistTags => Set<PlaylistTag>();
+    public DbSet<Folder> Folders => Set<Folder>();
+    public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -121,6 +123,30 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(pt => pt.TagId); // tag → playlists (global search, counts)
             e.HasOne(pt => pt.Playlist).WithMany(p => p.Tags).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(pt => pt.Tag).WithMany(t => t.Playlists).OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<Folder>(e =>
+        {
+            e.Property(f => f.Name).HasMaxLength(200);
+            e.HasIndex(f => f.OwnerId);
+            e.HasIndex(f => f.ParentId);
+            // Self-reference for nesting. Soft delete intercepts hard deletes, so subfolders are
+            // cascaded manually in FolderService; keep the FK Restrict to avoid surprise cascades.
+            e.HasOne(f => f.Parent).WithMany(f => f.Children)
+                .HasForeignKey(f => f.ParentId).OnDelete(DeleteBehavior.Restrict);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<FolderPlaylist>(e =>
+        {
+            // A playlist is filed in at most one folder per owner.
+            e.HasIndex(fp => new { fp.OwnerId, fp.PlaylistId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(fp => fp.FolderId);
+            e.HasOne(fp => fp.Folder).WithMany(f => f.Playlists)
+                .HasForeignKey(fp => fp.FolderId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(fp => fp.Playlist).WithMany()
+                .HasForeignKey(fp => fp.PlaylistId).OnDelete(DeleteBehavior.Restrict);
             e.HasSoftDeleteFilter();
         });
 

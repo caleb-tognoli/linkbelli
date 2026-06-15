@@ -3,6 +3,7 @@
 	import LinkTable from './LinkTable.svelte';
 	import TagEditor from './TagEditor.svelte';
 	import SourcesPanel from './SourcesPanel.svelte';
+	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
 	import { api } from '$lib/api/client';
 	import type { AttachedSource, Paged, Playlist, PlaylistItem, SourceSummary } from '$lib/types';
 
@@ -56,12 +57,19 @@
 				<p class="mt-1" style="color: var(--color-muted)">{playlist.description}</p>
 			{/if}
 		</div>
-		<span
-			class="shrink-0 rounded-full border px-2 py-0.5 text-xs"
-			style="border-color: var(--color-border); color: var(--color-muted)"
-		>
-			{playlist.visibility}
-		</span>
+		<div class="flex shrink-0 items-center gap-2">
+			<SaveToFolderDialog
+				playlistId={playlist.id}
+				currentFolderId={playlist.folderId}
+				currentFolderName={playlist.folderName}
+			/>
+			<span
+				class="rounded-full border px-2 py-0.5 text-xs"
+				style="border-color: var(--color-border); color: var(--color-muted)"
+			>
+				{playlist.visibility}
+			</span>
+		</div>
 	</header>
 
 	<div class="mt-3">

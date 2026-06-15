@@ -24,6 +24,8 @@ public interface IAppDbContext
     DbSet<UserQuota> UserQuotas { get; }
     DbSet<Tag> Tags { get; }
     DbSet<PlaylistTag> PlaylistTags { get; }
+    DbSet<Folder> Folders { get; }
+    DbSet<FolderPlaylist> FolderPlaylists { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

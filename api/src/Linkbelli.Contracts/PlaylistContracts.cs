@@ -9,7 +9,8 @@ public record UpdatePlaylistRequest(string? Name, string? Description, PlaylistV
 
 public record PlaylistResponse(
     Guid Id, string Name, string Slug, string? Description,
-    PlaylistVisibility Visibility, int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw);
+    PlaylistVisibility Visibility, int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw,
+    Guid? FolderId = null, string? FolderName = null);
 
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(

@@ -12,6 +12,8 @@ export interface ListPlaylistsOptions {
 	tag?: string;
 	cursor?: string;
 	limit?: number;
+	/** Only playlists not filed in any folder (the home "root" view). */
+	unfiled?: boolean;
 }
 
 export function listPlaylists(api: ApiFetch, opts: ListPlaylistsOptions = {}): Promise<Paged<Playlist>> {
@@ -19,6 +21,7 @@ export function listPlaylists(api: ApiFetch, opts: ListPlaylistsOptions = {}): P
 	if (opts.tag) qs.set('tag', opts.tag);
 	if (opts.cursor) qs.set('cursor', opts.cursor);
 	if (opts.limit) qs.set('limit', String(opts.limit));
+	if (opts.unfiled) qs.set('unfiled', 'true');
 	const suffix = qs.toString() ? `?${qs}` : '';
 	return api(`/api/v1/playlists${suffix}`).then((r) => json<Paged<Playlist>>(r, 'List playlists'));
 }
