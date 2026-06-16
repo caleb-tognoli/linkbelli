@@ -94,7 +94,7 @@
 			title="Add link"
 			aria-label="Add link"
 		>
-			<Plus size={16} aria-hidden="true" />
+			<Plus size={18} aria-hidden="true" />
 		</button>
 	</div>
 

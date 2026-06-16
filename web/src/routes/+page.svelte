@@ -62,7 +62,7 @@
 				title="New source"
 				aria-label="New source"
 			>
-				<Plus size={16} aria-hidden="true" />
+				<Plus size={18} aria-hidden="true" />
 			</a>
 		</header>
 		<div class="mt-6">

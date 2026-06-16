@@ -52,13 +52,13 @@
 				{#snippet actions()}
 					<span title={src.visibility} aria-label={src.visibility} style="color: var(--color-muted)">
 						{#if src.visibility === 'Private'}
-							<Lock size={13} aria-hidden="true" />
+							<Lock size={15} aria-hidden="true" />
 						{:else}
-							<Globe size={13} aria-hidden="true" />
+							<Globe size={15} aria-hidden="true" />
 						{/if}
 					</span>
 					<button type="button" onclick={() => run(src)} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Run now" aria-label={`Run ${src.name} now`}>
-						<Play size={13} aria-hidden="true" />
+						<Play size={15} aria-hidden="true" />
 					</button>
 				{/snippet}
 			</SourceListItem>

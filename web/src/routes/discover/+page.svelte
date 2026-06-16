@@ -56,7 +56,7 @@
 			style="border-color: var(--color-border); background: var(--color-bg)"
 		/>
 		<button type="submit" class="rounded-md p-2" style="background: var(--color-accent); color: var(--color-accent-contrast)" title="Search" aria-label="Search">
-			<Search size={16} aria-hidden="true" />
+			<Search size={18} aria-hidden="true" />
 		</button>
 	</form>
 
@@ -80,7 +80,7 @@
 		{#if nextCursor}
 			<div class="mt-4 text-center">
 				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border p-1.5 disabled:opacity-60" style="border-color: var(--color-border)" title="Load more" aria-label="Load more">
-					<ChevronDown size={16} aria-hidden="true" />
+					<ChevronDown size={18} aria-hidden="true" />
 				</button>
 			</div>
 		{/if}

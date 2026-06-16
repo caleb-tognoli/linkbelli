@@ -17,7 +17,7 @@
 	class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:border-[var(--color-accent)]"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
-	<FolderIcon size={20} aria-hidden="true" style="color: var(--color-muted)" />
+	<FolderIcon size={23} aria-hidden="true" style="color: var(--color-muted)" />
 	<div class="min-w-0 flex-1">
 		<div class="truncate font-medium">{folder.name}</div>
 		<div class="text-xs" style="color: var(--color-muted)">{subLabel} · {plLabel}</div>

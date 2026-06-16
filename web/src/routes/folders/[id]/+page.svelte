@@ -69,11 +69,11 @@
 				triggerClass="rounded-md px-3 py-1.5 text-sm font-medium"
 			/>
 			<button type="button" onclick={rename} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Rename folder" aria-label="Rename folder">
-				<Pencil size={15} aria-hidden="true" />
+				<Pencil size={17} aria-hidden="true" />
 			</button>
 			<MoveFolderDialog folderId={folder.id} currentParentId={folder.parentId} />
 			<button type="button" onclick={remove} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" style="color: var(--color-danger)" title="Delete folder" aria-label="Delete folder">
-				<Trash2 size={15} aria-hidden="true" />
+				<Trash2 size={17} aria-hidden="true" />
 			</button>
 		</div>
 	</header>

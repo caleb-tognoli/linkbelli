@@ -74,7 +74,7 @@
 		title="Move folder"
 		aria-label="Move folder"
 	>
-		<FolderInput size={15} aria-hidden="true" />
+		<FolderInput size={17} aria-hidden="true" />
 	</Dialog.Trigger>
 
 	<Dialog.Portal>
@@ -90,7 +90,7 @@
 					title="Cancel"
 					aria-label="Cancel"
 				>
-					<X size={15} aria-hidden="true" />
+					<X size={17} aria-hidden="true" />
 				</Dialog.Close>
 			</div>
 

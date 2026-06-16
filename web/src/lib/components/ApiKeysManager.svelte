@@ -100,13 +100,13 @@
 					aria-label={copied ? 'Copied!' : 'Copy key'}
 				>
 					{#if copied}
-						<Check size={13} aria-hidden="true" />
+						<Check size={15} aria-hidden="true" />
 					{:else}
-						<Copy size={13} aria-hidden="true" />
+						<Copy size={15} aria-hidden="true" />
 					{/if}
 				</button>
 				<button type="button" onclick={() => (createdToken = null)} title="Dismiss" aria-label="Dismiss" class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10">
-					<X size={13} aria-hidden="true" />
+					<X size={15} aria-hidden="true" />
 				</button>
 			</div>
 		</div>
@@ -133,7 +133,7 @@
 		</fieldset>
 		{#if error}<p class="mt-2 text-sm" style="color: var(--color-danger)">{error}</p>{/if}
 		<button type="button" onclick={create} disabled={busy || !name.trim()} class="mt-3 inline-flex items-center rounded-md p-2 disabled:opacity-60" style="background: var(--color-accent); color: var(--color-accent-contrast)" title="Create key" aria-label="Create key">
-			<Key size={15} aria-hidden="true" />
+			<Key size={17} aria-hidden="true" />
 		</button>
 	</div>
 
@@ -150,7 +150,7 @@
 						</div>
 					</div>
 					<button type="button" onclick={() => revoke(key)} title={`Revoke ${key.name}`} aria-label={`Revoke ${key.name}`} class="shrink-0 inline-flex items-center rounded p-1 hover:opacity-70" style="color: var(--color-danger)">
-						<Ban size={14} aria-hidden="true" />
+						<Ban size={16} aria-hidden="true" />
 					</button>
 				</li>
 			{/each}

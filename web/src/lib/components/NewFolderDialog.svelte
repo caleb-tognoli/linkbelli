@@ -42,7 +42,7 @@
 <Dialog.Root bind:open>
 	<Dialog.Trigger class={triggerClass} style={triggerStyle} title={label || 'New folder'} aria-label={label || 'New folder'}>
 		<span class="inline-flex items-center gap-1.5">
-			<FolderPlus size={16} aria-hidden="true" />
+			<FolderPlus size={18} aria-hidden="true" />
 			{#if label}{label}{/if}
 		</span>
 	</Dialog.Trigger>
@@ -71,7 +71,7 @@
 
 				<div class="mt-2 flex justify-end gap-2">
 					<Dialog.Close class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Cancel" aria-label="Cancel">
-						<X size={15} aria-hidden="true" />
+						<X size={17} aria-hidden="true" />
 					</Dialog.Close>
 					<button
 						type="submit"
@@ -81,7 +81,7 @@
 						title={submitting ? 'Creating…' : 'Create'}
 						aria-label="Create folder"
 					>
-						<Check size={15} aria-hidden="true" />
+						<Check size={17} aria-hidden="true" />
 					</button>
 				</div>
 			</form>

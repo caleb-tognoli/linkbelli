@@ -71,7 +71,7 @@
 				title="Sign out"
 				aria-label="Sign out"
 			>
-				<LogOut size={16} aria-hidden="true" />
+				<LogOut size={18} aria-hidden="true" />
 			</button>
 		</form>
 	</div>
@@ -89,7 +89,7 @@
 					class="-ml-1 rounded p-2 hover:bg-black/5 dark:hover:bg-white/10"
 					aria-label="Open navigation menu"
 				>
-					<Menu size={20} aria-hidden="true" />
+					<Menu size={23} aria-hidden="true" />
 				</Dialog.Trigger>
 				<Dialog.Portal>
 					<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />

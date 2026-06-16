@@ -101,7 +101,7 @@
 		{#if nextCursor}
 			<div class="mt-4 text-center">
 				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border p-1.5 disabled:opacity-60" style="border-color: var(--color-border)" title="Load more" aria-label="Load more">
-					<ChevronDown size={16} aria-hidden="true" />
+					<ChevronDown size={18} aria-hidden="true" />
 				</button>
 			</div>
 		{/if}

@@ -88,7 +88,7 @@
 				title="Cancel"
 				aria-label="Cancel"
 			>
-				<X size={12} aria-hidden="true" />
+				<X size={14} aria-hidden="true" />
 			</button>
 		</div>
 	{/if}
@@ -106,7 +106,7 @@
 					style={selectedId === f.id ? 'color: var(--color-accent)' : ''}
 					title={f.name}
 				>
-					<FolderIcon size={13} aria-hidden="true" class="shrink-0" style="color: var(--color-muted)" />
+					<FolderIcon size={15} aria-hidden="true" class="shrink-0" style="color: var(--color-muted)" />
 					<span class="truncate">{f.name}</span>
 				</button>
 				<button
@@ -118,7 +118,7 @@
 					title="New subfolder in {f.name}"
 					aria-label="New subfolder in {f.name}"
 				>
-					<Plus size={11} aria-hidden="true" />
+					<Plus size={13} aria-hidden="true" />
 				</button>
 			</div>
 			{@render addForm(f.id, depth + 1)}
@@ -137,7 +137,7 @@
 				class="flex flex-1 items-center gap-1.5 rounded px-1.5 py-1 text-left hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
 				style={selectedId === null ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
 			>
-				<House size={13} aria-hidden="true" class="shrink-0" />
+				<House size={15} aria-hidden="true" class="shrink-0" />
 				<span class="font-medium">{rootLabel}</span>
 			</button>
 			<button
@@ -149,7 +149,7 @@
 				title="New top-level folder"
 				aria-label="New top-level folder"
 			>
-				<Plus size={11} aria-hidden="true" />
+				<Plus size={13} aria-hidden="true" />
 			</button>
 		</div>
 		{@render addForm(null, 1)}

@@ -84,7 +84,7 @@
 		style="border-color: var(--color-border)"
 		title={filed ? `In folder: ${currentFolderName}` : 'Not in a folder'}
 	>
-		<Folder size={15} aria-hidden="true" style="color: var(--color-muted)" />
+		<Folder size={17} aria-hidden="true" style="color: var(--color-muted)" />
 		{#if filed}
 			<span class="max-w-[12rem] truncate">{currentFolderName}</span>
 		{:else}
@@ -105,7 +105,7 @@
 					title="Close"
 					aria-label="Close"
 				>
-					<X size={15} aria-hidden="true" />
+					<X size={17} aria-hidden="true" />
 				</Dialog.Close>
 			</div>
 

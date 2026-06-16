@@ -7,10 +7,10 @@
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { ChevronDown, EyeOff, Globe, Lock } from '@lucide/svelte';
-	import type { AttachedSource, Paged, Playlist, PlaylistItem, SourceSummary } from '$lib/types';
+	import type { AttachedSource, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
 
 	type VisOption = { label: string; icon: typeof Lock };
-	const visConfig: Record<string, VisOption> = {
+	const visConfig: Record<Visibility, VisOption> = {
 		Private: { label: 'Private', icon: Lock },
 		Unlisted: { label: 'Unlisted', icon: EyeOff },
 		Public: { label: 'Public', icon: Globe }
@@ -37,7 +37,7 @@
 	let visOpen = $state(false);
 	const currentVis = $derived(visConfig[visibility] ?? visConfig.Private);
 
-	async function setVisibility(next: string) {
+	async function setVisibility(next: Visibility) {
 		const prev = visibility;
 		visibility = next;
 		const res = await api.patch(`/playlists/${playlist.id}`, { visibility: next });
@@ -86,7 +86,7 @@
 					title="Change visibility"
 					aria-label="Visibility"
 				>
-					<currentVis.icon size={13} aria-hidden="true" />
+					<currentVis.icon size={15} aria-hidden="true" />
 					{currentVis.label}
 				</Popover.Trigger>
 				<Popover.Content
@@ -97,11 +97,11 @@
 					{#each Object.entries(visConfig) as [val, { label, icon: Icon }] (val)}
 						<button
 							type="button"
-							onclick={() => { setVisibility(val); visOpen = false; }}
+							onclick={() => { setVisibility(val as Visibility); visOpen = false; }}
 							class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
 							class:font-medium={visibility === val}
 						>
-							<Icon size={13} aria-hidden="true" style="color: var(--color-muted)" />
+							<Icon size={15} aria-hidden="true" style="color: var(--color-muted)" />
 							{label}
 						</button>
 					{/each}
@@ -140,7 +140,7 @@
 					title="Load more"
 					aria-label="Load more"
 				>
-					<ChevronDown size={16} aria-hidden="true" />
+					<ChevronDown size={18} aria-hidden="true" />
 				</button>
 			</div>
 		{/if}

@@ -130,9 +130,9 @@
 					aria-label={item.note ? 'Edit note' : 'Add note'}
 				>
 					{#if isPending(item)}
-						<Clock size={14} aria-hidden="true" />
+						<Clock size={16} aria-hidden="true" />
 					{:else}
-						<StickyNote size={14} aria-hidden="true" />
+						<StickyNote size={16} aria-hidden="true" />
 					{/if}
 				</Popover.Trigger>
 				<Popover.Content
@@ -162,7 +162,7 @@
 				title="Remove link"
 				aria-label="Remove link"
 			>
-				<Trash2 size={14} aria-hidden="true" />
+				<Trash2 size={16} aria-hidden="true" />
 			</button>
 		</td>
 	</tr>
@@ -188,7 +188,7 @@
 					: 'border-color: var(--color-border); color: var(--color-muted)'}
 			>
 				{#if opt.mode === 'shuffle'}
-					<span class="inline-flex items-center gap-1"><Shuffle size={11} aria-hidden="true" />{opt.label}</span>
+					<span class="inline-flex items-center gap-1"><Shuffle size={13} aria-hidden="true" />{opt.label}</span>
 				{:else}
 					{opt.label}
 				{/if}
@@ -202,7 +202,7 @@
 			title={showThumbnails ? 'Hide thumbnails' : 'Show thumbnails'}
 			aria-label={showThumbnails ? 'Hide thumbnails' : 'Show thumbnails'}
 		>
-			<Image size={13} aria-hidden="true" />
+			<Image size={15} aria-hidden="true" />
 		</button>
 	</div>
 

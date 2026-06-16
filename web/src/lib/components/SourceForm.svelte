@@ -248,12 +248,12 @@
 						<input bind:value={header.name} placeholder="Authorization" class="{fieldClass} flex-1" style={fieldStyle} />
 						<input bind:value={header.value} placeholder="Bearer …" class="{fieldClass} flex-1" style={fieldStyle} />
 						<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
-							<X size={15} aria-hidden="true" />
+							<X size={17} aria-hidden="true" />
 						</button>
 					</div>
 				{/each}
 				<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center self-start rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
-					<Plus size={13} aria-hidden="true" />
+					<Plus size={15} aria-hidden="true" />
 				</button>
 			</div>
 		{/if}
@@ -286,10 +286,10 @@
 
 	<div class="flex items-center gap-2">
 		<button type="button" onclick={save} disabled={busy} class="inline-flex items-center rounded-md p-2 disabled:opacity-60" style="background: var(--color-accent); color: var(--color-accent-contrast)" title={mode === 'create' ? 'Create source' : 'Save changes'} aria-label={mode === 'create' ? 'Create source' : 'Save changes'}>
-			<Save size={15} aria-hidden="true" />
+			<Save size={17} aria-hidden="true" />
 		</button>
 		<button type="button" onclick={doPreview} disabled={busy} class="inline-flex items-center rounded-md p-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Preview source" aria-label="Preview source">
-			<Eye size={15} aria-hidden="true" />
+			<Eye size={17} aria-hidden="true" />
 		</button>
 	</div>
 

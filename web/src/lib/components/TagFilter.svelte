@@ -68,7 +68,7 @@
 		>
 			{tag}
 			<button type="button" onclick={() => remove(tag)} aria-label={`Remove ${tag} filter`} title={`Remove ${tag} filter`} class="inline-flex items-center rounded p-0.5 hover:bg-black/10 dark:hover:bg-white/20">
-				<X size={11} aria-hidden="true" />
+				<X size={13} aria-hidden="true" />
 			</button>
 		</span>
 	{/each}
@@ -80,7 +80,7 @@
 			title="Filter by tag"
 			aria-label="Filter by tag"
 		>
-			<Tag size={13} aria-hidden="true" />
+			<Tag size={15} aria-hidden="true" />
 			Filter by tag
 		</Popover.Trigger>
 		<Popover.Portal>

@@ -31,7 +31,7 @@
 		title="New playlist"
 		aria-label="New playlist"
 	>
-		<Plus size={16} aria-hidden="true" />
+		<Plus size={18} aria-hidden="true" />
 	</Dialog.Trigger>
 
 	<Dialog.Portal>
@@ -97,7 +97,7 @@
 						title="Cancel"
 						aria-label="Cancel"
 					>
-						<X size={15} aria-hidden="true" />
+						<X size={17} aria-hidden="true" />
 					</Dialog.Close>
 					<button
 						type="submit"
@@ -107,7 +107,7 @@
 						title={submitting ? 'Creating…' : 'Create'}
 						aria-label="Create playlist"
 					>
-						<Check size={15} aria-hidden="true" />
+						<Check size={17} aria-hidden="true" />
 					</button>
 				</div>
 			</form>

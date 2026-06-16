@@ -59,7 +59,7 @@
 			class="mt-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 font-medium disabled:opacity-60"
 			style="background: var(--color-accent); color: var(--color-accent-contrast)"
 		>
-			<LogIn size={16} aria-hidden="true" />
+			<LogIn size={18} aria-hidden="true" />
 			{submitting ? 'Signing in…' : 'Sign in'}
 		</button>
 	</form>

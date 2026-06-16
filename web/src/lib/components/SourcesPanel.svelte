@@ -92,9 +92,9 @@
 				aria-label={addOpen ? 'Cancel' : 'Add source'}
 			>
 				{#if addOpen}
-					<X size={14} aria-hidden="true" />
+					<X size={16} aria-hidden="true" />
 				{:else}
-					<Plus size={14} aria-hidden="true" />
+					<Plus size={16} aria-hidden="true" />
 				{/if}
 			</Popover.Trigger>
 			<Popover.Content
@@ -112,7 +112,7 @@
 						onkeydown={(e) => e.key === 'Enter' && searchShared()}
 					/>
 					<button type="button" onclick={searchShared} disabled={searching} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Search shared" aria-label="Search shared sources">
-						<Search size={14} aria-hidden="true" />
+						<Search size={16} aria-hidden="true" />
 					</button>
 				</div>
 
@@ -124,7 +124,7 @@
 								<SourceListItem name={src.name} badge={displayType(src.type)} href={`/sources/${src.id}`}>
 									{#snippet actions()}
 										<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Attach source" aria-label="Attach source" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-accent)">
-											<Link size={13} aria-hidden="true" />
+											<Link size={15} aria-hidden="true" />
 										</button>
 									{/snippet}
 								</SourceListItem>
@@ -143,7 +143,7 @@
 								<SourceListItem name={src.name} badge={displayType(src.type)} subtitle={`@${src.ownerUsername}`}>
 									{#snippet actions()}
 										<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Subscribe" aria-label="Subscribe to source" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-accent)">
-											<UserPlus size={14} aria-hidden="true" />
+											<UserPlus size={16} aria-hidden="true" />
 										</button>
 									{/snippet}
 								</SourceListItem>
@@ -169,11 +169,11 @@
 					{#snippet actions()}
 						{#if src.ownedByMe}
 							<button type="button" onclick={() => run(src.id)} disabled={busy} title="Run now" aria-label="Run now" class="inline-flex items-center rounded p-0.5 hover:opacity-70">
-								<Play size={13} aria-hidden="true" />
+								<Play size={15} aria-hidden="true" />
 							</button>
 						{/if}
 						<button type="button" onclick={() => detach(src.id)} disabled={busy} title="Unsubscribe" aria-label="Unsubscribe" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-danger)">
-							<Unlink size={13} aria-hidden="true" />
+							<Unlink size={15} aria-hidden="true" />
 						</button>
 					{/snippet}
 				</SourceListItem>

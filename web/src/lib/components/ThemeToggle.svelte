@@ -33,9 +33,9 @@
 			aria-label={opt.label}
 			title={opt.label}
 		>
-			{#if opt.value === 'light'}<Sun size={16} aria-hidden="true" />{/if}
-			{#if opt.value === 'dark'}<Moon size={16} aria-hidden="true" />{/if}
-			{#if opt.value === 'system'}<Monitor size={16} aria-hidden="true" />{/if}
+			{#if opt.value === 'light'}<Sun size={18} aria-hidden="true" />{/if}
+			{#if opt.value === 'dark'}<Moon size={18} aria-hidden="true" />{/if}
+			{#if opt.value === 'system'}<Monitor size={18} aria-hidden="true" />{/if}
 		</button>
 	{/each}
 </div>

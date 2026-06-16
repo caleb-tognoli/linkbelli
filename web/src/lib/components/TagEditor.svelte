@@ -37,12 +37,12 @@
 		>
 			{tag}
 			<button type="button" onclick={() => removeTag(tag)} title={`Remove tag ${tag}`} aria-label={`Remove tag ${tag}`} disabled={busy} class="inline-flex items-center rounded p-0.5 hover:bg-black/10 dark:hover:bg-white/20">
-				<X size={10} aria-hidden="true" />
+				<X size={12} aria-hidden="true" />
 			</button>
 		</span>
 	{/each}
 	<span class="inline-flex items-center gap-1" style="color: var(--color-muted)">
-		<Tag size={12} aria-hidden="true" />
+		<Tag size={14} aria-hidden="true" />
 		<input
 			bind:value={input}
 			placeholder="add tag…"
