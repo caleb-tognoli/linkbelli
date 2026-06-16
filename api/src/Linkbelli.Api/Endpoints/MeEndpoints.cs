@@ -16,6 +16,7 @@ public static class MeEndpoints
         app.MapGet("/me", async (ClaimsPrincipal user, IUserPreferenceService prefs, CancellationToken ct) => Results.Ok(new
         {
             userId = user.FindFirstValue(ClaimTypes.NameIdentifier),
+            username = user.FindFirstValue(ClaimTypes.Name),
             authMethod = user.FindFirstValue("auth_method") ?? "bearer",
             scopes = user.FindAll("scope").Select(c => c.Value).ToArray(),
             showNsfw = await prefs.ShowNsfwAsync(user.GetUserId(), ct),

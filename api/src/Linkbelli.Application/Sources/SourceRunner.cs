@@ -21,7 +21,7 @@ public sealed class SourceRunner(
     public async Task RunAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
         var source = await db.Sources.FirstOrDefaultAsync(s => s.Id == sourceId, cancellationToken);
-        if (source is null || !source.Enabled)
+        if (source is null)
         {
             return;
         }
@@ -56,16 +56,29 @@ public sealed class SourceRunner(
             var discovered = fetch.Links
                 .Take(quota.MaxItemsPerRun)
                 .ToList();
-            run.ItemsFound = discovered.Count;
+
+            // Determine which candidate URLs are already known to the application before resolving,
+            // so ItemsAdded reflects links genuinely new to the system (not just new to a playlist).
+            var candidateHashes = new HashSet<string>(
+                discovered
+                    .Where(d => UrlCanonicalizer.TryCanonicalize(d.Url, out _))
+                    .Select(d => { UrlCanonicalizer.TryCanonicalize(d.Url, out var c); return c.Hash; }));
+
+            var preExistingHashes = (await db.Links
+                .Where(l => candidateHashes.Contains(l.UrlHash))
+                .Select(l => l.UrlHash)
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
 
             var playlistIds = await db.PlaylistSources
                 .Where(ps => ps.SourceId == sourceId)
                 .Select(ps => ps.PlaylistId)
                 .ToListAsync(cancellationToken);
 
-            // Resolve/dedup the links first (get-or-create persists genuinely new ones, queued
-            // for async enrichment). A NSFW source marks the links it ingests as NSFW.
-            var resolved = new List<Link>();
+            // Resolve/dedup the links (get-or-create persists genuinely new ones, queued for
+            // async enrichment). Both ItemsFound and ItemsAdded use canonical URLs so the frontend can compare them.
+            var foundUrls = new List<string>();
+            var resolved = new List<(Link link, bool isNew)>();
             foreach (var discoveredLink in discovered)
             {
                 if (UrlCanonicalizer.TryCanonicalize(discoveredLink.Url, out var canonical))
@@ -73,12 +86,8 @@ public sealed class SourceRunner(
                     try
                     {
                         var link = await links.GetOrCreateAsync(canonical, immediate: false, cancellationToken);
-                        if (source.Nsfw && !link.Nsfw)
-                        {
-                            link.Nsfw = true;
-                        }
-
-                        resolved.Add(link);
+                        foundUrls.Add(link.CanonicalUrl);
+                        resolved.Add((link, !preExistingHashes.Contains(canonical.Hash)));
                     }
                     catch (BlockedHostException)
                     {
@@ -86,10 +95,22 @@ public sealed class SourceRunner(
                     }
                 }
             }
+            run.ItemsFound = foundUrls.ToArray();
 
-            // Append to each playlist in memory (existing link ids + next position preloaded
-            // once per playlist), then persist all new items in a single SaveChanges (the finally).
-            var added = 0;
+            // ItemsAdded = URLs that were new to the application (first time seen globally).
+            var seenIds = new HashSet<Guid>();
+            var addedUrls = new List<string>();
+            foreach (var (link, isNew) in resolved)
+            {
+                if (isNew && seenIds.Add(link.Id))
+                {
+                    addedUrls.Add(link.CanonicalUrl);
+                }
+            }
+            run.ItemsAdded = addedUrls.ToArray();
+
+            // Append to each attached playlist (existing link ids + next position preloaded once
+            // per playlist), then persist all new items in a single SaveChanges (the finally).
             foreach (var playlistId in playlistIds)
             {
                 var present = (await db.PlaylistItems
@@ -101,9 +122,9 @@ public sealed class SourceRunner(
                     .Where(i => i.PlaylistId == playlistId)
                     .MaxAsync(i => (long?)i.Position, cancellationToken) ?? 0;
 
-                foreach (var link in resolved)
+                foreach (var (link, _) in resolved)
                 {
-                    if (!present.Add(link.Id)) // also dedups repeats within this run
+                    if (!present.Add(link.Id))
                     {
                         continue;
                     }
@@ -117,11 +138,8 @@ public sealed class SourceRunner(
                         SourceId = sourceId,
                         Status = PlaylistItemStatus.Active,
                     });
-                    added++;
                 }
             }
-
-            run.ItemsAdded = added;
             run.Status = SourceRunStatus.Succeeded;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

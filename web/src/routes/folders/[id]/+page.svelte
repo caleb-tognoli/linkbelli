@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 	import { Pencil, Trash2 } from '@lucide/svelte';
 	import FolderCard from '$lib/components/FolderCard.svelte';
 	import FolderPlaylistCard from '$lib/components/FolderPlaylistCard.svelte';
@@ -15,7 +16,7 @@
 	const folder = $derived(data.folder);
 
 	async function rename() {
-		const next = prompt('Folder name', folder.name);
+		const next = await promptDialog('Folder name', folder.name);
 		if (next === null) return;
 		const name = next.trim();
 		if (!name || name === folder.name) return;
@@ -33,7 +34,7 @@
 			folder.subfolders.length || folder.playlists.length
 				? 'Delete this folder and everything inside it? Your playlists themselves are not deleted.'
 				: 'Delete this folder?';
-		if (!confirm(msg)) return;
+		if (!(await confirmDialog(msg, { danger: true, confirmLabel: 'Delete' }))) return;
 		busy = true;
 		try {
 			const res = await api.del(`/folders/${folder.id}`);
@@ -61,7 +62,7 @@
 	</nav>
 
 	<header class="mt-3 flex flex-wrap items-center justify-between gap-3">
-		<div class="flex items-center gap-1">
+		<div class="flex items-center gap-3">
 			<h1 class="text-2xl font-semibold">{folder.name}</h1>
 			<button type="button" onclick={rename} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Rename folder" aria-label="Rename folder">
 				<Pencil size={17} aria-hidden="true" />

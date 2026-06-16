@@ -8,21 +8,19 @@ public record CreateSourceRequest(
     IReadOnlyDictionary<string, string> Config,
     string Schedule,
     Guid[]? PlaylistIds,
-    SourceVisibility? Visibility,
-    bool? Nsfw);
+    SourceVisibility? Visibility);
 
 public record UpdateSourceRequest(
     string? Name,
+    SourceType? Type,
     IReadOnlyDictionary<string, string>? Config,
     string? Schedule,
-    bool? Enabled,
     Guid[]? PlaylistIds,
-    SourceVisibility? Visibility,
-    bool? Nsfw);
+    SourceVisibility? Visibility);
 
 public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,
-    string Schedule, bool Enabled, SourceVisibility Visibility, bool Nsfw,
+    string Schedule, SourceVisibility Visibility,
     DateTimeOffset? LastRunAt, DateTimeOffset CreationTime, Guid[] PlaylistIds);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
@@ -38,7 +36,7 @@ public record SubscribeSourceRequest(Guid SourceId);
 
 public record SourceRunResponse(
     Guid Id, DateTimeOffset StartedAt, DateTimeOffset? FinishedAt,
-    SourceRunStatus Status, int ItemsFound, int ItemsAdded, string? Error);
+    SourceRunStatus Status, string[] ItemsFound, string[] ItemsAdded, string? Error);
 
 /// <summary>Dry-run a source config without saving, returning a few sample candidates.</summary>
 public record PreviewSourceRequest(SourceType Type, IReadOnlyDictionary<string, string> Config);

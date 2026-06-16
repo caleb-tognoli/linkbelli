@@ -24,7 +24,6 @@ public sealed class SourceScheduleSyncService(
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var sources = await db.Sources
-                .Where(s => s.Enabled)
                 .Select(s => new { s.Id, s.Schedule })
                 .ToListAsync(cancellationToken);
 

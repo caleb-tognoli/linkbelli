@@ -2,6 +2,7 @@
 	import { api } from '$lib/api/client';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import Switch from '$lib/components/Switch.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -32,7 +33,7 @@
 	<div>
 		<h2 class="font-medium">Content</h2>
 		<label class="mt-3 flex items-center gap-2 text-sm">
-			<input type="checkbox" checked={showNsfw} onchange={(e) => setNsfw(e.currentTarget.checked)} />
+			<Switch checked={showNsfw} onchange={setNsfw} />
 			Show NSFW content
 		</label>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">

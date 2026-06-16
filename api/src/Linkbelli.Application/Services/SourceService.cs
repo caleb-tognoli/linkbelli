@@ -62,8 +62,6 @@ public class SourceService(
             Config = JsonSerializer.Serialize(secrets.Encrypt(request.Type, request.Config, stored: null)),
             Schedule = request.Schedule.Trim(),
             Visibility = request.Visibility ?? SourceVisibility.Private,
-            Nsfw = request.Nsfw ?? false,
-            Enabled = true,
         };
         db.Sources.Add(source);
 
@@ -82,6 +80,12 @@ public class SourceService(
     {
         var source = await FindOwnedAsync(ownerId, id, ct);
         var interpreter = ResolveInterpreter(source.Type);
+
+        if (request.Type is not null && request.Type.Value != source.Type)
+        {
+            source.Type = request.Type.Value;
+            interpreter = ResolveInterpreter(source.Type);
+        }
 
         if (request.Name is not null)
         {
@@ -104,16 +108,6 @@ public class SourceService(
         {
             ValidateCron(request.Schedule);
             source.Schedule = request.Schedule.Trim();
-        }
-
-        if (request.Enabled is not null)
-        {
-            source.Enabled = request.Enabled.Value;
-        }
-
-        if (request.Nsfw is not null)
-        {
-            source.Nsfw = request.Nsfw.Value;
         }
 
         if (request.Visibility is not null && request.Visibility.Value != source.Visibility)
@@ -149,14 +143,7 @@ public class SourceService(
 
         await db.SaveChangesAsync(ct);
 
-        if (source.Enabled)
-        {
-            scheduler.Schedule(source.Id, source.Schedule);
-        }
-        else
-        {
-            scheduler.Unschedule(source.Id);
-        }
+        scheduler.Schedule(source.Id, source.Schedule);
 
         return ToResponse(source, await PlaylistIdsAsync(id, ct));
     }
@@ -279,6 +266,6 @@ public class SourceService(
         var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
-            source.Schedule, source.Enabled, source.Visibility, source.Nsfw, source.LastRunAt, source.CreationTime, playlistIds);
+            source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds);
     }
 }

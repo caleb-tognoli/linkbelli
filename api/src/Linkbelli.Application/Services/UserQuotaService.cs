@@ -3,20 +3,39 @@ using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Linkbelli.Application.Services;
 
-public class UserQuotaService(IAppDbContext db) : IUserQuotaService
+public class UserQuotaService(IAppDbContext db, IOptions<QuotaOptions> options) : IUserQuotaService
 {
+    private readonly QuotaOptions _opts = options.Value;
+
     public async Task<UserQuota> GetOrCreateAsync(Guid userId, CancellationToken ct = default)
     {
         var existing = await db.UserQuotas.FirstOrDefaultAsync(q => q.UserId == userId, ct);
         if (existing is not null)
         {
+            // Promote rows that still sit at the old factory defaults to the configured values
+            // so environment-level overrides take effect without a manual DB update.
+            var dirty = false;
+            if (existing.MaxSources == UserQuota.DefaultMaxSources && _opts.DefaultMaxSources != UserQuota.DefaultMaxSources)
+            { existing.MaxSources = _opts.DefaultMaxSources; dirty = true; }
+            if (existing.MaxRunsPerDay == UserQuota.DefaultMaxRunsPerDay && _opts.DefaultMaxRunsPerDay != UserQuota.DefaultMaxRunsPerDay)
+            { existing.MaxRunsPerDay = _opts.DefaultMaxRunsPerDay; dirty = true; }
+            if (existing.MaxItemsPerRun == UserQuota.DefaultMaxItemsPerRun && _opts.DefaultMaxItemsPerRun != UserQuota.DefaultMaxItemsPerRun)
+            { existing.MaxItemsPerRun = _opts.DefaultMaxItemsPerRun; dirty = true; }
+            if (dirty) await db.SaveChangesAsync(ct);
             return existing;
         }
 
-        var quota = new UserQuota { UserId = userId };
+        var quota = new UserQuota
+        {
+            UserId = userId,
+            MaxSources = _opts.DefaultMaxSources,
+            MaxRunsPerDay = _opts.DefaultMaxRunsPerDay,
+            MaxItemsPerRun = _opts.DefaultMaxItemsPerRun,
+        };
         db.UserQuotas.Add(quota);
         try
         {

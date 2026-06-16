@@ -5,6 +5,7 @@ export type Visibility = 'Private' | 'Unlisted' | 'Public';
 
 export interface User {
 	userId: string;
+	username: string | null;
 	authMethod: string;
 	scopes: string[];
 	showNsfw: boolean;
@@ -123,7 +124,6 @@ export interface SourceSummary {
 	name: string;
 	type: SourceType;
 	visibility: SourceVisibility;
-	nsfw: boolean;
 	playlistIds: string[];
 }
 
@@ -149,9 +149,7 @@ export interface Source {
 	type: SourceType;
 	config: Record<string, string>;
 	schedule: string;
-	enabled: boolean;
 	visibility: SourceVisibility;
-	nsfw: boolean;
 	lastRunAt: string | null;
 	creationTime: string;
 	playlistIds: string[];
@@ -162,15 +160,11 @@ export interface SourceRun {
 	startedAt: string;
 	finishedAt: string | null;
 	status: string;
-	itemsFound: number;
-	itemsAdded: number;
+	itemsFound: string[];
+	itemsAdded: string[];
 	error: string | null;
 }
 
-export interface DiscoveredLink {
-	url: string;
-	title: string | null;
-}
 
 export interface Quota {
 	maxSources: number;
@@ -200,7 +194,3 @@ export interface ApiKeyCreated {
 	expiresAt: string | null;
 }
 
-export interface PreviewResult {
-	count: number;
-	links: DiscoveredLink[];
-}

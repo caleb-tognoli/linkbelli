@@ -13,8 +13,8 @@ public class SourceRun : BaseEntity<Guid>
     public Guid SourceId { get; set; }
     public DateTimeOffset? FinishedAt { get; set; }
     public SourceRunStatus Status { get; set; } = SourceRunStatus.Running;
-    public int ItemsFound { get; set; }
-    public int ItemsAdded { get; set; }
+    public string[] ItemsFound { get; set; } = [];
+    public string[] ItemsAdded { get; set; } = [];
     public string? Error { get; set; }
 
     public Source? Source { get; set; }

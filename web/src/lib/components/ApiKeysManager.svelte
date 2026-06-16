@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Copy, Check, X, Key, Ban } from '@lucide/svelte';
+	import Switch from './Switch.svelte';
 	import type { ApiKey, ApiKeyCreated } from '$lib/types';
 
 	let { keys: initial }: { keys: ApiKey[] } = $props();
@@ -75,7 +77,7 @@
 	}
 
 	async function revoke(key: ApiKey) {
-		if (!confirm(`Revoke "${key.name}"? Apps using it will stop working.`)) return;
+		if (!(await confirmDialog(`Revoke "${key.name}"? Apps using it will stop working.`, { danger: true, confirmLabel: 'Revoke' }))) return;
 		const res = await api.del(`/me/apikeys/${key.id}`);
 		if (res.ok || res.status === 204) keys = keys.filter((k) => k.id !== key.id);
 	}
@@ -124,8 +126,8 @@
 			<legend class="text-xs" style="color: var(--color-muted)">Scopes (none = full access)</legend>
 			<div class="mt-1 flex flex-wrap gap-3 text-sm">
 				{#each ALL_SCOPES as scope (scope)}
-					<label class="flex items-center gap-1">
-						<input type="checkbox" checked={selectedScopes.has(scope)} onchange={(e) => toggleScope(scope, e.currentTarget.checked)} />
+					<label class="flex items-center gap-1.5">
+						<Switch checked={selectedScopes.has(scope)} onchange={(v) => toggleScope(scope, v)} />
 						<code>{scope}</code>
 					</label>
 				{/each}

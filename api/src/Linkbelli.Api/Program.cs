@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Composition root: Infrastructure (persistence + Identity) and Application (use cases).
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddApplication();
+builder.Services.AddApplication(builder.Configuration);
 
 // Serialize enums as strings (e.g. visibility "Public") in requests, responses, and the OpenAPI schema.
 builder.Services.ConfigureHttpJsonOptions(options =>

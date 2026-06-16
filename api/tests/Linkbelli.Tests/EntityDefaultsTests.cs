@@ -18,9 +18,9 @@ public class EntityDefaultsTests
     }
 
     [Fact]
-    public void New_source_is_enabled_by_default()
+    public void New_source_has_a_schedule()
     {
         var source = new Source { Name = "test", Config = "{}", Schedule = "0 * * * *" };
-        Assert.True(source.Enabled);
+        Assert.Equal("0 * * * *", source.Schedule);
     }
 }

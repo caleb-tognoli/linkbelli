@@ -54,9 +54,6 @@
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<Dialog.Title class="text-lg font-semibold">New folder</Dialog.Title>
-			<Dialog.Description class="mt-1 text-sm" style="color: var(--color-muted)">
-				{parentId ? 'Create a subfolder here.' : 'Create a top-level folder.'}
-			</Dialog.Description>
 
 			<form class="mt-4 flex flex-col gap-3" onsubmit={create}>
 				<label class="flex flex-col gap-1 text-sm">
@@ -69,19 +66,26 @@
 					<p class="text-sm" style="color: var(--color-danger)">{error}</p>
 				{/if}
 
-				<div class="mt-2 flex justify-end gap-2">
-					<Dialog.Close class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Cancel" aria-label="Cancel">
-						<X size={17} aria-hidden="true" />
+				<div class="mt-2 flex justify-center gap-2 text-sm">
+					<Dialog.Close
+						class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+						style="border-color: var(--color-border)"
+						title="Cancel"
+						aria-label="Cancel"
+					>
+						<X size={15} aria-hidden="true" />
+						Cancel
 					</Dialog.Close>
 					<button
 						type="submit"
 						disabled={submitting}
-						class="inline-flex items-center rounded-md p-2 disabled:opacity-60"
+						class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
 						style="background: var(--color-accent); color: var(--color-accent-contrast)"
 						title={submitting ? 'Creating…' : 'Create'}
 						aria-label="Create folder"
 					>
-						<Check size={17} aria-hidden="true" />
+						<Check size={15} aria-hidden="true" />
+						{submitting ? 'Creating…' : 'Create'}
 					</button>
 				</div>
 			</form>

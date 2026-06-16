@@ -91,7 +91,7 @@
 					<p class="text-sm" style="color: var(--color-danger)">{form.error}</p>
 				{/if}
 
-				<div class="mt-2 flex justify-end gap-2">
+				<div class="mt-2 flex justify-center gap-2">
 					<Dialog.Close
 						class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 						title="Cancel"

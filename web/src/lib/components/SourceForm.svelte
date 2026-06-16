@@ -1,14 +1,23 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
-	import { X, Plus, Save, Eye } from '@lucide/svelte';
-	import type { Playlist, PreviewResult, Source, SourceType, SourceVisibility } from '$lib/types';
+	import { confirmDialog } from '$lib/dialog.svelte';
+	import { Popover } from 'bits-ui';
+	import { X, Plus, Save, Lock, Globe, Trash2 } from '@lucide/svelte';
+	import Switch from './Switch.svelte';
+	import type { Source, SourceType, SourceVisibility } from '$lib/types';
+
+	type VisOption = { label: string; icon: typeof Lock };
+	const visConfig: Record<SourceVisibility, VisOption> = {
+		Private: { label: 'Private', icon: Lock },
+		Shared: { label: 'Shared', icon: Globe }
+	};
 
 	let {
 		mode,
 		source,
-		playlists
-	}: { mode: 'create' | 'edit'; source?: Source; playlists: Playlist[] } = $props();
+		ondelete
+	}: { mode: 'create' | 'edit'; source?: Source; ondelete?: () => void } = $props();
 
 	interface FieldDef {
 		key: string;
@@ -53,27 +62,27 @@
 		return count === 1 ? '0 0 * * *' : `0 0 */${count} * *`;
 	}
 
-	const _sched = parseCron(source?.schedule ?? '0 * * * *');
+	const CRON_NEVER = '0 0 30 2 *';
+
+	const _isEnabled = source?.schedule !== CRON_NEVER;
+	const _sched = parseCron(_isEnabled ? (source?.schedule ?? '0 * * * *') : '0 * * * *');
 
 	let name = $state(source?.name ?? '');
 	let type = $state<SourceType>(source?.type ?? 'Rss');
 	let visibility = $state<SourceVisibility>(source?.visibility ?? 'Private');
 	let scheduleCount = $state(_sched.count);
 	let scheduleUnit = $state<'minutes' | 'hours' | 'days'>(_sched.unit);
-	const schedule = $derived(buildCron(scheduleCount, scheduleUnit));
-	let enabled = $state(source?.enabled ?? true);
-	let nsfw = $state(source?.nsfw ?? false);
+	let enabled = $state(_isEnabled);
+	const schedule = $derived(enabled ? buildCron(scheduleCount, scheduleUnit) : CRON_NEVER);
 
 	// Config field values (non-header) for the current type.
 	let values = $state<Record<string, string>>(initValues());
 	let headers = $state<{ name: string; value: string }[]>(initHeaders());
-	let selected = $state<Set<string>>(
-		new Set((source?.playlistIds ?? []).filter((id) => playlists.some((p) => p.id === id)))
-	);
 
-	let preview = $state<PreviewResult | null>(null);
 	let busy = $state(false);
 	let error = $state<string | null>(null);
+	let visOpen = $state(false);
+	const currentVis = $derived(visConfig[visibility] ?? visConfig.Private);
 
 	function initValues(): Record<string, string> {
 		const v: Record<string, string> = {};
@@ -106,26 +115,10 @@
 		return cfg;
 	}
 
-	async function doPreview() {
-		busy = true;
-		error = null;
-		preview = null;
-		try {
-			const res = await api.post('/sources/preview', { type, config: buildConfig() });
-			if (!res.ok) {
-				error = 'Preview failed — check the URL and config.';
-				return;
-			}
-			preview = (await res.json()) as PreviewResult;
-		} finally {
-			busy = false;
-		}
-	}
-
 	async function save() {
 		// Warn before dropping other users' subscriptions.
 		if (mode === 'edit' && source!.visibility === 'Shared' && visibility === 'Private') {
-			const ok = confirm(
+			const ok = await confirmDialog(
 				"Switching this source to Private will unsubscribe it from other users' playlists that follow it. Continue?"
 			);
 			if (!ok) return;
@@ -135,12 +128,11 @@
 		error = null;
 		try {
 			const config = buildConfig();
-			const playlistIds = [...selected];
 			let res: Response;
 			if (mode === 'create') {
-				res = await api.post('/sources', { name, type, config, schedule, playlistIds, visibility, nsfw });
+				res = await api.post('/sources', { name, type, config, schedule, visibility });
 			} else {
-				res = await api.patch(`/sources/${source!.id}`, { name, schedule, enabled, config, playlistIds, visibility, nsfw });
+				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility });
 			}
 			if (!res.ok) {
 				error =
@@ -165,74 +157,100 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	<label class="flex flex-col gap-1 text-sm">
+	<div class="flex flex-col gap-1 text-sm">
 		<span>Name</span>
-		<input bind:value={name} class={fieldClass} style={fieldStyle} />
-	</label>
-
-	<div class="flex flex-wrap gap-4">
-		<label class="flex flex-col gap-1 text-sm">
-			<span>Type</span>
-			{#if mode === 'create'}
-				<select bind:value={type} class={fieldClass} style={fieldStyle}>
-					<option value="Rss">RSS / Atom</option>
-					<option value="Scraper">Web scraper</option>
-					<option value="JsonApi">JSON API</option>
-				</select>
-			{:else}
-				<span class="{fieldClass} inline-block" style={fieldStyle}>{type === 'Rss' ? 'RSS' : type}</span>
-			{/if}
-		</label>
-
-		<div class="flex flex-col gap-1 text-sm">
-			<span>Check every</span>
-			<div class="flex items-center gap-2">
-				<input
-					type="number"
-					bind:value={scheduleCount}
-					min={scheduleUnit === 'minutes' ? 5 : 1}
-					max={scheduleUnit === 'minutes' ? 59 : scheduleUnit === 'hours' ? 23 : 30}
-					class="w-16 rounded-md border px-2 py-1.5 text-center text-sm"
-					style="border-color: var(--color-border); background: var(--color-bg)"
-				/>
-				<select
-					bind:value={scheduleUnit}
-					onchange={() => {
-						if (scheduleUnit === 'minutes' && scheduleCount < 5) scheduleCount = 5;
-						if (scheduleUnit === 'hours' && scheduleCount > 23) scheduleCount = 23;
-						if (scheduleUnit === 'days' && scheduleCount > 30) scheduleCount = 30;
-					}}
-					class="rounded-md border px-2 py-1.5 text-sm"
-					style="border-color: var(--color-border); background: var(--color-bg)"
+		<div class="flex items-center gap-2">
+			<input bind:value={name} class="{fieldClass} flex-1" style={fieldStyle} />
+			<Popover.Root bind:open={visOpen}>
+				<Popover.Trigger
+					class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:border-[var(--color-accent)]"
+					style="border-color: var(--color-border)"
+					title="Change visibility"
+					aria-label="Visibility"
 				>
-					<option value="minutes">minutes</option>
-					<option value="hours">hours</option>
-					<option value="days">days</option>
-				</select>
+					<currentVis.icon size={14} aria-hidden="true" />
+					{currentVis.label}
+				</Popover.Trigger>
+				<Popover.Content
+					class="popover-surface z-30 overflow-hidden rounded-md border shadow-md"
+					sideOffset={4}
+					align="end"
+				>
+					{#each Object.entries(visConfig) as [val, { label, icon: Icon }] (val)}
+						<button
+							type="button"
+							onclick={() => { visibility = val as SourceVisibility; visOpen = false; }}
+							class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+							class:font-medium={visibility === val}
+						>
+							<Icon size={14} aria-hidden="true" style="color: var(--color-muted)" />
+							{label}
+						</button>
+					{/each}
+				</Popover.Content>
+			</Popover.Root>
+		</div>
+	</div>
+
+	<div class="flex flex-wrap items-end gap-8">
+		<div class="flex flex-col gap-2 text-sm">
+			<span>Run every</span>
+			<div class="flex items-center gap-2" class:opacity-40={!enabled}>
+				<div class="inline-flex divide-x overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border); --tw-divide-opacity: 1">
+					<button
+						type="button"
+						disabled={!enabled || scheduleCount <= (scheduleUnit === 'minutes' ? 5 : 1)}
+						onclick={() => scheduleCount--}
+						class="px-2.5 py-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:cursor-default disabled:opacity-30"
+						style="background: var(--color-bg)"
+					>−</button>
+					<span class="flex min-w-[2.5rem] items-center justify-center px-2 py-2 tabular-nums" style="background: var(--color-bg)">{scheduleCount}</span>
+					<button
+						type="button"
+						disabled={!enabled || scheduleCount >= (scheduleUnit === 'minutes' ? 59 : scheduleUnit === 'hours' ? 23 : 30)}
+						onclick={() => scheduleCount++}
+						class="px-2.5 py-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:cursor-default disabled:opacity-30"
+						style="background: var(--color-bg)"
+					>+</button>
+				</div>
+				<div class="inline-flex divide-x overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border)">
+					{#each [['minutes', 'min'], ['hours', 'hr'], ['days', 'day']] as [val, lbl] (val)}
+						<button
+							type="button"
+							disabled={!enabled}
+							onclick={() => {
+								scheduleUnit = val as 'minutes' | 'hours' | 'days';
+								if (val === 'minutes' && scheduleCount < 5) scheduleCount = 5;
+								if (val === 'hours' && scheduleCount > 23) scheduleCount = 23;
+								if (val === 'days' && scheduleCount > 30) scheduleCount = 30;
+							}}
+							class="px-3 py-2 disabled:cursor-default"
+							class:font-medium={scheduleUnit === val}
+							style="background: {scheduleUnit === val ? 'var(--color-surface)' : 'var(--color-bg)'}"
+						>{lbl}</button>
+					{/each}
+				</div>
 			</div>
 		</div>
 
+		<div class="flex flex-col gap-2 text-sm">
+			<span>Enabled</span>
+			<Switch bind:checked={enabled} />
+		</div>
+	</div>
+
+	<fieldset class="flex flex-col gap-4 rounded-lg border p-4" style="border-color: var(--color-border)">
+		<legend class="px-1 text-xs" style="color: var(--color-muted)">Configuration</legend>
+
 		<label class="flex flex-col gap-1 text-sm">
-			<span>Visibility</span>
-			<select bind:value={visibility} class={fieldClass} style={fieldStyle}>
-				<option value="Private">Private</option>
-				<option value="Shared">Shared (others can subscribe)</option>
+			<span>Type</span>
+			<select bind:value={type} class={fieldClass} style={fieldStyle}>
+				<option value="Rss">RSS / Atom</option>
+				<option value="Scraper">Web scraper</option>
+				<option value="JsonApi">JSON API</option>
 			</select>
 		</label>
 
-		{#if mode === 'edit'}
-			<label class="flex items-center gap-2 self-end text-sm">
-				<input type="checkbox" bind:checked={enabled} /> Enabled
-			</label>
-		{/if}
-
-		<label class="flex items-center gap-2 self-end text-sm">
-			<input type="checkbox" bind:checked={nsfw} /> NSFW
-		</label>
-	</div>
-
-	<fieldset class="flex flex-col gap-3 rounded-lg border p-3" style="border-color: var(--color-border)">
-		<legend class="px-1 text-xs" style="color: var(--color-muted)">Configuration</legend>
 		{#each FIELDS[type] as f (f.key)}
 			<label class="flex flex-col gap-1 text-sm">
 				<span>{f.label} {#if !f.required}<span style="color: var(--color-muted)">(optional)</span>{/if}</span>
@@ -259,48 +277,31 @@
 		{/if}
 	</fieldset>
 
-	{#if playlists.length}
-		<fieldset class="flex flex-col gap-1.5 rounded-lg border p-3" style="border-color: var(--color-border)">
-			<legend class="px-1 text-xs" style="color: var(--color-muted)">Feed into your playlists</legend>
-			{#each playlists as pl (pl.id)}
-				<label class="flex items-center gap-2 text-sm">
-					<input
-						type="checkbox"
-						checked={selected.has(pl.id)}
-						onchange={(e) => {
-							const next = new Set(selected);
-							if (e.currentTarget.checked) next.add(pl.id);
-							else next.delete(pl.id);
-							selected = next;
-						}}
-					/>
-					{pl.name}
-				</label>
-			{/each}
-		</fieldset>
-	{/if}
-
-	{#if error}
-		<p class="text-sm" style="color: var(--color-danger)">{error}</p>
-	{/if}
-
-	<div class="flex items-center gap-2">
-		<button type="button" onclick={save} disabled={busy} class="inline-flex items-center rounded-md p-2 disabled:opacity-60" style="background: var(--color-accent); color: var(--color-accent-contrast)" title={mode === 'create' ? 'Create source' : 'Save changes'} aria-label={mode === 'create' ? 'Create source' : 'Save changes'}>
-			<Save size={17} aria-hidden="true" />
+	<div class="flex items-center gap-3">
+		<button
+			type="button"
+			onclick={save}
+			disabled={busy}
+			class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
+			style="background: var(--color-accent); color: var(--color-accent-contrast)"
+		>
+			<Save size={16} aria-hidden="true" />
+			{mode === 'create' ? 'Create' : 'Save'}
 		</button>
-		<button type="button" onclick={doPreview} disabled={busy} class="inline-flex items-center rounded-md p-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Preview source" aria-label="Preview source">
-			<Eye size={17} aria-hidden="true" />
-		</button>
+		{#if ondelete}
+			<button
+				type="button"
+				onclick={ondelete}
+				disabled={busy}
+				class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
+				style="color: var(--color-danger)"
+			>
+				<Trash2 size={16} aria-hidden="true" />
+				Delete
+			</button>
+		{/if}
+		{#if error}
+			<p class="text-sm" style="color: var(--color-danger)">{error}</p>
+		{/if}
 	</div>
-
-	{#if preview}
-		<div class="rounded-lg border p-3 text-sm" style="border-color: var(--color-border)">
-			<div class="font-medium">Preview — {preview.count} link{preview.count === 1 ? '' : 's'}</div>
-			<ul class="mt-2 flex flex-col gap-1">
-				{#each preview.links as link (link.url)}
-					<li class="truncate" style="color: var(--color-muted)">{link.title ?? link.url}</li>
-				{/each}
-			</ul>
-		</div>
-	{/if}
 </div>

@@ -47,7 +47,7 @@
 				name={src.name}
 				badge={displayType(src.type)}
 				href={`/sources/${src.id}`}
-				subtitle={`last run ${lastRun(src.lastRunAt)}${src.nsfw ? ' · NSFW' : ''}`}
+				subtitle={`last run ${lastRun(src.lastRunAt)}`}
 			>
 				{#snippet actions()}
 					<span title={src.visibility} aria-label={src.visibility} style="color: var(--color-muted)">

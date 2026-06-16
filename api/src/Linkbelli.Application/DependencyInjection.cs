@@ -5,14 +5,16 @@ using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Http;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Linkbelli.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<QuotaOptions>(configuration.GetSection("Quota"));
         services.AddScoped<ILinkService, LinkService>();
         services.AddScoped<IPlaylistService, PlaylistService>();
         services.AddScoped<IPlaylistItemService, PlaylistItemService>();
