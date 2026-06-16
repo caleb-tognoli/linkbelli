@@ -61,16 +61,19 @@
 	</nav>
 
 	<header class="mt-3 flex flex-wrap items-center justify-between gap-3">
-		<h1 class="text-2xl font-semibold">{folder.name}</h1>
-		<div class="flex shrink-0 flex-wrap gap-2 text-sm">
-			<NewFolderDialog
-				parentId={folder.id}
-				label="New subfolder"
-				triggerClass="rounded-md px-3 py-1.5 text-sm font-medium"
-			/>
+		<div class="flex items-center gap-1">
+			<h1 class="text-2xl font-semibold">{folder.name}</h1>
 			<button type="button" onclick={rename} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Rename folder" aria-label="Rename folder">
 				<Pencil size={17} aria-hidden="true" />
 			</button>
+		</div>
+		<div class="flex shrink-0 flex-wrap gap-2 text-sm">
+			<NewFolderDialog
+				parentId={folder.id}
+				label=""
+				triggerClass="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+				triggerStyle=""
+			/>
 			<MoveFolderDialog folderId={folder.id} currentParentId={folder.parentId} />
 			<button type="button" onclick={remove} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" style="color: var(--color-danger)" title="Delete folder" aria-label="Delete folder">
 				<Trash2 size={17} aria-hidden="true" />
@@ -98,7 +101,7 @@
 	{:else}
 		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each folder.playlists as entry (entry.playlistId)}
-				<FolderPlaylistCard {entry} folderId={folder.id} />
+				<FolderPlaylistCard {entry} folderId={folder.id} folderName={folder.name} />
 			{/each}
 		</div>
 	{/if}

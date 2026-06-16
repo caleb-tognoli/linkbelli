@@ -2,18 +2,20 @@
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
-	import { Folder, X } from '@lucide/svelte';
+	import { Folder, FolderInput, X } from '@lucide/svelte';
 	import FolderPicker from './FolderPicker.svelte';
 	import type { Folder as FolderType } from '$lib/types';
 
 	let {
 		playlistId,
 		currentFolderId = null,
-		currentFolderName = null
+		currentFolderName = null,
+		compact = false
 	}: {
 		playlistId: string;
 		currentFolderId?: string | null;
 		currentFolderName?: string | null;
+		compact?: boolean;
 	} = $props();
 
 	const filed = $derived(currentFolderId !== null);
@@ -80,15 +82,22 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Trigger
-		class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]"
-		style="border-color: var(--color-border)"
-		title={filed ? `In folder: ${currentFolderName}` : 'Not in a folder'}
+		class={compact
+			? 'inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10'
+			: 'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]'}
+		style={compact ? '' : 'border-color: var(--color-border)'}
+		title={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
+		aria-label={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
 	>
-		<Folder size={17} aria-hidden="true" style="color: var(--color-muted)" />
-		{#if filed}
-			<span class="max-w-[12rem] truncate">{currentFolderName}</span>
+		{#if compact}
+			<FolderInput size={15} aria-hidden="true" />
 		{:else}
-			<span>Add to folder</span>
+			<Folder size={17} aria-hidden="true" style="color: var(--color-muted)" />
+			{#if filed}
+				<span class="max-w-[12rem] truncate">{currentFolderName}</span>
+			{:else}
+				<span>Add to folder</span>
+			{/if}
 		{/if}
 	</Dialog.Trigger>
 

@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { api } from '$lib/api/client';
 	import NsfwBadge from './NsfwBadge.svelte';
+	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
 	import type { FolderPlaylistEntry } from '$lib/types';
 
-	let { entry, folderId }: { entry: FolderPlaylistEntry; folderId: string } = $props();
-
-	let busy = $state(false);
+	let {
+		entry,
+		folderId,
+		folderName
+	}: { entry: FolderPlaylistEntry; folderId: string; folderName: string } = $props();
 
 	// Own playlists open the editable view; saved public ones deep-link to the public page.
 	const href = $derived(
@@ -14,19 +15,6 @@
 			? `/playlists/${entry.playlistId}`
 			: `/public/${encodeURIComponent(entry.ownerUsername)}/${encodeURIComponent(entry.slug)}`
 	);
-
-	async function remove() {
-		if (busy) return;
-		const verb = entry.ownedByMe ? 'Remove this playlist from the folder?' : 'Remove this saved playlist?';
-		if (!confirm(verb)) return;
-		busy = true;
-		try {
-			const res = await api.del(`/folders/${folderId}/playlists/${entry.playlistId}`);
-			if (res.ok || res.status === 204) await invalidateAll();
-		} finally {
-			busy = false;
-		}
-	}
 </script>
 
 <div
@@ -59,8 +47,11 @@
 
 	<div class="mt-auto flex items-center justify-between text-xs" style="color: var(--color-muted)">
 		<span>{entry.itemCount} {entry.itemCount === 1 ? 'link' : 'links'}</span>
-		<button type="button" onclick={remove} disabled={busy} class="hover:underline disabled:opacity-60" style="color: var(--color-danger)">
-			Remove
-		</button>
+		<SaveToFolderDialog
+			playlistId={entry.playlistId}
+			currentFolderId={folderId}
+			currentFolderName={folderName}
+			compact
+		/>
 	</div>
 </div>
