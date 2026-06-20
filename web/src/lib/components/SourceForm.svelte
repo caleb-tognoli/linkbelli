@@ -107,7 +107,7 @@
 			const v = values[f.key]?.trim();
 			if (v) cfg[f.key] = v;
 		}
-		if (type === 'JsonApi') {
+		if (type === 'JsonApi' || type === 'Scraper') {
 			for (const h of headers) {
 				if (h.name.trim() && h.value) cfg[`${HEADER_PREFIX}${h.name.trim()}`] = h.value;
 			}
@@ -258,21 +258,23 @@
 			</label>
 		{/each}
 
-		{#if type === 'JsonApi'}
+		{#if type === 'JsonApi' || type === 'Scraper'}
 			<div class="flex flex-col gap-2">
-				<span class="text-sm">Request headers <span style="color: var(--color-muted)">(stored encrypted; shown as ***)</span></span>
+				<div class="flex items-center justify-between">
+					<span class="text-sm">Request headers</span>
+					<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
+						<Plus size={15} aria-hidden="true" />
+					</button>
+				</div>
 				{#each headers as header, i (i)}
 					<div class="flex gap-2">
-						<input bind:value={header.name} placeholder="Authorization" class="{fieldClass} flex-1" style={fieldStyle} />
-						<input bind:value={header.value} placeholder="Bearer …" class="{fieldClass} flex-1" style={fieldStyle} />
+						<input bind:value={header.name} placeholder="Name" class="{fieldClass} flex-1" style={fieldStyle} />
+						<input bind:value={header.value} placeholder="Value" class="{fieldClass} flex-1" style={fieldStyle} />
 						<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
 							<X size={17} aria-hidden="true" />
 						</button>
 					</div>
 				{/each}
-				<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center self-start rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
-					<Plus size={15} aria-hidden="true" />
-				</button>
 			</div>
 		{/if}
 	</fieldset>

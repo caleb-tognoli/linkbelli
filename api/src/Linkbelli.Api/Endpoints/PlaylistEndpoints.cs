@@ -49,8 +49,15 @@ public static class PlaylistEndpoints
         // Subscribe/unsubscribe a source to this playlist (own source, or any shared one).
         group.MapPost("/{id:guid}/sources", async (Guid id, SubscribeSourceRequest req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
         {
-            await svc.SubscribeSourceAsync(user.GetUserId(), id, req.SourceId, ct);
-            return Results.NoContent();
+            var discoveredCount = await svc.SubscribeSourceAsync(user.GetUserId(), id, req.SourceId, ct);
+            return Results.Ok(new { discoveredCount });
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
+
+        group.MapPost("/{id:guid}/sources/{sourceId:guid}/backfill", async (Guid id, Guid sourceId, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        {
+            var itemsAdded = await svc.BackfillFromSourceAsync(user.GetUserId(), id, sourceId, ct);
+            return Results.Ok(new { itemsAdded });
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
 

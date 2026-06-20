@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Dialog, Popover } from 'bits-ui';
 	import { api, json } from '$lib/api/client';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Link, Play, Plus, Search, Unlink, UserPlus, X } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import type { AttachedSource, Playlist, SharedSource, SourceSummary } from '$lib/types';
@@ -63,7 +64,17 @@
 		busy = true;
 		try {
 			const res = await api.post(`/playlists/${playlistId}/sources`, { sourceId });
-			if (res.ok || res.status === 204) await refresh();
+			if (res.ok) {
+				await refresh();
+				const { discoveredCount } = (await res.json()) as { discoveredCount: number };
+				if (discoveredCount > 0) {
+					const backfill = await confirmDialog(
+						`This source has discovered ${discoveredCount} link${discoveredCount === 1 ? '' : 's'}. Add them all to this playlist?`,
+						{ confirmLabel: 'Add all' }
+					);
+					if (backfill) await api.post(`/playlists/${playlistId}/sources/${sourceId}/backfill`);
+				}
+			}
 		} finally {
 			busy = false;
 		}
@@ -116,8 +127,19 @@
 
 	async function subscribeToPlaylist(targetPlaylistId: string) {
 		if (!subscribeSourceId) return;
-		const res = await api.post(`/playlists/${targetPlaylistId}/sources`, { sourceId: subscribeSourceId });
-		if (res.ok || res.status === 204) subscribeDone = targetPlaylistId;
+		const sourceId = subscribeSourceId;
+		const res = await api.post(`/playlists/${targetPlaylistId}/sources`, { sourceId });
+		if (res.ok) {
+			subscribeDone = targetPlaylistId;
+			const { discoveredCount } = (await res.json()) as { discoveredCount: number };
+			if (discoveredCount > 0) {
+				const backfill = await confirmDialog(
+					`This source has discovered ${discoveredCount} link${discoveredCount === 1 ? '' : 's'}. Add them all to this playlist?`,
+					{ confirmLabel: 'Add all' }
+				);
+				if (backfill) await api.post(`/playlists/${targetPlaylistId}/sources/${sourceId}/backfill`);
+			}
+		}
 	}
 </script>
 

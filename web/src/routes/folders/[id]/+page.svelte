@@ -6,6 +6,7 @@
 	import FolderCard from '$lib/components/FolderCard.svelte';
 	import FolderPlaylistCard from '$lib/components/FolderPlaylistCard.svelte';
 	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
+	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
 	import MoveFolderDialog from '$lib/components/MoveFolderDialog.svelte';
 	import type { PageData } from './$types';
 
@@ -69,6 +70,7 @@
 			</button>
 		</div>
 		<div class="flex shrink-0 flex-wrap gap-2 text-sm">
+			<NewPlaylistDialog folderId={folder.id} />
 			<NewFolderDialog
 				parentId={folder.id}
 				label=""

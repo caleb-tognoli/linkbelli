@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
-	import { Home, ListMusic, Rss, Compass, User, LogOut, PanelLeftClose, PanelLeft, Menu } from '@lucide/svelte';
+	import { Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import GlobalDialog from '$lib/components/GlobalDialog.svelte';
@@ -11,6 +11,7 @@
 
 	const onHome = $derived(page.url.pathname === '/');
 	const onDiscover = $derived(page.url.pathname.startsWith('/discover'));
+	const onImport = $derived(page.url.pathname.startsWith('/import'));
 	const onSettings = $derived(page.url.pathname.startsWith('/settings'));
 	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
 	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
@@ -60,6 +61,18 @@
 		>
 			<Compass size={20} aria-hidden="true" />
 			{#if showLabels}<span>Discover</span>{/if}
+		</a>
+
+		<a
+			href="/import"
+			class="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
+			class:font-medium={onImport}
+			style={onImport ? 'background: var(--color-border)' : ''}
+			aria-current={onImport ? 'page' : undefined}
+			title="Import"
+		>
+			<Upload size={20} aria-hidden="true" />
+			{#if showLabels}<span>Import</span>{/if}
 		</a>
 	</nav>
 

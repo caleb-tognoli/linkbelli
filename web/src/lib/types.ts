@@ -194,3 +194,9 @@ export interface ApiKeyCreated {
 	expiresAt: string | null;
 }
 
+export interface ImportResult {
+	imported: number;
+	skipped: number;
+	errors: string[];
+}
+

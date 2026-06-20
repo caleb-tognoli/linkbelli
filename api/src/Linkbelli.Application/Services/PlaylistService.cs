@@ -4,6 +4,7 @@ using Linkbelli.Application.Data;
 using Linkbelli.Application.Mapping;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
+using Linkbelli.Core.Playlists;
 using Linkbelli.Core.Tags;
 using Microsoft.EntityFrameworkCore;
 
@@ -279,7 +280,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         return rows.Select(x => new TagSummary(x.Name, x.Count)).ToList();
     }
 
-    public async Task SubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default)
+    public async Task<int> SubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default)
     {
         _ = await db.Playlists.FirstOrDefaultAsync(p => p.Id == playlistId && p.OwnerId == ownerId, ct)
             ?? throw new NotFoundException("Playlist not found.");
@@ -293,13 +294,69 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
 
         var alreadyAttached = await db.PlaylistSources
             .AnyAsync(ps => ps.PlaylistId == playlistId && ps.SourceId == sourceId, ct);
-        if (alreadyAttached)
+        if (!alreadyAttached)
         {
-            return; // idempotent
+            db.PlaylistSources.Add(new PlaylistSource { PlaylistId = playlistId, SourceId = sourceId });
+            await db.SaveChangesAsync(ct);
         }
 
-        db.PlaylistSources.Add(new PlaylistSource { PlaylistId = playlistId, SourceId = sourceId });
+        // Count distinct URLs ever discovered by this source across all runs.
+        var runArrays = await db.SourceRuns
+            .Where(r => r.SourceId == sourceId)
+            .Select(r => r.ItemsAdded)
+            .ToListAsync(ct);
+        return runArrays.SelectMany(a => a).Distinct().Count();
+    }
+
+    public async Task<int> BackfillFromSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default)
+    {
+        _ = await db.Playlists.FirstOrDefaultAsync(p => p.Id == playlistId && p.OwnerId == ownerId, ct)
+            ?? throw new NotFoundException("Playlist not found.");
+
+        var source = await db.Sources.FirstOrDefaultAsync(s => s.Id == sourceId, ct);
+        if (source is null || (source.OwnerId != ownerId && source.Visibility != SourceVisibility.Shared))
+            throw new NotFoundException("Source not found.");
+
+        // Collect all distinct URLs ever discovered by this source.
+        var runArrays = await db.SourceRuns
+            .Where(r => r.SourceId == sourceId)
+            .Select(r => r.ItemsAdded)
+            .ToListAsync(ct);
+        var urls = runArrays.SelectMany(a => a).Distinct().ToList();
+        if (urls.Count == 0) return 0;
+
+        // Find corresponding Link ids (they must exist — links are created during runs).
+        var sourceLinks = await db.Links
+            .Where(l => urls.Contains(l.CanonicalUrl))
+            .Select(l => l.Id)
+            .ToListAsync(ct);
+        if (sourceLinks.Count == 0) return 0;
+
+        var existing = await db.PlaylistItems
+            .Where(i => i.PlaylistId == playlistId)
+            .Select(i => i.LinkId)
+            .ToHashSetAsync(ct);
+
+        var toAdd = sourceLinks.Where(id => !existing.Contains(id)).ToList();
+        if (toAdd.Count == 0) return 0;
+
+        var maxPos = await db.PlaylistItems.Where(i => i.PlaylistId == playlistId)
+            .MaxAsync(i => (long?)i.Position, ct) ?? 0;
+
+        for (var k = 0; k < toAdd.Count; k++)
+        {
+            db.PlaylistItems.Add(new PlaylistItem
+            {
+                PlaylistId = playlistId,
+                LinkId = toAdd[k],
+                Position = maxPos + (k + 1) * PlaylistOrdering.Gap,
+                Status = PlaylistItemStatus.Active,
+                SourceId = sourceId
+            });
+        }
+
         await db.SaveChangesAsync(ct);
+        return toAdd.Count;
     }
 
     public async Task UnsubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default)

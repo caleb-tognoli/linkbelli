@@ -2,7 +2,7 @@
 	import { Popover } from 'bits-ui';
 	import { dndzone } from 'svelte-dnd-action';
 	import { api } from '$lib/api/client';
-	import { Clock, Image, Shuffle, StickyNote, Trash2 } from '@lucide/svelte';
+	import { Clock, Image, Link2, Shuffle, StickyNote, Trash2 } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import type { PlaylistItem } from '$lib/types';
 
@@ -14,7 +14,8 @@
 	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle';
 	let sortMode = $state<SortMode>(readonly ? 'date-desc' : 'manual');
 	let shuffledItems = $state<PlaylistItem[]>([]);
-	let showThumbnails = $state(false);
+	let showThumbnails = $state(true);
+	let showUrls = $state(false);
 
 	const sortOptions: { mode: SortMode; label: string }[] = [
 		{ mode: 'manual', label: 'Manual' },
@@ -79,13 +80,20 @@
 	function isPending(item: PlaylistItem) {
 		return item.status === 'Pending' || !item.link.enriched;
 	}
+
+	const toggleClass = 'rounded-full border px-2.5 py-0.5 text-xs transition-colors';
+	function toggleStyle(active: boolean) {
+		return active
+			? 'border-color: var(--color-accent); color: var(--color-accent)'
+			: 'border-color: var(--color-border); color: var(--color-muted)';
+	}
 </script>
 
 {#snippet row(item: PlaylistItem, draggable: boolean)}
-	<tr class="border-t align-top" style="border-color: var(--color-border)">
+	<tr class="border-t align-middle" style="border-color: var(--color-border)">
 		{#if !readonly}
 			<td
-				class="select-none py-2 pr-1"
+				class="select-none pr-1"
 				class:cursor-grab={draggable}
 				style="color: var(--color-muted)"
 				title={draggable ? 'Drag to reorder' : undefined}
@@ -94,12 +102,13 @@
 			</td>
 		{/if}
 		<td class="py-2 pr-3">
-			<div class="flex items-start gap-2">
+			<div class="flex items-center gap-4">
 				{#if showThumbnails && item.link.thumbnailUrl}
 					<img
 						src={item.link.thumbnailUrl}
 						alt=""
-						class="mt-0.5 h-8 w-8 shrink-0 rounded object-cover"
+						class="shrink-0 rounded object-cover"
+						style="height: 5em; width: auto"
 					/>
 				{/if}
 				<div class="min-w-0">
@@ -109,7 +118,7 @@
 						rel="noopener noreferrer"
 						class="break-words hover:underline"
 					>
-						{item.link.title ?? item.link.url}
+						{showUrls ? item.link.url : (item.link.title ?? item.link.url)}
 					</a>
 					{#if item.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
 					{#if item.note && readonly}
@@ -118,10 +127,9 @@
 				</div>
 			</div>
 		</td>
-		<td class="py-2 pr-3" style="color: var(--color-muted)">{item.link.host}</td>
-		<td class="py-2 pr-3" style="color: var(--color-muted)">{added(item.creationTime)}</td>
+		<td class="whitespace-nowrap pr-3" style="color: var(--color-muted)">{added(item.creationTime)}</td>
 		{#if !readonly}
-			<td class="py-2 text-right">
+			<td class="text-right">
 				<Popover.Root
 					onOpenChange={(o) => {
 						if (o) {
@@ -167,7 +175,7 @@
 					</Popover.Content>
 				</Popover.Root>
 			</td>
-			<td class="py-2 text-right">
+			<td class="text-right">
 				<button
 					type="button"
 					onclick={() => remove(item)}
@@ -199,10 +207,8 @@
 			<button
 				type="button"
 				onclick={() => setSort(opt.mode)}
-				class="rounded-full border px-2.5 py-0.5 text-xs transition-colors"
-				style={sortMode === opt.mode
-					? 'border-color: var(--color-accent); color: var(--color-accent)'
-					: 'border-color: var(--color-border); color: var(--color-muted)'}
+				class={toggleClass}
+				style={toggleStyle(sortMode === opt.mode)}
 			>
 				{#if opt.mode === 'shuffle'}
 					<span class="inline-flex items-center gap-1"><Shuffle size={13} aria-hidden="true" />{opt.label}</span>
@@ -211,16 +217,24 @@
 				{/if}
 			</button>
 		{/each}
-		<button
-			type="button"
-			onclick={() => (showThumbnails = !showThumbnails)}
-			class="ml-auto inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-			style={showThumbnails ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
-			title={showThumbnails ? 'Hide thumbnails' : 'Show thumbnails'}
-			aria-label={showThumbnails ? 'Hide thumbnails' : 'Show thumbnails'}
-		>
-			<Image size={15} aria-hidden="true" />
-		</button>
+		<div class="ml-auto flex items-center gap-1.5">
+			<button
+				type="button"
+				onclick={() => (showUrls = !showUrls)}
+				class="{toggleClass} inline-flex items-center gap-1"
+				style={toggleStyle(showUrls)}
+			>
+				<Link2 size={11} aria-hidden="true" /> Show URL
+			</button>
+			<button
+				type="button"
+				onclick={() => (showThumbnails = !showThumbnails)}
+				class="{toggleClass} inline-flex items-center gap-1"
+				style={toggleStyle(showThumbnails)}
+			>
+				<Image size={11} aria-hidden="true" /> Thumbnail
+			</button>
+		</div>
 	</div>
 
 	<div class="overflow-x-auto">
@@ -228,8 +242,7 @@
 			<thead>
 				<tr class="text-left" style="color: var(--color-muted)">
 					{#if !readonly}<th class="w-6"></th>{/if}
-					<th class="py-2 font-medium">Title</th>
-					<th class="py-2 font-medium">Domain</th>
+					<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
 					<th class="py-2 font-medium">Added</th>
 					{#if !readonly}<th class="w-8"></th><th class="w-10"></th>{/if}
 				</tr>

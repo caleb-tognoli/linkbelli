@@ -23,8 +23,11 @@ public interface IPlaylistService
     /// <summary>Tags used across public playlists, with counts (global discovery tag cloud).</summary>
     Task<IReadOnlyList<TagSummary>> ListPublicTagsAsync(string? q, CancellationToken ct = default);
 
-    /// <summary>Attach a source (the caller's own, or any shared one) to a playlist the caller owns.</summary>
-    Task SubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default);
+    /// <summary>Attach a source (the caller's own, or any shared one) to a playlist the caller owns. Returns the total number of items ever discovered by the source (for backfill prompt).</summary>
+    Task<int> SubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default);
+
+    /// <summary>Add all links ever discovered by a source into a playlist the caller owns. Returns count of items added.</summary>
+    Task<int> BackfillFromSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default);
 
     /// <summary>Detach a source from a playlist the caller owns.</summary>
     Task UnsubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default);

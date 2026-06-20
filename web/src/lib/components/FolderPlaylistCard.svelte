@@ -9,12 +9,13 @@
 		folderName
 	}: { entry: FolderPlaylistEntry; folderId: string; folderName: string } = $props();
 
-	// Own playlists open the editable view; saved public ones deep-link to the public page
-	// with a `from` param so the back-link points back to this folder, not Discover.
+	const fromParams = $derived(
+		`?from=${encodeURIComponent(`/folders/${folderId}`)}&fromLabel=${encodeURIComponent(folderName)}`
+	);
 	const href = $derived(
 		entry.ownedByMe
-			? `/playlists/${entry.playlistId}`
-			: `/public/${encodeURIComponent(entry.ownerUsername)}/${encodeURIComponent(entry.slug)}?from=${encodeURIComponent(`/folders/${folderId}`)}&fromLabel=${encodeURIComponent(folderName)}`
+			? `/playlists/${entry.playlistId}${fromParams}`
+			: `/public/${encodeURIComponent(entry.ownerUsername)}/${encodeURIComponent(entry.slug)}${fromParams}`
 	);
 </script>
 

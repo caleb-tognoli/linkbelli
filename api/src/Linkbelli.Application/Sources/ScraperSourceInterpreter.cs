@@ -9,10 +9,12 @@ namespace Linkbelli.Application.Sources;
 
 /// <summary>
 /// Scrapes a web page for links via CSS selectors (through the SSRF-protected client).
-/// Config: { url, itemSelector, linkAttribute?, titleSelector? }.
+/// Config: { url, itemSelector, linkAttribute?, titleSelector?, header.* }.
 /// <c>itemSelector</c> selects the link-bearing elements; <c>linkAttribute</c> (default
 /// <c>href</c>) holds each URL; <c>titleSelector</c> (optional, searched within each element)
 /// or the element's text supplies the title. Relative URLs resolve against <c>url</c>.
+/// Keys prefixed <c>header.</c> become request headers and are treated as secrets (encrypted
+/// at rest) — use <c>header.Cookie</c> for session-authenticated pages.
 /// </summary>
 public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactory) : ISourceInterpreter
 {
@@ -20,10 +22,13 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
     public const string ItemSelectorKey = "itemSelector";
     public const string LinkAttributeKey = "linkAttribute";
     public const string TitleSelectorKey = "titleSelector";
+    public const string HeaderPrefix = "header.";
     private const int MaxItemsPerRun = 100;
     private static readonly HtmlParser Parser = new();
 
     public SourceType Type => SourceType.Scraper;
+
+    public bool IsSecretConfigKey(string key) => key.StartsWith(HeaderPrefix, StringComparison.OrdinalIgnoreCase);
 
     public void ValidateConfig(IReadOnlyDictionary<string, string> config)
     {
@@ -43,7 +48,18 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
     {
         var pageUrl = config[UrlKey];
         var client = httpClientFactory.CreateClient(EnrichmentHttpClient.Name);
-        var html = await client.GetStringAsync(pageUrl, cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Get, pageUrl);
+        foreach (var (key, value) in config)
+        {
+            if (key.StartsWith(HeaderPrefix, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(value))
+            {
+                request.Headers.TryAddWithoutValidation(key[HeaderPrefix.Length..], value);
+            }
+        }
+
+        using var response = await client.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync(cancellationToken);
         return new SourceFetchResult(Parse(html, pageUrl, config));
     }
 
