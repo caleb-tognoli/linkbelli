@@ -6,10 +6,13 @@
 	import NsfwBadge from './NsfwBadge.svelte';
 	import type { PlaylistItem } from '$lib/types';
 
-	let { items = $bindable() }: { items: PlaylistItem[] } = $props();
+	let {
+		items = $bindable(),
+		readonly = false
+	}: { items: PlaylistItem[]; readonly?: boolean } = $props();
 
 	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle';
-	let sortMode = $state<SortMode>('manual');
+	let sortMode = $state<SortMode>(readonly ? 'date-desc' : 'manual');
 	let shuffledItems = $state<PlaylistItem[]>([]);
 	let showThumbnails = $state(false);
 
@@ -19,6 +22,11 @@
 		{ mode: 'date-desc', label: 'Newest' },
 		{ mode: 'shuffle', label: 'Shuffle' }
 	];
+
+	// Manual sort is owner-only (requires drag). Hide it for readonly viewers.
+	const visibleSortOptions = $derived(
+		readonly ? sortOptions.filter((o) => o.mode !== 'manual') : sortOptions
+	);
 
 	function setSort(mode: SortMode) {
 		sortMode = mode;
@@ -75,14 +83,16 @@
 
 {#snippet row(item: PlaylistItem, draggable: boolean)}
 	<tr class="border-t align-top" style="border-color: var(--color-border)">
-		<td
-			class="select-none py-2 pr-1"
-			class:cursor-grab={draggable}
-			style="color: var(--color-muted)"
-			title={draggable ? 'Drag to reorder' : undefined}
-		>
-			{#if draggable}<span role="img" aria-label="Drag to reorder">⋮⋮</span>{/if}
-		</td>
+		{#if !readonly}
+			<td
+				class="select-none py-2 pr-1"
+				class:cursor-grab={draggable}
+				style="color: var(--color-muted)"
+				title={draggable ? 'Drag to reorder' : undefined}
+			>
+				{#if draggable}<span role="img" aria-label="Drag to reorder">⋮⋮</span>{/if}
+			</td>
+		{/if}
 		<td class="py-2 pr-3">
 			<div class="flex items-start gap-2">
 				{#if showThumbnails && item.link.thumbnailUrl}
@@ -102,69 +112,74 @@
 						{item.link.title ?? item.link.url}
 					</a>
 					{#if item.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
+					{#if item.note && readonly}
+						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.note}</p>
+					{/if}
 				</div>
 			</div>
 		</td>
 		<td class="py-2 pr-3" style="color: var(--color-muted)">{item.link.host}</td>
 		<td class="py-2 pr-3" style="color: var(--color-muted)">{added(item.creationTime)}</td>
-		<td class="py-2 text-right">
-			<Popover.Root
-				onOpenChange={(o) => {
-					if (o) {
-						noteEditId = item.id;
-						draftNote = item.note ?? '';
-					} else if (noteEditId === item.id) {
-						saveNote(item);
-						noteEditId = null;
-					}
-				}}
-			>
-				<Popover.Trigger
+		{#if !readonly}
+			<td class="py-2 text-right">
+				<Popover.Root
+					onOpenChange={(o) => {
+						if (o) {
+							noteEditId = item.id;
+							draftNote = item.note ?? '';
+						} else if (noteEditId === item.id) {
+							saveNote(item);
+							noteEditId = null;
+						}
+					}}
+				>
+					<Popover.Trigger
+						class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+						style={isPending(item)
+							? 'color: var(--color-muted)'
+							: item.note
+								? 'color: var(--color-accent)'
+								: 'color: var(--color-muted)'}
+						title={item.note ? 'Edit note' : 'Add note'}
+						aria-label={item.note ? 'Edit note' : 'Add note'}
+					>
+						{#if isPending(item)}
+							<Clock size={16} aria-hidden="true" />
+						{:else}
+							<StickyNote size={16} aria-hidden="true" />
+						{/if}
+					</Popover.Trigger>
+					<Popover.Content
+						class="popover-surface z-30 w-64 rounded-lg border p-3 shadow-md"
+						sideOffset={4}
+					>
+						<textarea
+							bind:value={draftNote}
+							placeholder="Add note…"
+							rows={4}
+							class="w-full resize-none rounded border px-2 py-1 text-sm"
+							style="border-color: var(--color-border); background: var(--color-bg)"
+							onkeydown={(e) => {
+								if (e.key === 'Enter' && e.ctrlKey) saveNote(item);
+							}}
+							autofocus
+						></textarea>
+					</Popover.Content>
+				</Popover.Root>
+			</td>
+			<td class="py-2 text-right">
+				<button
+					type="button"
+					onclick={() => remove(item)}
 					class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-					style={isPending(item)
-						? 'color: var(--color-muted)'
-						: item.note
-							? 'color: var(--color-accent)'
-							: 'color: var(--color-muted)'}
-					title={item.note ? 'Edit note' : 'Add note'}
-					aria-label={item.note ? 'Edit note' : 'Add note'}
+					style="color: var(--color-danger)"
+					title="Remove link"
+					aria-label="Remove link"
 				>
-					{#if isPending(item)}
-						<Clock size={16} aria-hidden="true" />
-					{:else}
-						<StickyNote size={16} aria-hidden="true" />
-					{/if}
-				</Popover.Trigger>
-				<Popover.Content
-					class="popover-surface z-30 w-64 rounded-lg border p-3 shadow-md"
-					sideOffset={4}
-				>
-					<textarea
-						bind:value={draftNote}
-						placeholder="Add note…"
-						rows={4}
-						class="w-full resize-none rounded border px-2 py-1 text-sm"
-						style="border-color: var(--color-border); background: var(--color-bg)"
-						onkeydown={(e) => {
-							if (e.key === 'Enter' && e.ctrlKey) saveNote(item);
-						}}
-						autofocus
-					></textarea>
-				</Popover.Content>
-			</Popover.Root>
-		</td>
-		<td class="py-2 text-right">
-			<button
-				type="button"
-				onclick={() => remove(item)}
-				class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-				style="color: var(--color-danger)"
-				title="Remove link"
-				aria-label="Remove link"
-			>
-				<Trash2 size={16} aria-hidden="true" />
-			</button>
-		</td>
+					<Trash2 size={16} aria-hidden="true" />
+				</button>
+			</td>
+		{/if}
 	</tr>
 {/snippet}
 
@@ -174,11 +189,13 @@
 		style="border-color: var(--color-border)"
 	>
 		<p class="font-medium">No links yet.</p>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">Paste a URL above to add the first.</p>
+		{#if !readonly}
+			<p class="mt-1 text-sm" style="color: var(--color-muted)">Paste a URL above to add the first.</p>
+		{/if}
 	</div>
 {:else}
 	<div class="mb-3 flex items-center gap-1.5">
-		{#each sortOptions as opt (opt.mode)}
+		{#each visibleSortOptions as opt (opt.mode)}
 			<button
 				type="button"
 				onclick={() => setSort(opt.mode)}
@@ -210,15 +227,14 @@
 		<table class="w-full border-collapse text-sm">
 			<thead>
 				<tr class="text-left" style="color: var(--color-muted)">
-					<th class="w-6"></th>
+					{#if !readonly}<th class="w-6"></th>{/if}
 					<th class="py-2 font-medium">Title</th>
 					<th class="py-2 font-medium">Domain</th>
 					<th class="py-2 font-medium">Added</th>
-					<th class="w-8"></th>
-					<th class="w-10"></th>
+					{#if !readonly}<th class="w-8"></th><th class="w-10"></th>{/if}
 				</tr>
 			</thead>
-			{#if sortMode === 'manual'}
+			{#if !readonly && sortMode === 'manual'}
 				<tbody
 					use:dndzone={{ items, flipDurationMs: FLIP, dropTargetStyle: {} }}
 					onconsider={onConsider}

@@ -31,4 +31,7 @@ public interface IPlaylistService
 
     /// <summary>Sources currently attached to a playlist the caller owns.</summary>
     Task<IReadOnlyList<AttachedSourceSummary>> ListAttachedSourcesAsync(Guid ownerId, Guid playlistId, CancellationToken ct = default);
+
+    /// <summary>Shared sources attached to a public (non-private) playlist — safe for anonymous callers.</summary>
+    Task<IReadOnlyList<AttachedSourceSummary>> ListPublicAttachedSourcesAsync(string username, string slug, CancellationToken ct = default);
 }

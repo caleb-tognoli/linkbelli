@@ -333,6 +333,29 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<AttachedSourceSummary>> ListPublicAttachedSourcesAsync(
+        string username, string slug, CancellationToken ct = default)
+    {
+        var normalized = username.ToUpperInvariant();
+        var playlist = await db.Playlists
+            .Where(p => p.Slug == slug
+                && p.Visibility != PlaylistVisibility.Private
+                && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
+            .Select(p => new { p.Id })
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("Playlist not found.");
+
+        return await (from ps in db.PlaylistSources
+                      where ps.PlaylistId == playlist.Id
+                      join s in db.Sources on ps.SourceId equals s.Id
+                      where s.Visibility == SourceVisibility.Shared
+                      join u in db.Users on s.OwnerId equals u.Id
+                      orderby s.Name
+                      select new AttachedSourceSummary(
+                          s.Id, s.Name, s.Type, u.UserName!, s.Visibility, false))
+            .ToListAsync(ct);
+    }
+
     /// <summary>Get-or-create tags by normalized name (race-safe, like Host/Link).</summary>
     private async Task<List<Tag>> ResolveTagsAsync(IReadOnlyList<string> names, CancellationToken ct)
     {

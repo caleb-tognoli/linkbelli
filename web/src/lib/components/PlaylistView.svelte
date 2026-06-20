@@ -20,13 +20,26 @@
 		playlist,
 		items: itemsPage,
 		attachedSources,
-		ownSources
+		ownSources = [],
+		isOwner = true,
+		isLoggedIn = true,
+		ownerUsername = undefined,
+		backHref = undefined,
+		backLabel = undefined
 	}: {
 		playlist: Playlist;
 		items: Paged<PlaylistItem>;
 		attachedSources: AttachedSource[];
-		ownSources: SourceSummary[];
+		ownSources?: SourceSummary[];
+		isOwner?: boolean;
+		isLoggedIn?: boolean;
+		ownerUsername?: string;
+		backHref?: string;
+		backLabel?: string;
 	} = $props();
+
+	const resolvedBackHref = $derived(backHref ?? (isOwner ? '/' : '/discover'));
+	const resolvedBackLabel = $derived(backLabel ?? (isOwner ? 'Playlists' : 'Discover'));
 
 	let items = $state(itemsPage.items);
 	let nextCursor = $state(itemsPage.nextCursor);
@@ -52,9 +65,10 @@
 		if (!nextCursor || loadingMore) return;
 		loadingMore = true;
 		try {
-			const res = await api.get(
-				`/playlists/${playlist.id}/items?cursor=${encodeURIComponent(nextCursor)}`
-			);
+			const endpoint = isOwner
+				? `/playlists/${playlist.id}/items`
+				: `/public/playlists/${encodeURIComponent(ownerUsername!)}/${encodeURIComponent(playlist.slug)}/items`;
+			const res = await api.get(`${endpoint}?cursor=${encodeURIComponent(nextCursor)}`);
 			if (res.ok) {
 				const page = (await res.json()) as Paged<PlaylistItem>;
 				items = [...items, ...page.items];
@@ -67,68 +81,89 @@
 </script>
 
 <section class="mx-auto max-w-4xl">
-	<a href="/" class="inline-flex items-center gap-1.5 text-sm" style="color: var(--color-muted)">
-		<span>←</span><span>Playlists</span>
+	<a
+		href={resolvedBackHref}
+		class="inline-flex items-center gap-1.5 text-sm"
+		style="color: var(--color-muted)"
+	>
+		← {resolvedBackLabel}
 	</a>
 
 	<header class="mt-3 flex items-start justify-between gap-3">
-		<div>
+		<div class="min-w-0">
 			<h1 class="text-2xl font-semibold">{playlist.name}</h1>
+			{#if ownerUsername}
+				<p class="mt-0.5 text-sm" style="color: var(--color-muted)">by @{ownerUsername}</p>
+			{/if}
 			{#if playlist.description}
 				<p class="mt-1" style="color: var(--color-muted)">{playlist.description}</p>
 			{/if}
 		</div>
 		<div class="flex shrink-0 items-center gap-2">
-			<Popover.Root bind:open={visOpen}>
-				<Popover.Trigger
-					class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]"
-					style="border-color: var(--color-border)"
-					title="Change visibility"
-					aria-label="Visibility"
-				>
-					<currentVis.icon size={15} aria-hidden="true" />
-					{currentVis.label}
-				</Popover.Trigger>
-				<Popover.Content
-					class="popover-surface z-30 rounded-md border shadow-md overflow-hidden"
-					sideOffset={4}
-					align="end"
-				>
-					{#each Object.entries(visConfig) as [val, { label, icon: Icon }] (val)}
-						<button
-							type="button"
-							onclick={() => { setVisibility(val as Visibility); visOpen = false; }}
-							class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-							class:font-medium={visibility === val}
-						>
-							<Icon size={15} aria-hidden="true" style="color: var(--color-muted)" />
-							{label}
-						</button>
-					{/each}
-				</Popover.Content>
-			</Popover.Root>
-			<SaveToFolderDialog
-				playlistId={playlist.id}
-				currentFolderId={playlist.folderId}
-				currentFolderName={playlist.folderName}
-			/>
+			{#if isOwner}
+				<Popover.Root bind:open={visOpen}>
+					<Popover.Trigger
+						class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]"
+						style="border-color: var(--color-border)"
+						title="Change visibility"
+						aria-label="Visibility"
+					>
+						<currentVis.icon size={15} aria-hidden="true" />
+						{currentVis.label}
+					</Popover.Trigger>
+					<Popover.Content
+						class="popover-surface z-30 rounded-md border shadow-md overflow-hidden"
+						sideOffset={4}
+						align="end"
+					>
+						{#each Object.entries(visConfig) as [val, { label, icon: Icon }] (val)}
+							<button
+								type="button"
+								onclick={() => { setVisibility(val as Visibility); visOpen = false; }}
+								class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+								class:font-medium={visibility === val}
+							>
+								<Icon size={15} aria-hidden="true" style="color: var(--color-muted)" />
+								{label}
+							</button>
+						{/each}
+					</Popover.Content>
+				</Popover.Root>
+			{/if}
+			{#if isLoggedIn}
+				<SaveToFolderDialog
+					playlistId={playlist.id}
+					currentFolderId={playlist.folderId}
+					currentFolderName={playlist.folderName}
+				/>
+			{/if}
 		</div>
 	</header>
 
 	<div class="mt-3">
-		<TagEditor playlistId={playlist.id} bind:tags />
+		<TagEditor playlistId={playlist.id} bind:tags readonly={!isOwner} />
 	</div>
 
-	<div class="mt-3">
-		<SourcesPanel playlistId={playlist.id} bind:attached {ownSources} />
-	</div>
+	{#if isOwner || attached.length > 0}
+		<div class="mt-3">
+			<SourcesPanel
+				playlistId={playlist.id}
+				bind:attached
+				{ownSources}
+				{isOwner}
+				{isLoggedIn}
+			/>
+		</div>
+	{/if}
+
+	{#if isOwner}
+		<div class="mt-5">
+			<AddLinkBar playlistId={playlist.id} {onAdded} />
+		</div>
+	{/if}
 
 	<div class="mt-5">
-		<AddLinkBar playlistId={playlist.id} {onAdded} />
-	</div>
-
-	<div class="mt-5">
-		<LinkTable bind:items />
+		<LinkTable bind:items readonly={!isOwner} />
 		{#if nextCursor}
 			<div class="mt-3 text-center">
 				<button
@@ -145,5 +180,4 @@
 			</div>
 		{/if}
 	</div>
-
 </section>

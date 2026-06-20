@@ -30,6 +30,11 @@ public static class PublicPlaylistEndpoints
             Results.Ok(await svc.ListPublicAsync(username, slug, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
 
+        // Shared sources attached to a public playlist (private sources are never exposed).
+        group.MapGet("/playlists/{username}/{slug}/sources", async (string username, string slug, IPlaylistService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListPublicAttachedSourcesAsync(username, slug, ct)))
+            .AllowAnonymous();
+
         // Public tag cloud: tags used across public playlists, with counts.
         group.MapGet("/tags", async (IPlaylistService svc, string? q, CancellationToken ct) =>
             Results.Ok(await svc.ListPublicTagsAsync(q, ct)))
