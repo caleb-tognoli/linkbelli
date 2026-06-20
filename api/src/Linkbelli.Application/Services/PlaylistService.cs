@@ -350,7 +350,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                 PlaylistId = playlistId,
                 LinkId = toAdd[k],
                 Position = maxPos + (k + 1) * PlaylistOrdering.Gap,
-                Status = PlaylistItemStatus.Active,
+                Status = PlaylistItemStatus.Added,
                 SourceId = sourceId
             });
         }

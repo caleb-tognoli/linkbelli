@@ -130,7 +130,7 @@
 		</header>
 
 		<aside
-			class={`hidden shrink-0 flex-col gap-1 border-r p-4 md:flex ${collapsed ? 'w-20' : 'w-72'}`}
+			class={`hidden shrink-0 flex-col gap-1 border-r p-4 md:flex sticky top-0 h-screen overflow-y-auto ${collapsed ? 'w-20' : 'w-72'}`}
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<div class="flex items-center gap-2 px-2 pb-4">

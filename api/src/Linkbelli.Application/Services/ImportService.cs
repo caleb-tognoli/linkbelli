@@ -87,7 +87,7 @@ public class ImportService(IAppDbContext db, ILinkService links, IPlaylistServic
                 LinkId = link.Id,
                 Position = maxPos,
                 Note = row.Note?.Trim(),
-                Status = PlaylistItemStatus.Active,
+                Status = PlaylistItemStatus.Added,
             });
             existingLinkIds.Add(link.Id);
             imported++;

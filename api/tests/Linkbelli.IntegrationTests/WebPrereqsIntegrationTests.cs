@@ -149,7 +149,7 @@ public class SourceSubscriptionTests(PostgresApiFactory factory)
         var paResp = await userA.PostAsJsonAsync("/api/v1/playlists", new { name = "A list" });
         var pa = await paResp.Content.ReadFromJsonAsync<PlaylistDto>();
         var ownSub = await userA.PostAsJsonAsync($"/api/v1/playlists/{pa!.Id}/sources", new { sourceId = priv.Id });
-        Assert.Equal(HttpStatusCode.NoContent, ownSub.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, ownSub.StatusCode);
 
         // User B can subscribe the SHARED source but not the PRIVATE one.
         var userB = await Bearer.NewUserAsync(factory, NewUsername());
@@ -157,7 +157,7 @@ public class SourceSubscriptionTests(PostgresApiFactory factory)
         var pb = await pbResp.Content.ReadFromJsonAsync<PlaylistDto>();
 
         var subShared = await userB.PostAsJsonAsync($"/api/v1/playlists/{pb!.Id}/sources", new { sourceId = shared.Id });
-        Assert.Equal(HttpStatusCode.NoContent, subShared.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, subShared.StatusCode);
 
         var subPrivate = await userB.PostAsJsonAsync($"/api/v1/playlists/{pb.Id}/sources", new { sourceId = priv.Id });
         Assert.Equal(HttpStatusCode.NotFound, subPrivate.StatusCode);

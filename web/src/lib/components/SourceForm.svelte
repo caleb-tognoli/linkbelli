@@ -24,14 +24,22 @@
 		label: string;
 		required: boolean;
 		placeholder?: string;
+		inputType?: string;
+		hideOptional?: boolean;
 	}
+
+	const AUTH_FIELDS: FieldDef[] = [
+		{ key: 'auth.loginUrl', label: 'Login URL', required: false, placeholder: 'https://site.example/api/auth/login' },
+		{ key: 'auth.username', label: 'Username', required: false },
+		{ key: 'auth.password', label: 'Password', required: false, inputType: 'password' }
+	];
 
 	const FIELDS: Record<SourceType, FieldDef[]> = {
 		Rss: [{ key: 'feedUrl', label: 'Feed URL', required: true, placeholder: 'https://…/feed.xml' }],
 		Scraper: [
 			{ key: 'url', label: 'Page URL', required: true, placeholder: 'https://news.example' },
 			{ key: 'itemSelector', label: 'Item selector (CSS)', required: true, placeholder: 'a.headline' },
-			{ key: 'linkAttribute', label: 'Link attribute', required: false, placeholder: 'href' },
+			{ key: 'linkAttribute', label: 'Link attribute', required: false, placeholder: 'href', hideOptional: true },
 			{ key: 'titleSelector', label: 'Title selector (CSS)', required: false }
 		],
 		JsonApi: [
@@ -78,6 +86,10 @@
 	// Config field values (non-header) for the current type.
 	let values = $state<Record<string, string>>(initValues());
 	let headers = $state<{ name: string; value: string }[]>(initHeaders());
+	// auth.loginUrl is plaintext in the response, so truthy = Login URL mode.
+	let authMode = $state<'none' | 'loginUrl'>(
+		source?.config?.['auth.loginUrl'] ? 'loginUrl' : 'none'
+	);
 
 	let busy = $state(false);
 	let error = $state<string | null>(null);
@@ -101,6 +113,10 @@
 			.map(([k, val]) => ({ name: k.slice(HEADER_PREFIX.length), value: val }));
 	}
 
+	function setAuthMode(mode: 'none' | 'loginUrl') {
+		authMode = mode;
+	}
+
 	function buildConfig(): Record<string, string> {
 		const cfg: Record<string, string> = {};
 		for (const f of FIELDS[type]) {
@@ -110,6 +126,12 @@
 		if (type === 'JsonApi' || type === 'Scraper') {
 			for (const h of headers) {
 				if (h.name.trim() && h.value) cfg[`${HEADER_PREFIX}${h.name.trim()}`] = h.value;
+			}
+			if (authMode === 'loginUrl') {
+				for (const f of AUTH_FIELDS) {
+					const v = values[f.key]?.trim();
+					if (v) cfg[f.key] = v;
+				}
 			}
 		}
 		return cfg;
@@ -239,44 +261,79 @@
 		</div>
 	</div>
 
-	<fieldset class="flex flex-col gap-4 rounded-lg border p-4" style="border-color: var(--color-border)">
+	<fieldset class="rounded-lg border p-4" style="border-color: var(--color-border)">
 		<legend class="px-1 text-xs" style="color: var(--color-muted)">Configuration</legend>
 
-		<label class="flex flex-col gap-1 text-sm">
-			<span>Type</span>
-			<select bind:value={type} class={fieldClass} style={fieldStyle}>
-				<option value="Rss">RSS / Atom</option>
-				<option value="Scraper">Web scraper</option>
-				<option value="JsonApi">JSON API</option>
-			</select>
-		</label>
+		<div class="flex flex-col gap-6 lg:flex-row lg:items-start">
+			<!-- Main config fields -->
+			<div class="flex flex-1 flex-col gap-4">
+				<label class="flex flex-col gap-1 text-sm">
+					<span>Type</span>
+					<select bind:value={type} class={fieldClass} style={fieldStyle}>
+						<option value="Rss">RSS / Atom</option>
+						<option value="Scraper">Web scraper</option>
+						<option value="JsonApi">JSON API</option>
+					</select>
+				</label>
 
-		{#each FIELDS[type] as f (f.key)}
-			<label class="flex flex-col gap-1 text-sm">
-				<span>{f.label} {#if !f.required}<span style="color: var(--color-muted)">(optional)</span>{/if}</span>
-				<input bind:value={values[f.key]} placeholder={f.placeholder ?? ''} class={fieldClass} style={fieldStyle} />
-			</label>
-		{/each}
-
-		{#if type === 'JsonApi' || type === 'Scraper'}
-			<div class="flex flex-col gap-2">
-				<div class="flex items-center justify-between">
-					<span class="text-sm">Request headers</span>
-					<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
-						<Plus size={15} aria-hidden="true" />
-					</button>
-				</div>
-				{#each headers as header, i (i)}
-					<div class="flex gap-2">
-						<input bind:value={header.name} placeholder="Name" class="{fieldClass} flex-1" style={fieldStyle} />
-						<input bind:value={header.value} placeholder="Value" class="{fieldClass} flex-1" style={fieldStyle} />
-						<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
-							<X size={17} aria-hidden="true" />
-						</button>
-					</div>
+				{#each FIELDS[type] as f (f.key)}
+					<label class="flex flex-col gap-1 text-sm">
+						<span>{f.label}{#if !f.required && !f.hideOptional}<span style="color: var(--color-muted)"> (optional)</span>{/if}</span>
+						<input bind:value={values[f.key]} placeholder={f.placeholder ?? ''} type={f.inputType ?? 'text'} class={fieldClass} style={fieldStyle} />
+					</label>
 				{/each}
+
+				{#if type === 'JsonApi' || type === 'Scraper'}
+					<div class="flex flex-col gap-2">
+						<div class="flex items-center justify-between">
+							<span class="text-sm">Request headers</span>
+							<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
+								<Plus size={15} aria-hidden="true" />
+							</button>
+						</div>
+						{#each headers as header, i (i)}
+							<div class="flex gap-2">
+								<input bind:value={header.name} placeholder="Name" class="{fieldClass} flex-1" style={fieldStyle} />
+								<input bind:value={header.value} placeholder="Value" class="{fieldClass} flex-1" style={fieldStyle} />
+								<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
+									<X size={17} aria-hidden="true" />
+								</button>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</div>
-		{/if}
+
+			<!-- Authentication subsection -->
+			{#if type === 'JsonApi' || type === 'Scraper'}
+				<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
+					<div class="flex items-center justify-between gap-4">
+						<span class="text-sm font-medium">Authentication</span>
+						<div class="inline-flex overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border)">
+							{#each [{ value: 'none', label: 'None' }, { value: 'loginUrl', label: 'Login URL' }] as opt (opt.value)}
+								<button
+									type="button"
+									onclick={() => setAuthMode(opt.value as 'none' | 'loginUrl')}
+									class="px-3 py-1.5"
+									style={authMode === opt.value
+										? 'background: var(--color-accent); color: var(--color-accent-contrast)'
+										: 'background: var(--color-bg)'}
+									aria-pressed={authMode === opt.value}
+								>{opt.label}</button>
+							{/each}
+						</div>
+					</div>
+					{#if authMode === 'loginUrl'}
+						{#each AUTH_FIELDS as f (f.key)}
+							<label class="flex flex-col gap-1 text-sm">
+								<span>{f.label}</span>
+								<input bind:value={values[f.key]} placeholder={f.placeholder ?? ''} type={f.inputType ?? 'text'} class={fieldClass} style={fieldStyle} />
+							</label>
+						{/each}
+					{/if}
+				</div>
+			{/if}
+		</div>
 	</fieldset>
 
 	<div class="flex items-center gap-3">

@@ -9,9 +9,12 @@ namespace Linkbelli.Application.Sources;
 
 /// <summary>
 /// Fetches a JSON API and extracts links via JSONPath (through the SSRF-protected client).
-/// Config: { url, itemsPath, urlPath, titlePath?, header.* }. <c>itemsPath</c> selects the
-/// item nodes; <c>urlPath</c>/<c>titlePath</c> are evaluated relative to each item. Keys
-/// prefixed <c>header.</c> become request headers and are treated as secrets (encrypted at rest).
+/// Config: { url, itemsPath, urlPath, titlePath?, header.*, auth.* }. <c>itemsPath</c> selects
+/// the item nodes; <c>urlPath</c>/<c>titlePath</c> are evaluated relative to each item. Keys
+/// prefixed <c>header.</c> become request headers (encrypted at rest). Keys prefixed <c>auth.</c>
+/// trigger a pre-run credential login (also encrypted): set <c>auth.loginUrl</c>,
+/// <c>auth.username</c>, <c>auth.password</c>; the resulting session cookies replace
+/// <c>header.Cookie</c> for that run.
 /// </summary>
 public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactory) : ISourceInterpreter
 {
@@ -24,7 +27,9 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
 
     public SourceType Type => SourceType.JsonApi;
 
-    public bool IsSecretConfigKey(string key) => key.StartsWith(HeaderPrefix, StringComparison.OrdinalIgnoreCase);
+    public bool IsSecretConfigKey(string key) =>
+        key.StartsWith(HeaderPrefix, StringComparison.OrdinalIgnoreCase) ||
+        AuthLogin.IsSecretKey(key);
 
     public void ValidateConfig(IReadOnlyDictionary<string, string> config)
     {
@@ -49,6 +54,9 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
     {
         var apiUrl = config[UrlKey];
         var client = httpClientFactory.CreateClient(EnrichmentHttpClient.Name);
+
+        var freshCookie = await AuthLogin.TryLoginAsync(config, client, cancellationToken);
+
         using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
         foreach (var (key, value) in config)
         {
@@ -56,6 +64,12 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
             {
                 request.Headers.TryAddWithoutValidation(key[HeaderPrefix.Length..], value);
             }
+        }
+
+        if (freshCookie is not null)
+        {
+            request.Headers.Remove("Cookie");
+            request.Headers.TryAddWithoutValidation("Cookie", freshCookie);
         }
 
         using var response = await client.SendAsync(request, cancellationToken);

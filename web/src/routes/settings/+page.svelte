@@ -19,7 +19,7 @@
 	}
 </script>
 
-<section class="mx-auto flex max-w-3xl flex-col gap-10">
+<section class="mx-auto flex max-w-4xl flex-col gap-10">
 	<h1 class="text-2xl font-semibold">Settings</h1>
 
 	<div>

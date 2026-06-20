@@ -2,8 +2,8 @@ namespace Linkbelli.Core.Entities;
 
 public enum PlaylistItemStatus
 {
-    Active = 0,
-    Pending = 1,
+    Added = 0,
+    Watched = 1,
 }
 
 public class PlaylistItem : BaseEntity<Guid>
@@ -17,7 +17,7 @@ public class PlaylistItem : BaseEntity<Guid>
     public string? Note { get; set; }
     /// <summary>Null when added manually; otherwise the source that discovered it.</summary>
     public Guid? SourceId { get; set; }
-    public PlaylistItemStatus Status { get; set; } = PlaylistItemStatus.Active;
+    public PlaylistItemStatus Status { get; set; } = PlaylistItemStatus.Added;
 
     public Playlist? Playlist { get; set; }
     public Link? Link { get; set; }

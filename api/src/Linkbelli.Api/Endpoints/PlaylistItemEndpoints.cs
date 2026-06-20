@@ -17,8 +17,8 @@ public static class PlaylistItemEndpoints
             .RequireAuthorization(secured).WithTags("Playlist items");
 
         items.MapGet("/", async (Guid playlistId, ClaimsPrincipal user, IPlaylistItemService svc,
-            int? limit, string? cursor, CancellationToken ct) =>
-            Results.Ok(await svc.ListAsync(user.GetUserId(), playlistId, limit, cursor, ct)))
+            int? limit, string? cursor, string? sort, CancellationToken ct) =>
+            Results.Ok(await svc.ListAsync(user.GetUserId(), playlistId, limit, cursor, sort, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
 
         items.MapPost("/", async (Guid playlistId, AddItemRequest req, ClaimsPrincipal user,

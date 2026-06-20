@@ -23,7 +23,7 @@ public record TagSummary(string Name, int PlaylistCount);
 // --- Items ---
 public record AddItemRequest(string Url, string? Note);
 
-public record UpdateItemRequest(string? Note);
+public record UpdateItemRequest(string? Note, PlaylistItemStatus? Status = null);
 
 /// <summary>Place the item immediately after AfterItemId; null moves it to the front.</summary>
 public record MoveItemRequest(Guid? AfterItemId);

@@ -20,34 +20,16 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             i.CreationTime);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
-        Guid ownerId, Guid playlistId, int? limit, string? cursor, CancellationToken ct = default)
+        Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, CancellationToken ct = default)
     {
         await EnsureOwnsPlaylistAsync(playlistId, ownerId, ct);
 
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
-        // Only enriched items are shown; NSFW items hidden unless the user opted in.
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId && i.Link!.EnrichedAt != null);
-        if (!showNsfw)
-        {
-            query = query.Where(i => !i.Link!.Nsfw);
-        }
+        if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
 
-        if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))
-        {
-            query = query.Where(i => i.Position > afterPos);
-        }
-
-        var rows = await query.OrderBy(i => i.Position).Take(take + 1).Select(ToResponse).ToListAsync(ct);
-
-        string? next = null;
-        if (rows.Count > take)
-        {
-            rows.RemoveAt(take);
-            next = Cursor.Encode(rows[^1].Position.ToString());
-        }
-
-        return new PagedResult<PlaylistItemResponse>(rows, next);
+        return await PageAsync(query, take, cursor, sort, ct);
     }
 
     public async Task<PlaylistItemResponse> AddAsync(
@@ -76,7 +58,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             LinkId = link.Id,
             Position = maxPos + PlaylistOrdering.Gap,
             Note = request.Note?.Trim(),
-            Status = PlaylistItemStatus.Active,
+            Status = PlaylistItemStatus.Added,
         };
         db.PlaylistItems.Add(item);
         await db.SaveChangesAsync(ct);
@@ -92,6 +74,11 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         if (request.Note is not null)
         {
             item.Note = request.Note.Trim();
+        }
+
+        if (request.Status is not null)
+        {
+            item.Status = request.Status.Value;
         }
 
         await db.SaveChangesAsync(ct);
@@ -153,7 +140,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     }
 
     public async Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(
-        string username, string slug, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default)
+        string username, string slug, int? limit, string? cursor, string? sort, Guid? viewerId, CancellationToken ct = default)
     {
         var normalized = username.ToUpperInvariant();
         var playlist = await db.Playlists
@@ -171,26 +158,39 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
 
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlist.Id && i.Link!.EnrichedAt != null);
-        if (!showNsfw)
+        if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
+
+        return await PageAsync(query, take, cursor, sort, ct);
+    }
+
+    private static async Task<PagedResult<PlaylistItemResponse>> PageAsync(
+        IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, CancellationToken ct)
+    {
+        if (sort is "date-asc" or "date-desc")
         {
-            query = query.Where(i => !i.Link!.Nsfw);
+            bool asc = sort == "date-asc";
+            if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var ticks))
+            {
+                var t = new DateTimeOffset(ticks, TimeSpan.Zero);
+                query = asc ? query.Where(i => i.CreationTime > t) : query.Where(i => i.CreationTime < t);
+            }
+            var rows = await (asc
+                ? query.OrderBy(i => i.CreationTime)
+                : query.OrderByDescending(i => i.CreationTime))
+                .Take(take + 1).Select(ToResponse).ToListAsync(ct);
+            string? next = null;
+            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode(rows[^1].CreationTime.UtcTicks.ToString()); }
+            return new PagedResult<PlaylistItemResponse>(rows, next);
         }
-
-        if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))
+        else
         {
-            query = query.Where(i => i.Position > afterPos);
+            if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))
+                query = query.Where(i => i.Position > afterPos);
+            var rows = await query.OrderBy(i => i.Position).Take(take + 1).Select(ToResponse).ToListAsync(ct);
+            string? next = null;
+            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode(rows[^1].Position.ToString()); }
+            return new PagedResult<PlaylistItemResponse>(rows, next);
         }
-
-        var rows = await query.OrderBy(i => i.Position).Take(take + 1).Select(ToResponse).ToListAsync(ct);
-
-        string? next = null;
-        if (rows.Count > take)
-        {
-            rows.RemoveAt(take);
-            next = Cursor.Encode(rows[^1].Position.ToString());
-        }
-
-        return new PagedResult<PlaylistItemResponse>(rows, next);
     }
 
     private Task<PlaylistItemResponse> ProjectAsync(Guid itemId, CancellationToken ct) =>

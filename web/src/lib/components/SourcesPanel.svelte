@@ -11,14 +11,24 @@
 		attached = $bindable(),
 		ownSources = [],
 		isOwner = true,
-		isLoggedIn = false
+		isLoggedIn = false,
+		fromHref,
+		fromLabel
 	}: {
 		playlistId: string;
 		attached: AttachedSource[];
 		ownSources?: SourceSummary[];
 		isOwner?: boolean;
 		isLoggedIn?: boolean;
+		fromHref?: string;
+		fromLabel?: string;
 	} = $props();
+
+	function sourceHref(id: string) {
+		const base = `/sources/${id}`;
+		if (!fromHref) return base;
+		return `${base}?from=${encodeURIComponent(fromHref)}&fromLabel=${encodeURIComponent(fromLabel ?? 'Back')}`;
+	}
 
 	let query = $state('');
 	let sharedResults = $state<SharedSource[]>([]);
@@ -183,7 +193,7 @@
 							<div class="mb-1.5 text-xs font-medium" style="color: var(--color-muted)">Yours</div>
 							<ul class="flex flex-col gap-1.5">
 								{#each ownFiltered as src (src.id)}
-									<SourceListItem name={src.name} badge={displayType(src.type)} href={`/sources/${src.id}`}>
+									<SourceListItem name={src.name} badge={displayType(src.type)} href={sourceHref(src.id)}>
 										{#snippet actions()}
 											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Attach source" aria-label="Attach source" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-accent)">
 												<Link size={15} aria-hidden="true" />
@@ -224,7 +234,7 @@
 				<SourceListItem
 					name={src.name}
 					badge={displayType(src.type)}
-					href={src.ownedByMe ? `/sources/${src.id}` : undefined}
+					href={src.ownedByMe ? sourceHref(src.id) : undefined}
 					subtitle={src.ownedByMe ? undefined : `@${src.ownerUsername}`}
 				>
 					{#snippet actions()}

@@ -2,63 +2,98 @@
 	import { Popover } from 'bits-ui';
 	import { dndzone } from 'svelte-dnd-action';
 	import { api } from '$lib/api/client';
-	import { Clock, Image, Link2, Shuffle, StickyNote, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, Clock, Eye, EyeOff, Image, StickyNote, Trash2 } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import type { PlaylistItem } from '$lib/types';
 
 	let {
 		items = $bindable(),
-		readonly = false
-	}: { items: PlaylistItem[]; readonly?: boolean } = $props();
+		readonly = false,
+		onfetchsort
+	}: { items: PlaylistItem[]; readonly?: boolean; onfetchsort?: (sort: string) => Promise<void> } = $props();
 
 	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle';
+	type StatusFilter = 'All' | 'Unwatched' | 'Watched';
+
 	let sortMode = $state<SortMode>(readonly ? 'date-desc' : 'manual');
+	let statusFilter = $state<StatusFilter>(!readonly ? 'Unwatched' : 'All');
 	let shuffledItems = $state<PlaylistItem[]>([]);
 	let showThumbnails = $state(true);
 	let showUrls = $state(false);
 
-	const sortOptions: { mode: SortMode; label: string }[] = [
-		{ mode: 'manual', label: 'Manual' },
-		{ mode: 'date-asc', label: 'Oldest' },
-		{ mode: 'date-desc', label: 'Newest' },
-		{ mode: 'shuffle', label: 'Shuffle' }
-	];
+	const statusOptions: StatusFilter[] = ['All', 'Unwatched', 'Watched'];
+	const SORT_LABELS: Record<SortMode, string> = {
+		manual: 'Manual',
+		'date-asc': 'Oldest',
+		'date-desc': 'Newest',
+		shuffle: 'Shuffle'
+	};
 
-	// Manual sort is owner-only (requires drag). Hide it for readonly viewers.
-	const visibleSortOptions = $derived(
-		readonly ? sortOptions.filter((o) => o.mode !== 'manual') : sortOptions
+	let statusOpen = $state(false);
+	let sortOpen = $state(false);
+	let displayOpen = $state(false);
+
+	function setStatusFilter(f: StatusFilter) {
+		statusFilter = f;
+	}
+
+	// Items visible under the current status filter
+	const filteredItems = $derived(
+		statusFilter === 'All'
+			? items
+			: statusFilter === 'Unwatched'
+				? items.filter((i) => i.status === 'Added')
+				: items.filter((i) => i.status === 'Watched')
 	);
+
+	// DND state — syncs from filteredItems when items change externally
+	let dndItems = $state<PlaylistItem[]>([]);
+	$effect(() => {
+		dndItems = filteredItems;
+	});
 
 	function setSort(mode: SortMode) {
 		sortMode = mode;
-		if (mode === 'shuffle') shuffledItems = [...items].sort(() => Math.random() - 0.5);
+		if (mode === 'shuffle') {
+			shuffledItems = [...filteredItems].sort(() => Math.random() - 0.5);
+		} else {
+			const serverSort = mode === 'date-asc' ? 'date-asc' : mode === 'date-desc' ? 'date-desc' : 'position';
+			onfetchsort?.(serverSort);
+		}
 	}
 
-	const displayItems = $derived(
-		sortMode === 'manual'
-			? items
-			: sortMode === 'shuffle'
-				? shuffledItems
-				: [...items].sort((a, b) => {
-						const diff = new Date(a.creationTime).getTime() - new Date(b.creationTime).getTime();
-						return sortMode === 'date-asc' ? diff : -diff;
-					})
-	);
+	function sortByDate(arr: PlaylistItem[], asc: boolean) {
+		return [...arr].sort((a, b) => {
+			const diff = new Date(a.creationTime).getTime() - new Date(b.creationTime).getTime();
+			return asc ? diff : -diff;
+		});
+	}
+
+	const displayItems = $derived.by(() => {
+		if (sortMode === 'shuffle') return shuffledItems;
+		if (sortMode === 'date-asc') return sortByDate(filteredItems, true);
+		if (sortMode === 'date-desc') return sortByDate(filteredItems, false);
+		return filteredItems;
+	});
 
 	let noteEditId = $state<string | null>(null);
 	let draftNote = $state('');
 
 	const FLIP = 150;
+	const useDnd = $derived(!readonly && sortMode === 'manual');
 
 	function onConsider(e: CustomEvent<{ items: PlaylistItem[] }>) {
-		items = e.detail.items;
+		dndItems = e.detail.items;
 	}
 
 	async function onFinalize(e: CustomEvent<{ items: PlaylistItem[]; info: { id: string } }>) {
-		items = e.detail.items;
+		dndItems = e.detail.items;
 		const movedId = e.detail.info.id;
-		const idx = items.findIndex((i) => i.id === movedId);
-		const afterItemId = idx > 0 ? items[idx - 1].id : null;
+		const idx = dndItems.findIndex((i) => i.id === movedId);
+		const afterItemId = idx > 0 ? dndItems[idx - 1].id : null;
+		// Merge reordered filtered items back; items not in the current filter stay in place
+		const filteredIds = new Set(filteredItems.map((i) => i.id));
+		items = [...items.filter((i) => !filteredIds.has(i.id)), ...dndItems];
 		await api.post(`/items/${movedId}/move`, { afterItemId });
 	}
 
@@ -73,12 +108,18 @@
 		if (res.ok || res.status === 204) items = items.filter((i) => i.id !== item.id);
 	}
 
-	function added(iso: string) {
+	async function toggleWatched(item: PlaylistItem) {
+		const newStatus = item.status === 'Watched' ? 'Added' : 'Watched';
+		const res = await api.patch(`/items/${item.id}`, { status: newStatus });
+		if (res.ok) items = items.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i));
+	}
+
+	function dateAdded(iso: string) {
 		return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 	}
 
 	function isPending(item: PlaylistItem) {
-		return item.status === 'Pending' || !item.link.enriched;
+		return !item.link.enriched;
 	}
 
 	const toggleClass = 'rounded-full border px-2.5 py-0.5 text-xs transition-colors';
@@ -90,7 +131,10 @@
 </script>
 
 {#snippet row(item: PlaylistItem, draggable: boolean)}
-	<tr class="border-t align-middle" style="border-color: var(--color-border)">
+	<tr
+		class="border-t align-middle"
+		style="border-color: var(--color-border); {item.status === 'Watched' ? 'opacity: 0.45' : ''}"
+	>
 		{#if !readonly}
 			<td
 				class="select-none pr-1"
@@ -127,9 +171,9 @@
 				</div>
 			</div>
 		</td>
-		<td class="whitespace-nowrap pr-3" style="color: var(--color-muted)">{added(item.creationTime)}</td>
+		<td class="whitespace-nowrap pr-3" style="color: var(--color-muted)">{dateAdded(item.creationTime)}</td>
 		{#if !readonly}
-			<td class="text-right">
+			<td class="w-8 text-right">
 				<Popover.Root
 					onOpenChange={(o) => {
 						if (o) {
@@ -175,7 +219,23 @@
 					</Popover.Content>
 				</Popover.Root>
 			</td>
-			<td class="text-right">
+			<td class="w-8 text-right">
+				<button
+					type="button"
+					onclick={() => toggleWatched(item)}
+					class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+					style="color: var(--color-muted)"
+					title={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
+					aria-label={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
+				>
+					{#if item.status === 'Watched'}
+						<EyeOff size={16} aria-hidden="true" />
+					{:else}
+						<Eye size={16} aria-hidden="true" />
+					{/if}
+				</button>
+			</td>
+			<td class="w-8 text-right">
 				<button
 					type="button"
 					onclick={() => remove(item)}
@@ -202,68 +262,142 @@
 		{/if}
 	</div>
 {:else}
-	<div class="mb-3 flex items-center gap-1.5">
-		{#each visibleSortOptions as opt (opt.mode)}
-			<button
-				type="button"
-				onclick={() => setSort(opt.mode)}
-				class={toggleClass}
-				style={toggleStyle(sortMode === opt.mode)}
+	<div class="mb-3 flex flex-wrap items-center gap-1.5">
+		{#if !readonly}
+			<Popover.Root bind:open={statusOpen}>
+				<Popover.Trigger
+					class="{toggleClass} inline-flex items-center gap-1"
+					style={toggleStyle(statusFilter !== 'Unwatched')}
+				>
+					{statusFilter} <ChevronDown size={10} aria-hidden="true" />
+				</Popover.Trigger>
+				<Popover.Content
+					class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
+					sideOffset={4}
+				>
+					{#each statusOptions as f (f)}
+						<button
+							type="button"
+							onclick={() => { setStatusFilter(f); statusOpen = false; }}
+							class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+							class:font-medium={statusFilter === f}
+						>{f}</button>
+					{/each}
+				</Popover.Content>
+			</Popover.Root>
+		{/if}
+
+		<Popover.Root bind:open={sortOpen}>
+			<Popover.Trigger
+				class="{toggleClass} inline-flex items-center gap-1"
+				style={toggleStyle(sortMode !== (readonly ? 'date-desc' : 'manual'))}
 			>
-				{#if opt.mode === 'shuffle'}
-					<span class="inline-flex items-center gap-1"><Shuffle size={13} aria-hidden="true" />{opt.label}</span>
-				{:else}
-					{opt.label}
+				{SORT_LABELS[sortMode]} <ChevronDown size={10} aria-hidden="true" />
+			</Popover.Trigger>
+			<Popover.Content
+				class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
+				sideOffset={4}
+			>
+				{#if !readonly}
+					<button
+						type="button"
+						onclick={() => { setSort('manual'); sortOpen = false; }}
+						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+						class:font-medium={sortMode === 'manual'}
+					>Manual</button>
 				{/if}
-			</button>
-		{/each}
-		<div class="ml-auto flex items-center gap-1.5">
-			<button
-				type="button"
-				onclick={() => (showUrls = !showUrls)}
+				<button
+					type="button"
+					onclick={() => { setSort('date-asc'); sortOpen = false; }}
+					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={sortMode === 'date-asc'}
+				>Oldest</button>
+				<button
+					type="button"
+					onclick={() => { setSort('date-desc'); sortOpen = false; }}
+					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={sortMode === 'date-desc'}
+				>Newest</button>
+				<button
+					type="button"
+					onclick={() => { setSort('shuffle'); sortOpen = false; }}
+					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={sortMode === 'shuffle'}
+				>Shuffle</button>
+			</Popover.Content>
+		</Popover.Root>
+
+		<span class="text-xs" style="color: var(--color-border)">|</span>
+
+		<Popover.Root bind:open={displayOpen}>
+			<Popover.Trigger
 				class="{toggleClass} inline-flex items-center gap-1"
 				style={toggleStyle(showUrls)}
 			>
-				<Link2 size={11} aria-hidden="true" /> Show URL
-			</button>
-			<button
-				type="button"
-				onclick={() => (showThumbnails = !showThumbnails)}
-				class="{toggleClass} inline-flex items-center gap-1"
-				style={toggleStyle(showThumbnails)}
+				{showUrls ? 'URL' : 'Title'} <ChevronDown size={10} aria-hidden="true" />
+			</Popover.Trigger>
+			<Popover.Content
+				class="popover-surface z-30 min-w-24 overflow-hidden rounded-md border shadow-md"
+				sideOffset={4}
 			>
-				<Image size={11} aria-hidden="true" /> Thumbnail
-			</button>
-		</div>
+				<button
+					type="button"
+					onclick={() => { showUrls = false; displayOpen = false; }}
+					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={!showUrls}
+				>Title</button>
+				<button
+					type="button"
+					onclick={() => { showUrls = true; displayOpen = false; }}
+					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+					class:font-medium={showUrls}
+				>URL</button>
+			</Popover.Content>
+		</Popover.Root>
+
+		<button
+			type="button"
+			onclick={() => (showThumbnails = !showThumbnails)}
+			class="{toggleClass} inline-flex items-center gap-1"
+			style={toggleStyle(showThumbnails)}
+		>
+			<Image size={11} aria-hidden="true" /> Thumbnail
+		</button>
 	</div>
 
-	<div class="overflow-x-auto">
-		<table class="w-full border-collapse text-sm">
-			<thead>
-				<tr class="text-left" style="color: var(--color-muted)">
-					{#if !readonly}<th class="w-6"></th>{/if}
-					<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
-					<th class="py-2 font-medium">Added</th>
-					{#if !readonly}<th class="w-8"></th><th class="w-10"></th>{/if}
-				</tr>
-			</thead>
-			{#if !readonly && sortMode === 'manual'}
-				<tbody
-					use:dndzone={{ items, flipDurationMs: FLIP, dropTargetStyle: {} }}
-					onconsider={onConsider}
-					onfinalize={onFinalize}
-				>
-					{#each items as item (item.id)}
-						{@render row(item, true)}
-					{/each}
-				</tbody>
-			{:else}
-				<tbody>
-					{#each displayItems as item (item.id)}
-						{@render row(item, false)}
-					{/each}
-				</tbody>
-			{/if}
-		</table>
-	</div>
+	{#if filteredItems.length === 0}
+		<p class="py-6 text-center text-sm" style="color: var(--color-muted)">
+			No {statusFilter.toLowerCase()} items.
+		</p>
+	{:else}
+		<div class="overflow-x-auto">
+			<table class="w-full border-collapse text-sm">
+				<thead>
+					<tr class="text-left" style="color: var(--color-muted)">
+						{#if !readonly}<th class="w-6"></th>{/if}
+						<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
+						<th class="py-2 font-medium">Added</th>
+						{#if !readonly}<th class="w-8"></th><th class="w-8"></th><th class="w-8"></th>{/if}
+					</tr>
+				</thead>
+				{#if useDnd}
+					<tbody
+						use:dndzone={{ items: dndItems, flipDurationMs: FLIP, dropTargetStyle: {} }}
+						onconsider={onConsider}
+						onfinalize={onFinalize}
+					>
+						{#each dndItems as item (item.id)}
+							{@render row(item, true)}
+						{/each}
+					</tbody>
+				{:else}
+					<tbody>
+						{#each displayItems as item (item.id)}
+							{@render row(item, false)}
+						{/each}
+					</tbody>
+				{/if}
+			</table>
+		</div>
+	{/if}
 {/if}

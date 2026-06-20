@@ -66,7 +66,7 @@ public class NsfwEnrichmentTests(PostgresApiFactory factory)
                 PlaylistId = playlist.Id,
                 LinkId = link.Id,
                 Position = pos,
-                Status = PlaylistItemStatus.Active
+                Status = PlaylistItemStatus.Added
             });
             pos += 1024;
         }

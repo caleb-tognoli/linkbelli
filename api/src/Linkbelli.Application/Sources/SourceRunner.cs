@@ -136,7 +136,7 @@ public sealed class SourceRunner(
                         LinkId = link.Id,
                         Position = nextPosition,
                         SourceId = sourceId,
-                        Status = PlaylistItemStatus.Active,
+                        Status = PlaylistItemStatus.Added,
                     });
                 }
             }

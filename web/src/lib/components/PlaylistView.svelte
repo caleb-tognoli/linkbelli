@@ -43,6 +43,7 @@
 
 	let items = $state(itemsPage.items);
 	let nextCursor = $state(itemsPage.nextCursor);
+	let serverSort = $state('position');
 	let tags = $state(playlist.tags);
 	let attached = $state(attachedSources);
 	let loadingMore = $state(false);
@@ -61,14 +62,27 @@
 		items = [...items, item];
 	}
 
+	function itemsEndpoint() {
+		return isOwner
+			? `/playlists/${playlist.id}/items`
+			: `/public/playlists/${encodeURIComponent(ownerUsername!)}/${encodeURIComponent(playlist.slug)}/items`;
+	}
+
+	async function onfetchsort(sort: string) {
+		serverSort = sort;
+		const res = await api.get(`${itemsEndpoint()}?sort=${sort}`);
+		if (res.ok) {
+			const page = (await res.json()) as Paged<PlaylistItem>;
+			items = page.items;
+			nextCursor = page.nextCursor;
+		}
+	}
+
 	async function loadMore() {
 		if (!nextCursor || loadingMore) return;
 		loadingMore = true;
 		try {
-			const endpoint = isOwner
-				? `/playlists/${playlist.id}/items`
-				: `/public/playlists/${encodeURIComponent(ownerUsername!)}/${encodeURIComponent(playlist.slug)}/items`;
-			const res = await api.get(`${endpoint}?cursor=${encodeURIComponent(nextCursor)}`);
+			const res = await api.get(`${itemsEndpoint()}?cursor=${encodeURIComponent(nextCursor)}&sort=${serverSort}`);
 			if (res.ok) {
 				const page = (await res.json()) as Paged<PlaylistItem>;
 				items = [...items, ...page.items];
@@ -80,7 +94,7 @@
 	}
 </script>
 
-<section class="mx-auto max-w-4xl">
+<section class="mx-auto max-w-5xl">
 	<a
 		href={resolvedBackHref}
 		class="inline-flex items-center gap-1.5 text-sm"
@@ -152,6 +166,8 @@
 				{ownSources}
 				{isOwner}
 				{isLoggedIn}
+				fromHref={isOwner ? `/playlists/${playlist.id}` : undefined}
+				fromLabel={isOwner ? playlist.name : undefined}
 			/>
 		</div>
 	{/if}
@@ -163,7 +179,7 @@
 	{/if}
 
 	<div class="mt-5">
-		<LinkTable bind:items readonly={!isOwner} />
+		<LinkTable bind:items readonly={!isOwner} {onfetchsort} />
 		{#if nextCursor}
 			<div class="mt-3 text-center">
 				<button

@@ -26,8 +26,8 @@ public static class PublicPlaylistEndpoints
             .AllowAnonymous();
 
         group.MapGet("/playlists/{username}/{slug}/items", async (
-            ClaimsPrincipal user, string username, string slug, IPlaylistItemService svc, int? limit, string? cursor, CancellationToken ct) =>
-            Results.Ok(await svc.ListPublicAsync(username, slug, limit, cursor, ViewerId(user), ct)))
+            ClaimsPrincipal user, string username, string slug, IPlaylistItemService svc, int? limit, string? cursor, string? sort, CancellationToken ct) =>
+            Results.Ok(await svc.ListPublicAsync(username, slug, limit, cursor, sort, ViewerId(user), ct)))
             .AllowAnonymous();
 
         // Shared sources attached to a public playlist (private sources are never exposed).

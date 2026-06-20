@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
+	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Dialog } from 'bits-ui';
@@ -11,6 +12,9 @@
 	let { data }: { data: PageData } = $props();
 	let busy = $state(false);
 	let toast = $state<string | null>(null);
+
+	const backHref = $derived(routePage.url.searchParams.get('from') ?? '/#sources');
+	const backLabel = $derived(routePage.url.searchParams.get('fromLabel') ?? 'Sources');
 
 	const pageSize = 10;
 	let page = $state(0);
@@ -74,8 +78,8 @@
 	}
 </script>
 
-<section class="mx-auto max-w-2xl">
-	<a href="/#sources" class="text-sm" style="color: var(--color-muted)">← Sources</a>
+<section class="mx-auto max-w-4xl">
+	<a href={backHref} class="text-sm" style="color: var(--color-muted)">← {backLabel}</a>
 
 	<header class="mt-3 flex items-center justify-between gap-3">
 		<h1 class="text-2xl font-semibold">{data.source.name}</h1>

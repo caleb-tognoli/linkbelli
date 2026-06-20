@@ -9,7 +9,7 @@
 	let submitting = $state(false);
 </script>
 
-<div class="max-w-2xl">
+<div class="max-w-4xl">
 	<h1 class="mb-8 text-2xl font-semibold">Import links</h1>
 
 	{#if form && 'success' in form && form.success}
