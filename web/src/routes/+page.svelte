@@ -1,3 +1,5 @@
+<svelte:head><title>Home — Linkbelli</title></svelte:head>
+
 <script lang="ts">
 	import { Plus } from '@lucide/svelte';
 	import FolderCard from '$lib/components/FolderCard.svelte';

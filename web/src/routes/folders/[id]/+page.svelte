@@ -50,6 +50,8 @@
 	}
 </script>
 
+<svelte:head><title>{data.folder.name} — Linkbelli</title></svelte:head>
+
 <section class="mx-auto max-w-5xl">
 	<!-- Breadcrumb trail: Home / ancestors / current -->
 	<nav class="flex flex-wrap items-center gap-1 text-sm" style="color: var(--color-muted)">

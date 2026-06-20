@@ -6,36 +6,33 @@
 	let { initial }: { initial: Theme } = $props();
 	let theme = $state<Theme>(initial);
 
-	const options: { value: Theme; label: string }[] = [
-		{ value: 'light', label: 'Light' },
-		{ value: 'dark', label: 'Dark' },
-		{ value: 'system', label: 'System' }
+	const options: { value: Theme; label: string; desc: string; Icon: typeof Sun }[] = [
+		{ value: 'light', label: 'Light', desc: 'Always light', Icon: Sun },
+		{ value: 'dark', label: 'Dark', desc: 'Always dark', Icon: Moon },
+		{ value: 'system', label: 'System', desc: 'Follow OS setting', Icon: Monitor }
 	];
 
 	function set(value: Theme) {
 		theme = value;
-		// Persist for SSR on next load and apply immediately (no reload).
 		document.cookie = `lb_theme=${value}; path=/; max-age=31536000; samesite=lax`;
 		document.documentElement.dataset.theme = value;
 	}
 </script>
 
-<div class="inline-flex overflow-hidden rounded-md border" style="border-color: var(--color-border)">
+<div class="flex gap-2">
 	{#each options as opt (opt.value)}
+		{@const active = theme === opt.value}
 		<button
 			type="button"
 			onclick={() => set(opt.value)}
-			class="p-1.5"
-			style={theme === opt.value
-				? 'background: var(--color-accent); color: var(--color-accent-contrast)'
-				: 'color: var(--color-muted)'}
-			aria-pressed={theme === opt.value}
-			aria-label={opt.label}
-			title={opt.label}
+			class="flex flex-1 items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors"
+			style={active
+				? 'border-color: var(--color-accent); color: var(--color-accent)'
+				: 'border-color: var(--color-border)'}
+			aria-pressed={active}
 		>
-			{#if opt.value === 'light'}<Sun size={18} aria-hidden="true" />{/if}
-			{#if opt.value === 'dark'}<Moon size={18} aria-hidden="true" />{/if}
-			{#if opt.value === 'system'}<Monitor size={18} aria-hidden="true" />{/if}
+			<opt.Icon size={18} aria-hidden="true" />
+			<span class="font-medium">{opt.label}</span>
 		</button>
 	{/each}
 </div>

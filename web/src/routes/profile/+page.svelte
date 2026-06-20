@@ -1,3 +1,5 @@
+<svelte:head><title>Profile — Linkbelli</title></svelte:head>
+
 <script lang="ts">
 	import { api } from '$lib/api/client';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
@@ -20,11 +22,10 @@
 </script>
 
 <section class="mx-auto flex max-w-4xl flex-col gap-10">
-	<h1 class="text-2xl font-semibold">Settings</h1>
+	<h1 class="text-2xl font-semibold">Profile</h1>
 
 	<div>
-		<h2 class="font-medium">Appearance</h2>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">Choose your theme.</p>
+		<h2 class="font-medium">Theme</h2>
 		<div class="mt-3">
 			<ThemeToggle initial={data.theme} />
 		</div>
@@ -34,21 +35,21 @@
 		<h2 class="font-medium">Content</h2>
 		<label class="mt-3 flex items-center gap-2 text-sm">
 			<Switch checked={showNsfw} onchange={setNsfw} />
-			Show NSFW content
+			Show NSFW
 		</label>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			When off (default), playlists and links marked adult are hidden everywhere.
-		</p>
 	</div>
 
 	<div>
 		<h2 class="font-medium">Profile</h2>
 		{#if data.user}
-			<dl class="mt-3 grid grid-cols-[8rem_1fr] gap-y-2 rounded-lg border p-4 text-sm" style="border-color: var(--color-border); background: var(--color-surface)">
-				<dt style="color: var(--color-muted)">User ID</dt>
-				<dd class="font-mono">{data.user.userId}</dd>
-				<dt style="color: var(--color-muted)">Auth method</dt>
-				<dd>{data.user.authMethod}</dd>
+			<dl
+				class="mt-3 grid grid-cols-[8rem_1fr] gap-y-2 rounded-lg border p-4 text-sm"
+				style="border-color: var(--color-border); background: var(--color-surface)"
+			>
+				<dt style="color: var(--color-muted)">Username</dt>
+				<dd>{data.user.username ?? '—'}</dd>
+				<dt style="color: var(--color-muted)">Email</dt>
+				<dd>{data.user.email ?? '—'}</dd>
 			</dl>
 		{/if}
 	</div>
@@ -57,15 +58,25 @@
 		<div>
 			<h2 class="font-medium">Quota</h2>
 			<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-				{#each [{ label: 'Sources', used: data.quota.sourcesUsed, max: data.quota.maxSources }, { label: 'Runs today', used: data.quota.runsUsedToday, max: data.quota.maxRunsPerDay }, { label: 'Items / run', used: 0, max: data.quota.maxItemsPerRun }] as q (q.label)}
-					<div class="rounded-lg border p-3" style="border-color: var(--color-border); background: var(--color-surface)">
+				{#each [
+					{ label: 'Sources', used: data.quota.sourcesUsed, max: data.quota.maxSources },
+					{ label: 'Runs today', used: data.quota.runsUsedToday, max: data.quota.maxRunsPerDay },
+					{ label: 'Items / run', used: 0, max: data.quota.maxItemsPerRun }
+				] as q (q.label)}
+					<div
+						class="rounded-lg border p-3"
+						style="border-color: var(--color-border); background: var(--color-surface)"
+					>
 						<div class="text-sm" style="color: var(--color-muted)">{q.label}</div>
 						<div class="mt-1 text-lg font-semibold">
 							{#if q.label === 'Items / run'}{q.max}{:else}{q.used} / {q.max}{/if}
 						</div>
 						{#if q.label !== 'Items / run'}
 							<div class="mt-2 h-1.5 overflow-hidden rounded-full" style="background: var(--color-border)">
-								<div class="h-full" style={`width: ${pct(q.used, q.max)}%; background: var(--color-accent)`}></div>
+								<div
+									class="h-full"
+									style="width: {pct(q.used, q.max)}%; background: var(--color-accent)"
+								></div>
 							</div>
 						{/if}
 					</div>
@@ -75,12 +86,6 @@
 	{/if}
 
 	<div>
-		<h2 class="font-medium">API keys</h2>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			Programmatic access via the <code>X-Api-Key</code> header. The full key is shown once.
-		</p>
-		<div class="mt-3">
-			<ApiKeysManager keys={data.apiKeys} />
-		</div>
+		<ApiKeysManager keys={data.apiKeys} />
 	</div>
 </section>

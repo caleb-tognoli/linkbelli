@@ -17,6 +17,7 @@ public static class MeEndpoints
         {
             userId = user.FindFirstValue(ClaimTypes.NameIdentifier),
             username = user.FindFirstValue(ClaimTypes.Name),
+            email = user.FindFirstValue(ClaimTypes.Email),
             authMethod = user.FindFirstValue("auth_method") ?? "bearer",
             scopes = user.FindAll("scope").Select(c => c.Value).ToArray(),
             showNsfw = await prefs.ShowNsfwAsync(user.GetUserId(), ct),

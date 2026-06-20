@@ -9,6 +9,8 @@
 	const backLabel = $derived(page.url.searchParams.get('fromLabel') ?? undefined);
 </script>
 
+<svelte:head><title>{data.playlist.name} — Linkbelli</title></svelte:head>
+
 <!-- Key by id so all interactive state resets when navigating between playlists. -->
 {#key data.playlist.id}
 	<PlaylistView

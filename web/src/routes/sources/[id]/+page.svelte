@@ -78,6 +78,8 @@
 	}
 </script>
 
+<svelte:head><title>{data.source.name} — Linkbelli</title></svelte:head>
+
 <section class="mx-auto max-w-4xl">
 	<a href={backHref} class="text-sm" style="color: var(--color-muted)">← {backLabel}</a>
 

@@ -6,6 +6,7 @@ export type Visibility = 'Private' | 'Unlisted' | 'Public';
 export interface User {
 	userId: string;
 	username: string | null;
+	email: string | null;
 	authMethod: string;
 	scopes: string[];
 	showNsfw: boolean;

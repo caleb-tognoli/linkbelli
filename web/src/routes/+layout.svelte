@@ -12,7 +12,7 @@
 	const onHome = $derived(page.url.pathname === '/');
 	const onDiscover = $derived(page.url.pathname.startsWith('/discover'));
 	const onImport = $derived(page.url.pathname.startsWith('/import'));
-	const onSettings = $derived(page.url.pathname.startsWith('/settings'));
+	const onSettings = $derived(page.url.pathname.startsWith('/profile'));
 	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
 	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
 	const isAuthPage = $derived(['/login', '/register'].includes(page.url.pathname));
@@ -78,7 +78,7 @@
 
 	<div class="mt-auto flex {showLabels ? 'items-center gap-1' : 'flex-col gap-1'} border-t pt-3" style="border-color: var(--color-border)">
 		<a
-			href="/settings"
+			href="/profile"
 			class="flex min-w-0 items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 {showLabels ? 'flex-1' : 'justify-center'}"
 			class:font-medium={onSettings}
 			style={onSettings ? 'background: var(--color-border)' : ''}

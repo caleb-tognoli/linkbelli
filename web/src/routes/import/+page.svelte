@@ -1,3 +1,5 @@
+<svelte:head><title>Import — Linkbelli</title></svelte:head>
+
 <script lang="ts">
 	import { Upload, CheckCircle } from '@lucide/svelte';
 	import { enhance } from '$app/forms';

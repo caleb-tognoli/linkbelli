@@ -1,3 +1,5 @@
+<svelte:head><title>Discover — Linkbelli</title></svelte:head>
+
 <script lang="ts">
 	import { api } from '$lib/api/client';
 	import { Search, ChevronDown } from '@lucide/svelte';

@@ -1,3 +1,5 @@
+<svelte:head><title>Sign in — Linkbelli</title></svelte:head>
+
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { LogIn } from '@lucide/svelte';

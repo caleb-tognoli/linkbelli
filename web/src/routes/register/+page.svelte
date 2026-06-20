@@ -1,3 +1,5 @@
+<svelte:head><title>Create account — Linkbelli</title></svelte:head>
+
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { UserPlus } from '@lucide/svelte';

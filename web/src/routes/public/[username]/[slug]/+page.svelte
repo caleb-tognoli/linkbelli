@@ -9,6 +9,8 @@
 	const backLabel = $derived(page.url.searchParams.get('fromLabel') ?? 'Discover');
 </script>
 
+<svelte:head><title>{data.playlist.name} by {data.username} — Linkbelli</title></svelte:head>
+
 {#key data.playlist.id}
 	<PlaylistView
 		playlist={data.playlist}
