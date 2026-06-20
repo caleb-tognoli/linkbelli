@@ -1,10 +1,9 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Linkbelli.IntegrationTests;
 
-public class ApiSmokeTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+[Collection(IntegrationCollection.Name)]
+public class ApiSmokeTests(PostgresApiFactory factory)
 {
     [Fact]
     public async Task Root_returns_api_info()

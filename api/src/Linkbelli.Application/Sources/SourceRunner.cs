@@ -78,7 +78,7 @@ public sealed class SourceRunner(
             // Resolve/dedup the links (get-or-create persists genuinely new ones, queued for
             // async enrichment). Both ItemsFound and ItemsAdded use canonical URLs so the frontend can compare them.
             var foundUrls = new List<string>();
-            var resolved = new List<(Link link, bool isNew)>();
+            var resolved = new List<(Link link, bool isNew, IReadOnlyDictionary<string, string>? metadata)>();
             foreach (var discoveredLink in discovered)
             {
                 if (UrlCanonicalizer.TryCanonicalize(discoveredLink.Url, out var canonical))
@@ -87,7 +87,7 @@ public sealed class SourceRunner(
                     {
                         var link = await links.GetOrCreateAsync(canonical, immediate: false, cancellationToken);
                         foundUrls.Add(link.CanonicalUrl);
-                        resolved.Add((link, !preExistingHashes.Contains(canonical.Hash)));
+                        resolved.Add((link, !preExistingHashes.Contains(canonical.Hash), discoveredLink.Metadata));
                     }
                     catch (BlockedHostException)
                     {
@@ -100,7 +100,7 @@ public sealed class SourceRunner(
             // ItemsAdded = URLs that were new to the application (first time seen globally).
             var seenIds = new HashSet<Guid>();
             var addedUrls = new List<string>();
-            foreach (var (link, isNew) in resolved)
+            foreach (var (link, isNew, _) in resolved)
             {
                 if (isNew && seenIds.Add(link.Id))
                 {
@@ -122,7 +122,7 @@ public sealed class SourceRunner(
                     .Where(i => i.PlaylistId == playlistId)
                     .MaxAsync(i => (long?)i.Position, cancellationToken) ?? 0;
 
-                foreach (var (link, _) in resolved)
+                foreach (var (link, _, metadata) in resolved)
                 {
                     if (!present.Add(link.Id))
                     {
@@ -137,6 +137,9 @@ public sealed class SourceRunner(
                         Position = nextPosition,
                         SourceId = sourceId,
                         Status = PlaylistItemStatus.Added,
+                        Metadata = metadata is { Count: > 0 }
+                            ? new Dictionary<string, string>(metadata)
+                            : null,
                     });
                 }
             }

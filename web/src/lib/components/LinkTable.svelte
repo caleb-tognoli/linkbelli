@@ -147,13 +147,16 @@
 		{/if}
 		<td class="py-2 pr-3">
 			<div class="flex items-center gap-4">
-				{#if showThumbnails && item.link.thumbnailUrl}
-					<img
-						src={item.link.thumbnailUrl}
-						alt=""
-						class="shrink-0 rounded object-cover"
-						style="height: 5em; width: auto"
-					/>
+				{#if showThumbnails}
+					{@const thumb = item.metadata?.thumbnail ?? item.link.thumbnailUrl}
+					{#if thumb}
+						<img
+							src={thumb}
+							alt=""
+							class="shrink-0 rounded object-cover"
+							style="height: 5em; width: auto"
+						/>
+					{/if}
 				{/if}
 				<div class="min-w-0">
 					<a
@@ -162,9 +165,12 @@
 						rel="noopener noreferrer"
 						class="break-words hover:underline"
 					>
-						{showUrls ? item.link.url : (item.link.title ?? item.link.url)}
+						{showUrls ? item.link.url : (item.metadata?.title ?? item.link.title ?? item.link.url)}
 					</a>
 					{#if item.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
+					{#if item.metadata?.author}
+						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.metadata.author}</p>
+					{/if}
 					{#if item.note && readonly}
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.note}</p>
 					{/if}

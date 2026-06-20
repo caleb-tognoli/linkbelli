@@ -17,7 +17,8 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             new LinkResponse(
                 i.Link!.Id, i.Link.CanonicalUrl, i.Link.Host!.Hostname, i.Link.Title,
                 i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw),
-            i.CreationTime);
+            i.CreationTime,
+            i.Metadata);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, CancellationToken ct = default)

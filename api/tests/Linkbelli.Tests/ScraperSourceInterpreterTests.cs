@@ -27,28 +27,54 @@ public class ScraperSourceInterpreterTests
 
         Assert.Equal(2, links.Count);
         Assert.Equal("https://news.example/articles/1", links[0].Url);
-        Assert.Equal("First Story", links[0].Title);
         Assert.Equal("https://other.example/2", links[1].Url);
     }
 
     [Fact]
-    public void Honors_custom_link_attribute_and_title_selector()
+    public void Honors_custom_link_attribute_and_meta_selectors()
     {
         const string html = """
-            <div class="card" data-url="https://example.com/a"><h2 class="t">Title A</h2></div>
-            <div class="card" data-url="https://example.com/b"><h2 class="t">Title B</h2></div>
+            <div class="card" data-url="https://example.com/a"><h2 class="t">Title A</h2><span class="author">Alice</span></div>
+            <div class="card" data-url="https://example.com/b"><h2 class="t">Title B</h2><span class="author">Bob</span></div>
             """;
         var config = new Dictionary<string, string>
         {
             [ScraperSourceInterpreter.ItemSelectorKey] = ".card",
             [ScraperSourceInterpreter.LinkAttributeKey] = "data-url",
-            [ScraperSourceInterpreter.TitleSelectorKey] = "h2.t",
+            ["meta.title"] = "h2.t",
+            ["meta.author"] = ".author",
         };
 
         var links = ScraperSourceInterpreter.Parse(html, "https://example.com", config);
 
         Assert.Equal(2, links.Count);
         Assert.Equal("https://example.com/a", links[0].Url);
-        Assert.Equal("Title A", links[0].Title);
+        Assert.Equal("Title A", links[0].Metadata?["title"]);
+        Assert.Equal("Alice", links[0].Metadata?["author"]);
+    }
+
+    [Fact]
+    public void Link_selector_finds_child_element()
+    {
+        const string html = """
+            <html><body>
+              <div class="item"><a class="link" href="/watch/1">Watch</a><img src="thumb1.jpg" /></div>
+              <div class="item"><a class="link" href="/watch/2">Watch</a><img src="thumb2.jpg" /></div>
+            </body></html>
+            """;
+        var config = new Dictionary<string, string>
+        {
+            [ScraperSourceInterpreter.ItemSelectorKey] = ".item",
+            [ScraperSourceInterpreter.LinkSelectorKey] = "a.link",
+            [ScraperSourceInterpreter.LinkAttributeKey] = "href",
+            ["meta.thumbnail"] = "img",
+            ["meta.thumbnail.attr"] = "src",
+        };
+
+        var links = ScraperSourceInterpreter.Parse(html, "https://example.com", config);
+
+        Assert.Equal(2, links.Count);
+        Assert.Equal("https://example.com/watch/1", links[0].Url);
+        Assert.Equal("thumb1.jpg", links[0].Metadata?["thumbnail"]);
     }
 }

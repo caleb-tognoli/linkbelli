@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using CodeHollow.FeedReader;
+using CodeHollow.FeedReader.Feeds;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Http;
 using Linkbelli.Core.Entities;
@@ -73,9 +74,47 @@ public sealed class RssSourceInterpreter(IHttpClientFactory httpClientFactory) :
         return feed.Items
             .Where(i => !string.IsNullOrWhiteSpace(i.Link))
             .Take(MaxItemsPerRun)
-            .Select(i => new DiscoveredLink(
-                i.Link!.Trim(),
-                string.IsNullOrWhiteSpace(i.Title) ? null : i.Title!.Trim()))
+            .Select(i =>
+            {
+                var meta = new Dictionary<string, string>();
+                if (!string.IsNullOrWhiteSpace(i.Title))  meta["title"]  = i.Title!.Trim();
+                if (!string.IsNullOrWhiteSpace(i.Author)) meta["author"] = i.Author!.Trim();
+                var thumb = ExtractThumbnail(i);
+                if (thumb is not null) meta["thumbnail"] = thumb;
+                return new DiscoveredLink(i.Link!.Trim(), null, meta.Count > 0 ? meta : null);
+            })
             .ToList();
+    }
+
+    private static string? ExtractThumbnail(FeedItem item)
+    {
+        // media:thumbnail / media:content (Media RSS)
+        if (item.SpecificItem is MediaRssFeedItem mediaItem)
+        {
+            var fromThumb = mediaItem.Media?
+                .SelectMany(m => m.Thumbnails)
+                .Select(t => t.Url)
+                .FirstOrDefault(u => !string.IsNullOrEmpty(u));
+            if (fromThumb is not null) return fromThumb;
+
+            var fromMedia = mediaItem.MediaGroups?
+                .SelectMany(g => g.Media)
+                .SelectMany(m => m.Thumbnails)
+                .Select(t => t.Url)
+                .FirstOrDefault(u => !string.IsNullOrEmpty(u));
+            if (fromMedia is not null) return fromMedia;
+        }
+
+        // <enclosure> with an image MIME type (RSS 2.0)
+        var enclosure = item.SpecificItem switch
+        {
+            Rss20FeedItem r => r.Enclosure,
+            Rss092FeedItem r2 => r2.Enclosure,
+            _ => null
+        };
+        if (enclosure is { Url: { Length: > 0 } url } && enclosure.MediaType?.StartsWith("image/") == true)
+            return url;
+
+        return null;
     }
 }

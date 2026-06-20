@@ -1,4 +1,5 @@
 using Hangfire;
+using Npgsql;
 using Hangfire.PostgreSql;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
@@ -27,7 +28,8 @@ public static class DependencyInjection
     {
         var connectionString = configuration.GetConnectionString("Default");
 
-        services.AddDbContext<LinkbelliDbContext>(options => options.UseNpgsql(connectionString));
+        var dataSource = new NpgsqlDataSourceBuilder(connectionString).EnableDynamicJson().Build();
+        services.AddDbContext<LinkbelliDbContext>(options => options.UseNpgsql(dataSource));
 
         // Expose the same scoped DbContext instance as the Application's abstraction.
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<LinkbelliDbContext>());

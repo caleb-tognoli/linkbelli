@@ -2,8 +2,8 @@ using Linkbelli.Core.Entities;
 
 namespace Linkbelli.Application.Sources;
 
-/// <summary>A link discovered by a source: its URL and an optional title hint.</summary>
-public record DiscoveredLink(string Url, string? Title);
+/// <summary>A link discovered by a source: its URL, an optional title hint, and source-provided metadata.</summary>
+public record DiscoveredLink(string Url, string? Title, IReadOnlyDictionary<string, string>? Metadata = null);
 
 /// <summary>
 /// Outcome of one fetch: the discovered links, optional updated interpreter state to persist

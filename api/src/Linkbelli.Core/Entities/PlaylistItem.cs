@@ -18,6 +18,8 @@ public class PlaylistItem : BaseEntity<Guid>
     /// <summary>Null when added manually; otherwise the source that discovered it.</summary>
     public Guid? SourceId { get; set; }
     public PlaylistItemStatus Status { get; set; } = PlaylistItemStatus.Added;
+    /// <summary>Source-provided metadata (title, thumbnail, author, etc.). Null when added manually.</summary>
+    public Dictionary<string, string>? Metadata { get; set; }
 
     public Playlist? Playlist { get; set; }
     public Link? Link { get; set; }

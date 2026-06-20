@@ -75,6 +75,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasOne(i => i.Playlist).WithMany(p => p.Items).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(i => i.Link).WithMany().OnDelete(DeleteBehavior.Restrict);
             e.HasOne(i => i.Source).WithMany().OnDelete(DeleteBehavior.SetNull);
+            e.Property(i => i.Metadata).HasColumnType("jsonb");
             e.HasSoftDeleteFilter();
         });
 

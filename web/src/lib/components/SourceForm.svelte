@@ -3,7 +3,7 @@
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Popover } from 'bits-ui';
-	import { X, Plus, Save, Lock, Globe, Trash2 } from '@lucide/svelte';
+	import { X, Plus, Save, Lock, Globe, Trash2, Info } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 	import type { Source, SourceType, SourceVisibility } from '$lib/types';
 
@@ -29,24 +29,29 @@
 	}
 
 	const AUTH_FIELDS: FieldDef[] = [
-		{ key: 'auth.loginUrl', label: 'Login URL', required: false, placeholder: 'https://site.example/api/auth/login' },
+		{ key: 'auth.loginUrl', label: 'Login URL', required: false },
 		{ key: 'auth.username', label: 'Username', required: false },
 		{ key: 'auth.password', label: 'Password', required: false, inputType: 'password' }
 	];
 
+	const META_FIELD_NAMES = ['title', 'thumbnail', 'author'] as const;
+	type MetaFieldName = (typeof META_FIELD_NAMES)[number];
+
+	const SCRAPER_LINK_FIELDS = ['linkSelector', 'linkAttribute'] as const;
+
 	const FIELDS: Record<SourceType, FieldDef[]> = {
-		Rss: [{ key: 'feedUrl', label: 'Feed URL', required: true, placeholder: 'https://…/feed.xml' }],
+		Rss: [{ key: 'feedUrl', label: 'Feed URL', required: true }],
 		Scraper: [
-			{ key: 'url', label: 'Page URL', required: true, placeholder: 'https://news.example' },
-			{ key: 'itemSelector', label: 'Item selector (CSS)', required: true, placeholder: 'a.headline' },
-			{ key: 'linkAttribute', label: 'Link attribute', required: false, placeholder: 'href', hideOptional: true },
-			{ key: 'titleSelector', label: 'Title selector (CSS)', required: false }
+			{ key: 'url', label: 'Page URL', required: true },
+			{ key: 'itemSelector', label: 'Item selector', required: true },
+			{ key: 'linkSelector', label: 'Link selector (CSS)', required: false, hideOptional: true },
+			{ key: 'linkAttribute', label: 'Link attribute', required: false, hideOptional: true }
 		],
 		JsonApi: [
-			{ key: 'url', label: 'API URL', required: true, placeholder: 'https://api.example/posts' },
-			{ key: 'itemsPath', label: 'Items JSONPath', required: true, placeholder: '$.data.posts[*]' },
-			{ key: 'urlPath', label: 'URL JSONPath', required: true, placeholder: 'permalink' },
-			{ key: 'titlePath', label: 'Title JSONPath', required: false, placeholder: 'title' }
+			{ key: 'url', label: 'API URL', required: true },
+			{ key: 'itemsPath', label: 'Items JSONPath', required: true },
+			{ key: 'urlPath', label: 'URL JSONPath', required: true },
+			{ key: 'titlePath', label: 'Title JSONPath', required: false }
 		]
 	};
 
@@ -134,6 +139,14 @@
 				}
 			}
 		}
+		if (type === 'Scraper') {
+			for (const name of META_FIELD_NAMES) {
+				const sel = values[`meta.${name}`]?.trim();
+				const attr = values[`meta.${name}.attr`]?.trim();
+				if (sel) cfg[`meta.${name}`] = sel;
+				if (attr) cfg[`meta.${name}.attr`] = attr;
+			}
+		}
 		return cfg;
 	}
 
@@ -177,6 +190,13 @@
 	const fieldClass = 'rounded-md border px-3 py-2 text-sm';
 	const fieldStyle = 'border-color: var(--color-border); background: var(--color-bg)';
 </script>
+
+{#snippet infoTip(text: string)}
+	<span class="group relative inline-flex cursor-default">
+		<Info size={12} aria-hidden="true" style="color: var(--color-muted)" />
+		<span class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100" style="border-color: var(--color-border); background: var(--color-surface); color: var(--color-muted)">{text}</span>
+	</span>
+{/snippet}
 
 <div class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1 text-sm">
@@ -264,9 +284,9 @@
 	<fieldset class="rounded-lg border p-4" style="border-color: var(--color-border)">
 		<legend class="px-1 text-xs" style="color: var(--color-muted)">Configuration</legend>
 
-		<div class="flex flex-col gap-6 lg:flex-row lg:items-start">
-			<!-- Main config fields -->
-			<div class="flex flex-1 flex-col gap-4">
+		<div class="flex flex-col gap-6">
+			<!-- Type + main config fields -->
+			<div class="flex flex-col gap-4">
 				<label class="flex flex-col gap-1 text-sm">
 					<span>Type</span>
 					<select bind:value={type} class={fieldClass} style={fieldStyle}>
@@ -276,36 +296,48 @@
 					</select>
 				</label>
 
-				{#each FIELDS[type] as f (f.key)}
+				{#each FIELDS[type].filter(f => !SCRAPER_LINK_FIELDS.includes(f.key as typeof SCRAPER_LINK_FIELDS[number])) as f (f.key)}
 					<label class="flex flex-col gap-1 text-sm">
 						<span>{f.label}{#if !f.required && !f.hideOptional}<span style="color: var(--color-muted)"> (optional)</span>{/if}</span>
-						<input bind:value={values[f.key]} placeholder={f.placeholder ?? ''} type={f.inputType ?? 'text'} class={fieldClass} style={fieldStyle} />
+						<input bind:value={values[f.key]} type={f.inputType ?? 'text'} class={fieldClass} style={fieldStyle} />
 					</label>
 				{/each}
 
-				{#if type === 'JsonApi' || type === 'Scraper'}
-					<div class="flex flex-col gap-2">
-						<div class="flex items-center justify-between">
-							<span class="text-sm">Request headers</span>
-							<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
-								<Plus size={15} aria-hidden="true" />
-							</button>
-						</div>
-						{#each headers as header, i (i)}
-							<div class="flex gap-2">
-								<input bind:value={header.name} placeholder="Name" class="{fieldClass} flex-1" style={fieldStyle} />
-								<input bind:value={header.value} placeholder="Value" class="{fieldClass} flex-1" style={fieldStyle} />
-								<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
-									<X size={17} aria-hidden="true" />
-								</button>
-							</div>
-						{/each}
+				{#if type === 'Scraper'}
+					<div class="flex gap-2">
+						<label class="flex flex-1 flex-col gap-1 text-sm">
+							<span class="inline-flex items-center gap-1">Link selector {@render infoTip('Selector is relative to the item selector')}</span>
+							<input bind:value={values['linkSelector']} class={fieldClass} style={fieldStyle} />
+						</label>
+						<label class="flex flex-1 flex-col gap-1 text-sm">
+							<span class="inline-flex items-center gap-1">Link attribute {@render infoTip('Leave blank to read text content')}</span>
+							<input bind:value={values['linkAttribute']} class={fieldClass} style={fieldStyle} />
+						</label>
 					</div>
 				{/if}
 			</div>
 
-			<!-- Authentication subsection -->
 			{#if type === 'JsonApi' || type === 'Scraper'}
+				<!-- Request headers -->
+				<div class="flex flex-col gap-2">
+					<div class="flex items-center justify-between">
+						<span class="text-sm">Request headers</span>
+						<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
+							<Plus size={15} aria-hidden="true" />
+						</button>
+					</div>
+					{#each headers as header, i (i)}
+						<div class="flex gap-2">
+							<input bind:value={header.name} class="{fieldClass} flex-1" style={fieldStyle} />
+							<input bind:value={header.value} class="{fieldClass} flex-1" style={fieldStyle} />
+							<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
+								<X size={17} aria-hidden="true" />
+							</button>
+						</div>
+					{/each}
+				</div>
+
+				<!-- Authentication -->
 				<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
 					<div class="flex items-center justify-between gap-4">
 						<span class="text-sm font-medium">Authentication</span>
@@ -324,14 +356,39 @@
 						</div>
 					</div>
 					{#if authMode === 'loginUrl'}
-						{#each AUTH_FIELDS as f (f.key)}
-							<label class="flex flex-col gap-1 text-sm">
-								<span>{f.label}</span>
-								<input bind:value={values[f.key]} placeholder={f.placeholder ?? ''} type={f.inputType ?? 'text'} class={fieldClass} style={fieldStyle} />
+						<label class="flex flex-col gap-1 text-sm">
+							<span>Login URL</span>
+							<input bind:value={values['auth.loginUrl']} class={fieldClass} style={fieldStyle} />
+						</label>
+						<div class="flex gap-2">
+							<label class="flex flex-1 flex-col gap-1 text-sm">
+								<span>Username</span>
+								<input bind:value={values['auth.username']} class={fieldClass} style={fieldStyle} />
 							</label>
-						{/each}
+							<label class="flex flex-1 flex-col gap-1 text-sm">
+								<span>Password</span>
+								<input bind:value={values['auth.password']} type="password" class={fieldClass} style={fieldStyle} />
+							</label>
+						</div>
 					{/if}
 				</div>
+
+				<!-- Metadata (Scraper only) -->
+				{#if type === 'Scraper'}
+					<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
+						<span class="text-sm font-medium">Metadata</span>
+						<div class="grid grid-cols-[7rem_1fr_1fr] items-center gap-x-2 gap-y-2 text-sm">
+							<span class="text-xs font-medium" style="color: var(--color-muted)">Field</span>
+							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Selector {@render infoTip('Selector is relative to the item selector')}</span>
+							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Attribute {@render infoTip('Leave blank to read text content')}</span>
+							{#each META_FIELD_NAMES as name (name)}
+								<span class="capitalize" style="color: var(--color-muted)">{name}</span>
+								<input bind:value={values[`meta.${name}`]} class={fieldClass} style={fieldStyle} />
+								<input bind:value={values[`meta.${name}.attr`]} class={fieldClass} style={fieldStyle} />
+							{/each}
+						</div>
+					</div>
+				{/if}
 			{/if}
 		</div>
 	</fieldset>

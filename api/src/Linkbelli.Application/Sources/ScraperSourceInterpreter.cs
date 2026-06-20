@@ -9,21 +9,23 @@ namespace Linkbelli.Application.Sources;
 
 /// <summary>
 /// Scrapes a web page for links via CSS selectors (through the SSRF-protected client).
-/// Config: { url, itemSelector, linkAttribute?, titleSelector?, header.*, auth.* }.
-/// <c>itemSelector</c> selects the link-bearing elements; <c>linkAttribute</c> (default
-/// <c>href</c>) holds each URL; <c>titleSelector</c> (optional, searched within each element)
-/// or the element's text supplies the title. Relative URLs resolve against <c>url</c>.
+/// Config: { url, itemSelector, linkSelector?, linkAttribute?, meta.*, header.*, auth.* }.
+/// <c>itemSelector</c> selects each item container. Within each item, <c>linkSelector</c>
+/// (optional) finds the element that carries the URL; <c>linkAttribute</c> names the attribute
+/// to read from that element (default <c>href</c>; empty = read text content as URL).
+/// If <c>linkSelector</c> is absent the URL is read from the item element itself.
+/// Metadata keys follow the pattern <c>meta.&lt;name&gt;</c> (CSS selector within item) and
+/// <c>meta.&lt;name&gt;.attr</c> (attribute to read; absent = text content).
 /// Keys prefixed <c>header.</c> become request headers (encrypted at rest).
-/// Keys prefixed <c>auth.</c> trigger a pre-run credential login (also encrypted at rest):
-/// set <c>auth.loginUrl</c>, <c>auth.username</c>, <c>auth.password</c> and any extra body
-/// fields; the resulting session cookies replace <c>header.Cookie</c> for that run.
+/// Keys prefixed <c>auth.</c> trigger a pre-run credential login (also encrypted at rest).
 /// </summary>
 public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactory) : ISourceInterpreter
 {
     public const string UrlKey = "url";
     public const string ItemSelectorKey = "itemSelector";
+    public const string LinkSelectorKey = "linkSelector";
     public const string LinkAttributeKey = "linkAttribute";
-    public const string TitleSelectorKey = "titleSelector";
+    public const string MetaPrefix = "meta.";
     public const string HeaderPrefix = "header.";
     private const int MaxItemsPerRun = 100;
     private static readonly HtmlParser Parser = new();
@@ -80,43 +82,66 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
     public static IReadOnlyList<DiscoveredLink> Parse(string html, string baseUrl, IReadOnlyDictionary<string, string> config)
     {
         var itemSelector = config[ItemSelectorKey];
-        var linkAttribute = config.GetValueOrDefault(LinkAttributeKey) is { Length: > 0 } a ? a : "href";
-        var titleSelector = config.GetValueOrDefault(TitleSelectorKey);
+        var linkSelectorVal = config.GetValueOrDefault(LinkSelectorKey);
+        var linkAttributeVal = config.GetValueOrDefault(LinkAttributeKey);
         var baseUri = Uri.TryCreate(baseUrl, UriKind.Absolute, out var b) ? b : null;
+
+        // Collect meta.<name> selectors (keys without a dot after the prefix are field names).
+        var metaSelectors = config
+            .Where(kv => kv.Key.StartsWith(MetaPrefix, StringComparison.OrdinalIgnoreCase)
+                      && !kv.Key[MetaPrefix.Length..].Contains('.'))
+            .Select(kv => (
+                name: kv.Key[MetaPrefix.Length..],
+                selector: kv.Value,
+                attr: config.GetValueOrDefault(kv.Key + ".attr")))
+            .Where(m => !string.IsNullOrWhiteSpace(m.selector))
+            .ToList();
 
         var doc = Parser.ParseDocument(html);
         var results = new List<DiscoveredLink>();
         var seen = new HashSet<string>();
+
         foreach (var el in doc.QuerySelectorAll(itemSelector))
         {
-            var raw = el.GetAttribute(linkAttribute);
-            if (string.IsNullOrWhiteSpace(raw))
+            // Resolve which element holds the URL.
+            string? raw;
+            if (!string.IsNullOrEmpty(linkSelectorVal))
             {
-                continue;
+                var linkEl = el.QuerySelector(linkSelectorVal);
+                if (linkEl is null) continue;
+                raw = string.IsNullOrEmpty(linkAttributeVal)
+                    ? linkEl.TextContent?.Trim()
+                    : linkEl.GetAttribute(linkAttributeVal);
             }
+            else
+            {
+                var effectiveAttr = string.IsNullOrEmpty(linkAttributeVal) ? "href" : linkAttributeVal;
+                raw = el.GetAttribute(effectiveAttr);
+            }
+
+            if (string.IsNullOrWhiteSpace(raw)) continue;
 
             var resolved = baseUri is not null && Uri.TryCreate(baseUri, raw, out var abs) ? abs.ToString() : raw.Trim();
-            if (!seen.Add(resolved))
+            if (!seen.Add(resolved)) continue;
+
+            // Extract metadata fields.
+            Dictionary<string, string>? metadata = null;
+            foreach (var (fieldName, selector, attr) in metaSelectors)
             {
-                continue;
+                var metaEl = el.QuerySelector(selector);
+                if (metaEl is null) continue;
+                var value = string.IsNullOrEmpty(attr)
+                    ? metaEl.TextContent?.Trim()
+                    : metaEl.GetAttribute(attr)?.Trim();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    metadata ??= new Dictionary<string, string>();
+                    metadata[fieldName] = value;
+                }
             }
 
-            string? title = null;
-            if (!string.IsNullOrWhiteSpace(titleSelector))
-            {
-                title = el.QuerySelector(titleSelector)?.TextContent.Trim();
-            }
-
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                title = string.IsNullOrWhiteSpace(el.TextContent) ? null : el.TextContent.Trim();
-            }
-
-            results.Add(new DiscoveredLink(resolved, string.IsNullOrWhiteSpace(title) ? null : title));
-            if (results.Count >= MaxItemsPerRun)
-            {
-                break;
-            }
+            results.Add(new DiscoveredLink(resolved, null, metadata));
+            if (results.Count >= MaxItemsPerRun) break;
         }
 
         return results;
