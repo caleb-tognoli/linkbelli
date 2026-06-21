@@ -109,6 +109,7 @@ export interface PlaylistItem {
 	link: LinkSummary;
 	creationTime: string;
 	metadata: Record<string, string> | null;
+	sourceId: string | null;
 }
 
 export interface LinkPreview {

@@ -30,7 +30,7 @@ public record MoveItemRequest(Guid? AfterItemId);
 
 public record PlaylistItemResponse(
     Guid Id, long Position, string? Note, PlaylistItemStatus Status, LinkResponse Link, DateTimeOffset CreationTime,
-    IReadOnlyDictionary<string, string>? Metadata = null);
+    IReadOnlyDictionary<string, string>? Metadata = null, Guid? SourceId = null);
 
 // --- Links ---
 public record CreateLinkRequest(string Url);

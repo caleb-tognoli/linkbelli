@@ -44,6 +44,7 @@
 	let items = $state(itemsPage.items);
 	let nextCursor = $state(itemsPage.nextCursor);
 	let serverSort = $state('position');
+	let sourceFilter = $state<string | null>(null); // null = all, 'manual' = no source, else sourceId
 	let tags = $state(playlist.tags);
 	let attached = $state(attachedSources);
 	let loadingMore = $state(false);
@@ -68,9 +69,27 @@
 			: `/public/playlists/${encodeURIComponent(ownerUsername!)}/${encodeURIComponent(playlist.slug)}/items`;
 	}
 
+	function buildParams(extra: Record<string, string> = {}) {
+		const p = new URLSearchParams(extra);
+		if (serverSort !== 'position') p.set('sort', serverSort);
+		if (sourceFilter !== null) p.set('source', sourceFilter);
+		const qs = p.toString();
+		return qs ? `?${qs}` : '';
+	}
+
 	async function onfetchsort(sort: string) {
 		serverSort = sort;
-		const res = await api.get(`${itemsEndpoint()}?sort=${sort}`);
+		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
+		if (res.ok) {
+			const page = (await res.json()) as Paged<PlaylistItem>;
+			items = page.items;
+			nextCursor = page.nextCursor;
+		}
+	}
+
+	async function applySourceFilter(source: string | null) {
+		sourceFilter = source;
+		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 		if (res.ok) {
 			const page = (await res.json()) as Paged<PlaylistItem>;
 			items = page.items;
@@ -82,7 +101,7 @@
 		if (!nextCursor || loadingMore) return;
 		loadingMore = true;
 		try {
-			const res = await api.get(`${itemsEndpoint()}?cursor=${encodeURIComponent(nextCursor)}&sort=${serverSort}`);
+			const res = await api.get(`${itemsEndpoint()}${buildParams({ cursor: nextCursor })}`);
 			if (res.ok) {
 				const page = (await res.json()) as Paged<PlaylistItem>;
 				items = [...items, ...page.items];
@@ -179,7 +198,14 @@
 	{/if}
 
 	<div class="mt-5">
-		<LinkTable bind:items readonly={!isOwner} {onfetchsort} />
+		<LinkTable
+			bind:items
+			readonly={!isOwner}
+			{onfetchsort}
+			attachedSources={attached}
+			{sourceFilter}
+			onsourcefilter={applySourceFilter}
+		/>
 		{#if nextCursor}
 			<div class="mt-3 text-center">
 				<button

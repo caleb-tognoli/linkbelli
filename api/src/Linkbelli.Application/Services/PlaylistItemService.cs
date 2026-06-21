@@ -18,10 +18,11 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
                 i.Link!.Id, i.Link.CanonicalUrl, i.Link.Host!.Hostname, i.Link.Title,
                 i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw),
             i.CreationTime,
-            i.Metadata);
+            i.Metadata,
+            i.SourceId);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
-        Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, CancellationToken ct = default)
+        Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, CancellationToken ct = default)
     {
         await EnsureOwnsPlaylistAsync(playlistId, ownerId, ct);
 
@@ -29,6 +30,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId && i.Link!.EnrichedAt != null);
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
+        query = ApplySourceFilter(query, source);
 
         return await PageAsync(query, take, cursor, sort, ct);
     }
@@ -141,7 +143,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     }
 
     public async Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(
-        string username, string slug, int? limit, string? cursor, string? sort, Guid? viewerId, CancellationToken ct = default)
+        string username, string slug, int? limit, string? cursor, string? sort, string? source, Guid? viewerId, CancellationToken ct = default)
     {
         var normalized = username.ToUpperInvariant();
         var playlist = await db.Playlists
@@ -160,8 +162,16 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlist.Id && i.Link!.EnrichedAt != null);
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
+        query = ApplySourceFilter(query, source);
 
         return await PageAsync(query, take, cursor, sort, ct);
+    }
+
+    private static IQueryable<PlaylistItem> ApplySourceFilter(IQueryable<PlaylistItem> query, string? source)
+    {
+        if (source == "manual") return query.Where(i => i.SourceId == null);
+        if (Guid.TryParse(source, out var sourceId)) return query.Where(i => i.SourceId == sourceId);
+        return query;
     }
 
     private static async Task<PagedResult<PlaylistItemResponse>> PageAsync(

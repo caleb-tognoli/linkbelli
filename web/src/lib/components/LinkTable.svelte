@@ -2,15 +2,25 @@
 	import { Popover } from 'bits-ui';
 	import { dndzone } from 'svelte-dnd-action';
 	import { api } from '$lib/api/client';
-	import { ChevronDown, Clock, Eye, EyeOff, Image, StickyNote, Trash2 } from '@lucide/svelte';
+	import { ArrowUpDown, ChevronDown, Clock, Eye, EyeOff, Image, Rss, StickyNote, Trash2, Type } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
-	import type { PlaylistItem } from '$lib/types';
+	import type { AttachedSource, PlaylistItem } from '$lib/types';
 
 	let {
 		items = $bindable(),
 		readonly = false,
-		onfetchsort
-	}: { items: PlaylistItem[]; readonly?: boolean; onfetchsort?: (sort: string) => Promise<void> } = $props();
+		onfetchsort,
+		attachedSources = [],
+		sourceFilter = null,
+		onsourcefilter
+	}: {
+		items: PlaylistItem[];
+		readonly?: boolean;
+		onfetchsort?: (sort: string) => Promise<void>;
+		attachedSources?: AttachedSource[];
+		sourceFilter?: string | null;
+		onsourcefilter?: (source: string | null) => Promise<void>;
+	} = $props();
 
 	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle';
 	type StatusFilter = 'All' | 'Unwatched' | 'Watched';
@@ -29,9 +39,18 @@
 		shuffle: 'Shuffle'
 	};
 
+	let sourceFilterOpen = $state(false);
 	let statusOpen = $state(false);
 	let sortOpen = $state(false);
 	let displayOpen = $state(false);
+
+	const sourceFilterLabel = $derived(
+		sourceFilter === null
+			? 'All'
+			: sourceFilter === 'manual'
+				? 'Manual'
+				: (attachedSources.find((s) => s.id === sourceFilter)?.name ?? 'Unknown')
+	);
 
 	function setStatusFilter(f: StatusFilter) {
 		statusFilter = f;
@@ -257,25 +276,51 @@
 	</tr>
 {/snippet}
 
-{#if items.length === 0}
-	<div
-		class="rounded-lg border border-dashed p-10 text-center"
-		style="border-color: var(--color-border)"
-	>
-		<p class="font-medium">No links yet.</p>
-		{#if !readonly}
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">Paste a URL above to add the first.</p>
-		{/if}
-	</div>
-{:else}
+{#if items.length > 0 || sourceFilter !== null}
 	<div class="mb-3 flex flex-wrap items-center gap-1.5">
+		<!-- First section: source + status filters -->
+		{#if attachedSources.length > 0}
+			<Popover.Root bind:open={sourceFilterOpen}>
+				<Popover.Trigger
+					class="{toggleClass} inline-flex items-center gap-1"
+					style={toggleStyle(sourceFilter !== null)}
+				>
+					<Rss size={10} aria-hidden="true" /> {sourceFilterLabel} <ChevronDown size={10} aria-hidden="true" />
+				</Popover.Trigger>
+				<Popover.Content
+					class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
+					sideOffset={4}
+				>
+					<button
+						type="button"
+						onclick={() => { onsourcefilter?.(null); sourceFilterOpen = false; }}
+						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+						class:font-medium={sourceFilter === null}
+					>All</button>
+					<button
+						type="button"
+						onclick={() => { onsourcefilter?.('manual'); sourceFilterOpen = false; }}
+						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+						class:font-medium={sourceFilter === 'manual'}
+					>Manual</button>
+					{#each attachedSources as source (source.id)}
+						<button
+							type="button"
+							onclick={() => { onsourcefilter?.(source.id); sourceFilterOpen = false; }}
+							class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+							class:font-medium={sourceFilter === source.id}
+						>{source.name}</button>
+					{/each}
+				</Popover.Content>
+			</Popover.Root>
+		{/if}
 		{#if !readonly}
 			<Popover.Root bind:open={statusOpen}>
 				<Popover.Trigger
 					class="{toggleClass} inline-flex items-center gap-1"
 					style={toggleStyle(statusFilter !== 'Unwatched')}
 				>
-					{statusFilter} <ChevronDown size={10} aria-hidden="true" />
+					<Eye size={10} aria-hidden="true" /> {statusFilter} <ChevronDown size={10} aria-hidden="true" />
 				</Popover.Trigger>
 				<Popover.Content
 					class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
@@ -292,13 +337,17 @@
 				</Popover.Content>
 			</Popover.Root>
 		{/if}
+		{#if attachedSources.length > 0 || !readonly}
+			<span class="text-xs" style="color: var(--color-border)">|</span>
+		{/if}
 
+		<!-- Second section: sort + display options -->
 		<Popover.Root bind:open={sortOpen}>
 			<Popover.Trigger
 				class="{toggleClass} inline-flex items-center gap-1"
 				style={toggleStyle(sortMode !== (readonly ? 'date-desc' : 'manual'))}
 			>
-				{SORT_LABELS[sortMode]} <ChevronDown size={10} aria-hidden="true" />
+				<ArrowUpDown size={10} aria-hidden="true" /> {SORT_LABELS[sortMode]} <ChevronDown size={10} aria-hidden="true" />
 			</Popover.Trigger>
 			<Popover.Content
 				class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
@@ -340,7 +389,7 @@
 				class="{toggleClass} inline-flex items-center gap-1"
 				style={toggleStyle(showUrls)}
 			>
-				{showUrls ? 'URL' : 'Title'} <ChevronDown size={10} aria-hidden="true" />
+				<Type size={10} aria-hidden="true" /> {showUrls ? 'URL' : 'Title'} <ChevronDown size={10} aria-hidden="true" />
 			</Popover.Trigger>
 			<Popover.Content
 				class="popover-surface z-30 min-w-24 overflow-hidden rounded-md border shadow-md"
@@ -370,13 +419,28 @@
 			<Image size={11} aria-hidden="true" /> Thumbnail
 		</button>
 	</div>
+{/if}
 
-	{#if filteredItems.length === 0}
-		<p class="py-6 text-center text-sm" style="color: var(--color-muted)">
-			No {statusFilter.toLowerCase()} items.
-		</p>
+{#if items.length === 0}
+	{#if sourceFilter !== null}
+		<p class="py-6 text-center text-sm" style="color: var(--color-muted)">No items for this source.</p>
 	{:else}
-		<div class="overflow-x-auto">
+		<div
+			class="rounded-lg border border-dashed p-10 text-center"
+			style="border-color: var(--color-border)"
+		>
+			<p class="font-medium">No links yet.</p>
+			{#if !readonly}
+				<p class="mt-1 text-sm" style="color: var(--color-muted)">Paste a URL above to add the first.</p>
+			{/if}
+		</div>
+	{/if}
+{:else if filteredItems.length === 0}
+	<p class="py-6 text-center text-sm" style="color: var(--color-muted)">
+		No {statusFilter.toLowerCase()} items.
+	</p>
+{:else}
+	<div class="overflow-x-auto">
 			<table class="w-full border-collapse text-sm">
 				<thead>
 					<tr class="text-left" style="color: var(--color-muted)">
@@ -405,5 +469,4 @@
 				{/if}
 			</table>
 		</div>
-	{/if}
 {/if}
