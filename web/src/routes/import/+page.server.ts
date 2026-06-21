@@ -90,6 +90,12 @@ export const actions: Actions = {
 		const text = await file.text();
 		const rows = parseCsv(text);
 
+		if (rows.length > 2000) {
+			return fail(400, {
+				error: `Too many rows (${rows.length}). The limit is 2,000 per import — split your file and import in batches.`
+			});
+		}
+
 		if (rows.length === 0) {
 			return fail(400, {
 				error: 'No valid rows found. Make sure the file has a header row with a "url" column.'
