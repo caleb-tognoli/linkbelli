@@ -30,12 +30,18 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
     }
 
     public async Task<PagedResult<PlaylistResponse>> ListAsync(
-        Guid ownerId, int? limit, string? cursor, string[]? tags, bool unfiled = false, CancellationToken ct = default)
+        Guid ownerId, int? limit, string? cursor, string[]? tags, string? q = null, bool unfiled = false, CancellationToken ct = default)
     {
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
 
         var query = FilterByTags(db.Playlists.Where(p => p.OwnerId == ownerId), tags);
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var needle = q.Trim().ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(needle));
+        }
 
         // The home "root" view shows only playlists not filed in any of the caller's folders.
         if (unfiled)

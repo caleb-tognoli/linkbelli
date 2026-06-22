@@ -5,7 +5,7 @@ namespace Linkbelli.Application.Services;
 public interface IPlaylistService
 {
     /// <summary>List the caller's playlists. When <paramref name="unfiled"/> is true, only playlists not filed in any folder (the home "root" view).</summary>
-    Task<PagedResult<PlaylistResponse>> ListAsync(Guid ownerId, int? limit, string? cursor, string[]? tags, bool unfiled = false, CancellationToken ct = default);
+    Task<PagedResult<PlaylistResponse>> ListAsync(Guid ownerId, int? limit, string? cursor, string[]? tags, string? q = null, bool unfiled = false, CancellationToken ct = default);
     Task<PlaylistResponse> CreateAsync(Guid ownerId, CreatePlaylistRequest request, CancellationToken ct = default);
     Task<PlaylistResponse> GetAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task<PlaylistResponse> UpdateAsync(Guid ownerId, Guid id, UpdatePlaylistRequest request, CancellationToken ct = default);
