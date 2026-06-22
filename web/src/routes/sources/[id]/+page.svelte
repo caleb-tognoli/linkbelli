@@ -4,10 +4,10 @@
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Dialog } from 'bits-ui';
-	import { Play, RotateCcw, X, ChevronRight } from '@lucide/svelte';
+	import { Play, RotateCcw, X, ChevronRight, Copy } from '@lucide/svelte';
 	import SourceForm from '$lib/components/SourceForm.svelte';
 	import type { PageData } from './$types';
-	import type { SourceRun } from '$lib/types';
+	import type { Source, SourceRun } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 	let busy = $state(false);
@@ -51,6 +51,29 @@
 		}
 	}
 
+	async function duplicate() {
+		if (!(await confirmDialog(`Duplicate "${data.source.name}"?`, { confirmLabel: 'Duplicate' }))) return;
+		busy = true;
+		try {
+			const res = await api.post('/sources', {
+				name: `${data.source.name} (copy)`,
+				type: data.source.type,
+				config: data.source.config,
+				schedule: data.source.schedule,
+				visibility: data.source.visibility,
+				playlistIds: data.source.playlistIds,
+			});
+			if (res.ok) {
+				const created = (await res.json()) as Source;
+				await goto(`/sources/${created.id}`);
+			} else {
+				toast = 'Could not duplicate source.';
+			}
+		} finally {
+			busy = false;
+		}
+	}
+
 	async function remove() {
 		if (!(await confirmDialog('Delete this source? Playlists keep their existing links.', { danger: true, confirmLabel: 'Delete' }))) return;
 		busy = true;
@@ -85,9 +108,14 @@
 
 	<header class="mt-3 flex items-center justify-between gap-3">
 		<h1 class="text-2xl font-semibold">{data.source.name}</h1>
-		<button type="button" onclick={runNow} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Run now" aria-label="Run now">
-			<Play size={17} aria-hidden="true" />
-		</button>
+		<div class="flex items-center gap-1">
+			<button type="button" onclick={duplicate} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Duplicate source" aria-label="Duplicate source">
+				<Copy size={17} aria-hidden="true" />
+			</button>
+			<button type="button" onclick={runNow} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Run now" aria-label="Run now">
+				<Play size={17} aria-hidden="true" />
+			</button>
+		</div>
 	</header>
 
 	{#if toast}
