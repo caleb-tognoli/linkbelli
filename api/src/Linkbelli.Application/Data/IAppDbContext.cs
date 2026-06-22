@@ -2,6 +2,7 @@ using Linkbelli.Application.Identity;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Linkbelli.Application.Data;
 
@@ -26,6 +27,15 @@ public interface IAppDbContext
     DbSet<PlaylistTag> PlaylistTags { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }
+
+    /// <summary>Begins a database transaction, pinning a single connection for the duration.</summary>
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets the PostgreSQL random seed so that subsequent <c>ORDER BY random()</c> queries
+    /// produce a deterministic order on the same connection.
+    /// </summary>
+    Task SeedRandomAsync(double seed, CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

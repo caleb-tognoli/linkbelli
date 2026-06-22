@@ -18,6 +18,7 @@
 		items={data.items}
 		attachedSources={data.attachedSources}
 		ownSources={data.ownSources}
+		initialPrefs={data.initialPrefs}
 		{backHref}
 		{backLabel}
 	/>

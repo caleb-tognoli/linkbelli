@@ -4,12 +4,16 @@
 	import { api } from '$lib/api/client';
 	import { ArrowUpDown, ChevronDown, Clock, Eye, EyeOff, Image, Rss, StickyNote, Trash2, Type } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
+	import { savePrefs } from '$lib/prefs';
 	import type { AttachedSource, PlaylistItem } from '$lib/types';
+	import type { PlaylistPrefs } from '$lib/prefs';
 
 	let {
 		items = $bindable(),
 		readonly = false,
 		onfetchsort,
+		playlistId = undefined,
+		initialPrefs = undefined,
 		attachedSources = [],
 		sourceFilter = null,
 		onsourcefilter
@@ -17,6 +21,8 @@
 		items: PlaylistItem[];
 		readonly?: boolean;
 		onfetchsort?: (sort: string) => Promise<void>;
+		playlistId?: string;
+		initialPrefs?: PlaylistPrefs;
 		attachedSources?: AttachedSource[];
 		sourceFilter?: string | null;
 		onsourcefilter?: (source: string | null) => Promise<void>;
@@ -25,11 +31,19 @@
 	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle';
 	type StatusFilter = 'All' | 'Unwatched' | 'Watched';
 
-	let sortMode = $state<SortMode>(readonly ? 'date-desc' : 'manual');
-	let statusFilter = $state<StatusFilter>(!readonly ? 'Unwatched' : 'All');
-	let shuffledItems = $state<PlaylistItem[]>([]);
-	let showThumbnails = $state(true);
-	let showUrls = $state(false);
+	function serverSortToMode(s: string | undefined): SortMode {
+		if (s === 'date-asc') return 'date-asc';
+		if (s === 'date-desc') return 'date-desc';
+		if (s === 'shuffle') return 'shuffle';
+		return readonly ? 'date-desc' : 'manual';
+	}
+
+	const defaultStatus: StatusFilter = !readonly ? 'Unwatched' : 'All';
+
+	let sortMode = $state<SortMode>(serverSortToMode(initialPrefs?.sort));
+	let statusFilter = $state<StatusFilter>((initialPrefs?.status as StatusFilter | null) ?? defaultStatus);
+	let showThumbnails = $state(initialPrefs?.showThumbnails ?? true);
+	let showUrls = $state(initialPrefs?.showUrls ?? false);
 
 	const statusOptions: StatusFilter[] = ['All', 'Unwatched', 'Watched'];
 	const SORT_LABELS: Record<SortMode, string> = {
@@ -54,6 +68,7 @@
 
 	function setStatusFilter(f: StatusFilter) {
 		statusFilter = f;
+		if (playlistId) savePrefs(playlistId, { status: f });
 	}
 
 	// Items visible under the current status filter
@@ -73,12 +88,8 @@
 
 	function setSort(mode: SortMode) {
 		sortMode = mode;
-		if (mode === 'shuffle') {
-			shuffledItems = [...filteredItems].sort(() => Math.random() - 0.5);
-		} else {
-			const serverSort = mode === 'date-asc' ? 'date-asc' : mode === 'date-desc' ? 'date-desc' : 'position';
-			onfetchsort?.(serverSort);
-		}
+		const serverSort = mode === 'date-asc' ? 'date-asc' : mode === 'date-desc' ? 'date-desc' : mode === 'shuffle' ? 'shuffle' : 'position';
+		onfetchsort?.(serverSort);
 	}
 
 	function sortByDate(arr: PlaylistItem[], asc: boolean) {
@@ -89,10 +100,9 @@
 	}
 
 	const displayItems = $derived.by(() => {
-		if (sortMode === 'shuffle') return shuffledItems;
 		if (sortMode === 'date-asc') return sortByDate(filteredItems, true);
 		if (sortMode === 'date-desc') return sortByDate(filteredItems, false);
-		return filteredItems;
+		return filteredItems; // manual and shuffle: server order is canonical
 	});
 
 	let noteEditId = $state<string | null>(null);
@@ -397,13 +407,13 @@
 			>
 				<button
 					type="button"
-					onclick={() => { showUrls = false; displayOpen = false; }}
+					onclick={() => { showUrls = false; displayOpen = false; if (playlistId) savePrefs(playlistId, { showUrls: false }); }}
 					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
 					class:font-medium={!showUrls}
 				>Title</button>
 				<button
 					type="button"
-					onclick={() => { showUrls = true; displayOpen = false; }}
+					onclick={() => { showUrls = true; displayOpen = false; if (playlistId) savePrefs(playlistId, { showUrls: true }); }}
 					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
 					class:font-medium={showUrls}
 				>URL</button>
@@ -412,7 +422,7 @@
 
 		<button
 			type="button"
-			onclick={() => (showThumbnails = !showThumbnails)}
+			onclick={() => { showThumbnails = !showThumbnails; if (playlistId) savePrefs(playlistId, { showThumbnails }); }}
 			class="{toggleClass} inline-flex items-center gap-1"
 			style={toggleStyle(showThumbnails)}
 		>

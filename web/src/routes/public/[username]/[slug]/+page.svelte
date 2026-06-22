@@ -19,6 +19,7 @@
 		isOwner={false}
 		isLoggedIn={!!data.user}
 		ownerUsername={data.username}
+		initialPrefs={data.initialPrefs}
 		{backHref}
 		{backLabel}
 	/>

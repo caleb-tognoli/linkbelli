@@ -32,7 +32,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
         query = ApplySourceFilter(query, source);
 
-        return await PageAsync(query, take, cursor, sort, ct);
+        return await PageAsync(query, take, cursor, sort, db, ct);
     }
 
     public async Task<PlaylistItemResponse> AddAsync(
@@ -164,7 +164,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
         query = ApplySourceFilter(query, source);
 
-        return await PageAsync(query, take, cursor, sort, ct);
+        return await PageAsync(query, take, cursor, sort, db, ct);
     }
 
     private static IQueryable<PlaylistItem> ApplySourceFilter(IQueryable<PlaylistItem> query, string? source)
@@ -175,8 +175,51 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     }
 
     private static async Task<PagedResult<PlaylistItemResponse>> PageAsync(
-        IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, CancellationToken ct)
+        IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, IAppDbContext db, CancellationToken ct)
     {
+        if (sort == "shuffle")
+        {
+            double seed;
+            int offset;
+
+            if (Cursor.TryDecode(cursor, out var v))
+            {
+                var sep = v.IndexOf(':');
+                if (sep > 0
+                    && double.TryParse(v[..sep], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out seed)
+                    && int.TryParse(v[(sep + 1)..], out offset))
+                {
+                    // Restore seed+offset from cursor
+                }
+                else { seed = NewSeed(); offset = 0; }
+            }
+            else { seed = NewSeed(); offset = 0; }
+
+            // setseed() and ORDER BY random() must run in the same PG session.
+            // The transaction pins the connection; setseed is session-state, not rolled back.
+            await using var tx = await db.BeginTransactionAsync(ct);
+            await db.SeedRandomAsync(seed, ct);
+
+            var rows = await query
+                .OrderBy(_ => EF.Functions.Random())
+                .Skip(offset)
+                .Take(take + 1)
+                .Select(ToResponse)
+                .ToListAsync(ct);
+
+            await tx.CommitAsync(ct);
+
+            string? next = null;
+            if (rows.Count > take)
+            {
+                rows.RemoveAt(take);
+                var seedStr = seed.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                next = Cursor.Encode($"{seedStr}:{offset + take}");
+            }
+            return new PagedResult<PlaylistItemResponse>(rows, next);
+        }
+
         if (sort is "date-asc" or "date-desc")
         {
             bool asc = sort == "date-asc";
@@ -203,6 +246,8 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             return new PagedResult<PlaylistItemResponse>(rows, next);
         }
     }
+
+    private static double NewSeed() => Random.Shared.NextDouble() * 2.0 - 1.0;
 
     private Task<PlaylistItemResponse> ProjectAsync(Guid itemId, CancellationToken ct) =>
         db.PlaylistItems.Where(i => i.Id == itemId).Select(ToResponse).FirstAsync(ct);

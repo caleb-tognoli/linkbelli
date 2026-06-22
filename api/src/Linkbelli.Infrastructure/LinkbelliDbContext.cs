@@ -166,6 +166,18 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         }
     }
 
+    public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        => Database.BeginTransactionAsync(cancellationToken);
+
+    public Task SeedRandomAsync(double seed, CancellationToken cancellationToken = default)
+    {
+        // seed is always a double formatted with "R" — no SQL injection risk.
+        var literal = seed.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+#pragma warning disable EF1002
+        return Database.ExecuteSqlRawAsync($"SELECT setseed({literal})", cancellationToken);
+#pragma warning restore EF1002
+    }
+
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         ApplyAuditRules();

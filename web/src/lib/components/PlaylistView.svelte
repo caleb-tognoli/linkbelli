@@ -6,8 +6,10 @@
 	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
+	import { savePrefs } from '$lib/prefs';
 	import { ChevronDown, EyeOff, Globe, Lock } from '@lucide/svelte';
 	import type { AttachedSource, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
+	import type { PlaylistPrefs } from '$lib/prefs';
 
 	type VisOption = { label: string; icon: typeof Lock };
 	const visConfig: Record<Visibility, VisOption> = {
@@ -25,7 +27,8 @@
 		isLoggedIn = true,
 		ownerUsername = undefined,
 		backHref = undefined,
-		backLabel = undefined
+		backLabel = undefined,
+		initialPrefs = undefined
 	}: {
 		playlist: Playlist;
 		items: Paged<PlaylistItem>;
@@ -36,6 +39,7 @@
 		ownerUsername?: string;
 		backHref?: string;
 		backLabel?: string;
+		initialPrefs?: PlaylistPrefs;
 	} = $props();
 
 	const resolvedBackHref = $derived(backHref ?? (isOwner ? '/' : '/discover'));
@@ -43,8 +47,8 @@
 
 	let items = $state(itemsPage.items);
 	let nextCursor = $state(itemsPage.nextCursor);
-	let serverSort = $state('position');
-	let sourceFilter = $state<string | null>(null); // null = all, 'manual' = no source, else sourceId
+	let serverSort = $state(initialPrefs?.sort ?? 'position');
+	let sourceFilter = $state<string | null>(initialPrefs?.source ?? null);
 	let tags = $state(playlist.tags);
 	let attached = $state(attachedSources);
 	let loadingMore = $state(false);
@@ -79,6 +83,7 @@
 
 	async function onfetchsort(sort: string) {
 		serverSort = sort;
+		savePrefs(playlist.id, { sort });
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 		if (res.ok) {
 			const page = (await res.json()) as Paged<PlaylistItem>;
@@ -89,6 +94,7 @@
 
 	async function applySourceFilter(source: string | null) {
 		sourceFilter = source;
+		savePrefs(playlist.id, { source });
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 		if (res.ok) {
 			const page = (await res.json()) as Paged<PlaylistItem>;
@@ -202,6 +208,8 @@
 			bind:items
 			readonly={!isOwner}
 			{onfetchsort}
+			playlistId={playlist.id}
+			{initialPrefs}
 			attachedSources={attached}
 			{sourceFilter}
 			onsourcefilter={applySourceFilter}
