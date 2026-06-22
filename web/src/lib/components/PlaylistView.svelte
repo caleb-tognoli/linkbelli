@@ -81,6 +81,15 @@
 		return qs ? `?${qs}` : '';
 	}
 
+	async function reloadItems() {
+		const res = await api.get(`${itemsEndpoint()}?sort=${serverSort}`);
+		if (res.ok) {
+			const page = (await res.json()) as Paged<PlaylistItem>;
+			items = page.items;
+			nextCursor = page.nextCursor;
+		}
+	}
+
 	async function onfetchsort(sort: string) {
 		serverSort = sort;
 		savePrefs(playlist.id, { sort });
@@ -193,6 +202,7 @@
 				{isLoggedIn}
 				fromHref={isOwner ? `/playlists/${playlist.id}` : undefined}
 				fromLabel={isOwner ? playlist.name : undefined}
+				onreloaditems={isOwner ? reloadItems : undefined}
 			/>
 		</div>
 	{/if}

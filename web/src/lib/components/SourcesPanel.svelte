@@ -13,7 +13,8 @@
 		isOwner = true,
 		isLoggedIn = false,
 		fromHref,
-		fromLabel
+		fromLabel,
+		onreloaditems
 	}: {
 		playlistId: string;
 		attached: AttachedSource[];
@@ -22,6 +23,7 @@
 		isLoggedIn?: boolean;
 		fromHref?: string;
 		fromLabel?: string;
+		onreloaditems?: () => Promise<void>;
 	} = $props();
 
 	function sourceHref(id: string) {
@@ -82,7 +84,10 @@
 						`This source has discovered ${discoveredCount} link${discoveredCount === 1 ? '' : 's'}. Add them all to this playlist?`,
 						{ confirmLabel: 'Add all' }
 					);
-					if (backfill) await api.post(`/playlists/${playlistId}/sources/${sourceId}/backfill`);
+					if (backfill) {
+						await api.post(`/playlists/${playlistId}/sources/${sourceId}/backfill`);
+						await onreloaditems?.();
+					}
 				}
 			}
 		} finally {

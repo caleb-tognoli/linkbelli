@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
@@ -87,20 +87,18 @@
 	</header>
 
 	{#if folder.subfolders.length}
-		<h2 class="mt-8 text-sm font-medium" style="color: var(--color-muted)">Subfolders</h2>
-		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+		<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each folder.subfolders as sub (sub.id)}
 				<FolderCard folder={sub} />
 			{/each}
 		</div>
 	{/if}
 
-	<h2 class="mt-8 text-sm font-medium" style="color: var(--color-muted)">Playlists</h2>
 	{#if folder.playlists.length === 0}
 		<div class="mt-3 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">No playlists in this folder.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				Use “Save to folder” on a playlist to file it here.
+				Use "Save to folder" on a playlist to file it here.
 			</p>
 		</div>
 	{:else}
