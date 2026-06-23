@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Dialog, Popover } from 'bits-ui';
-	import { api, json } from '$lib/api/client';
+	import { Popover } from 'bits-ui';
+	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Link, Play, Plus, Search, Unlink, UserPlus, X } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
-	import type { AttachedSource, Playlist, SharedSource, SourceSummary } from '$lib/types';
+	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
+	import type { AttachedSource, SharedSource, SourceSummary } from '$lib/types';
 
 	let {
 		playlistId,
@@ -42,10 +43,7 @@
 	// Subscribe-to-playlist (non-owner logged-in users)
 	let subscribeSourceId = $state<string | null>(null);
 	let subscribeSourceName = $state('');
-	let subscribePlaylists = $state<Playlist[]>([]);
-	let subscribeLoading = $state(false);
-	let subscribeOpen = $derived(subscribeSourceId !== null);
-	let subscribeDone = $state<string | null>(null); // id of playlist just subscribed
+	let subscribeOpen = $state(false);
 
 	const attachedIds = $derived(new Set(attached.map((s) => s.id)));
 	const ownUnattached = $derived(ownSources.filter((s) => !attachedIds.has(s.id)));
@@ -121,40 +119,26 @@
 		}
 	}
 
-	async function openSubscribeDialog(src: AttachedSource) {
+	function openSubscribeDialog(src: AttachedSource) {
 		subscribeSourceId = src.id;
 		subscribeSourceName = src.name;
-		subscribeDone = null;
-		subscribeLoading = true;
-		subscribePlaylists = [];
-		try {
-			const res = await api.get('/playlists?limit=100');
-			if (res.ok) subscribePlaylists = (await json<{ items: Playlist[] }>(res)).items;
-		} finally {
-			subscribeLoading = false;
-		}
+		subscribeOpen = true;
 	}
 
-	function closeSubscribeDialog() {
-		subscribeSourceId = null;
-		subscribeDone = null;
-	}
-
-	async function subscribeToPlaylist(targetPlaylistId: string) {
+	async function subscribeToPlaylist(targetPlaylistId: string): Promise<string | null | undefined> {
 		if (!subscribeSourceId) return;
 		const sourceId = subscribeSourceId;
 		const res = await api.post(`/playlists/${targetPlaylistId}/sources`, { sourceId });
-		if (res.ok) {
-			subscribeDone = targetPlaylistId;
-			const { discoveredCount } = (await res.json()) as { discoveredCount: number };
-			if (discoveredCount > 0) {
-				const backfill = await confirmDialog(
-					`This source has discovered ${discoveredCount} link${discoveredCount === 1 ? '' : 's'}. Add them all to this playlist?`,
-					{ confirmLabel: 'Add all' }
-				);
-				if (backfill) await api.post(`/playlists/${targetPlaylistId}/sources/${sourceId}/backfill`);
-			}
+		if (!res.ok) throw new Error();
+		const { discoveredCount } = (await res.json()) as { discoveredCount: number };
+		if (discoveredCount > 0) {
+			const backfill = await confirmDialog(
+				`This source has discovered ${discoveredCount} link${discoveredCount === 1 ? '' : 's'}. Add them all to this playlist?`,
+				{ confirmLabel: 'Add all' }
+			);
+			if (backfill) await api.post(`/playlists/${targetPlaylistId}/sources/${sourceId}/backfill`);
 		}
+		return undefined; // 'Added'
 	}
 </script>
 
@@ -275,57 +259,11 @@
 	{/if}
 </div>
 
-<!-- Subscribe-to-playlist dialog (for non-owner logged-in users) -->
 {#if !isOwner && isLoggedIn}
-	<Dialog.Root
-		open={subscribeOpen}
-		onOpenChange={(o) => { if (!o) closeSubscribeDialog(); }}
-	>
-		<Dialog.Portal>
-			<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-			<Dialog.Content
-				class="fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border p-5 shadow-xl"
-				style="border-color: var(--color-border); background: var(--color-surface)"
-			>
-				<div class="flex items-center justify-between">
-					<Dialog.Title class="font-semibold">Add source to playlist</Dialog.Title>
-					<Dialog.Close
-						class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-						title="Close"
-						aria-label="Close"
-					>
-						<X size={17} aria-hidden="true" />
-					</Dialog.Close>
-				</div>
-				<p class="mt-1 text-sm" style="color: var(--color-muted)">{subscribeSourceName}</p>
-
-				<div class="mt-4 flex-1 overflow-y-auto">
-					{#if subscribeLoading}
-						<p class="text-sm" style="color: var(--color-muted)">Loading…</p>
-					{:else if subscribePlaylists.length === 0}
-						<p class="text-sm" style="color: var(--color-muted)">No playlists found.</p>
-					{:else}
-						<ul class="flex flex-col gap-1">
-							{#each subscribePlaylists as pl (pl.id)}
-								{@const done = subscribeDone === pl.id}
-								<li>
-									<button
-										type="button"
-										onclick={() => subscribeToPlaylist(pl.id)}
-										disabled={done}
-										class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
-									>
-										<span class="truncate">{pl.name}</span>
-										{#if done}
-											<span class="ml-2 shrink-0 text-xs font-medium" style="color: var(--color-accent)">Added</span>
-										{/if}
-									</button>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</div>
-			</Dialog.Content>
-		</Dialog.Portal>
-	</Dialog.Root>
+	<PlaylistPickerDialog
+		bind:open={subscribeOpen}
+		title="Add source to playlist"
+		subtitle={subscribeSourceName}
+		onselect={subscribeToPlaylist}
+	/>
 {/if}

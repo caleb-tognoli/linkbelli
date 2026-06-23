@@ -2,7 +2,8 @@
 	import { Popover } from 'bits-ui';
 	import { dndzone } from 'svelte-dnd-action';
 	import { api } from '$lib/api/client';
-	import { ArrowUpDown, ChevronDown, Clock, Eye, EyeOff, Image, Rss, StickyNote, Trash2, Type } from '@lucide/svelte';
+	import { ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, MoreVertical, Rss, Share2, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
 	import type { AttachedSource, PlaylistItem } from '$lib/types';
@@ -107,6 +108,9 @@
 
 	let noteEditId = $state<string | null>(null);
 	let draftNote = $state('');
+	let actionFlyoutId = $state<string | null>(null);
+	let shareItem = $state<PlaylistItem | null>(null);
+	let shareOpen = $state(false);
 
 	const FLIP = 150;
 	const useDnd = $derived(!readonly && sortMode === 'manual');
@@ -210,80 +214,122 @@
 		{#if !readonly}
 			<td class="w-8 text-right">
 				<Popover.Root
-					onOpenChange={(o) => {
-						if (o) {
-							noteEditId = item.id;
-							draftNote = item.note ?? '';
-						} else if (noteEditId === item.id) {
-							saveNote(item);
-							noteEditId = null;
-						}
-					}}
+					open={actionFlyoutId === item.id}
+					onOpenChange={(o) => { actionFlyoutId = o ? item.id : (actionFlyoutId === item.id ? null : actionFlyoutId); }}
 				>
 					<Popover.Trigger
 						class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-						style={isPending(item)
-							? 'color: var(--color-muted)'
-							: item.note
-								? 'color: var(--color-accent)'
-								: 'color: var(--color-muted)'}
-						title={item.note ? 'Edit note' : 'Add note'}
-						aria-label={item.note ? 'Edit note' : 'Add note'}
+						style="color: var(--color-muted)"
+						title="Actions"
+						aria-label="Actions"
 					>
-						{#if isPending(item)}
-							<Clock size={16} aria-hidden="true" />
-						{:else}
-							<StickyNote size={16} aria-hidden="true" />
-						{/if}
+						<MoreVertical size={16} aria-hidden="true" />
 					</Popover.Trigger>
 					<Popover.Content
-						class="popover-surface z-30 w-64 rounded-lg border p-3 shadow-md"
+						class="popover-surface z-30 rounded-lg border shadow-md"
+						side="top"
 						sideOffset={4}
 					>
-						<textarea
-							bind:value={draftNote}
-							placeholder="Add note…"
-							rows={4}
-							class="w-full resize-none rounded border px-2 py-1 text-sm"
-							style="border-color: var(--color-border); background: var(--color-bg)"
-							onkeydown={(e) => {
-								if (e.key === 'Enter' && e.ctrlKey) saveNote(item);
-							}}
-							autofocus
-						></textarea>
+						<div class="flex items-center gap-0.5 px-1.5 py-1.5">
+							<button
+								type="button"
+								onclick={() => { toggleWatched(item); actionFlyoutId = null; }}
+								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+								style="color: var(--color-muted)"
+								title={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
+								aria-label={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
+							>
+								{#if item.status === 'Watched'}
+									<EyeOff size={16} aria-hidden="true" />
+								{:else}
+									<Eye size={16} aria-hidden="true" />
+								{/if}
+							</button>
+							<button
+								type="button"
+								onclick={() => { actionFlyoutId = null; shareItem = item; shareOpen = true; }}
+								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+								style="color: var(--color-muted)"
+								title="Add to another playlist"
+								aria-label="Add to another playlist"
+							>
+								<Share2 size={16} aria-hidden="true" />
+							</button>
+							<button
+								type="button"
+								onclick={() => {
+									actionFlyoutId = null;
+									if (noteEditId === item.id) { noteEditId = null; }
+									else { noteEditId = item.id; draftNote = item.note ?? ''; }
+								}}
+								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+								style={isPending(item) ? 'color: var(--color-muted)' : item.note ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
+								title={item.note ? 'Edit note' : 'Add note'}
+								aria-label={item.note ? 'Edit note' : 'Add note'}
+							>
+								{#if isPending(item)}
+									<Clock size={16} aria-hidden="true" />
+								{:else}
+									<StickyNote size={16} aria-hidden="true" />
+								{/if}
+							</button>
+							<button
+								type="button"
+								onclick={() => { remove(item); actionFlyoutId = null; }}
+								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+								style="color: var(--color-danger)"
+								title="Remove link"
+								aria-label="Remove link"
+							>
+								<Trash2 size={16} aria-hidden="true" />
+							</button>
+						</div>
 					</Popover.Content>
 				</Popover.Root>
 			</td>
-			<td class="w-8 text-right">
-				<button
-					type="button"
-					onclick={() => toggleWatched(item)}
-					class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-					style="color: var(--color-muted)"
-					title={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
-					aria-label={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
-				>
-					{#if item.status === 'Watched'}
-						<EyeOff size={16} aria-hidden="true" />
-					{:else}
-						<Eye size={16} aria-hidden="true" />
-					{/if}
-				</button>
-			</td>
-			<td class="w-8 text-right">
-				<button
-					type="button"
-					onclick={() => remove(item)}
-					class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-					style="color: var(--color-danger)"
-					title="Remove link"
-					aria-label="Remove link"
-				>
-					<Trash2 size={16} aria-hidden="true" />
-				</button>
-			</td>
 		{/if}
 	</tr>
+	{#if !readonly && noteEditId === item.id}
+		<tr class="border-t" style="border-color: var(--color-border)">
+			<td colspan={4} class="px-2 py-2">
+				<div class="flex items-start gap-2">
+					<textarea
+						bind:value={draftNote}
+						placeholder="Add note…"
+						rows={3}
+						class="flex-1 resize-none rounded border px-2 py-1 text-sm"
+						style="border-color: var(--color-border); background: var(--color-bg)"
+						onkeydown={(e) => {
+							if (e.key === 'Enter' && e.ctrlKey) { saveNote(item); noteEditId = null; }
+							if (e.key === 'Escape') { noteEditId = null; }
+						}}
+					></textarea>
+					<div class="flex flex-col gap-1">
+						<button
+							type="button"
+							onclick={() => { saveNote(item); noteEditId = null; }}
+							class="inline-flex items-center rounded p-1.5"
+							style="background: var(--color-accent); color: var(--color-accent-contrast)"
+							title="Save note"
+							aria-label="Save note"
+						>
+							<Check size={14} aria-hidden="true" />
+						</button>
+						<button
+							type="button"
+							onclick={() => { noteEditId = null; }}
+							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+							style="color: var(--color-muted)"
+							title="Cancel"
+							aria-label="Cancel"
+						>
+							<X size={14} aria-hidden="true" />
+						</button>
+					</div>
+				</div>
+			</td>
+		</tr>
+	{/if}
 {/snippet}
 
 {#if items.length > 0 || sourceFilter !== null}
@@ -457,7 +503,7 @@
 						{#if !readonly}<th class="w-6"></th>{/if}
 						<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
 						<th class="py-2 font-medium">Added</th>
-						{#if !readonly}<th class="w-8"></th><th class="w-8"></th><th class="w-8"></th>{/if}
+						{#if !readonly}<th class="w-8"></th>{/if}
 					</tr>
 				</thead>
 				{#if useDnd}
@@ -479,4 +525,19 @@
 				{/if}
 			</table>
 		</div>
+{/if}
+
+{#if !readonly && playlistId}
+	<PlaylistPickerDialog
+		bind:open={shareOpen}
+		title="Add to playlist"
+		excludePlaylistId={playlistId}
+		onselect={async (targetId) => {
+			if (!shareItem) return;
+			const res = await api.post(`/playlists/${targetId}/items`, { url: shareItem.link.url });
+			if (res.ok) return undefined;
+			if (res.status === 409) return 'Already here';
+			throw new Error();
+		}}
+	/>
 {/if}
