@@ -12,7 +12,7 @@
 </script>
 
 <li
-	class="flex items-center gap-3 rounded-lg border p-3"
+	class="flex items-center gap-3.5 rounded-lg border p-3"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	{#if leading}

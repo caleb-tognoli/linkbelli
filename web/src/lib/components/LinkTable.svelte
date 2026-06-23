@@ -250,16 +250,16 @@
 				</div>
 			</div>
 		</td>
-		<td class="whitespace-nowrap pr-3" style="color: var(--color-muted)">{dateAdded(item.creationTime)}</td>
+		<td class="whitespace-nowrap text-center" style="color: var(--color-muted)">{dateAdded(item.creationTime)}</td>
 		{#if showScoreCol}
-			<td class="w-10 pr-3 text-right" style="color: var(--color-muted)">
+			<td class="w-10 pl-6 text-center" style="color: var(--color-muted)">
 				<input
 					type="number"
 					min="0"
 					max="100"
 					value={item.score ?? ''}
 					placeholder="—"
-					class="w-10 border-none bg-transparent text-right text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+					class="w-10 border-none bg-transparent text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus-visible:!outline-none"
 					style="color: inherit"
 					oninput={(e) => {
 						const v = e.currentTarget.value;
@@ -596,7 +596,7 @@
 					<tr class="text-left" style="color: var(--color-muted)">
 						{#if !readonly}<th class="w-6"></th>{/if}
 						<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
-						<th class="py-2 font-medium">
+						<th class="py-2 text-center font-medium">
 						<button
 							type="button"
 							onclick={clickAddedHeader}
@@ -604,6 +604,7 @@
 							title="Sort by date added"
 							aria-label="Sort by date added"
 						>
+							Added
 							{#if sortMode === 'date-desc'}
 								<ArrowDown size={12} aria-hidden="true" />
 							{:else if sortMode === 'date-asc'}
@@ -611,11 +612,10 @@
 							{:else}
 								<ArrowUpDown size={12} aria-hidden="true" style="opacity: 0.4" />
 							{/if}
-							Added
 						</button>
 					</th>
 						{#if showScoreCol}
-							<th class="w-16 py-2 text-right font-medium">
+							<th class="w-16 py-2 pl-6 text-center font-medium">
 								<button
 									type="button"
 									onclick={clickScoreHeader}
@@ -623,6 +623,7 @@
 									title="Sort by score"
 									aria-label="Sort by score"
 								>
+									Score
 									{#if sortMode === 'score-desc'}
 										<ArrowDown size={12} aria-hidden="true" />
 									{:else if sortMode === 'score-asc'}
@@ -630,7 +631,6 @@
 									{:else}
 										<ArrowUpDown size={12} aria-hidden="true" style="opacity: 0.4" />
 									{/if}
-									Score
 								</button>
 							</th>
 						{/if}

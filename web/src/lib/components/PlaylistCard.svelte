@@ -1,16 +1,9 @@
 <script lang="ts">
+	import { Lock, EyeOff, Globe } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import type { Playlist } from '$lib/types';
 
 	let { playlist }: { playlist: Playlist } = $props();
-
-	const created = $derived(
-		new Date(playlist.creationTime).toLocaleDateString(undefined, {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric'
-		})
-	);
 </script>
 
 <a
@@ -23,10 +16,12 @@
 		<span class="flex shrink-0 items-center gap-1">
 			{#if playlist.nsfw}<NsfwBadge />{/if}
 			<span
-				class="rounded-full border px-2 py-0.5 text-xs"
+				class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
 				style="border-color: var(--color-border); color: var(--color-muted)"
 			>
-				{playlist.visibility}
+				{#if playlist.visibility === 'Private'}<Lock size={11} aria-hidden="true" />
+				{:else if playlist.visibility === 'Unlisted'}<EyeOff size={11} aria-hidden="true" />
+				{:else}<Globe size={11} aria-hidden="true" />{/if}{playlist.visibility}
 			</span>
 		</span>
 	</div>
@@ -45,8 +40,7 @@
 		</div>
 	{/if}
 
-	<div class="mt-auto flex justify-between text-xs" style="color: var(--color-muted)">
-		<span>{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}</span>
-		<span>{created}</span>
+	<div class="mt-auto text-right text-xs" style="color: var(--color-muted)">
+		{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}
 	</div>
 </a>

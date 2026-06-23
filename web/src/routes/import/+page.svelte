@@ -1,4 +1,4 @@
-<svelte:head><title>Import — Linkbelli</title></svelte:head>
+﻿<svelte:head><title>Import - linkbelli</title></svelte:head>
 
 <script lang="ts">
 	import { Upload, CheckCircle } from '@lucide/svelte';

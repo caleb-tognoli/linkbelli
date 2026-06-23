@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
@@ -156,7 +156,7 @@
 	}
 </script>
 
-<svelte:head><title>{data.source.name} — Linkbelli</title></svelte:head>
+<svelte:head><title>{data.source.name} - linkbelli</title></svelte:head>
 
 <section class="mx-auto max-w-4xl">
 	<a href={backHref} class="text-sm" style="color: var(--color-muted)">← {backLabel}</a>

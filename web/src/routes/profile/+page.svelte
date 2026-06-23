@@ -1,4 +1,4 @@
-<svelte:head><title>Profile — Linkbelli</title></svelte:head>
+﻿<svelte:head><title>Profile - linkbelli</title></svelte:head>
 
 <script lang="ts">
 	import { api } from '$lib/api/client';

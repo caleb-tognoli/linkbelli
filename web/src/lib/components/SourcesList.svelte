@@ -60,9 +60,6 @@
 {#if sources.length === 0}
 	<div class="rounded-lg border border-dashed p-8 text-center" style="border-color: var(--color-border)">
 		<p class="font-medium">No sources yet.</p>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			Sources automatically pull links (RSS, scrapers, JSON APIs) into your playlists.
-		</p>
 	</div>
 {:else}
 	<ul class="flex flex-col gap-2">

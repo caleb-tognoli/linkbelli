@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
 	import { page } from '$app/state';
 	import PlaylistView from '$lib/components/PlaylistView.svelte';
 	import type { PageData } from './$types';
@@ -9,7 +9,7 @@
 	const backLabel = $derived(page.url.searchParams.get('fromLabel') ?? 'Discover');
 </script>
 
-<svelte:head><title>{data.playlist.name} by {data.username} — Linkbelli</title></svelte:head>
+<svelte:head><title>{data.playlist.name} by {data.username} - linkbelli</title></svelte:head>
 
 {#key data.playlist.id}
 	<PlaylistView

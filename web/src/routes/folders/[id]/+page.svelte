@@ -50,7 +50,7 @@
 	}
 </script>
 
-<svelte:head><title>{data.folder.name} — Linkbelli</title></svelte:head>
+<svelte:head><title>{data.folder.name} - linkbelli</title></svelte:head>
 
 <section class="mx-auto max-w-5xl">
 	<!-- Breadcrumb trail: Home / ancestors / current -->

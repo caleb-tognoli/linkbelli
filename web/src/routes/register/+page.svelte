@@ -1,4 +1,4 @@
-<svelte:head><title>Create account — Linkbelli</title></svelte:head>
+﻿<svelte:head><title>Create account - linkbelli</title></svelte:head>
 
 <script lang="ts">
 	import { enhance } from '$app/forms';

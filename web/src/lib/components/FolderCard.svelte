@@ -5,10 +5,14 @@
 	let { folder }: { folder: Folder } = $props();
 
 	const subLabel = $derived(
-		`${folder.subfolderCount} ${folder.subfolderCount === 1 ? 'folder' : 'folders'}`
+		folder.subfolderCount > 0
+			? `${folder.subfolderCount} ${folder.subfolderCount === 1 ? 'folder' : 'folders'}`
+			: null
 	);
 	const plLabel = $derived(
-		`${folder.playlistCount} ${folder.playlistCount === 1 ? 'playlist' : 'playlists'}`
+		folder.playlistCount > 0
+			? `${folder.playlistCount} ${folder.playlistCount === 1 ? 'playlist' : 'playlists'}`
+			: null
 	);
 </script>
 
@@ -20,6 +24,8 @@
 	<FolderIcon size={23} aria-hidden="true" style="color: var(--color-muted)" />
 	<div class="min-w-0 flex-1">
 		<div class="truncate font-medium">{folder.name}</div>
-		<div class="text-xs" style="color: var(--color-muted)">{subLabel} · {plLabel}</div>
+		<div class="text-xs" style="color: var(--color-muted)">
+			{#if subLabel && plLabel}{subLabel} · {plLabel}{:else if subLabel}{subLabel}{:else if plLabel}{plLabel}{:else}Empty{/if}
+		</div>
 	</div>
 </a>

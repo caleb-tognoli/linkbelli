@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
 	import { page } from '$app/state';
 	import PlaylistView from '$lib/components/PlaylistView.svelte';
 	import type { PageData } from './$types';
@@ -9,7 +9,7 @@
 	const backLabel = $derived(page.url.searchParams.get('fromLabel') ?? undefined);
 </script>
 
-<svelte:head><title>{data.playlist.name} — Linkbelli</title></svelte:head>
+<svelte:head><title>{data.playlist.name} - linkbelli</title></svelte:head>
 
 <!-- Key by id so all interactive state resets when navigating between playlists. -->
 {#key data.playlist.id}

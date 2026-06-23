@@ -1,4 +1,4 @@
-<svelte:head><title>New source — Linkbelli</title></svelte:head>
+﻿<svelte:head><title>New source - linkbelli</title></svelte:head>
 
 <script lang="ts">
 	import SourceForm from '$lib/components/SourceForm.svelte';
