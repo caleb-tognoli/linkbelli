@@ -2,7 +2,7 @@
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { Link, Play, Plus, Search, Unlink, UserPlus, X } from '@lucide/svelte';
+	import { ChevronDown, Link, Play, Plus, Search, Unlink, UserPlus, X } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import type { AttachedSource, SharedSource, SourceSummary } from '$lib/types';
@@ -39,6 +39,9 @@
 	let searched = $state(false);
 	let busy = $state(false);
 	let addOpen = $state(false);
+
+	const SOURCE_PREVIEW = 3;
+	let sourcesExpanded = $state(false);
 
 	// Subscribe-to-playlist (non-owner logged-in users)
 	let subscribeSourceId = $state<string | null>(null);
@@ -218,8 +221,9 @@
 	</div>
 
 	{#if attached.length}
+		{@const visible = sourcesExpanded ? attached : attached.slice(0, SOURCE_PREVIEW)}
 		<ul class="mt-2 flex flex-col gap-2">
-			{#each attached as src (src.id)}
+			{#each visible as src (src.id)}
 				<SourceListItem
 					name={src.name}
 					badge={displayType(src.type)}
@@ -252,6 +256,18 @@
 				</SourceListItem>
 			{/each}
 		</ul>
+		{#if attached.length > SOURCE_PREVIEW && !sourcesExpanded}
+			<button
+				type="button"
+				onclick={() => sourcesExpanded = true}
+				class="mt-1 flex w-full items-center justify-center rounded-md py-1 hover:bg-black/5 dark:hover:bg-white/10"
+				style="color: var(--color-muted)"
+				title="Show all sources"
+				aria-label="Show all sources"
+			>
+				<ChevronDown size={15} aria-hidden="true" />
+			</button>
+		{/if}
 	{:else}
 		<p class="mt-2 text-sm" style="color: var(--color-muted)">
 			{isOwner ? 'No sources attached.' : 'No shared sources.'}

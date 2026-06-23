@@ -2,7 +2,7 @@
 	import { Popover } from 'bits-ui';
 	import { dndzone } from 'svelte-dnd-action';
 	import { api } from '$lib/api/client';
-	import { ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, MoreVertical, Rss, Share2, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, MoreVertical, Rss, Share2, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
@@ -91,6 +91,12 @@
 		sortMode = mode;
 		const serverSort = mode === 'date-asc' ? 'date-asc' : mode === 'date-desc' ? 'date-desc' : mode === 'shuffle' ? 'shuffle' : 'position';
 		onfetchsort?.(serverSort);
+	}
+
+	function clickAddedHeader() {
+		if (sortMode === 'date-desc') setSort('date-asc');
+		else if (sortMode === 'date-asc') setSort(readonly ? 'date-desc' : 'manual');
+		else setSort('date-desc');
 	}
 
 	function sortByDate(arr: PlaylistItem[], asc: boolean) {
@@ -502,7 +508,24 @@
 					<tr class="text-left" style="color: var(--color-muted)">
 						{#if !readonly}<th class="w-6"></th>{/if}
 						<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
-						<th class="py-2 font-medium">Added</th>
+						<th class="py-2 font-medium">
+						<button
+							type="button"
+							onclick={clickAddedHeader}
+							class="inline-flex items-center gap-1 hover:opacity-70"
+							title="Sort by date added"
+							aria-label="Sort by date added"
+						>
+							Added
+							{#if sortMode === 'date-desc'}
+								<ArrowDown size={12} aria-hidden="true" />
+							{:else if sortMode === 'date-asc'}
+								<ArrowUp size={12} aria-hidden="true" />
+							{:else}
+								<ArrowUpDown size={12} aria-hidden="true" style="opacity: 0.4" />
+							{/if}
+						</button>
+					</th>
 						{#if !readonly}<th class="w-8"></th>{/if}
 					</tr>
 				</thead>
