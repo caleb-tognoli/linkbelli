@@ -88,6 +88,7 @@ export interface PublicPlaylistSummary {
 
 export type SourceType = 'Rss' | 'Scraper' | 'JsonApi';
 export type SourceVisibility = 'Private' | 'Shared';
+export type SourceRunStatus = 'Running' | 'Succeeded' | 'Failed';
 
 export interface LinkSummary {
 	id: string;
@@ -154,6 +155,7 @@ export interface Source {
 	schedule: string;
 	visibility: SourceVisibility;
 	lastRunAt: string | null;
+	lastRunStatus: SourceRunStatus | null;
 	creationTime: string;
 	playlistIds: string[];
 }

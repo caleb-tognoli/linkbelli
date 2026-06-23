@@ -19,14 +19,26 @@ public class SourceService(
 
     public async Task<IReadOnlyList<SourceResponse>> ListAsync(Guid ownerId, CancellationToken ct = default)
     {
-        var sources = await db.Sources
+        // Fetch sources with their latest run status. Sort: never-run first, then failures
+        // (most-recent first), then successes (most-recent first).
+        var sourcesWithStatus = await db.Sources
             .AsNoTracking()
             .Where(s => s.OwnerId == ownerId)
-            .OrderByDescending(s => s.CreationTime)
+            .Select(s => new
+            {
+                Source = s,
+                LastRunStatus = db.SourceRuns
+                    .Where(r => r.SourceId == s.Id)
+                    .OrderByDescending(r => r.CreationTime)
+                    .Select(r => (SourceRunStatus?)r.Status)
+                    .FirstOrDefault()
+            })
+            .OrderBy(x => x.Source.LastRunAt == null ? 0 : (x.LastRunStatus == SourceRunStatus.Failed ? 1 : 2))
+            .ThenByDescending(x => x.Source.LastRunAt)
             .ToListAsync(ct);
 
         // Fetch every source's playlist attachments in one grouped query instead of N round-trips.
-        var sourceIds = sources.Select(s => s.Id).ToList();
+        var sourceIds = sourcesWithStatus.Select(x => x.Source.Id).ToList();
         var playlistIdsBySource = (await db.PlaylistSources
                 .Where(ps => sourceIds.Contains(ps.SourceId))
                 .Select(ps => new { ps.SourceId, ps.PlaylistId })
@@ -34,10 +46,11 @@ public class SourceService(
             .GroupBy(ps => ps.SourceId)
             .ToDictionary(g => g.Key, g => g.Select(ps => ps.PlaylistId).ToArray());
 
-        return sources
-            .Select(source => ToResponse(
-                source,
-                playlistIdsBySource.TryGetValue(source.Id, out var ids) ? ids : []))
+        return sourcesWithStatus
+            .Select(x => ToResponse(
+                x.Source,
+                playlistIdsBySource.TryGetValue(x.Source.Id, out var ids) ? ids : [],
+                x.LastRunStatus))
             .ToList();
     }
 
@@ -261,11 +274,12 @@ public class SourceService(
             .ToListAsync(ct);
     }
 
-    private SourceResponse ToResponse(Source source, Guid[] playlistIds)
+    private SourceResponse ToResponse(Source source, Guid[] playlistIds, SourceRunStatus? lastRunStatus = null)
     {
         var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
-            source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds);
+            source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
+            lastRunStatus);
     }
 }
