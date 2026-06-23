@@ -46,7 +46,6 @@
 
 <section class="mx-auto max-w-5xl">
 	<h1 class="text-2xl font-semibold">Discover</h1>
-	<p class="mt-1 text-sm" style="color: var(--color-muted)">Browse public playlists.</p>
 
 	<form method="get" class="mt-4 flex gap-2">
 		<input

@@ -7,7 +7,9 @@
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { savePrefs } from '$lib/prefs';
-	import { ChevronDown, EyeOff, Globe, Lock } from '@lucide/svelte';
+	import { confirmDialog } from '$lib/dialog.svelte';
+	import { goto } from '$app/navigation';
+	import { ChevronDown, EyeOff, Globe, Lock, Trash2 } from '@lucide/svelte';
 	import type { AttachedSource, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -54,7 +56,23 @@
 	let loadingMore = $state(false);
 	let visibility = $state(playlist.visibility);
 	let visOpen = $state(false);
+	let playlistName = $state(playlist.name);
 	const currentVis = $derived(visConfig[visibility] ?? visConfig.Private);
+
+	async function saveName(el: HTMLInputElement) {
+		const name = el.value.trim();
+		if (!name) { el.value = playlistName; return; }
+		if (name === playlistName) return;
+		const res = await api.patch(`/playlists/${playlist.id}`, { name });
+		if (res.ok) playlistName = name;
+		else el.value = playlistName;
+	}
+
+	async function deletePlaylist() {
+		if (!(await confirmDialog(`Delete "${playlistName}"? This cannot be undone.`, { danger: true, confirmLabel: 'Delete' }))) return;
+		const res = await api.del(`/playlists/${playlist.id}`);
+		if (res.ok || res.status === 204) goto(resolvedBackHref);
+	}
 
 	async function setVisibility(next: Visibility) {
 		const prev = visibility;
@@ -141,7 +159,18 @@
 
 	<header class="mt-3 flex items-start justify-between gap-3">
 		<div class="min-w-0">
-			<h1 class="text-2xl font-semibold">{playlist.name}</h1>
+			{#if isOwner}
+				<input
+					type="text"
+					value={playlistName}
+					class="w-full bg-transparent text-2xl font-semibold outline-none focus-visible:!outline-none"
+					style="min-width: 0"
+					onblur={(e) => saveName(e.currentTarget)}
+					onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = playlistName; e.currentTarget.blur(); } }}
+				/>
+			{:else}
+				<h1 class="text-2xl font-semibold">{playlistName}</h1>
+			{/if}
 			{#if ownerUsername}
 				<p class="mt-0.5 text-sm" style="color: var(--color-muted)">by @{ownerUsername}</p>
 			{/if}
@@ -186,6 +215,18 @@
 					currentFolderId={playlist.folderId}
 					currentFolderName={playlist.folderName}
 				/>
+			{/if}
+			{#if isOwner}
+				<button
+					type="button"
+					onclick={deletePlaylist}
+					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+					style="color: var(--color-danger)"
+					title="Delete playlist"
+					aria-label="Delete playlist"
+				>
+					<Trash2 size={17} aria-hidden="true" />
+				</button>
 			{/if}
 		</div>
 	</header>

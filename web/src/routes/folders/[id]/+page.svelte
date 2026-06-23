@@ -1,8 +1,8 @@
 ﻿<script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
-	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
-	import { Pencil, Trash2 } from '@lucide/svelte';
+	import { confirmDialog } from '$lib/dialog.svelte';
+	import { Trash2 } from '@lucide/svelte';
 	import FolderCard from '$lib/components/FolderCard.svelte';
 	import FolderPlaylistCard from '$lib/components/FolderPlaylistCard.svelte';
 	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
@@ -15,19 +15,15 @@
 	let busy = $state(false);
 
 	const folder = $derived(data.folder);
+	let folderName = $state(data.folder.name);
 
-	async function rename() {
-		const next = await promptDialog('Folder name', folder.name);
-		if (next === null) return;
-		const name = next.trim();
-		if (!name || name === folder.name) return;
-		busy = true;
-		try {
-			const res = await api.patch(`/folders/${folder.id}`, { name });
-			if (res.ok) await invalidateAll();
-		} finally {
-			busy = false;
-		}
+	async function saveName(el: HTMLInputElement) {
+		const name = el.value.trim();
+		if (!name) { el.value = folderName; return; }
+		if (name === folderName) return;
+		const res = await api.patch(`/folders/${folder.id}`, { name });
+		if (res.ok) { folderName = name; await invalidateAll(); }
+		else el.value = folderName;
 	}
 
 	async function remove() {
@@ -61,15 +57,18 @@
 			<a href={`/folders/${crumb.id}`} class="hover:underline">{crumb.name}</a>
 		{/each}
 		<span>/</span>
-		<span style="color: var(--color-text)">{folder.name}</span>
+		<span style="color: var(--color-text)">{folderName}</span>
 	</nav>
 
 	<header class="mt-3 flex flex-wrap items-center justify-between gap-3">
-		<div class="flex items-center gap-3">
-			<h1 class="text-2xl font-semibold">{folder.name}</h1>
-			<button type="button" onclick={rename} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Rename folder" aria-label="Rename folder">
-				<Pencil size={17} aria-hidden="true" />
-			</button>
+		<div class="min-w-0 flex-1">
+			<input
+				type="text"
+				value={folderName}
+				class="w-full bg-transparent text-2xl font-semibold outline-none focus-visible:!outline-none"
+				onblur={(e) => saveName(e.currentTarget)}
+				onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = folderName; e.currentTarget.blur(); } }}
+			/>
 		</div>
 		<div class="flex shrink-0 flex-wrap gap-2 text-sm">
 			<NewPlaylistDialog folderId={folder.id} />

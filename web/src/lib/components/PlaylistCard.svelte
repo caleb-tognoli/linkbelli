@@ -13,17 +13,7 @@
 >
 	<div class="flex items-start justify-between gap-2">
 		<span class="font-medium">{playlist.name}</span>
-		<span class="flex shrink-0 items-center gap-1">
-			{#if playlist.nsfw}<NsfwBadge />{/if}
-			<span
-				class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
-				style="border-color: var(--color-border); color: var(--color-muted)"
-			>
-				{#if playlist.visibility === 'Private'}<Lock size={11} aria-hidden="true" />
-				{:else if playlist.visibility === 'Unlisted'}<EyeOff size={11} aria-hidden="true" />
-				{:else}<Globe size={11} aria-hidden="true" />{/if}{playlist.visibility}
-			</span>
-		</span>
+		{#if playlist.nsfw}<span class="shrink-0"><NsfwBadge /></span>{/if}
 	</div>
 
 	{#if playlist.description}
@@ -40,7 +30,15 @@
 		</div>
 	{/if}
 
-	<div class="mt-auto text-right text-xs" style="color: var(--color-muted)">
-		{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}
+	<div class="mt-auto flex items-center justify-between text-xs" style="color: var(--color-muted)">
+		<span
+			class="inline-flex items-center gap-1 rounded-full border px-2 pt-0.5"
+			style="border-color: var(--color-border)"
+		>
+			{#if playlist.visibility === 'Private'}<Lock size={11} aria-hidden="true" />
+			{:else if playlist.visibility === 'Unlisted'}<EyeOff size={11} aria-hidden="true" />
+			{:else}<Globe size={11} aria-hidden="true" />{/if}{playlist.visibility}
+		</span>
+		<span>{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}</span>
 	</div>
 </a>

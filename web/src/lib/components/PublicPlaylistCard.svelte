@@ -10,11 +10,10 @@
 	class="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:border-[var(--color-accent)]"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
-	<span class="flex items-center gap-2">
+	<div class="flex items-start justify-between gap-2">
 		<span class="font-medium">{playlist.name}</span>
-		{#if playlist.nsfw}<NsfwBadge />{/if}
-	</span>
-	<span class="text-xs" style="color: var(--color-muted)">by @{playlist.ownerUsername}</span>
+		{#if playlist.nsfw}<span class="shrink-0"><NsfwBadge /></span>{/if}
+	</div>
 
 	{#if playlist.description}
 		<p class="line-clamp-2 text-sm" style="color: var(--color-muted)">{playlist.description}</p>
@@ -28,7 +27,8 @@
 		</div>
 	{/if}
 
-	<div class="mt-auto text-xs" style="color: var(--color-muted)">
-		{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}
+	<div class="mt-auto flex justify-between text-xs" style="color: var(--color-muted)">
+		<span>@{playlist.ownerUsername}</span>
+		<span>{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}</span>
 	</div>
 </a>

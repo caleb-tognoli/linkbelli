@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { EyeOff, Globe, Lock } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
 	import type { FolderPlaylistEntry } from '$lib/types';
@@ -25,13 +26,14 @@
 >
 	<div class="flex items-start justify-between gap-2">
 		<a href={href} class="min-w-0 flex-1 font-medium hover:underline">{entry.name}</a>
-		<span class="flex shrink-0 items-center gap-1">
+		<span class="flex shrink-0 items-center gap-1.5">
 			{#if entry.nsfw}<NsfwBadge />{/if}
-			{#if !entry.ownedByMe}
-				<span class="rounded-full border px-2 py-0.5 text-xs" style="border-color: var(--color-border); color: var(--color-muted)">
-					@{entry.ownerUsername}
-				</span>
-			{/if}
+			<SaveToFolderDialog
+				playlistId={entry.playlistId}
+				currentFolderId={folderId}
+				currentFolderName={folderName}
+				compact
+			/>
 		</span>
 	</div>
 
@@ -48,12 +50,18 @@
 	{/if}
 
 	<div class="mt-auto flex items-center justify-between text-xs" style="color: var(--color-muted)">
+		{#if entry.ownedByMe}
+			<span
+				class="inline-flex items-center gap-1 rounded-full border px-2 pt-0.5"
+				style="border-color: var(--color-border)"
+			>
+				{#if entry.visibility === 'Private'}<Lock size={11} aria-hidden="true" />
+				{:else if entry.visibility === 'Unlisted'}<EyeOff size={11} aria-hidden="true" />
+				{:else}<Globe size={11} aria-hidden="true" />{/if}{entry.visibility}
+			</span>
+		{:else}
+			<span>@{entry.ownerUsername}</span>
+		{/if}
 		<span>{entry.itemCount} {entry.itemCount === 1 ? 'link' : 'links'}</span>
-		<SaveToFolderDialog
-			playlistId={entry.playlistId}
-			currentFolderId={folderId}
-			currentFolderName={folderName}
-			compact
-		/>
 	</div>
 </div>
