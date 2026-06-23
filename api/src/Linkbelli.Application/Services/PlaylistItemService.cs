@@ -19,7 +19,8 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
                 i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw),
             i.CreationTime,
             i.Metadata,
-            i.SourceId);
+            i.SourceId,
+            i.Score);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, CancellationToken ct = default)
@@ -84,6 +85,14 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             item.Status = request.Status.Value;
         }
 
+        await db.SaveChangesAsync(ct);
+        return await ProjectAsync(itemId, ct);
+    }
+
+    public async Task<PlaylistItemResponse> SetScoreAsync(Guid ownerId, Guid itemId, int? score, CancellationToken ct = default)
+    {
+        var item = await FindOwnedItemAsync(itemId, ownerId, ct);
+        item.Score = score;
         await db.SaveChangesAsync(ct);
         return await ProjectAsync(itemId, ct);
     }
@@ -236,6 +245,21 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode(rows[^1].CreationTime.UtcTicks.ToString()); }
             return new PagedResult<PlaylistItemResponse>(rows, next);
         }
+
+        if (sort is "score-asc" or "score-desc")
+        {
+            bool asc = sort == "score-asc";
+            int offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? o : 0;
+            // NULL scores always sort last regardless of direction.
+            IQueryable<PlaylistItem> q = asc
+                ? query.OrderBy(i => i.Score == null ? 1 : 0).ThenBy(i => i.Score).ThenBy(i => i.Position)
+                : query.OrderBy(i => i.Score == null ? 1 : 0).ThenByDescending(i => i.Score).ThenBy(i => i.Position);
+            var rows = await q.Skip(offset).Take(take + 1).Select(ToResponse).ToListAsync(ct);
+            string? next = null;
+            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode((offset + take).ToString()); }
+            return new PagedResult<PlaylistItemResponse>(rows, next);
+        }
+
         else
         {
             if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))

@@ -47,5 +47,10 @@ public static class PlaylistItemEndpoints
             IPlaylistItemService svc, CancellationToken ct) =>
             Results.Ok(await svc.MoveAsync(user.GetUserId(), id, req, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
+
+        item.MapPut("/{id:guid}/score", async (Guid id, SetScoreRequest req, ClaimsPrincipal user,
+            IPlaylistItemService svc, CancellationToken ct) =>
+            Results.Ok(await svc.SetScoreAsync(user.GetUserId(), id, req.Score, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
     }
 }

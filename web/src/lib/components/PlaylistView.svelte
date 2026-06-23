@@ -82,7 +82,7 @@
 	}
 
 	async function reloadItems() {
-		const res = await api.get(`${itemsEndpoint()}?sort=${serverSort}`);
+		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 		if (res.ok) {
 			const page = (await res.json()) as Paged<PlaylistItem>;
 			items = page.items;
@@ -93,6 +93,7 @@
 	async function onfetchsort(sort: string) {
 		serverSort = sort;
 		savePrefs(playlist.id, { sort });
+		nextCursor = null; // clear stale cursor immediately while loading
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 		if (res.ok) {
 			const page = (await res.json()) as Paged<PlaylistItem>;
@@ -104,6 +105,7 @@
 	async function applySourceFilter(source: string | null) {
 		sourceFilter = source;
 		savePrefs(playlist.id, { source });
+		nextCursor = null;
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 		if (res.ok) {
 			const page = (await res.json()) as Paged<PlaylistItem>;
@@ -218,6 +220,7 @@
 			bind:items
 			readonly={!isOwner}
 			{onfetchsort}
+			onmove={reloadItems}
 			playlistId={playlist.id}
 			{initialPrefs}
 			attachedSources={attached}

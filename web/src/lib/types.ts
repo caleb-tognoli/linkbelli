@@ -111,6 +111,7 @@ export interface PlaylistItem {
 	creationTime: string;
 	metadata: Record<string, string> | null;
 	sourceId: string | null;
+	score: number | null;
 }
 
 export interface LinkPreview {

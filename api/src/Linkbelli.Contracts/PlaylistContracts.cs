@@ -25,12 +25,14 @@ public record AddItemRequest(string Url, string? Note);
 
 public record UpdateItemRequest(string? Note, PlaylistItemStatus? Status = null);
 
+public record SetScoreRequest(int? Score);
+
 /// <summary>Place the item immediately after AfterItemId; null moves it to the front.</summary>
 public record MoveItemRequest(Guid? AfterItemId);
 
 public record PlaylistItemResponse(
     Guid Id, long Position, string? Note, PlaylistItemStatus Status, LinkResponse Link, DateTimeOffset CreationTime,
-    IReadOnlyDictionary<string, string>? Metadata = null, Guid? SourceId = null);
+    IReadOnlyDictionary<string, string>? Metadata = null, Guid? SourceId = null, int? Score = null);
 
 // --- Links ---
 public record CreateLinkRequest(string Url);

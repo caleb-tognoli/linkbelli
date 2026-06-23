@@ -20,6 +20,8 @@ public class PlaylistItem : BaseEntity<Guid>
     public PlaylistItemStatus Status { get; set; } = PlaylistItemStatus.Added;
     /// <summary>Source-provided metadata (title, thumbnail, author, etc.). Null when added manually.</summary>
     public Dictionary<string, string>? Metadata { get; set; }
+    /// <summary>Owner-assigned score (0–100). Null means unrated.</summary>
+    public int? Score { get; set; }
 
     public Playlist? Playlist { get; set; }
     public Link? Link { get; set; }
