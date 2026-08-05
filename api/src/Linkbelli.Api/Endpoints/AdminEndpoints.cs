@@ -53,7 +53,9 @@ public static class AdminEndpoints
             var query = db.Links.AsQueryable();
             if (onlyFailed ?? true)
             {
-                query = query.Where(l => l.Metadata != null && l.Metadata.Contains("enrichmentError"));
+                // Metadata is jsonb — string.Contains isn't translatable, but Npgsql's
+                // JsonExists checks whether the failure stamp's top-level key is present.
+                query = query.Where(l => l.Metadata != null && EF.Functions.JsonExists(l.Metadata, "enrichmentError"));
             }
 
             if (!string.IsNullOrWhiteSpace(host))
