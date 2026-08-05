@@ -90,6 +90,36 @@ export type SourceType = 'Rss' | 'Scraper' | 'JsonApi';
 export type SourceVisibility = 'Private' | 'Shared';
 export type SourceRunStatus = 'Running' | 'Succeeded' | 'Failed';
 
+export interface TemplateField {
+	key: string;
+	label: string;
+	description: string | null;
+	type: 'text' | 'url';
+	required: boolean;
+	isSecret: boolean;
+}
+
+export type SourceTemplateVisibility = 'Private' | 'Unlisted' | 'Public';
+
+export interface SourceTemplate {
+	id: string;
+	ownerId: string | null;
+	name: string;
+	description: string | null;
+	type: SourceType;
+	userFields: TemplateField[];
+	defaultSchedule: string | null;
+	visibility: SourceTemplateVisibility;
+	tags: string[];
+	ownedByMe: boolean;
+	savedByMe: boolean;
+	creationTime: string;
+}
+
+export interface SourceTemplateDetail extends SourceTemplate {
+	baseConfig: Record<string, string>;
+}
+
 export interface LinkSummary {
 	id: string;
 	url: string;
@@ -159,6 +189,7 @@ export interface Source {
 	lastRunStatus: SourceRunStatus | null;
 	creationTime: string;
 	playlistIds: string[];
+	templateId: string | null;
 }
 
 export interface SourceRun {

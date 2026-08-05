@@ -22,7 +22,8 @@ public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,
     string Schedule, SourceVisibility Visibility,
     DateTimeOffset? LastRunAt, DateTimeOffset CreationTime, Guid[] PlaylistIds,
-    SourceRunStatus? LastRunStatus);
+    SourceRunStatus? LastRunStatus,
+    Guid? TemplateId = null);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
 public record SharedSourceSummary(

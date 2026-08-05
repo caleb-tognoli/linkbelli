@@ -10,4 +10,5 @@ public class Tag : BaseEntity<Guid>
     public required string Name { get; set; }
 
     public List<PlaylistTag> Playlists { get; set; } = [];
+    public List<TemplateTag> Templates { get; set; } = [];
 }

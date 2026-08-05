@@ -13,6 +13,8 @@ public interface ISourceService
     Task<IReadOnlyList<SourceRunResponse>> ListRunsAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task<PreviewSourceResponse> PreviewAsync(Guid ownerId, PreviewSourceRequest request, CancellationToken ct = default);
 
+    Task<SourceResponse> CreateFromTemplateAsync(Guid ownerId, CreateTemplateSourceRequest request, CancellationToken ct = default);
+
     /// <summary>Browse shared sources (any owner) so they can be subscribed to a playlist.</summary>
     Task<IReadOnlyList<SharedSourceSummary>> ListSharedAsync(string? q, CancellationToken ct = default);
 }

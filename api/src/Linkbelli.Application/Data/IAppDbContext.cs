@@ -20,11 +20,14 @@ public interface IAppDbContext
     DbSet<Link> Links { get; }
     DbSet<PlaylistItem> PlaylistItems { get; }
     DbSet<Source> Sources { get; }
+    DbSet<SourceTemplate> SourceTemplates { get; }
     DbSet<PlaylistSource> PlaylistSources { get; }
     DbSet<SourceRun> SourceRuns { get; }
     DbSet<UserQuota> UserQuotas { get; }
     DbSet<Tag> Tags { get; }
     DbSet<PlaylistTag> PlaylistTags { get; }
+    DbSet<TemplateTag> TemplateTags { get; }
+    DbSet<UserSavedTemplate> UserSavedTemplates { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }
 

@@ -30,8 +30,15 @@ public class Source : BaseEntity<Guid>
     /// <summary>Governs who can subscribe it to playlists. Editable: switching Shared→Private
     /// drops other users' subscriptions (handled in SourceService.UpdateAsync).</summary>
     public SourceVisibility Visibility { get; set; } = SourceVisibility.Private;
-    /// <summary>Type-specific declarative config (jsonb), validated per type.</summary>
-    public required string Config { get; set; }
+    /// <summary>
+    /// Type-specific declarative config (jsonb).
+    /// For manual sources: the full interpreter config.
+    /// For template sources: user-provided substitution values only ({{key}} → value).
+    /// </summary>
+    public string? Config { get; set; }
+    /// <summary>If set, this source was created from a template. Config holds user params only.</summary>
+    public Guid? TemplateId { get; set; }
+    public SourceTemplate? Template { get; set; }
     /// <summary>Cron expression; enforced minimum interval applies.</summary>
     public required string Schedule { get; set; }
     /// <summary>Interpreter persistence between runs: ETag, Last-Modified, cursor… (jsonb).</summary>

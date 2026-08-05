@@ -17,11 +17,14 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<Link> Links => Set<Link>();
     public DbSet<PlaylistItem> PlaylistItems => Set<PlaylistItem>();
     public DbSet<Source> Sources => Set<Source>();
+    public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<PlaylistSource> PlaylistSources => Set<PlaylistSource>();
     public DbSet<SourceRun> SourceRuns => Set<SourceRun>();
     public DbSet<UserQuota> UserQuotas => Set<UserQuota>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PlaylistTag> PlaylistTags => Set<PlaylistTag>();
+    public DbSet<TemplateTag> TemplateTags => Set<TemplateTag>();
+    public DbSet<UserSavedTemplate> UserSavedTemplates => Set<UserSavedTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
 
@@ -79,6 +82,17 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasSoftDeleteFilter();
         });
 
+        modelBuilder.Entity<SourceTemplate>(e =>
+        {
+            e.Property(t => t.Name).HasMaxLength(200);
+            e.Property(t => t.Description).HasMaxLength(1000);
+            e.Property(t => t.DefaultSchedule).HasMaxLength(100);
+            e.Property(t => t.BaseConfig).HasColumnType("jsonb");
+            e.Property(t => t.UserFields).HasColumnType("jsonb");
+            e.HasIndex(t => t.OwnerId);
+            e.HasSoftDeleteFilter();
+        });
+
         modelBuilder.Entity<Source>(e =>
         {
             e.Property(s => s.Name).HasMaxLength(200);
@@ -86,6 +100,8 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.Property(s => s.Config).HasColumnType("jsonb");
             e.Property(s => s.State).HasColumnType("jsonb");
             e.HasIndex(s => s.OwnerId);
+            e.HasIndex(s => s.TemplateId);
+            e.HasOne(s => s.Template).WithMany().OnDelete(DeleteBehavior.SetNull);
             e.HasSoftDeleteFilter();
         });
 
@@ -124,6 +140,23 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(pt => pt.TagId); // tag → playlists (global search, counts)
             e.HasOne(pt => pt.Playlist).WithMany(p => p.Tags).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(pt => pt.Tag).WithMany(t => t.Playlists).OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<TemplateTag>(e =>
+        {
+            e.HasIndex(tt => new { tt.TemplateId, tt.TagId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(tt => tt.TagId);
+            e.HasOne(tt => tt.Template).WithMany(t => t.Tags).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(tt => tt.Tag).WithMany(t => t.Templates).OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<UserSavedTemplate>(e =>
+        {
+            e.HasIndex(s => new { s.UserId, s.TemplateId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(s => s.TemplateId);
+            e.HasOne(s => s.Template).WithMany(t => t.SavedBy).OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 

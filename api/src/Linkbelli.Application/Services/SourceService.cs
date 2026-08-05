@@ -56,8 +56,11 @@ public class SourceService(
 
     public async Task<SourceResponse> GetAsync(Guid ownerId, Guid id, CancellationToken ct = default)
     {
-        var source = await FindOwnedAsync(ownerId, id, ct);
-        return ToResponse(source, await PlaylistIdsAsync(id, ct));
+        var source = await db.Sources
+            .Include(s => s.Template)
+            .FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == ownerId, ct)
+            ?? throw new NotFoundException("Source not found.");
+        return ToResponse(source, await PlaylistIdsAsync(id, ct), template: source.Template);
     }
 
     public async Task<SourceResponse> CreateAsync(Guid ownerId, CreateSourceRequest request, CancellationToken ct = default)
@@ -91,7 +94,10 @@ public class SourceService(
 
     public async Task<SourceResponse> UpdateAsync(Guid ownerId, Guid id, UpdateSourceRequest request, CancellationToken ct = default)
     {
-        var source = await FindOwnedAsync(ownerId, id, ct);
+        var source = await db.Sources
+            .Include(s => s.Template)
+            .FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == ownerId, ct)
+            ?? throw new NotFoundException("Source not found.");
         var interpreter = ResolveInterpreter(source.Type);
 
         if (request.Type is not null && request.Type.Value != source.Type)
@@ -112,9 +118,18 @@ public class SourceService(
 
         if (request.Config is not null)
         {
-            interpreter.ValidateConfig(request.Config);
-            var existing = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
-            source.Config = JsonSerializer.Serialize(secrets.Encrypt(source.Type, request.Config, existing));
+            var existing = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config ?? "{}") ?? new();
+            if (source.Template is not null)
+            {
+                // Template source: store user params (skip full config validation).
+                source.Config = JsonSerializer.Serialize(
+                    secrets.Encrypt(source.Type, request.Config, existing, source.Template.UserFields));
+            }
+            else
+            {
+                interpreter.ValidateConfig(request.Config);
+                source.Config = JsonSerializer.Serialize(secrets.Encrypt(source.Type, request.Config, existing));
+            }
         }
 
         if (request.Schedule is not null)
@@ -158,7 +173,7 @@ public class SourceService(
 
         scheduler.Schedule(source.Id, source.Schedule);
 
-        return ToResponse(source, await PlaylistIdsAsync(id, ct));
+        return ToResponse(source, await PlaylistIdsAsync(id, ct), template: source.Template);
     }
 
     public async Task DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default)
@@ -274,12 +289,50 @@ public class SourceService(
             .ToListAsync(ct);
     }
 
-    private SourceResponse ToResponse(Source source, Guid[] playlistIds, SourceRunStatus? lastRunStatus = null)
+    public async Task<SourceResponse> CreateFromTemplateAsync(
+        Guid ownerId, CreateTemplateSourceRequest request, CancellationToken ct = default)
     {
-        var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
+        var template = await db.SourceTemplates
+            .FirstOrDefaultAsync(t => t.Id == request.TemplateId, ct)
+            ?? throw new ValidationException("templateId", "Template not found.");
+
+        ValidateCron(request.Schedule);
+        await EnsurePlaylistsOwnedAsync(ownerId, request.PlaylistIds, ct);
+        await quotas.EnsureCanCreateSourceAsync(ownerId, ct);
+
+        var encryptedParams = secrets.Encrypt(template.Type, request.UserParams, stored: null, template.UserFields);
+
+        var source = new Source
+        {
+            OwnerId = ownerId,
+            Name = request.Name.Trim(),
+            Type = template.Type,
+            TemplateId = template.Id,
+            Config = JsonSerializer.Serialize(encryptedParams),
+            Schedule = request.Schedule.Trim(),
+            Visibility = request.Visibility ?? SourceVisibility.Private,
+        };
+        db.Sources.Add(source);
+
+        foreach (var playlistId in request.PlaylistIds ?? [])
+            db.PlaylistSources.Add(new PlaylistSource { SourceId = source.Id, PlaylistId = playlistId });
+
+        await db.SaveChangesAsync(ct);
+        scheduler.Schedule(source.Id, source.Schedule);
+
+        return ToResponse(source, (request.PlaylistIds ?? []).ToArray(), template: template);
+    }
+
+    private SourceResponse ToResponse(
+        Source source, Guid[] playlistIds, SourceRunStatus? lastRunStatus = null, SourceTemplate? template = null)
+    {
+        var stored = source.Config is not null
+            ? JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new()
+            : new Dictionary<string, string>();
+        var redacted = secrets.Redact(source.Type, stored, template?.UserFields);
         return new(
-            source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
+            source.Id, source.Name, source.Type, redacted,
             source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
-            lastRunStatus);
+            lastRunStatus, source.TemplateId);
     }
 }

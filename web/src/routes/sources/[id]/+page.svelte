@@ -8,13 +8,24 @@
 
 	const visIcons = { Private: Lock, Unlisted: EyeOff, Public: Globe } as const;
 	import SourceForm from '$lib/components/SourceForm.svelte';
+	import TemplateSourceForm from '$lib/components/TemplateSourceForm.svelte';
 	import SourceListItem from '$lib/components/SourceListItem.svelte';
 	import type { PageData } from './$types';
-	import type { Paged, Playlist, Source, SourceRun } from '$lib/types';
+	import type { Paged, Playlist, Source, SourceRun, SourceTemplate } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 	let busy = $state(false);
 	let toast = $state<string | null>(null);
+	let sourceTemplate = $state<SourceTemplate | null>(null);
+
+	$effect(() => {
+		const id = data.source.templateId;
+		if (id) {
+			api.get(`/templates/${id}`).then(async (res) => {
+				if (res.ok) sourceTemplate = await res.json();
+			});
+		}
+	});
 
 	const backHref = $derived(routePage.url.searchParams.get('from') ?? '/#sources');
 	const backLabel = $derived(routePage.url.searchParams.get('fromLabel') ?? 'Sources');
@@ -179,7 +190,11 @@
 
 	{#key data.source.id}
 		<div class="mt-5">
-			<SourceForm mode="edit" source={data.source} ondelete={remove} />
+			{#if sourceTemplate}
+				<TemplateSourceForm mode="edit" template={sourceTemplate} source={data.source} ondelete={remove} />
+			{:else}
+				<SourceForm mode="edit" source={data.source} ondelete={remove} />
+			{/if}
 		</div>
 	{/key}
 

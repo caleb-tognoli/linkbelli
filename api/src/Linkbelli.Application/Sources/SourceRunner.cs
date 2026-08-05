@@ -20,7 +20,9 @@ public sealed class SourceRunner(
 {
     public async Task RunAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
-        var source = await db.Sources.FirstOrDefaultAsync(s => s.Id == sourceId, cancellationToken);
+        var source = await db.Sources
+            .Include(s => s.Template)
+            .FirstOrDefaultAsync(s => s.Id == sourceId, cancellationToken);
         if (source is null)
         {
             return;
@@ -44,8 +46,21 @@ public sealed class SourceRunner(
             var interpreter = interpreters.FirstOrDefault(i => i.Type == source.Type)
                 ?? throw new InvalidOperationException($"No interpreter for source type {source.Type}.");
 
-            var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
-            var config = secrets.Decrypt(source.Type, stored);
+            Dictionary<string, string> config;
+            if (source.Template is not null)
+            {
+                // Template source: resolve base config, then decrypt any secret user params.
+                var userParams = source.Config is not null
+                    ? JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new()
+                    : new Dictionary<string, string>();
+                var decryptedParams = secrets.Decrypt(source.Type, userParams, source.Template.UserFields);
+                config = TemplateConfigResolver.Resolve(source.Template.BaseConfig, decryptedParams);
+            }
+            else
+            {
+                var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config ?? "{}") ?? new();
+                config = secrets.Decrypt(source.Type, stored);
+            }
 
             var fetch = await interpreter.FetchAsync(config, source.State, cancellationToken);
             if (fetch.State is not null)

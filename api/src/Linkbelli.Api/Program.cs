@@ -153,6 +153,7 @@ v1.MapPlaylistItemEndpoints();
 v1.MapFolderEndpoints();
 v1.MapLinkEndpoints();
 v1.MapSourceEndpoints();
+v1.MapSourceTemplateEndpoints();
 v1.MapTagEndpoints();
 v1.MapAdminEndpoints();
 v1.MapImportEndpoints();

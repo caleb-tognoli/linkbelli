@@ -5,6 +5,7 @@ using Linkbelli.Core.Entities;
 using Linkbelli.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Linkbelli.Infrastructure.Migrations
 {
     [DbContext(typeof(LinkbelliDbContext))]
-    partial class LinkbelliDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624055745_AddSourceTemplates")]
+    partial class AddSourceTemplates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -632,6 +635,9 @@ namespace Linkbelli.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -646,9 +652,6 @@ namespace Linkbelli.Infrastructure.Migrations
                     b.Property<List<TemplateField>>("UserFields")
                         .IsRequired()
                         .HasColumnType("jsonb");
-
-                    b.Property<int>("Visibility")
-                        .HasColumnType("integer");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -695,41 +698,6 @@ namespace Linkbelli.Infrastructure.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("Linkbelli.Core.Entities.TemplateTag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreationTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("DeletionTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("TagId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TemplateId")
-                        .HasColumnType("uuid");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xmin")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TagId");
-
-                    b.HasIndex("TemplateId", "TagId")
-                        .IsUnique()
-                        .HasFilter("\"DeletionTime\" IS NULL");
-
-                    b.ToTable("TemplateTags");
-                });
-
             modelBuilder.Entity("Linkbelli.Core.Entities.UserQuota", b =>
                 {
                     b.Property<Guid>("Id")
@@ -767,41 +735,6 @@ namespace Linkbelli.Infrastructure.Migrations
                         .HasFilter("\"DeletionTime\" IS NULL");
 
                     b.ToTable("UserQuotas");
-                });
-
-            modelBuilder.Entity("Linkbelli.Core.Entities.UserSavedTemplate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreationTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("DeletionTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("TemplateId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xmin")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TemplateId");
-
-                    b.HasIndex("UserId", "TemplateId")
-                        .IsUnique()
-                        .HasFilter("\"DeletionTime\" IS NULL");
-
-                    b.ToTable("UserSavedTemplates");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -1059,36 +992,6 @@ namespace Linkbelli.Infrastructure.Migrations
                     b.Navigation("Source");
                 });
 
-            modelBuilder.Entity("Linkbelli.Core.Entities.TemplateTag", b =>
-                {
-                    b.HasOne("Linkbelli.Core.Entities.Tag", "Tag")
-                        .WithMany("Templates")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Linkbelli.Core.Entities.SourceTemplate", "Template")
-                        .WithMany("Tags")
-                        .HasForeignKey("TemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tag");
-
-                    b.Navigation("Template");
-                });
-
-            modelBuilder.Entity("Linkbelli.Core.Entities.UserSavedTemplate", b =>
-                {
-                    b.HasOne("Linkbelli.Core.Entities.SourceTemplate", "Template")
-                        .WithMany("SavedBy")
-                        .HasForeignKey("TemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Template");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -1163,18 +1066,9 @@ namespace Linkbelli.Infrastructure.Migrations
                     b.Navigation("Runs");
                 });
 
-            modelBuilder.Entity("Linkbelli.Core.Entities.SourceTemplate", b =>
-                {
-                    b.Navigation("SavedBy");
-
-                    b.Navigation("Tags");
-                });
-
             modelBuilder.Entity("Linkbelli.Core.Entities.Tag", b =>
                 {
                     b.Navigation("Playlists");
-
-                    b.Navigation("Templates");
                 });
 #pragma warning restore 612, 618
         }

@@ -62,5 +62,12 @@ public static class SourceEndpoints
         group.MapGet("/{id:guid}/runs", async (Guid id, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.ListRunsAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead));
+
+        group.MapPost("/from-template", async (CreateTemplateSourceRequest req, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
+        {
+            var created = await svc.CreateFromTemplateAsync(user.GetUserId(), req, ct);
+            return Results.Created($"{ApiRoutes.V1}/sources/{created.Id}", created);
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.SourcesWrite));
     }
 }

@@ -1,15 +1,10 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
-	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Popover } from 'bits-ui';
 	import { Save, Lock, Globe, Trash2 } from '@lucide/svelte';
-	import Switch from './Switch.svelte';
 	import CronScheduleEditor from './CronScheduleEditor.svelte';
-	import RssSourceConfig from './RssSourceConfig.svelte';
-	import ScraperSourceConfig from './ScraperSourceConfig.svelte';
-	import JsonApiSourceConfig from './JsonApiSourceConfig.svelte';
-	import type { Source, SourceType, SourceVisibility } from '$lib/types';
+	import type { Source, SourceTemplate, SourceVisibility } from '$lib/types';
 
 	const CRON_NEVER = '0 0 30 2 *';
 
@@ -21,19 +16,26 @@
 
 	let {
 		mode,
+		template,
 		source,
-		lockedType,
 		ondelete
-	}: { mode: 'create' | 'edit'; source?: Source; lockedType?: SourceType; ondelete?: () => void } = $props();
+	}: {
+		mode: 'create' | 'edit';
+		template: SourceTemplate;
+		source?: Source;
+		ondelete?: () => void;
+	} = $props();
 
-	const effectiveLockedType = $derived(mode === 'edit' ? source?.type : lockedType);
+	const initSched = source?.schedule ?? template.defaultSchedule ?? '0 * * * *';
 
 	let name = $state(source?.name ?? '');
-	let type = $state<SourceType>(effectiveLockedType ?? source?.type ?? 'Rss');
 	let visibility = $state<SourceVisibility>(source?.visibility ?? 'Private');
-	let schedule = $state(source?.schedule ?? '0 * * * *');
-	let enabled = $state(source?.schedule !== CRON_NEVER);
-	let config = $state<Record<string, string>>({ ...(source?.config ?? {}) });
+	let schedule = $state(initSched);
+	let enabled = $state(initSched !== CRON_NEVER);
+
+	let params = $state<Record<string, string>>(
+		Object.fromEntries(template.userFields.map(f => [f.key, source?.config?.[f.key] ?? '']))
+	);
 
 	let busy = $state(false);
 	let error = $state<string | null>(null);
@@ -44,27 +46,30 @@
 	const fieldStyle = 'border-color: var(--color-border); background: var(--color-bg)';
 
 	async function save() {
-		if (mode === 'edit' && source!.visibility === 'Shared' && visibility === 'Private') {
-			const ok = await confirmDialog(
-				"Switching this source to Private will unsubscribe it from other users' playlists that follow it. Continue?"
-			);
-			if (!ok) return;
-		}
-
 		busy = true;
 		error = null;
 		try {
 			let res: Response;
 			if (mode === 'create') {
-				res = await api.post('/sources', { name, type, config, schedule, visibility });
+				res = await api.post('/sources/from-template', {
+					templateId: template.id,
+					name,
+					userParams: params,
+					schedule,
+					visibility
+				});
 			} else {
-				res = await api.patch(`/sources/${source!.id}`, { name, schedule, config, visibility });
+				res = await api.patch(`/sources/${source!.id}`, {
+					name,
+					config: params,
+					schedule,
+					visibility
+				});
 			}
 			if (!res.ok) {
-				error =
-					res.status === 429
-						? 'You have reached your source quota.'
-						: 'Could not save — check the name and config.';
+				error = res.status === 429
+					? 'You have reached your source quota.'
+					: 'Could not save — check the fields.';
 				return;
 			}
 			if (mode === 'create') {
@@ -80,6 +85,7 @@
 </script>
 
 <div class="flex flex-col gap-4">
+	<!-- Name + visibility -->
 	<div class="flex flex-col gap-1 text-sm">
 		<span>Name</span>
 		<div class="flex items-center gap-2">
@@ -117,34 +123,29 @@
 
 	<CronScheduleEditor bind:schedule bind:enabled />
 
+	<!-- Template user fields -->
 	<fieldset class="rounded-lg border p-4" style="border-color: var(--color-border)">
 		<legend class="px-1 text-xs" style="color: var(--color-muted)">Configuration</legend>
-
 		<div class="flex flex-col gap-4">
-			{#if effectiveLockedType}
-				<div class="flex items-center gap-2 text-sm">
-					<span style="color: var(--color-muted)">Type</span>
-					<span class="rounded-md border px-2 py-1 text-xs font-medium" style="border-color: var(--color-border); background: var(--color-surface)">
-						{type === 'Rss' ? 'RSS / Atom' : type === 'Scraper' ? 'Web scraper' : 'JSON API'}
-					</span>
-				</div>
-			{:else}
+			{#each template.userFields as field (field.key)}
 				<label class="flex flex-col gap-1 text-sm">
-					<span>Type</span>
-					<select bind:value={type} class={fieldClass} style={fieldStyle}>
-						<option value="Rss">RSS / Atom</option>
-						<option value="Scraper">Web scraper</option>
-						<option value="JsonApi">JSON API</option>
-					</select>
+					<span>
+						{field.label}
+						{#if !field.required}<span style="color: var(--color-muted)"> (optional)</span>{/if}
+					</span>
+					{#if field.description}
+						<p class="text-xs" style="color: var(--color-muted)">{field.description}</p>
+					{/if}
+					<input
+						bind:value={params[field.key]}
+						type={field.isSecret ? 'password' : field.type === 'url' ? 'url' : 'text'}
+						class={fieldClass}
+						style={fieldStyle}
+					/>
 				</label>
-			{/if}
-
-			{#if type === 'Rss'}
-				<RssSourceConfig bind:config />
-			{:else if type === 'Scraper'}
-				<ScraperSourceConfig bind:config />
-			{:else}
-				<JsonApiSourceConfig bind:config />
+			{/each}
+			{#if template.userFields.length === 0}
+				<p class="text-sm" style="color: var(--color-muted)">This template has no configurable fields.</p>
 			{/if}
 		</div>
 	</fieldset>
