@@ -24,7 +24,7 @@ public class LinkService(
             throw new ValidationException("url", "A valid http(s) URL is required.");
         }
 
-        var link = await GetOrCreateAsync(canonical, immediate: true, cancellationToken);
+        var link = await GetOrCreateAsync(canonical, immediate: true, cancellationToken: cancellationToken);
         return link.ToResponse();
     }
 
@@ -41,7 +41,7 @@ public class LinkService(
             metadata?.Title, metadata?.Description, metadata?.ImageUrl, metadata?.SiteName);
     }
 
-    public async Task<Link> GetOrCreateAsync(CanonicalUrl canonical, bool immediate = false, CancellationToken cancellationToken = default)
+    public async Task<Link> GetOrCreateAsync(CanonicalUrl canonical, bool immediate = false, string? initialTitle = null, CancellationToken cancellationToken = default)
     {
         var existing = await db.Links
             .Include(l => l.Host)
@@ -68,6 +68,7 @@ public class LinkService(
             UrlHash = canonical.Hash,
             HostId = host.Id,
             Host = host,
+            Title = string.IsNullOrWhiteSpace(initialTitle) ? null : initialTitle.Trim(),
         };
         db.Links.Add(link);
 

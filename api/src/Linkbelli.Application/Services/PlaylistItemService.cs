@@ -46,7 +46,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             throw new ValidationException("url", "A valid http(s) URL is required.");
         }
 
-        var link = await links.GetOrCreateAsync(canonical, immediate: true, ct);
+        var link = await links.GetOrCreateAsync(canonical, immediate: true, cancellationToken: ct);
 
         if (await db.PlaylistItems.AnyAsync(i => i.PlaylistId == playlistId && i.LinkId == link.Id, ct))
         {

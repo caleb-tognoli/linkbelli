@@ -28,14 +28,17 @@ public class LinkEnricher(
 
             if (!response.IsSuccessStatusCode)
             {
-                // 4xx is permanent — stamp so we stop retrying; 5xx is transient — leave for a later sweep.
-                if ((int)response.StatusCode is >= 400 and < 500)
+                // 4xx is permanent — stamp so we stop retrying; 5xx and 429 are transient — throw so
+                // the job runner retries with backoff instead of stamping a dead-end failure.
+                var status = (int)response.StatusCode;
+                if (status is >= 400 and < 500 and not 429)
                 {
-                    StampFailure(link, $"HTTP {(int)response.StatusCode}");
+                    StampFailure(link, $"HTTP {status}");
                     await db.SaveChangesAsync(cancellationToken);
+                    return;
                 }
 
-                return;
+                throw new HttpRequestException($"Enrichment fetch returned HTTP {status} (transient).");
             }
 
             var mediaType = response.Content.Headers.ContentType?.MediaType;
@@ -49,7 +52,13 @@ public class LinkEnricher(
             var html = await response.Content.ReadAsStringAsync(cancellationToken);
             var metadata = extractor.Extract(html);
 
-            link.Title = metadata.Title;
+            // Only fill in the title when it's still empty — a source-provided title (e.g. TMDB
+            // via urlTemplate + titlePath) is more trustworthy than the target page's OG tag,
+            // which can be localized (e.g. Finnish) and would otherwise clobber it.
+            if (string.IsNullOrWhiteSpace(link.Title))
+            {
+                link.Title = metadata.Title;
+            }
             link.Description = metadata.Description;
             link.ThumbnailUrl = metadata.ImageUrl;
             link.SiteName = metadata.SiteName;

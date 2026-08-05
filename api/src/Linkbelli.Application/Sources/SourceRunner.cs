@@ -85,7 +85,7 @@ public sealed class SourceRunner(
                 {
                     try
                     {
-                        var link = await links.GetOrCreateAsync(canonical, immediate: false, cancellationToken);
+                        var link = await links.GetOrCreateAsync(canonical, immediate: false, discoveredLink.Title, cancellationToken);
                         foundUrls.Add(link.CanonicalUrl);
                         resolved.Add((link, !preExistingHashes.Contains(canonical.Hash), discoveredLink.Metadata));
                     }

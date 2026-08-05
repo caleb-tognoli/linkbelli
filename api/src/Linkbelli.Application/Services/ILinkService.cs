@@ -9,9 +9,11 @@ public interface ILinkService
     /// <summary>
     /// Resolves a canonical URL to its globally-deduplicated Link, creating it (and its Host) on
     /// first sight. <paramref name="immediate"/> enriches new links synchronously (manual adds),
-    /// otherwise enrichment is queued (source ingestion).
+    /// otherwise enrichment is queued (source ingestion). <paramref name="initialTitle"/> seeds the
+    /// Link's title on creation (source-provided titles from APIs like TMDB); enrichment then only
+    /// fills in the title when it's still empty, so a curated source title isn't overwritten.
     /// </summary>
-    Task<Link> GetOrCreateAsync(CanonicalUrl canonical, bool immediate = false, CancellationToken cancellationToken = default);
+    Task<Link> GetOrCreateAsync(CanonicalUrl canonical, bool immediate = false, string? initialTitle = null, CancellationToken cancellationToken = default);
 
     /// <summary>Validates and canonicalizes a raw URL, then get-or-creates the Link and returns its DTO.</summary>
     Task<LinkResponse> CreateAsync(CreateLinkRequest request, CancellationToken cancellationToken = default);

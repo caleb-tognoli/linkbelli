@@ -45,6 +45,9 @@ public static class DependencyInjection
                 client.Timeout = EnrichmentHttpClient.Timeout;
                 client.MaxResponseContentBufferSize = EnrichmentHttpClient.MaxResponseBytes;
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(EnrichmentHttpClient.UserAgent);
+                // Ask locale-aware sites (e.g. themoviedb.org) for English HTML so scraped OG tags
+                // don't come back in whatever language the origin geo-guesses for our server.
+                client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
             })
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
