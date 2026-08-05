@@ -16,7 +16,7 @@ All types discover up to 100 links per run (then capped again by your `maxItemsP
 |------|-------------|-------|
 | `Rss` | `feedUrl` | RSS or Atom feed. Uses conditional GET (ETag/Last-Modified) to skip unchanged feeds. |
 | `Scraper` | `url`, `itemSelector`, `linkAttribute?`, `titleSelector?` | Scrapes a page with CSS selectors. `itemSelector` selects link-bearing elements; `linkAttribute` (default `href`) holds the URL; `titleSelector` (within each element) or the element text supplies the title. Relative URLs resolve against `url`. |
-| `JsonApi` | `url`, `itemsPath`, `urlPath`, `titlePath?`, `header.*` | Fetches JSON and extracts links via JSONPath. `itemsPath` selects item nodes; `urlPath`/`titlePath` are evaluated relative to each item. Any `header.<Name>` key is sent as a request header **and treated as a secret** (encrypted at rest, shown as `***` in responses). |
+| `JsonApi` | `url`, `itemsPath`, `urlPath?`, `urlTemplate?`, `titlePath?`, `header.*` | Fetches JSON and extracts links via JSONPath. `itemsPath` selects item nodes; `urlPath`/`titlePath` are evaluated relative to each item. Either `urlPath` **or** `urlTemplate` must be set. `urlTemplate` builds a URL from item fields via `{jsonpath}` placeholders — e.g. `https://site.tld/movie/{id}` or `https://site.tld/r/{subreddit}/{id}/{meta.slug}`; items where any placeholder resolves empty are skipped. Any `header.<Name>` key is sent as a request header **and treated as a secret** (encrypted at rest, shown as `***` in responses). |
 
 ```jsonc
 // Scraper config

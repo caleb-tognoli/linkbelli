@@ -50,7 +50,8 @@
 		JsonApi: [
 			{ key: 'url', label: 'API URL', required: true },
 			{ key: 'itemsPath', label: 'Items JSONPath', required: true },
-			{ key: 'urlPath', label: 'URL JSONPath', required: true },
+			{ key: 'urlPath', label: 'URL JSONPath', required: false },
+			{ key: 'urlTemplate', label: 'URL template', required: false, placeholder: 'https://example.com/movie/{id}/{slug}' },
 			{ key: 'titlePath', label: 'Title JSONPath', required: false }
 		]
 	};
@@ -299,7 +300,7 @@
 				{#each FIELDS[type].filter(f => !SCRAPER_LINK_FIELDS.includes(f.key as typeof SCRAPER_LINK_FIELDS[number])) as f (f.key)}
 					<label class="flex flex-col gap-1 text-sm">
 						<span>{f.label}{#if !f.required && !f.hideOptional}<span style="color: var(--color-muted)"> (optional)</span>{/if}</span>
-						<input bind:value={values[f.key]} type={f.inputType ?? 'text'} class={fieldClass} style={fieldStyle} />
+						<input bind:value={values[f.key]} type={f.inputType ?? 'text'} placeholder={f.placeholder ?? ''} class={fieldClass} style={fieldStyle} />
 					</label>
 				{/each}
 

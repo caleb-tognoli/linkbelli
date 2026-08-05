@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Http;
 using Linkbelli.Core.Entities;
@@ -9,20 +10,25 @@ namespace Linkbelli.Application.Sources;
 
 /// <summary>
 /// Fetches a JSON API and extracts links via JSONPath (through the SSRF-protected client).
-/// Config: { url, itemsPath, urlPath, titlePath?, header.*, auth.* }. <c>itemsPath</c> selects
-/// the item nodes; <c>urlPath</c>/<c>titlePath</c> are evaluated relative to each item. Keys
-/// prefixed <c>header.</c> become request headers (encrypted at rest). Keys prefixed <c>auth.</c>
-/// trigger a pre-run credential login (also encrypted): set <c>auth.loginUrl</c>,
-/// <c>auth.username</c>, <c>auth.password</c>; the resulting session cookies replace
-/// <c>header.Cookie</c> for that run.
+/// Config: { url, itemsPath, urlPath?, urlTemplate?, titlePath?, header.*, auth.* }. <c>itemsPath</c>
+/// selects the item nodes; <c>urlPath</c>/<c>titlePath</c> are JSONPaths evaluated relative to each
+/// item. Either <c>urlPath</c> or <c>urlTemplate</c> must be set. <c>urlTemplate</c> builds each
+/// URL from item fields via <c>{jsonpath}</c> placeholders — e.g.
+/// <c>https://site.tld/movie/{id}</c> or <c>https://site.tld/{lang}/movie/{id}/{slug}</c>. Each
+/// placeholder is evaluated per-item; if any resolves empty, the item is skipped. Keys prefixed
+/// <c>header.</c> become request headers (encrypted at rest). Keys prefixed <c>auth.</c> trigger a
+/// pre-run credential login (also encrypted): set <c>auth.loginUrl</c>, <c>auth.username</c>,
+/// <c>auth.password</c>; the resulting session cookies replace <c>header.Cookie</c> for that run.
 /// </summary>
 public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactory) : ISourceInterpreter
 {
     public const string UrlKey = "url";
     public const string ItemsPathKey = "itemsPath";
     public const string UrlPathKey = "urlPath";
+    public const string UrlTemplateKey = "urlTemplate";
     public const string TitlePathKey = "titlePath";
     public const string HeaderPrefix = "header.";
+    private static readonly Regex PlaceholderRegex = new(@"\{([^{}]+)\}", RegexOptions.Compiled);
     private const int MaxItemsPerRun = 100;
 
     public SourceType Type => SourceType.JsonApi;
@@ -43,9 +49,21 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
             throw new ValidationException($"config.{ItemsPathKey}", "A JSONPath to the items array is required.");
         }
 
-        if (!config.TryGetValue(UrlPathKey, out var urlPath) || string.IsNullOrWhiteSpace(urlPath))
+        var hasUrlPath = config.TryGetValue(UrlPathKey, out var urlPath) && !string.IsNullOrWhiteSpace(urlPath);
+        var hasUrlTemplate = config.TryGetValue(UrlTemplateKey, out var urlTemplate) && !string.IsNullOrWhiteSpace(urlTemplate);
+
+        if (!hasUrlPath && !hasUrlTemplate)
         {
-            throw new ValidationException($"config.{UrlPathKey}", "A JSONPath to each item's URL is required.");
+            throw new ValidationException(
+                $"config.{UrlPathKey}",
+                $"Either {UrlPathKey} or {UrlTemplateKey} is required.");
+        }
+
+        if (hasUrlTemplate && !PlaceholderRegex.IsMatch(urlTemplate!))
+        {
+            throw new ValidationException(
+                $"config.{UrlTemplateKey}",
+                "urlTemplate must contain at least one '{jsonpath}' placeholder.");
         }
     }
 
@@ -83,14 +101,24 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
     public static IReadOnlyList<DiscoveredLink> Parse(string json, IReadOnlyDictionary<string, string> config)
     {
         var itemsPath = config[ItemsPathKey];
-        var urlPath = config[UrlPathKey];
+        var urlPath = config.GetValueOrDefault(UrlPathKey);
+        var urlTemplate = config.GetValueOrDefault(UrlTemplateKey);
         var titlePath = config.GetValueOrDefault(TitlePathKey);
 
         var root = JToken.Parse(json);
         var results = new List<DiscoveredLink>();
         foreach (var item in root.SelectTokens(itemsPath))
         {
-            var url = item.SelectToken(urlPath)?.ToString();
+            string? url;
+            if (!string.IsNullOrWhiteSpace(urlTemplate))
+            {
+                url = ExpandTemplate(urlTemplate, item);
+            }
+            else
+            {
+                url = item.SelectToken(urlPath!)?.ToString();
+            }
+
             if (string.IsNullOrWhiteSpace(url))
             {
                 continue;
@@ -105,5 +133,27 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// Replaces every <c>{jsonpath}</c> in <paramref name="template"/> with the item's value at that
+    /// JSONPath. Returns null if any placeholder resolves to null/empty so the caller skips the item.
+    /// </summary>
+    private static string? ExpandTemplate(string template, JToken item)
+    {
+        var missing = false;
+        var expanded = PlaceholderRegex.Replace(template, match =>
+        {
+            var value = item.SelectToken(match.Groups[1].Value)?.ToString();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                missing = true;
+                return string.Empty;
+            }
+
+            return value.Trim();
+        });
+
+        return missing ? null : expanded;
     }
 }
