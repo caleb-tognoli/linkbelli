@@ -11,11 +11,12 @@ public class LinkEnricher(
     IHttpClientFactory httpClientFactory,
     LinkMetadataExtractor extractor,
     IAppDbContext db,
+    IHostThrottle throttle,
     ILogger<LinkEnricher> logger) : ILinkEnricher
 {
     public async Task EnrichAsync(Guid linkId, CancellationToken cancellationToken = default)
     {
-        var link = await db.Links.FirstOrDefaultAsync(l => l.Id == linkId, cancellationToken);
+        var link = await db.Links.Include(l => l.Host).FirstOrDefaultAsync(l => l.Id == linkId, cancellationToken);
         if (link is null)
         {
             return;
@@ -23,6 +24,10 @@ public class LinkEnricher(
 
         try
         {
+            // Serialize requests per host so parallel Hangfire workers don't dogpile the same
+            // origin — the primary cause of the 429 wave we hit on the TMDB seed.
+            await throttle.WaitAsync(link.Host!.Hostname, cancellationToken);
+
             var client = httpClientFactory.CreateClient(EnrichmentHttpClient.Name);
             using var response = await client.GetAsync(link.CanonicalUrl, cancellationToken);
 
