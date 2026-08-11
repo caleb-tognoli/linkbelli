@@ -46,9 +46,19 @@ public static class DependencyInjection
                 client.Timeout = EnrichmentHttpClient.Timeout;
                 client.MaxResponseContentBufferSize = EnrichmentHttpClient.MaxResponseBytes;
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(EnrichmentHttpClient.UserAgent);
+                // Force HTTP/1.1 — Cloudflare fingerprints .NET's HTTP/2 handshake as bot-like
+                // and 429s the request even before it sees the User-Agent. HTTP/1.1 looks like a
+                // plain curl/browser and gets through.
+                client.DefaultRequestVersion = HttpVersion.Version11;
+                client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact;
                 // Ask locale-aware sites (e.g. themoviedb.org) for English HTML so scraped OG tags
                 // don't come back in whatever language the origin geo-guesses for our server.
                 client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+                // Browser-typical headers so Cloudflare/edge fingerprinting doesn't flag the
+                // request as automated based on their absence.
+                client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+                client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
+                client.DefaultRequestHeaders.Connection.ParseAdd("keep-alive");
             })
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
