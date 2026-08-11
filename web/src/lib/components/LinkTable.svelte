@@ -9,6 +9,8 @@
 	import type { AttachedSource, PlaylistItem } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
+	type StatusFilter = 'All' | 'Unwatched' | 'Watched';
+
 	let {
 		items = $bindable(),
 		readonly = false,
@@ -18,7 +20,10 @@
 		initialPrefs = undefined,
 		attachedSources = [],
 		sourceFilter = null,
-		onsourcefilter
+		onsourcefilter,
+		statusFilter = 'All',
+		onstatusfilter,
+		isSearching = false
 	}: {
 		items: PlaylistItem[];
 		readonly?: boolean;
@@ -29,10 +34,12 @@
 		attachedSources?: AttachedSource[];
 		sourceFilter?: string | null;
 		onsourcefilter?: (source: string | null) => Promise<void>;
+		statusFilter?: StatusFilter;
+		onstatusfilter?: (status: StatusFilter) => Promise<void>;
+		isSearching?: boolean;
 	} = $props();
 
 	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle' | 'score-asc' | 'score-desc';
-	type StatusFilter = 'All' | 'Unwatched' | 'Watched';
 
 	function serverSortToMode(s: string | undefined): SortMode {
 		if (s === 'date-asc') return 'date-asc';
@@ -43,10 +50,7 @@
 		return readonly ? 'date-desc' : 'manual';
 	}
 
-	const defaultStatus: StatusFilter = !readonly ? 'Unwatched' : 'All';
-
 	let sortMode = $state<SortMode>(serverSortToMode(initialPrefs?.sort));
-	let statusFilter = $state<StatusFilter>((initialPrefs?.status as StatusFilter | null) ?? defaultStatus);
 	let showThumbnails = $state(initialPrefs?.showThumbnails ?? true);
 	let showUrls = $state(initialPrefs?.showUrls ?? false);
 	let forceShowScore = $state(false);
@@ -78,24 +82,10 @@
 	const hasAnyScore = $derived(items.some((i) => i.score !== null));
 	const showScoreCol = $derived(!readonly && (hasAnyScore || forceShowScore || sortMode === 'score-asc' || sortMode === 'score-desc'));
 
-	function setStatusFilter(f: StatusFilter) {
-		statusFilter = f;
-		if (playlistId) savePrefs(playlistId, { status: f });
-	}
-
-	// Items visible under the current status filter
-	const filteredItems = $derived(
-		statusFilter === 'All'
-			? items
-			: statusFilter === 'Unwatched'
-				? items.filter((i) => i.status === 'Added')
-				: items.filter((i) => i.status === 'Watched')
-	);
-
-	// DND state — syncs from filteredItems when items change externally
+	// DND state — syncs from items when they change externally
 	let dndItems = $state<PlaylistItem[]>([]);
 	$effect(() => {
-		dndItems = filteredItems;
+		dndItems = items;
 	});
 
 	function setSort(mode: SortMode) {
@@ -130,9 +120,9 @@
 	}
 
 	const displayItems = $derived.by(() => {
-		if (sortMode === 'date-asc') return sortByDate(filteredItems, true);
-		if (sortMode === 'date-desc') return sortByDate(filteredItems, false);
-		return filteredItems; // manual, shuffle, score: server order is canonical
+		if (sortMode === 'date-asc') return sortByDate(items, true);
+		if (sortMode === 'date-desc') return sortByDate(items, false);
+		return items; // manual, shuffle, score: server order is canonical
 	});
 
 	let noteEditId = $state<string | null>(null);
@@ -153,9 +143,7 @@
 		const movedId = e.detail.info.id;
 		const idx = dndItems.findIndex((i) => i.id === movedId);
 		const afterItemId = idx > 0 ? dndItems[idx - 1].id : null;
-		// Merge reordered filtered items back; items not in the current filter stay in place
-		const filteredIds = new Set(filteredItems.map((i) => i.id));
-		items = [...items.filter((i) => !filteredIds.has(i.id)), ...dndItems];
+		items = dndItems;
 		await api.post(`/items/${movedId}/move`, { afterItemId });
 		await onmove?.();
 	}
@@ -184,7 +172,12 @@
 	async function toggleWatched(item: PlaylistItem) {
 		const newStatus = item.status === 'Watched' ? 'Added' : 'Watched';
 		const res = await api.patch(`/items/${item.id}`, { status: newStatus });
-		if (res.ok) items = items.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i));
+		if (!res.ok) return;
+		const updated = items.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i));
+		// If the active status filter now excludes this item, drop it from the visible list.
+		if (statusFilter === 'Watched') items = updated.filter((i) => i.status === 'Watched');
+		else if (statusFilter === 'Unwatched') items = updated.filter((i) => i.status === 'Added');
+		else items = updated;
 	}
 
 	function dateAdded(iso: string) {
@@ -412,7 +405,7 @@
 	{/if}
 {/snippet}
 
-{#if items.length > 0 || sourceFilter !== null}
+{#if items.length > 0 || sourceFilter !== null || statusFilter !== 'All' || isSearching}
 	<div class="mb-3 flex flex-wrap items-center gap-1.5">
 		<!-- First section: source + status filters -->
 		{#if attachedSources.length > 0}
@@ -465,7 +458,7 @@
 					{#each statusOptions as f (f)}
 						<button
 							type="button"
-							onclick={() => { setStatusFilter(f); statusOpen = false; }}
+							onclick={() => { onstatusfilter?.(f); statusOpen = false; }}
 							class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
 							class:font-medium={statusFilter === f}
 						>{f}</button>
@@ -572,8 +565,8 @@
 {/if}
 
 {#if items.length === 0}
-	{#if sourceFilter !== null}
-		<p class="py-6 text-center text-sm" style="color: var(--color-muted)">No items for this source.</p>
+	{#if sourceFilter !== null || statusFilter !== 'All' || isSearching}
+		<p class="py-6 text-center text-sm" style="color: var(--color-muted)">No matching items.</p>
 	{:else}
 		<div
 			class="rounded-lg border border-dashed p-10 text-center"
@@ -585,10 +578,6 @@
 			{/if}
 		</div>
 	{/if}
-{:else if filteredItems.length === 0}
-	<p class="py-6 text-center text-sm" style="color: var(--color-muted)">
-		No {statusFilter.toLowerCase()} items.
-	</p>
 {:else}
 	<div class="overflow-x-auto">
 			<table class="w-full border-collapse text-sm">

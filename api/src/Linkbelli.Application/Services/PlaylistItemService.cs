@@ -23,7 +23,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             i.Score);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
-        Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, CancellationToken ct = default)
+        Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)
     {
         await EnsureOwnsPlaylistAsync(playlistId, ownerId, ct);
 
@@ -32,6 +32,8 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId && i.Link!.EnrichedAt != null);
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
         query = ApplySourceFilter(query, source);
+        query = ApplyStatusFilter(query, status);
+        query = ApplyQueryFilter(query, q);
 
         return await PageAsync(query, take, cursor, sort, db, ct);
     }
@@ -152,7 +154,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     }
 
     public async Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(
-        string username, string slug, int? limit, string? cursor, string? sort, string? source, Guid? viewerId, CancellationToken ct = default)
+        string username, string slug, int? limit, string? cursor, string? sort, string? source, string? status, string? q, Guid? viewerId, CancellationToken ct = default)
     {
         var normalized = username.ToUpperInvariant();
         var playlist = await db.Playlists
@@ -172,8 +174,40 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlist.Id && i.Link!.EnrichedAt != null);
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
         query = ApplySourceFilter(query, source);
+        query = ApplyStatusFilter(query, status);
+        query = ApplyQueryFilter(query, q);
 
         return await PageAsync(query, take, cursor, sort, db, ct);
+    }
+
+    private static IQueryable<PlaylistItem> ApplyStatusFilter(IQueryable<PlaylistItem> query, string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status)) return query;
+        if (status.Equals("watched", StringComparison.OrdinalIgnoreCase))
+            return query.Where(i => i.Status == PlaylistItemStatus.Watched);
+        if (status.Equals("unwatched", StringComparison.OrdinalIgnoreCase))
+            return query.Where(i => i.Status == PlaylistItemStatus.Added);
+        return query;
+    }
+
+    private static IQueryable<PlaylistItem> ApplyQueryFilter(IQueryable<PlaylistItem> query, string? q)
+    {
+        if (string.IsNullOrWhiteSpace(q)) return query;
+
+        // If the query parses as a URL, match by canonical hash (indexed dedup key).
+        if (UrlCanonicalizer.TryCanonicalize(q, out var canon))
+        {
+            var hash = canon.Hash;
+            return query.Where(i => i.Link!.UrlHash == hash);
+        }
+
+        var needle = q.ToLower();
+        return query.Where(i =>
+            (i.Link!.Title != null && i.Link.Title.ToLower().Contains(needle))
+            || (i.Link!.Description != null && i.Link.Description.ToLower().Contains(needle))
+            || (i.Link!.SiteName != null && i.Link.SiteName.ToLower().Contains(needle))
+            || i.Link!.CanonicalUrl.ToLower().Contains(needle)
+            || i.Link!.Host!.Hostname.ToLower().Contains(needle));
     }
 
     private static IQueryable<PlaylistItem> ApplySourceFilter(IQueryable<PlaylistItem> query, string? source)

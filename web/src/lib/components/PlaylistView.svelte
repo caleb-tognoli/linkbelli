@@ -1,5 +1,5 @@
 <script lang="ts">
-	import AddLinkBar from './AddLinkBar.svelte';
+	import PlaylistSearchBar from './PlaylistSearchBar.svelte';
 	import LinkTable from './LinkTable.svelte';
 	import TagEditor from './TagEditor.svelte';
 	import SourcesPanel from './SourcesPanel.svelte';
@@ -47,10 +47,16 @@
 	const resolvedBackHref = $derived(backHref ?? (isOwner ? '/' : '/discover'));
 	const resolvedBackLabel = $derived(backLabel ?? (isOwner ? 'Playlists' : 'Discover'));
 
+	type StatusFilter = 'All' | 'Unwatched' | 'Watched';
+	const defaultStatus: StatusFilter = isOwner ? 'Unwatched' : 'All';
+
 	let items = $state(itemsPage.items);
 	let nextCursor = $state(itemsPage.nextCursor);
 	let serverSort = $state(initialPrefs?.sort ?? 'position');
 	let sourceFilter = $state<string | null>(initialPrefs?.source ?? null);
+	let statusFilter = $state<StatusFilter>((initialPrefs?.status as StatusFilter | null) ?? defaultStatus);
+	let query = $state('');
+	let queryInitialized = false;
 	let tags = $state(playlist.tags);
 	let attached = $state(attachedSources);
 	let loadingMore = $state(false);
@@ -95,9 +101,22 @@
 		const p = new URLSearchParams(extra);
 		if (serverSort !== 'position') p.set('sort', serverSort);
 		if (sourceFilter !== null) p.set('source', sourceFilter);
+		if (statusFilter !== 'All') p.set('status', statusFilter.toLowerCase());
+		if (query.trim()) p.set('q', query.trim());
 		const qs = p.toString();
 		return qs ? `?${qs}` : '';
 	}
+
+	$effect(() => {
+		const term = query;
+		if (!queryInitialized) {
+			queryInitialized = true;
+			return;
+		}
+		const delay = term ? 300 : 0;
+		const t = setTimeout(reloadItems, delay);
+		return () => clearTimeout(t);
+	});
 
 	async function reloadItems() {
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
@@ -123,6 +142,18 @@
 	async function applySourceFilter(source: string | null) {
 		sourceFilter = source;
 		savePrefs(playlist.id, { source });
+		nextCursor = null;
+		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
+		if (res.ok) {
+			const page = (await res.json()) as Paged<PlaylistItem>;
+			items = page.items;
+			nextCursor = page.nextCursor;
+		}
+	}
+
+	async function applyStatusFilter(status: StatusFilter) {
+		statusFilter = status;
+		savePrefs(playlist.id, { status });
 		nextCursor = null;
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 		if (res.ok) {
@@ -250,11 +281,15 @@
 		</div>
 	{/if}
 
-	{#if isOwner}
-		<div class="mt-5">
-			<AddLinkBar playlistId={playlist.id} {onAdded} />
-		</div>
-	{/if}
+	<div class="mt-5">
+		<PlaylistSearchBar
+			playlistId={playlist.id}
+			{isOwner}
+			bind:query
+			resultCount={items.length}
+			{onAdded}
+		/>
+	</div>
 
 	<div class="mt-5">
 		<LinkTable
@@ -267,6 +302,9 @@
 			attachedSources={attached}
 			{sourceFilter}
 			onsourcefilter={applySourceFilter}
+			{statusFilter}
+			onstatusfilter={applyStatusFilter}
+			isSearching={query.trim().length > 0}
 		/>
 		{#if nextCursor}
 			<div class="mt-3 text-center">

@@ -21,7 +21,8 @@ export const load: PageServerLoad = async ({ locals, params, parent, cookies }) 
 	}
 
 	const prefs = readPrefsCookie(cookies.get('pl_prefs'), playlist.id);
-	const itemsQuery = buildItemsQuery(prefs.sort, prefs.source);
+	const initialStatus = prefs.status ?? 'All';
+	const itemsQuery = buildItemsQuery(prefs.sort, prefs.source, initialStatus);
 
 	const [itemsRes, sourcesRes] = await Promise.all([
 		locals.api(`${base}/items${itemsQuery}`),
@@ -53,10 +54,11 @@ function readPrefsCookie(raw: string | undefined, playlistId: string): PlaylistP
 	return { sort: 'position', source: null, status: null, showUrls: false, showThumbnails: true };
 }
 
-function buildItemsQuery(sort: string, source: string | null): string {
+function buildItemsQuery(sort: string, source: string | null, status: string): string {
 	const p = new URLSearchParams();
 	if (sort !== 'position') p.set('sort', sort);
 	if (source !== null) p.set('source', source);
+	if (status !== 'All') p.set('status', status.toLowerCase());
 	const qs = p.toString();
 	return qs ? `?${qs}` : '';
 }
