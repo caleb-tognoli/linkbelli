@@ -52,6 +52,7 @@
 
 	let items = $state(itemsPage.items);
 	let nextCursor = $state(itemsPage.nextCursor);
+	let total = $state<number | null>(itemsPage.total ?? null);
 	let serverSort = $state(initialPrefs?.sort ?? 'position');
 	let sourceFilter = $state<string | null>(initialPrefs?.source ?? null);
 	let statusFilter = $state<StatusFilter>((initialPrefs?.status as StatusFilter | null) ?? defaultStatus);
@@ -89,6 +90,7 @@
 
 	function onAdded(item: PlaylistItem) {
 		items = [...items, item];
+		if (total !== null) total = total + 1;
 	}
 
 	function itemsEndpoint() {
@@ -118,13 +120,15 @@
 		return () => clearTimeout(t);
 	});
 
+	function applyPage(page: Paged<PlaylistItem>) {
+		items = page.items;
+		nextCursor = page.nextCursor;
+		total = page.total ?? null;
+	}
+
 	async function reloadItems() {
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) {
-			const page = (await res.json()) as Paged<PlaylistItem>;
-			items = page.items;
-			nextCursor = page.nextCursor;
-		}
+		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
 	}
 
 	async function onfetchsort(sort: string) {
@@ -132,11 +136,7 @@
 		savePrefs(playlist.id, { sort });
 		nextCursor = null; // clear stale cursor immediately while loading
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) {
-			const page = (await res.json()) as Paged<PlaylistItem>;
-			items = page.items;
-			nextCursor = page.nextCursor;
-		}
+		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
 	}
 
 	async function applySourceFilter(source: string | null) {
@@ -144,11 +144,7 @@
 		savePrefs(playlist.id, { source });
 		nextCursor = null;
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) {
-			const page = (await res.json()) as Paged<PlaylistItem>;
-			items = page.items;
-			nextCursor = page.nextCursor;
-		}
+		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
 	}
 
 	async function applyStatusFilter(status: StatusFilter) {
@@ -156,11 +152,7 @@
 		savePrefs(playlist.id, { status });
 		nextCursor = null;
 		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) {
-			const page = (await res.json()) as Paged<PlaylistItem>;
-			items = page.items;
-			nextCursor = page.nextCursor;
-		}
+		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
 	}
 
 	async function loadMore() {
@@ -172,6 +164,7 @@
 				const page = (await res.json()) as Paged<PlaylistItem>;
 				items = [...items, ...page.items];
 				nextCursor = page.nextCursor;
+				if (page.total !== undefined) total = page.total;
 			}
 		} finally {
 			loadingMore = false;
@@ -305,6 +298,7 @@
 			{statusFilter}
 			onstatusfilter={applyStatusFilter}
 			isSearching={query.trim().length > 0}
+			bind:total
 		/>
 		{#if nextCursor}
 			<div class="mt-3 text-center">

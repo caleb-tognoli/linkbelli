@@ -23,7 +23,8 @@
 		onsourcefilter,
 		statusFilter = 'All',
 		onstatusfilter,
-		isSearching = false
+		isSearching = false,
+		total = $bindable(null)
 	}: {
 		items: PlaylistItem[];
 		readonly?: boolean;
@@ -37,6 +38,7 @@
 		statusFilter?: StatusFilter;
 		onstatusfilter?: (status: StatusFilter) => Promise<void>;
 		isSearching?: boolean;
+		total?: number | null;
 	} = $props();
 
 	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle' | 'score-asc' | 'score-desc';
@@ -166,7 +168,10 @@
 
 	async function remove(item: PlaylistItem) {
 		const res = await api.del(`/items/${item.id}`);
-		if (res.ok || res.status === 204) items = items.filter((i) => i.id !== item.id);
+		if (res.ok || res.status === 204) {
+			items = items.filter((i) => i.id !== item.id);
+			if (total !== null) total = Math.max(0, total - 1);
+		}
 	}
 
 	async function toggleWatched(item: PlaylistItem) {
@@ -175,9 +180,17 @@
 		if (!res.ok) return;
 		const updated = items.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i));
 		// If the active status filter now excludes this item, drop it from the visible list.
-		if (statusFilter === 'Watched') items = updated.filter((i) => i.status === 'Watched');
-		else if (statusFilter === 'Unwatched') items = updated.filter((i) => i.status === 'Added');
-		else items = updated;
+		if (statusFilter === 'Watched') {
+			const next = updated.filter((i) => i.status === 'Watched');
+			if (total !== null && next.length < updated.length) total = Math.max(0, total - 1);
+			items = next;
+		} else if (statusFilter === 'Unwatched') {
+			const next = updated.filter((i) => i.status === 'Added');
+			if (total !== null && next.length < updated.length) total = Math.max(0, total - 1);
+			items = next;
+		} else {
+			items = updated;
+		}
 	}
 
 	function dateAdded(iso: string) {
@@ -561,6 +574,12 @@
 		>
 			<Image size={11} aria-hidden="true" /> Thumbnail
 		</button>
+
+		{#if total !== null}
+			<span class="ml-auto text-xs" style="color: var(--color-muted)">
+				{total} {total === 1 ? 'item' : 'items'}
+			</span>
+		{/if}
 	</div>
 {/if}
 

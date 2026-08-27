@@ -220,6 +220,8 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     private static async Task<PagedResult<PlaylistItemResponse>> PageAsync(
         IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, IAppDbContext db, CancellationToken ct)
     {
+        var total = await query.CountAsync(ct);
+
         if (sort == "shuffle")
         {
             double seed;
@@ -260,7 +262,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
                 var seedStr = seed.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
                 next = Cursor.Encode($"{seedStr}:{offset + take}");
             }
-            return new PagedResult<PlaylistItemResponse>(rows, next);
+            return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
 
         if (sort is "date-asc" or "date-desc")
@@ -277,7 +279,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
                 .Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
             if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode(rows[^1].CreationTime.UtcTicks.ToString()); }
-            return new PagedResult<PlaylistItemResponse>(rows, next);
+            return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
 
         if (sort is "score-asc" or "score-desc")
@@ -291,7 +293,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             var rows = await q.Skip(offset).Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
             if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode((offset + take).ToString()); }
-            return new PagedResult<PlaylistItemResponse>(rows, next);
+            return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
 
         else
@@ -301,7 +303,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             var rows = await query.OrderBy(i => i.Position).Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
             if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode(rows[^1].Position.ToString()); }
-            return new PagedResult<PlaylistItemResponse>(rows, next);
+            return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
     }
 

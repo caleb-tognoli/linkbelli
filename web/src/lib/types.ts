@@ -30,6 +30,7 @@ export interface Playlist {
 export interface Paged<T> {
 	items: T[];
 	nextCursor: string | null;
+	total?: number;
 }
 
 export interface TagSummary {
