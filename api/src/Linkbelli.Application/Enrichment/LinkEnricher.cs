@@ -1,7 +1,9 @@
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Http;
+using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +16,11 @@ public class LinkEnricher(
     IHostThrottle throttle,
     ILogger<LinkEnricher> logger) : ILinkEnricher
 {
+    private static readonly HashSet<string> YouTubeHosts = new(StringComparer.Ordinal)
+    {
+        "youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be",
+    };
+
     public async Task EnrichAsync(Guid linkId, CancellationToken cancellationToken = default)
     {
         var link = await db.Links.Include(l => l.Host).FirstOrDefaultAsync(l => l.Id == linkId, cancellationToken);
@@ -29,6 +36,15 @@ public class LinkEnricher(
             await throttle.WaitAsync(link.Host!.Hostname, cancellationToken);
 
             var client = httpClientFactory.CreateClient(EnrichmentHttpClient.Name);
+
+            // YouTube serves an anti-bot interstitial to the generic fetch; use the public oEmbed
+            // endpoint instead — it returns title/author/thumbnail as JSON, no auth, no bot check.
+            if (YouTubeHosts.Contains(link.Host.Hostname))
+            {
+                await EnrichViaYouTubeOEmbedAsync(link, client, cancellationToken);
+                return;
+            }
+
             using var response = await client.GetAsync(link.CanonicalUrl, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -85,7 +101,56 @@ public class LinkEnricher(
         }
     }
 
-    private static void StampFailure(Core.Entities.Link link, string reason)
+    private async Task EnrichViaYouTubeOEmbedAsync(Link link, HttpClient client, CancellationToken ct)
+    {
+        var oembedUrl = "https://www.youtube.com/oembed?format=json&url=" + Uri.EscapeDataString(link.CanonicalUrl);
+        using var response = await client.GetAsync(oembedUrl, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var status = (int)response.StatusCode;
+            // 401/404 = private/deleted/unlisted — permanent. Other 4xx (except 429) also permanent.
+            if (status is >= 400 and < 500 and not 429)
+            {
+                StampFailure(link, $"YouTube oEmbed HTTP {status}");
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+
+            throw new HttpRequestException($"YouTube oEmbed returned HTTP {status} (transient).");
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(ct);
+        var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        var root = doc.RootElement;
+
+        var title = ReadString(root, "title");
+        var author = ReadString(root, "author_name");
+        var thumbnail = ReadString(root, "thumbnail_url");
+        var providerName = ReadString(root, "provider_name") ?? "YouTube";
+
+        if (string.IsNullOrWhiteSpace(link.Title))
+        {
+            link.Title = title;
+        }
+        link.ThumbnailUrl = thumbnail;
+        link.SiteName = providerName;
+
+        var raw = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (!string.IsNullOrWhiteSpace(title)) raw["title"] = title!;
+        if (!string.IsNullOrWhiteSpace(author)) raw["author"] = author!;
+        if (!string.IsNullOrWhiteSpace(thumbnail)) raw["thumbnail"] = thumbnail!;
+        raw["provider_name"] = providerName;
+        link.Metadata = JsonSerializer.Serialize(raw);
+
+        link.EnrichedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static string? ReadString(JsonElement obj, string name)
+        => obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+
+    private static void StampFailure(Link link, string reason)
     {
         link.Metadata = JsonSerializer.Serialize(new Dictionary<string, string> { ["enrichmentError"] = reason });
         link.EnrichedAt = DateTimeOffset.UtcNow;
