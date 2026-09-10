@@ -9,6 +9,9 @@ const AUTH_PAGES = ['/login', '/register'];
 // endpoints; the API still enforces per-endpoint auth (protected calls get 401).
 const ANON_PREFIXES = ['/discover', '/public', '/api/v1'];
 
+// Served to crawlers, which never carry a session.
+const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml'];
+
 const startsWithSegment = (path: string, prefix: string) =>
 	path === prefix || path.startsWith(prefix + '/');
 
@@ -59,8 +62,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname } = event.url;
 	const isAuthPage = AUTH_PAGES.includes(pathname);
 	// "/" is the site introduction — public, so newcomers can read it before signing up.
+	// Crawler files have to answer to an anonymous request or they do not work at all.
 	const anonAllowed =
-		pathname === '/' || isAuthPage || ANON_PREFIXES.some((p) => startsWithSegment(pathname, p));
+		pathname === '/' ||
+		CRAWLER_FILES.includes(pathname) ||
+		isAuthPage ||
+		ANON_PREFIXES.some((p) => startsWithSegment(pathname, p));
 
 	if (!event.locals.authenticated && !anonAllowed) {
 		const redirectTo = encodeURIComponent(pathname + event.url.search);
