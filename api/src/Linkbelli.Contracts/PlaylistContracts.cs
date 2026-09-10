@@ -39,7 +39,9 @@ public record CreateLinkRequest(string Url);
 
 public record LinkResponse(
     Guid Id, string Url, string Host, string? Title, string? Description,
-    string? ThumbnailUrl, string? SiteName, bool Enriched, bool Nsfw);
+    string? ThumbnailUrl, string? SiteName, bool Enriched, bool Nsfw,
+    /// <summary>The site's favicon, shared by every link on that host. Null until a link there has been enriched.</summary>
+    string? Favicon = null);
 
 /// <summary>Metadata fetched for a URL without saving anything (paste → preview → confirm).</summary>
 public record LinkPreviewResponse(

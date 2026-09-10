@@ -70,4 +70,48 @@ public class LinkMetadataExtractorTests
 
         Assert.Equal(expected, _extractor.Extract(html).Nsfw);
     }
+
+    [Fact]
+    public void Finds_the_declared_favicon()
+    {
+        const string html = """
+            <html><head>
+              <link rel="stylesheet" href="/style.css">
+              <link rel="icon" href="/assets/icon-32.png">
+            </head><body></body></html>
+            """;
+
+        Assert.Equal("/assets/icon-32.png", _extractor.Extract(html).FaviconHref);
+    }
+
+    [Theory]
+    [InlineData("shortcut icon")]
+    [InlineData("apple-touch-icon")]
+    [InlineData("apple-touch-icon-precomposed")]
+    [InlineData("mask-icon")]
+    public void Accepts_the_other_common_icon_rels(string rel)
+    {
+        var html = $"""<html><head><link rel="{rel}" href="https://cdn.example/i.png"></head></html>""";
+
+        Assert.Equal("https://cdn.example/i.png", _extractor.Extract(html).FaviconHref);
+    }
+
+    [Fact]
+    public void Prefers_a_plain_icon_over_an_apple_touch_icon()
+    {
+        const string html = """
+            <html><head>
+              <link rel="apple-touch-icon" href="/apple.png">
+              <link rel="icon" href="/icon.png">
+            </head></html>
+            """;
+
+        Assert.Equal("/icon.png", _extractor.Extract(html).FaviconHref);
+    }
+
+    [Fact]
+    public void Reports_no_favicon_when_the_page_declares_none()
+    {
+        Assert.Null(_extractor.Extract("<html><head><title>x</title></head></html>").FaviconHref);
+    }
 }

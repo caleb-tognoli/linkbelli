@@ -101,6 +101,8 @@ export interface LinkSummary {
 	siteName: string | null;
 	enriched: boolean;
 	nsfw: boolean;
+	/** The site's favicon, shared by every link on that host. Null until a link there is enriched. */
+	favicon: string | null;
 }
 
 export interface PlaylistItem {

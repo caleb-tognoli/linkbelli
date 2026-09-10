@@ -4,6 +4,7 @@ using System.Text.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Http;
 using Linkbelli.Core.Entities;
+using Linkbelli.Core.Url;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -89,6 +90,13 @@ public class LinkEnricher(
                 link.Nsfw = true; // automatic; never cleared
             }
 
+            // og:site_name only — LinkMetadata.SiteName falls back to the page <title>, which
+            // names one article rather than the site it lives on.
+            ApplyHostBranding(
+                link.Host,
+                metadata.Raw.GetValueOrDefault("og:site_name"),
+                FaviconResolver.Resolve(link.CanonicalUrl, metadata.FaviconHref));
+
             link.EnrichedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -143,8 +151,28 @@ public class LinkEnricher(
         raw["provider_name"] = providerName;
         link.Metadata = JsonSerializer.Serialize(raw);
 
+        ApplyHostBranding(link.Host!, providerName, FaviconResolver.Resolve(link.CanonicalUrl, null));
+
         link.EnrichedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Fills in the Host row's display name and favicon the first time a page on that site tells
+    /// us what they are. Both are per-site, so the first enriched link wins and later ones leave
+    /// them alone — re-deriving them from every page would flap on sites with per-section icons.
+    /// </summary>
+    private static void ApplyHostBranding(Core.Entities.Host host, string? siteName, string? faviconUrl)
+    {
+        if (string.IsNullOrWhiteSpace(host.DisplayName) && !string.IsNullOrWhiteSpace(siteName))
+        {
+            host.DisplayName = siteName.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(host.Favicon) && !string.IsNullOrWhiteSpace(faviconUrl))
+        {
+            host.Favicon = faviconUrl;
+        }
     }
 
     private static string? ReadString(JsonElement obj, string name)

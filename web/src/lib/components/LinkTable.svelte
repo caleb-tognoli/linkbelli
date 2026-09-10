@@ -234,7 +234,23 @@
 							alt=""
 							class="shrink-0 rounded object-cover"
 							style="height: 5em; width: auto"
+							loading="lazy"
 						/>
+					{:else if item.link.favicon}
+						<!-- No page image: the site's own icon keeps the row's left edge aligned
+						     with its neighbours instead of leaving a ragged gap. -->
+						<span
+							class="flex shrink-0 items-center justify-center rounded"
+							style="height: 5em; width: 5em; background: var(--color-surface)"
+						>
+							<img
+								src={item.link.favicon}
+								alt=""
+								class="size-6 object-contain"
+								loading="lazy"
+								onerror={(e) => e.currentTarget.parentElement?.remove()}
+							/>
+						</span>
 					{/if}
 				{/if}
 				<div class="min-w-0">

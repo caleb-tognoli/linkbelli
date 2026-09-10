@@ -9,7 +9,9 @@ public record LinkMetadata(
     string? ImageUrl,
     string? SiteName,
     bool Nsfw,
-    IReadOnlyDictionary<string, string> Raw);
+    IReadOnlyDictionary<string, string> Raw,
+    /// <summary>Favicon href exactly as declared — may be relative; the caller resolves it.</summary>
+    string? FaviconHref = null);
 
 /// <summary>Pure HTML → metadata extraction (no I/O), so it's unit-testable from fixtures.</summary>
 public class LinkMetadataExtractor
@@ -40,7 +42,37 @@ public class LinkMetadataExtractor
         // Fall back to the page <title> when the site doesn't declare og:site_name.
         var siteName = Clean(raw.GetValueOrDefault("og:site_name")) ?? docTitle;
 
-        return new LinkMetadata(title, description, image, siteName, DetectNsfw(doc), raw);
+        return new LinkMetadata(title, description, image, siteName, DetectNsfw(doc), raw, FindFavicon(doc));
+    }
+
+    /// <summary>
+    /// The page's declared icon, most specific first. Sites vary wildly in which rel they use, so
+    /// all the common spellings are tried before the caller falls back to /favicon.ico.
+    /// </summary>
+    private static string? FindFavicon(AngleSharp.Dom.IDocument doc)
+    {
+        string[] selectors =
+        [
+            "link[rel='icon']",
+            "link[rel='shortcut icon']",
+            "link[rel='apple-touch-icon']",
+            "link[rel='apple-touch-icon-precomposed']",
+            "link[rel='mask-icon']",
+        ];
+
+        foreach (var selector in selectors)
+        {
+            foreach (var element in doc.QuerySelectorAll(selector))
+            {
+                var href = Clean(element.GetAttribute("href"));
+                if (href is not null)
+                {
+                    return href;
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
