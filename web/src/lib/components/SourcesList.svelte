@@ -69,6 +69,21 @@
 		if (src.lastRunStatus === 'Running') return 'Currently running';
 		return 'Last run succeeded';
 	}
+
+	// A paused source shows a hollow ring rather than a filled dot: the fill means "this is
+	// running on a schedule", which is exactly what pausing stops.
+	const paused = (src: Source) => src.status === 'Paused';
+
+	function dotStyle(src: Source): string {
+		const base = 'width: 8px; height: 8px; border-radius: 50%; display: block; flex-shrink: 0;';
+		return paused(src)
+			? `${base} border: 1.5px solid var(--color-muted);`
+			: `${base} background: ${statusColor(src)};`;
+	}
+
+	function dotLabel(src: Source): string {
+		return paused(src) ? `Paused — ${statusLabel(src).toLowerCase()}` : statusLabel(src);
+	}
 </script>
 
 {#if sources.length === 0}
@@ -105,13 +120,15 @@
 					name={src.name}
 					badge={displayType(src.type)}
 					href={`/sources/${src.id}`}
-					subtitle={`last run ${lastRun(src.lastRunAt)}`}
+					subtitle={paused(src)
+						? `paused · last run ${lastRun(src.lastRunAt)}`
+						: `last run ${lastRun(src.lastRunAt)}`}
 				>
 					{#snippet leading()}
 						<span
-							style="width: 8px; height: 8px; border-radius: 50%; background: {statusColor(src)}; display: block; flex-shrink: 0;"
-							title={statusLabel(src)}
-							aria-label={statusLabel(src)}
+							style={dotStyle(src)}
+							title={dotLabel(src)}
+							aria-label={dotLabel(src)}
 						></span>
 					{/snippet}
 					{#snippet actions()}

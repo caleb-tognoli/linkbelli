@@ -7,6 +7,16 @@ public enum SourceType
     JsonApi = 2,
 }
 
+/// <summary>Whether a source's schedule is live.</summary>
+public enum SourceStatus
+{
+    /// <summary>Scheduled and running on its cron.</summary>
+    Active = 0,
+
+    /// <summary>Deliberately stopped by its owner. Unscheduled; "run now" still works.</summary>
+    Paused = 1,
+}
+
 /// <summary>Who may attach a source to their playlists. Set at creation and immutable.</summary>
 public enum SourceVisibility
 {
@@ -32,8 +42,15 @@ public class Source : BaseEntity<Guid>
     public SourceVisibility Visibility { get; set; } = SourceVisibility.Private;
     /// <summary>Type-specific declarative config (jsonb), validated per type.</summary>
     public required string Config { get; set; }
-    /// <summary>Cron expression; enforced minimum interval applies.</summary>
+    /// <summary>Cron expression; enforced minimum interval applies. Kept while paused, so
+    /// resuming restores the owner's original cadence rather than a default.</summary>
     public required string Schedule { get; set; }
+
+    /// <summary>
+    /// Whether the schedule is live. Pausing unschedules the recurring job; it does not touch
+    /// <see cref="Schedule"/>, and it does not block an explicit "run now".
+    /// </summary>
+    public SourceStatus Status { get; set; } = SourceStatus.Active;
     /// <summary>Interpreter persistence between runs: ETag, Last-Modified, cursor… (jsonb).</summary>
     public string? State { get; set; }
     public DateTimeOffset? LastRunAt { get; set; }

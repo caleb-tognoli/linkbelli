@@ -16,13 +16,14 @@ public record UpdateSourceRequest(
     IReadOnlyDictionary<string, string>? Config,
     string? Schedule,
     Guid[]? PlaylistIds,
-    SourceVisibility? Visibility);
+    SourceVisibility? Visibility,
+    SourceStatus? Status = null);
 
 public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,
     string Schedule, SourceVisibility Visibility,
     DateTimeOffset? LastRunAt, DateTimeOffset CreationTime, Guid[] PlaylistIds,
-    SourceRunStatus? LastRunStatus);
+    SourceRunStatus? LastRunStatus, SourceStatus Status = SourceStatus.Active);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
 public record SharedSourceSummary(

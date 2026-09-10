@@ -154,9 +154,23 @@ public class SourceService(
             }
         }
 
+        if (request.Status is not null)
+        {
+            source.Status = request.Status.Value;
+        }
+
         await db.SaveChangesAsync(ct);
 
-        scheduler.Schedule(source.Id, source.Schedule);
+        // The recurring job follows the status, not the cron. A paused source keeps its schedule
+        // so resuming restores the owner's cadence instead of guessing a default.
+        if (source.Status == SourceStatus.Paused)
+        {
+            scheduler.Unschedule(source.Id);
+        }
+        else
+        {
+            scheduler.Schedule(source.Id, source.Schedule);
+        }
 
         return ToResponse(source, await PlaylistIdsAsync(id, ct));
     }
@@ -280,6 +294,6 @@ public class SourceService(
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
             source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
-            lastRunStatus);
+            lastRunStatus, source.Status);
     }
 }

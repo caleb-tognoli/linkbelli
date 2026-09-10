@@ -76,18 +76,18 @@
 		return count === 1 ? '0 0 * * *' : `0 0 */${count} * *`;
 	}
 
-	const CRON_NEVER = '0 0 30 2 *';
-
-	const _isEnabled = source?.schedule !== CRON_NEVER;
-	const _sched = parseCron(_isEnabled ? (source?.schedule ?? '0 * * * *') : '0 * * * *');
+	const _sched = parseCron(source?.schedule ?? '0 * * * *');
 
 	let name = $state(source?.name ?? '');
 	let type = $state<SourceType>(source?.type ?? 'Rss');
 	let visibility = $state<SourceVisibility>(source?.visibility ?? 'Private');
 	let scheduleCount = $state(_sched.count);
 	let scheduleUnit = $state<'minutes' | 'hours' | 'days'>(_sched.unit);
-	let enabled = $state(_isEnabled);
-	const schedule = $derived(enabled ? buildCron(scheduleCount, scheduleUnit) : CRON_NEVER);
+	// Pausing is a status on the source, not a cron that never fires: the schedule below stays
+	// exactly as the owner set it, so resuming picks the same cadence back up.
+	let enabled = $state((source?.status ?? 'Active') === 'Active');
+	const schedule = $derived(buildCron(scheduleCount, scheduleUnit));
+	const status = $derived(enabled ? 'Active' : 'Paused');
 
 	// Config field values (non-header) for the current type.
 	let values = $state<Record<string, string>>(initValues());
@@ -173,9 +173,9 @@
 			const config = buildConfig();
 			let res: Response;
 			if (mode === 'create') {
-				res = await api.post('/sources', { name, type, config, schedule, visibility });
+				res = await api.post('/sources', { name, type, config, schedule, visibility, status });
 			} else {
-				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility });
+				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility, status });
 			}
 			if (!res.ok) {
 				error =
@@ -245,11 +245,11 @@
 	<div class="flex flex-wrap items-end gap-8">
 		<div class="flex flex-col gap-2 text-sm">
 			<span>Run every</span>
-			<div class="flex items-center gap-2" class:opacity-40={!enabled}>
+			<div class="flex items-center gap-2">
 				<div class="inline-flex divide-x overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border); --tw-divide-opacity: 1">
 					<button
 						type="button"
-						disabled={!enabled || scheduleCount <= (scheduleUnit === 'minutes' ? 5 : 1)}
+						disabled={scheduleCount <= (scheduleUnit === 'minutes' ? 5 : 1)}
 						onclick={() => scheduleCount--}
 						class="px-2.5 py-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:cursor-default disabled:opacity-30"
 						style="background: var(--color-bg)"
@@ -257,7 +257,7 @@
 					<span class="flex min-w-[2.5rem] items-center justify-center px-2 py-2 tabular-nums" style="background: var(--color-bg)">{scheduleCount}</span>
 					<button
 						type="button"
-						disabled={!enabled || scheduleCount >= (scheduleUnit === 'minutes' ? 59 : scheduleUnit === 'hours' ? 23 : 30)}
+						disabled={scheduleCount >= (scheduleUnit === 'minutes' ? 59 : scheduleUnit === 'hours' ? 23 : 30)}
 						onclick={() => scheduleCount++}
 						class="px-2.5 py-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:cursor-default disabled:opacity-30"
 						style="background: var(--color-bg)"
@@ -267,7 +267,6 @@
 					{#each [['minutes', 'min'], ['hours', 'hr'], ['days', 'day']] as [val, lbl] (val)}
 						<button
 							type="button"
-							disabled={!enabled}
 							onclick={() => {
 								scheduleUnit = val as 'minutes' | 'hours' | 'days';
 								if (val === 'minutes' && scheduleCount < 5) scheduleCount = 5;
@@ -286,6 +285,9 @@
 		<div class="flex flex-col gap-2 text-sm">
 			<span>Enabled</span>
 			<Switch bind:checked={enabled} />
+			{#if !enabled}
+				<span class="text-xs" style="color: var(--color-muted)">Paused — runs only when you trigger one.</span>
+			{/if}
 		</div>
 	</div>
 
