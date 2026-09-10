@@ -176,6 +176,35 @@ curl http://localhost:5180/api/v1/public/playlists/alice/my-reading-list
 curl http://localhost:5180/api/v1/public/playlists/alice/my-reading-list/items
 ```
 
+## Feeds (syndication)
+
+A non-private playlist is readable as **RSS 2.0**, **Atom 1.0** and **JSON Feed 1.1** — so a
+playlist can be followed from any reader, including by another Linkbelli source.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/public/playlists/{username}/{slug}/feed.rss`  | RSS 2.0 |
+| `GET` | `/api/v1/public/playlists/{username}/{slug}/feed.atom` | Atom 1.0 |
+| `GET` | `/api/v1/public/playlists/{username}/{slug}/feed.json` | JSON Feed 1.1 |
+
+- Anonymous, and governed by the same visibility rules as the HTML read: `Public` and
+  `Unlisted` are served, `Private` returns **404**.
+- **NSFW playlists are never syndicated.** A feed reader carries no session, so there is no
+  viewer to have opted in.
+- Entries are **newest first** (a feed is a stream), capped at **50**, and each entry links to
+  the target URL — not back to a Linkbelli page.
+- The entry summary is the owner's note when there is one, otherwise the link's description.
+- The web app serves the same feeds at the friendlier
+  `/public/{username}/{slug}/feed.rss`, and the public playlist page advertises all three via
+  `<link rel="alternate">` so readers find them on their own.
+
+> Set `PublicWebBaseUrl` to the web app's origin so feeds link readers to the real page. Without
+> it the API falls back to its own address, which behind a proxy is an internal hostname.
+
+```bash
+curl http://localhost:5180/api/v1/public/playlists/alice/my-reading-list/feed.rss
+```
+
 ## Source subscriptions
 
 A playlist can be fed by **sources** (see [sources.md](sources.md)). You attach a source to a

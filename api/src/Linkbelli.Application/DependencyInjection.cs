@@ -7,6 +7,7 @@ using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Linkbelli.Application.Feeds;
 
 namespace Linkbelli.Application;
 
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IImportService, ImportService>();
         services.AddScoped<ITrashService, TrashService>();
+        services.AddScoped<IPlaylistFeedService, PlaylistFeedService>();
 
         // --- Link enrichment --- (ILinkEnrichmentQueue is implemented in Infrastructure via Hangfire)
         services.AddSingleton<LinkMetadataExtractor>();

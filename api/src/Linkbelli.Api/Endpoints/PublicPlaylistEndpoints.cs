@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Linkbelli.Api.Auth;
+using Linkbelli.Application.Feeds;
 using Linkbelli.Application.Services;
 
 namespace Linkbelli.Api.Endpoints;
@@ -35,10 +36,51 @@ public static class PublicPlaylistEndpoints
             Results.Ok(await svc.ListPublicAttachedSourcesAsync(username, slug, ct)))
             .AllowAnonymous();
 
+        // Syndication: the same playlist as RSS, Atom or JSON Feed. Linkbelli reads all three
+        // already; this is the direction that was missing.
+        group.MapGet("/playlists/{username}/{slug}/feed.{format}", async (
+            string username, string slug, string format, HttpContext http,
+            IPlaylistFeedService feeds, CancellationToken ct) =>
+        {
+            var parsed = FeedSerializer.Parse(format);
+            if (parsed is null)
+            {
+                return Results.NotFound();
+            }
+
+            // Both URLs are built from the public origin, never from the incoming request: behind
+            // the web BFF that request arrives as http://api:8080, which is unreachable for a
+            // reader and leaks the internal topology into every feed.
+            var pageUrl = PublicPageUrl(http, username, slug);
+            var selfUrl = $"{pageUrl}/feed.{Uri.EscapeDataString(format)}";
+
+            var feed = await feeds.BuildAsync(username, slug, selfUrl, pageUrl, ct);
+
+            return Results.Text(
+                FeedSerializer.Serialize(feed, parsed.Value),
+                FeedSerializer.ContentType(parsed.Value));
+        })
+            .AllowAnonymous()
+            .ExcludeFromDescription();
+
         // Public tag cloud: tags used across public playlists, with counts.
         group.MapGet("/tags", async (IPlaylistService svc, string? q, CancellationToken ct) =>
             Results.Ok(await svc.ListPublicTagsAsync(q, ct)))
             .AllowAnonymous();
+    }
+
+    /// <summary>
+    /// Where a human reads this playlist. Configure "PublicWebBaseUrl" with the web app's origin
+    /// so feeds link people to the real page instead of back at the API.
+    /// </summary>
+    private static string PublicPageUrl(HttpContext http, string username, string slug)
+    {
+        var configured = http.RequestServices.GetRequiredService<IConfiguration>()["PublicWebBaseUrl"];
+        var origin = string.IsNullOrWhiteSpace(configured)
+            ? $"{http.Request.Scheme}://{http.Request.Host}"
+            : configured.TrimEnd('/');
+
+        return $"{origin}/public/{Uri.EscapeDataString(username)}/{Uri.EscapeDataString(slug)}";
     }
 
     /// <summary>The authenticated viewer's id, or null for anonymous callers.</summary>

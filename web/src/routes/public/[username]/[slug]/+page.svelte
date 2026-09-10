@@ -22,6 +22,7 @@
 	const canonical = $derived(
 		`${page.url.origin}/public/${encodeURIComponent(data.username)}/${encodeURIComponent(data.slug)}`
 	);
+	const feedUrl = $derived(`${canonical}/feed`);
 
 	// The first item that has an image stands in as the card art.
 	const cardImage = $derived(
@@ -53,6 +54,11 @@
 	{#if cardImage}
 		<meta name="twitter:image" content={cardImage} />
 	{/if}
+
+	<!-- Feed autodiscovery: a reader pointed at this page finds the feeds by itself. -->
+	<link rel="alternate" type="application/rss+xml" title={`${data.playlist.name} (RSS)`} href={`${feedUrl}.rss`} />
+	<link rel="alternate" type="application/atom+xml" title={`${data.playlist.name} (Atom)`} href={`${feedUrl}.atom`} />
+	<link rel="alternate" type="application/feed+json" title={`${data.playlist.name} (JSON)`} href={`${feedUrl}.json`} />
 
 	<!-- Unlisted is share-by-link: readable by anyone holding the URL, but never indexed. -->
 	{#if data.playlist.visibility !== 'Public'}

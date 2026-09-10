@@ -28,6 +28,9 @@ services:
       Database__MigrateAtStartup: "true"
       # Persist the Data Protection key ring so tokens/secrets survive container restarts.
       DataProtection__KeyRingPath: /keys
+      # Where humans read a public playlist, so syndicated feeds link to the web app
+      # rather than back at this API.
+      PublicWebBaseUrl: http://localhost:5173
     ports:
       - "5180:8080"
     volumes:
