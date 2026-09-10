@@ -220,24 +220,27 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     private static async Task<PagedResult<PlaylistItemResponse>> PageAsync(
         IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, IAppDbContext db, CancellationToken ct)
     {
-        var total = await query.CountAsync(ct);
+        // The total is counted once, on the first page, then carried inside the cursor. Counting on
+        // every "load more" ran a second full pass over the filtered set — doubling the cost of
+        // exactly the queries (filtered, searched, large) that are already the slowest.
+        var continuing = Cursor.TryDecodePage(cursor, out var total, out var payload);
+        if (!continuing)
+        {
+            total = await query.CountAsync(ct);
+        }
 
         if (sort == "shuffle")
         {
             double seed;
             int offset;
 
-            if (Cursor.TryDecode(cursor, out var v))
+            var sep = payload.IndexOf(':');
+            if (sep > 0
+                && double.TryParse(payload[..sep], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out seed)
+                && int.TryParse(payload[(sep + 1)..], out offset))
             {
-                var sep = v.IndexOf(':');
-                if (sep > 0
-                    && double.TryParse(v[..sep], System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture, out seed)
-                    && int.TryParse(v[(sep + 1)..], out offset))
-                {
-                    // Restore seed+offset from cursor
-                }
-                else { seed = NewSeed(); offset = 0; }
+                // Seed + offset restored from the cursor: the same shuffle order continues.
             }
             else { seed = NewSeed(); offset = 0; }
 
@@ -260,7 +263,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             {
                 rows.RemoveAt(take);
                 var seedStr = seed.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
-                next = Cursor.Encode($"{seedStr}:{offset + take}");
+                next = Cursor.EncodePage(total, $"{seedStr}:{offset + take}");
             }
             return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
@@ -268,41 +271,55 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         if (sort is "date-asc" or "date-desc")
         {
             bool asc = sort == "date-asc";
-            if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var ticks))
+
+            // Keyset on (CreationTime, Id), not CreationTime alone. A source run inserts all of
+            // its items in one SaveChanges, so they share a creation timestamp to the tick; a
+            // cursor that only compared timestamps skipped every tied row after the page break.
+            var sep = payload.IndexOf(':');
+            if (sep > 0
+                && long.TryParse(payload[..sep], out var ticks)
+                && Guid.TryParse(payload[(sep + 1)..], out var lastId))
             {
                 var t = new DateTimeOffset(ticks, TimeSpan.Zero);
-                query = asc ? query.Where(i => i.CreationTime > t) : query.Where(i => i.CreationTime < t);
+                query = asc
+                    ? query.Where(i => i.CreationTime > t || (i.CreationTime == t && i.Id.CompareTo(lastId) > 0))
+                    : query.Where(i => i.CreationTime < t || (i.CreationTime == t && i.Id.CompareTo(lastId) < 0));
             }
+
             var rows = await (asc
-                ? query.OrderBy(i => i.CreationTime)
-                : query.OrderByDescending(i => i.CreationTime))
+                ? query.OrderBy(i => i.CreationTime).ThenBy(i => i.Id)
+                : query.OrderByDescending(i => i.CreationTime).ThenByDescending(i => i.Id))
                 .Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
-            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode(rows[^1].CreationTime.UtcTicks.ToString()); }
+            if (rows.Count > take)
+            {
+                rows.RemoveAt(take);
+                next = Cursor.EncodePage(total, $"{rows[^1].CreationTime.UtcTicks}:{rows[^1].Id}");
+            }
             return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
 
         if (sort is "score-asc" or "score-desc")
         {
             bool asc = sort == "score-asc";
-            int offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? o : 0;
+            int offset = int.TryParse(payload, out var o) ? o : 0;
             // NULL scores always sort last regardless of direction.
             IQueryable<PlaylistItem> q = asc
                 ? query.OrderBy(i => i.Score == null ? 1 : 0).ThenBy(i => i.Score).ThenBy(i => i.Position)
                 : query.OrderBy(i => i.Score == null ? 1 : 0).ThenByDescending(i => i.Score).ThenBy(i => i.Position);
             var rows = await q.Skip(offset).Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
-            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode((offset + take).ToString()); }
+            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.EncodePage(total, (offset + take).ToString()); }
             return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
 
         else
         {
-            if (Cursor.TryDecode(cursor, out var v) && long.TryParse(v, out var afterPos))
+            if (long.TryParse(payload, out var afterPos))
                 query = query.Where(i => i.Position > afterPos);
             var rows = await query.OrderBy(i => i.Position).Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
-            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.Encode(rows[^1].Position.ToString()); }
+            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.EncodePage(total, rows[^1].Position.ToString()); }
             return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
     }
