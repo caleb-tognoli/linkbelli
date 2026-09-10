@@ -5,6 +5,7 @@
 	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
 	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
+	import { Trash2 } from '@lucide/svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -17,6 +18,14 @@
 	<header class="flex items-center justify-between gap-2">
 		<h1 class="text-2xl font-semibold">Playlists</h1>
 		<div class="flex shrink-0 items-center gap-1">
+			<a
+				href="/trash"
+				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+				title="Trash"
+				aria-label="Trash"
+			>
+				<Trash2 size={18} aria-hidden="true" />
+			</a>
 			<NewFolderDialog
 				label=""
 				triggerClass="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"

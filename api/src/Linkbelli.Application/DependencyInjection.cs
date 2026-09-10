@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IUserPreferenceService, UserPreferenceService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IImportService, ImportService>();
+        services.AddScoped<ITrashService, TrashService>();
 
         // --- Link enrichment --- (ILinkEnrichmentQueue is implemented in Infrastructure via Hangfire)
         services.AddSingleton<LinkMetadataExtractor>();

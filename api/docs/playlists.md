@@ -125,6 +125,35 @@ Each user has a **Show NSFW** preference (default **off**): `GET /api/v1/me` ret
 items are hidden everywhere — your own lists, item lists, discovery, and public views (a NSFW public
 playlist returns 404). Anonymous viewers are always treated as off.
 
+## Trash (undo a delete)
+
+Deleting a playlist or an item is a **soft delete**: the row is kept and can be restored for
+**30 days**, after which a nightly job removes it for good.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET`    | `/api/v1/trash`                          | Everything you deleted that is still restorable |
+| `POST`   | `/api/v1/trash/playlists/{id}/restore`   | Put a deleted playlist back (with its items) |
+| `POST`   | `/api/v1/trash/items/{id}/restore`       | Put a deleted item back at the end of its playlist |
+| `DELETE` | `/api/v1/trash`                          | Purge your trash now, permanently |
+
+- Items whose **playlist** was also deleted aren't listed on their own — they come back with the
+  playlist. Restoring the playlist restores them.
+- If another playlist took the slug while this one sat in the trash, the restored playlist gets a
+  suffixed slug (`weekend-reading-2`) rather than failing.
+- Restoring an item whose link was re-added to the playlist in the meantime returns **409** —
+  the link that came back on its own wins.
+- Each entry reports `deletedAt` and `purgeAfter` so a client can show how long is left.
+
+```bash
+curl http://localhost:5180/api/v1/trash -H "Authorization: Bearer <token>"
+# -> { "playlists": [ { "id":"P...", "name":"Recipes", "itemCount":12,
+#                       "deletedAt":"...", "purgeAfter":"..." } ],
+#      "items": [], "retentionDays": 30 }
+
+curl -X POST http://localhost:5180/api/v1/trash/playlists/P.../restore   -H "Authorization: Bearer <token>"   # -> 204 No Content
+```
+
 ## Public (anonymous) reads
 
 `Public` and `Unlisted` playlists can be read **without authentication**, addressed by the

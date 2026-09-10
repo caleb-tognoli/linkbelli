@@ -212,3 +212,28 @@ export interface ImportResult {
 	errors: string[];
 }
 
+export interface TrashedPlaylist {
+	id: string;
+	name: string;
+	slug: string;
+	itemCount: number;
+	deletedAt: string;
+	purgeAfter: string;
+}
+
+export interface TrashedItem {
+	id: string;
+	playlistId: string;
+	playlistName: string;
+	url: string;
+	title: string | null;
+	deletedAt: string;
+	purgeAfter: string;
+}
+
+export interface Trash {
+	playlists: TrashedPlaylist[];
+	items: TrashedItem[];
+	/** How long a deleted row stays restorable before it is purged. */
+	retentionDays: number;
+}
