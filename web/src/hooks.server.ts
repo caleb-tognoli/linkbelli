@@ -58,7 +58,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const { pathname } = event.url;
 	const isAuthPage = AUTH_PAGES.includes(pathname);
-	const anonAllowed = isAuthPage || ANON_PREFIXES.some((p) => startsWithSegment(pathname, p));
+	// "/" is the site introduction — public, so newcomers can read it before signing up.
+	const anonAllowed =
+		pathname === '/' || isAuthPage || ANON_PREFIXES.some((p) => startsWithSegment(pathname, p));
 
 	if (!event.locals.authenticated && !anonAllowed) {
 		const redirectTo = encodeURIComponent(pathname + event.url.search);

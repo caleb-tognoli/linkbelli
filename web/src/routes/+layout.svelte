@@ -9,10 +9,25 @@
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
-	const onHome = $derived(page.url.pathname === '/');
-	const onDiscover = $derived(page.url.pathname.startsWith('/discover'));
-	const onImport = $derived(page.url.pathname.startsWith('/import'));
-	const onSettings = $derived(page.url.pathname.startsWith('/profile'));
+	const inSection = (path: string, prefix: string) =>
+		path === prefix || path.startsWith(prefix + '/');
+
+	// Top-level destinations. Home is the site introduction; Playlists and Sources are the two
+	// first-class working areas. Folders live at /folders/:id but belong to the Playlists section.
+	const NAV = [
+		{ href: '/', label: 'Home', Icon: Home, match: (p: string) => p === '/' },
+		{
+			href: '/playlists',
+			label: 'Playlists',
+			Icon: ListMusic,
+			match: (p: string) => inSection(p, '/playlists') || inSection(p, '/folders')
+		},
+		{ href: '/sources', label: 'Sources', Icon: Rss, match: (p: string) => inSection(p, '/sources') },
+		{ href: '/discover', label: 'Discover', Icon: Compass, match: (p: string) => inSection(p, '/discover') },
+		{ href: '/import', label: 'Import', Icon: Upload, match: (p: string) => inSection(p, '/import') }
+	];
+
+	const onSettings = $derived(inSection(page.url.pathname, '/profile'));
 	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
 	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
 	const isAuthPage = $derived(['/login', '/register'].includes(page.url.pathname));
@@ -28,52 +43,20 @@
 <!-- Shared nav body — rendered in both the desktop sidebar (collapsible) and the mobile drawer (always expanded). -->
 {#snippet navBody(showLabels = true)}
 	<nav class="flex flex-col gap-1 text-base">
-		<a
-			href="/"
-			class="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
-			class:font-medium={onHome}
-			style={onHome ? 'background: var(--color-border)' : ''}
-			aria-current={onHome ? 'page' : undefined}
-			title="Home"
-		>
-			<Home size={20} aria-hidden="true" />
-			{#if showLabels}<span>Home</span>{/if}
-		</a>
-		{#if showLabels}
-			<!-- Home subsections: scroll to the matching section. -->
-			<a href="/#playlists" class="flex items-center gap-3 rounded-md px-3 py-2 pl-11 text-sm hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-muted)">
-				<ListMusic size={16} aria-hidden="true" />
-				Playlists
+		{#each NAV as item (item.href)}
+			{@const active = item.match(page.url.pathname)}
+			<a
+				href={item.href}
+				class="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
+				class:font-medium={active}
+				style={active ? 'background: var(--color-border)' : ''}
+				aria-current={active ? 'page' : undefined}
+				title={item.label}
+			>
+				<item.Icon size={20} aria-hidden="true" />
+				{#if showLabels}<span>{item.label}</span>{/if}
 			</a>
-			<a href="/#sources" class="flex items-center gap-3 rounded-md px-3 py-2 pl-11 text-sm hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-muted)">
-				<Rss size={16} aria-hidden="true" />
-				Sources
-			</a>
-		{/if}
-
-		<a
-			href="/discover"
-			class="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
-			class:font-medium={onDiscover}
-			style={onDiscover ? 'background: var(--color-border)' : ''}
-			aria-current={onDiscover ? 'page' : undefined}
-			title="Discover"
-		>
-			<Compass size={20} aria-hidden="true" />
-			{#if showLabels}<span>Discover</span>{/if}
-		</a>
-
-		<a
-			href="/import"
-			class="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
-			class:font-medium={onImport}
-			style={onImport ? 'background: var(--color-border)' : ''}
-			aria-current={onImport ? 'page' : undefined}
-			title="Import"
-		>
-			<Upload size={20} aria-hidden="true" />
-			{#if showLabels}<span>Import</span>{/if}
-		</a>
+		{/each}
 	</nav>
 
 	<div class="mt-auto flex {showLabels ? 'items-center gap-1' : 'flex-col gap-1'} border-t pt-3" style="border-color: var(--color-border)">
@@ -163,7 +146,7 @@
 {:else}
 	<div class="flex min-h-screen flex-col">
 		<header class="flex items-center justify-between border-b px-6 py-3" style="border-color: var(--color-border)">
-			<a href="/discover" class="text-lg font-semibold">Linkbelli</a>
+			<a href="/" class="text-lg font-semibold">Linkbelli</a>
 			<a href="/login" class="text-sm font-medium" style="color: var(--color-accent)">Sign in</a>
 		</header>
 		<main class="mx-auto w-full max-w-5xl flex-1 p-6">

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
-	import { ChevronDown, Globe, Lock, Play } from '@lucide/svelte';
+	import { ChevronDown, Globe, Lock, Play, Search } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import type { Source } from '$lib/types';
 
@@ -10,9 +10,23 @@
 	let sources = $state(initial);
 	let visibleCount = $state(PAGE_SIZE);
 	let toast = $state<string | null>(null);
+	let query = $state('');
 
-	let visibleSources = $derived(sources.slice(0, visibleCount));
-	let hasMore = $derived(sources.length > visibleCount);
+	// Own sources arrive as one full array (GET /sources takes no query), so filter client-side.
+	// Matching name, type and target URL covers how you actually look a source up.
+	const filtered = $derived.by(() => {
+		const q = query.trim().toLowerCase();
+		if (!q) return sources;
+		return sources.filter(
+			(s) =>
+				s.name.toLowerCase().includes(q) ||
+				displayType(s.type).toLowerCase().includes(q) ||
+				(s.config?.url ?? '').toLowerCase().includes(q)
+		);
+	});
+
+	let visibleSources = $derived(filtered.slice(0, visibleCount));
+	let hasMore = $derived(filtered.length > visibleCount);
 
 	function loadMore() {
 		visibleCount += PAGE_SIZE;
@@ -62,46 +76,70 @@
 		<p class="font-medium">No sources yet.</p>
 	</div>
 {:else}
-	<ul class="flex flex-col gap-2">
-		{#each visibleSources as src (src.id)}
-			<SourceListItem
-				name={src.name}
-				badge={displayType(src.type)}
-				href={`/sources/${src.id}`}
-				subtitle={`last run ${lastRun(src.lastRunAt)}`}
+	<div class="relative">
+		<Search
+			size={15}
+			aria-hidden="true"
+			class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+			style="color: var(--color-muted)"
+		/>
+		<input
+			bind:value={query}
+			oninput={() => (visibleCount = PAGE_SIZE)}
+			placeholder="Search sources…"
+			aria-label="Search sources"
+			class="w-full rounded-md border py-2 pr-3 pl-9 text-sm"
+			style="border-color: var(--color-border); background: var(--color-bg)"
+		/>
+	</div>
+
+	{#if filtered.length === 0}
+		<div class="mt-3 rounded-lg border border-dashed p-8 text-center" style="border-color: var(--color-border)">
+			<p class="font-medium">No matching sources.</p>
+			<p class="mt-1 text-sm" style="color: var(--color-muted)">Try a different name, type, or URL.</p>
+		</div>
+	{:else}
+		<ul class="mt-3 flex flex-col gap-2">
+			{#each visibleSources as src (src.id)}
+				<SourceListItem
+					name={src.name}
+					badge={displayType(src.type)}
+					href={`/sources/${src.id}`}
+					subtitle={`last run ${lastRun(src.lastRunAt)}`}
+				>
+					{#snippet leading()}
+						<span
+							style="width: 8px; height: 8px; border-radius: 50%; background: {statusColor(src)}; display: block; flex-shrink: 0;"
+							title={statusLabel(src)}
+							aria-label={statusLabel(src)}
+						></span>
+					{/snippet}
+					{#snippet actions()}
+						<span title={src.visibility} aria-label={src.visibility} style="color: var(--color-muted)">
+							{#if src.visibility === 'Private'}
+								<Lock size={15} aria-hidden="true" />
+							{:else}
+								<Globe size={15} aria-hidden="true" />
+							{/if}
+						</span>
+						<button type="button" onclick={() => run(src)} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Run now" aria-label={`Run ${src.name} now`}>
+							<Play size={15} aria-hidden="true" />
+						</button>
+					{/snippet}
+				</SourceListItem>
+			{/each}
+		</ul>
+		{#if hasMore}
+			<button
+				type="button"
+				onclick={loadMore}
+				class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border p-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+				style="border-color: var(--color-border); color: var(--color-muted)"
 			>
-				{#snippet leading()}
-					<span
-						style="width: 8px; height: 8px; border-radius: 50%; background: {statusColor(src)}; display: block; flex-shrink: 0;"
-						title={statusLabel(src)}
-						aria-label={statusLabel(src)}
-					></span>
-				{/snippet}
-				{#snippet actions()}
-					<span title={src.visibility} aria-label={src.visibility} style="color: var(--color-muted)">
-						{#if src.visibility === 'Private'}
-							<Lock size={15} aria-hidden="true" />
-						{:else}
-							<Globe size={15} aria-hidden="true" />
-						{/if}
-					</span>
-					<button type="button" onclick={() => run(src)} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Run now" aria-label={`Run ${src.name} now`}>
-						<Play size={15} aria-hidden="true" />
-					</button>
-				{/snippet}
-			</SourceListItem>
-		{/each}
-	</ul>
-	{#if hasMore}
-		<button
-			type="button"
-			onclick={loadMore}
-			class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border p-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-			style="border-color: var(--color-border); color: var(--color-muted)"
-		>
-			Load more
-			<ChevronDown size={15} aria-hidden="true" />
-		</button>
+				Load more
+				<ChevronDown size={15} aria-hidden="true" />
+			</button>
+		{/if}
 	{/if}
 {/if}
 

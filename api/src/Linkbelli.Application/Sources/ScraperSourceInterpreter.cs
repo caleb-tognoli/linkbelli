@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using AngleSharp.Html.Parser;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Http;
@@ -16,6 +17,10 @@ namespace Linkbelli.Application.Sources;
 /// If <c>linkSelector</c> is absent the URL is read from the item element itself.
 /// Metadata keys follow the pattern <c>meta.&lt;name&gt;</c> (CSS selector within item) and
 /// <c>meta.&lt;name&gt;.attr</c> (attribute to read; absent = text content).
+/// <c>meta.&lt;name&gt;.regex</c> post-processes the extracted value as a find/replace: every
+/// match of the pattern becomes <c>meta.&lt;name&gt;.replacement</c> (absent = deleted), which
+/// may reference capture groups as <c>$1</c>. A regex of <c>\s*\|\s*Site Name$</c> with no
+/// replacement therefore strips a trailing " | Site Name" from a scraped title.
 /// Keys prefixed <c>header.</c> become request headers (encrypted at rest).
 /// Keys prefixed <c>auth.</c> trigger a pre-run credential login (also encrypted at rest).
 /// </summary>
@@ -26,8 +31,14 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
     public const string LinkSelectorKey = "linkSelector";
     public const string LinkAttributeKey = "linkAttribute";
     public const string MetaPrefix = "meta.";
+    public const string MetaAttrSuffix = ".attr";
+    public const string MetaRegexSuffix = ".regex";
+    public const string MetaReplacementSuffix = ".replacement";
     public const string HeaderPrefix = "header.";
     private const int MaxItemsPerRun = 100;
+
+    /// <summary>Guards against catastrophic backtracking in user-supplied patterns.</summary>
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(250);
     private static readonly HtmlParser Parser = new();
 
     public SourceType Type => SourceType.Scraper;
@@ -46,6 +57,24 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
         if (!config.TryGetValue(ItemSelectorKey, out var selector) || string.IsNullOrWhiteSpace(selector))
         {
             throw new ValidationException($"config.{ItemSelectorKey}", "A CSS selector for items is required.");
+        }
+
+        // Reject unparseable patterns at save time rather than letting them fail a run later.
+        foreach (var (key, value) in config)
+        {
+            if (!IsMetaSuffixKey(key, MetaRegexSuffix) || string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            try
+            {
+                _ = new Regex(value, RegexOptions.None, RegexTimeout);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ValidationException($"config.{key}", $"Invalid regular expression: {ex.Message}");
+            }
         }
     }
 
@@ -86,14 +115,18 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
         var linkAttributeVal = config.GetValueOrDefault(LinkAttributeKey);
         var baseUri = Uri.TryCreate(baseUrl, UriKind.Absolute, out var b) ? b : null;
 
-        // Collect meta.<name> selectors (keys without a dot after the prefix are field names).
+        // Collect meta.<name> selectors (keys without a dot after the prefix are field names),
+        // each with its optional attribute and regex post-processing. Patterns are compiled once
+        // per parse, not once per item.
         var metaSelectors = config
             .Where(kv => kv.Key.StartsWith(MetaPrefix, StringComparison.OrdinalIgnoreCase)
                       && !kv.Key[MetaPrefix.Length..].Contains('.'))
             .Select(kv => (
                 name: kv.Key[MetaPrefix.Length..],
                 selector: kv.Value,
-                attr: config.GetValueOrDefault(kv.Key + ".attr")))
+                attr: config.GetValueOrDefault(kv.Key + MetaAttrSuffix),
+                regex: TryBuildRegex(config.GetValueOrDefault(kv.Key + MetaRegexSuffix)),
+                replacement: config.GetValueOrDefault(kv.Key + MetaReplacementSuffix) ?? string.Empty))
             .Where(m => !string.IsNullOrWhiteSpace(m.selector))
             .ToList();
 
@@ -126,13 +159,18 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
 
             // Extract metadata fields.
             Dictionary<string, string>? metadata = null;
-            foreach (var (fieldName, selector, attr) in metaSelectors)
+            foreach (var (fieldName, selector, attr, regex, replacement) in metaSelectors)
             {
                 var metaEl = el.QuerySelector(selector);
                 if (metaEl is null) continue;
                 var value = string.IsNullOrEmpty(attr)
                     ? metaEl.TextContent?.Trim()
                     : metaEl.GetAttribute(attr)?.Trim();
+                if (regex is not null && !string.IsNullOrEmpty(value))
+                {
+                    value = regex.Replace(value, replacement).Trim();
+                }
+
                 if (!string.IsNullOrWhiteSpace(value))
                 {
                     metadata ??= new Dictionary<string, string>();
@@ -145,5 +183,28 @@ public sealed class ScraperSourceInterpreter(IHttpClientFactory httpClientFactor
         }
 
         return results;
+    }
+
+    /// <summary>True for keys shaped <c>meta.&lt;name&gt;&lt;suffix&gt;</c> with a non-empty name.</summary>
+    private static bool IsMetaSuffixKey(string key, string suffix) =>
+        key.StartsWith(MetaPrefix, StringComparison.OrdinalIgnoreCase) &&
+        key.Length > MetaPrefix.Length + suffix.Length &&
+        key.EndsWith(suffix, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Compiles a user-supplied pattern, or returns null when it is absent or unparseable — an
+    /// unparseable pattern leaves the raw value untouched rather than failing the whole run.
+    /// </summary>
+    private static Regex? TryBuildRegex(string? pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern)) return null;
+        try
+        {
+            return new Regex(pattern, RegexOptions.None, RegexTimeout);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 }

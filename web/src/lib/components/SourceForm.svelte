@@ -144,8 +144,15 @@
 			for (const name of META_FIELD_NAMES) {
 				const sel = values[`meta.${name}`]?.trim();
 				const attr = values[`meta.${name}.attr`]?.trim();
+				const regex = values[`meta.${name}.regex`];
+				const replacement = values[`meta.${name}.replacement`];
 				if (sel) cfg[`meta.${name}`] = sel;
 				if (attr) cfg[`meta.${name}.attr`] = attr;
+				// Patterns and replacements keep leading/trailing whitespace — it is often
+				// exactly what the pattern is meant to strip.
+				if (regex) cfg[`meta.${name}.regex`] = regex;
+				// Only meaningful alongside a pattern; empty replacement = delete the match.
+				if (regex && replacement) cfg[`meta.${name}.replacement`] = replacement;
 			}
 		}
 		return cfg;
@@ -378,16 +385,23 @@
 				{#if type === 'Scraper'}
 					<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
 						<span class="text-sm font-medium">Metadata</span>
-						<div class="grid grid-cols-[7rem_1fr_1fr] items-center gap-x-2 gap-y-2 text-sm">
+						<div class="grid grid-cols-[4.5rem_1.4fr_0.8fr_1.4fr_1fr] items-center gap-x-2 gap-y-2 text-sm">
 							<span class="text-xs font-medium" style="color: var(--color-muted)">Field</span>
 							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Selector {@render infoTip('Selector is relative to the item selector')}</span>
 							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Attribute {@render infoTip('Leave blank to read text content')}</span>
+							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Pattern {@render infoTip('Regex — every match in the value is replaced')}</span>
+							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Replacement {@render infoTip('Blank deletes the match; $1 inserts a capture group')}</span>
 							{#each META_FIELD_NAMES as name (name)}
 								<span class="capitalize" style="color: var(--color-muted)">{name}</span>
 								<input bind:value={values[`meta.${name}`]} class={fieldClass} style={fieldStyle} />
 								<input bind:value={values[`meta.${name}.attr`]} class={fieldClass} style={fieldStyle} />
+								<input bind:value={values[`meta.${name}.regex`]} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
+								<input bind:value={values[`meta.${name}.replacement`]} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
 							{/each}
 						</div>
+						<span class="text-xs" style="color: var(--color-muted)">
+							Pattern and replacement clean up the extracted value — e.g. <code>\s*\|\s*Site Name$</code> with a blank replacement strips a trailing “ | Site Name” from a title.
+						</span>
 					</div>
 				{/if}
 			{/if}

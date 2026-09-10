@@ -44,7 +44,7 @@
 		initialPrefs?: PlaylistPrefs;
 	} = $props();
 
-	const resolvedBackHref = $derived(backHref ?? (isOwner ? '/' : '/discover'));
+	const resolvedBackHref = $derived(backHref ?? (isOwner ? '/playlists' : '/discover'));
 	const resolvedBackLabel = $derived(backLabel ?? (isOwner ? 'Playlists' : 'Discover'));
 
 	type StatusFilter = 'All' | 'Unwatched' | 'Watched';

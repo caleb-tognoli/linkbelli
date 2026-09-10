@@ -16,7 +16,7 @@
 	let busy = $state(false);
 	let toast = $state<string | null>(null);
 
-	const backHref = $derived(routePage.url.searchParams.get('from') ?? '/#sources');
+	const backHref = $derived(routePage.url.searchParams.get('from') ?? '/sources');
 	const backLabel = $derived(routePage.url.searchParams.get('fromLabel') ?? 'Sources');
 
 	const pageSize = 10;
@@ -81,7 +81,7 @@
 		if (!(await confirmDialog('Delete this source? Playlists keep their existing links.', { danger: true, confirmLabel: 'Delete' }))) return;
 		busy = true;
 		const res = await api.del(`/sources/${data.source.id}`);
-		if (res.ok || res.status === 204) await goto('/#sources');
+		if (res.ok || res.status === 204) await goto('/sources');
 		else busy = false;
 	}
 

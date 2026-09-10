@@ -49,9 +49,9 @@
 <svelte:head><title>{data.folder.name} - linkbelli</title></svelte:head>
 
 <section class="mx-auto max-w-5xl">
-	<!-- Breadcrumb trail: Home / ancestors / current -->
+	<!-- Breadcrumb trail: Playlists / ancestors / current -->
 	<nav class="flex flex-wrap items-center gap-1 text-sm" style="color: var(--color-muted)">
-		<a href="/" class="hover:underline">Home</a>
+		<a href="/playlists" class="hover:underline">Playlists</a>
 		{#each folder.breadcrumbs as crumb (crumb.id)}
 			<span>/</span>
 			<a href={`/folders/${crumb.id}`} class="hover:underline">{crumb.name}</a>

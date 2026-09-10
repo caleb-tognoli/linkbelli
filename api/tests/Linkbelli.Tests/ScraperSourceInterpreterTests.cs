@@ -1,3 +1,4 @@
+using Linkbelli.Application.Common;
 using Linkbelli.Application.Sources;
 
 namespace Linkbelli.Tests;
@@ -51,6 +52,69 @@ public class ScraperSourceInterpreterTests
         Assert.Equal("https://example.com/a", links[0].Url);
         Assert.Equal("Title A", links[0].Metadata?["title"]);
         Assert.Equal("Alice", links[0].Metadata?["author"]);
+    }
+
+    [Fact]
+    public void Meta_regex_strips_matches_and_expands_capture_groups()
+    {
+        const string html = """
+            <div class="card" data-url="https://example.com/a"><h2 class="t">Story A | Site Name</h2><span class="by">Posted by Alice</span></div>
+            <div class="card" data-url="https://example.com/b"><h2 class="t">Story B</h2><span class="by">Posted by Bob</span></div>
+            """;
+        var config = new Dictionary<string, string>
+        {
+            [ScraperSourceInterpreter.ItemSelectorKey] = ".card",
+            [ScraperSourceInterpreter.LinkAttributeKey] = "data-url",
+            ["meta.title"] = "h2.t",
+            ["meta.title.regex"] = @"\s*\|\s*Site Name$",
+            ["meta.author"] = ".by",
+            ["meta.author.regex"] = "^Posted by (.+)$",
+            ["meta.author.replacement"] = "$1",
+        };
+
+        var links = ScraperSourceInterpreter.Parse(html, "https://example.com", config);
+
+        Assert.Equal(2, links.Count);
+        Assert.Equal("Story A", links[0].Metadata?["title"]);
+        Assert.Equal("Alice", links[0].Metadata?["author"]);
+        // Non-matching values pass through untouched.
+        Assert.Equal("Story B", links[1].Metadata?["title"]);
+        Assert.Equal("Bob", links[1].Metadata?["author"]);
+    }
+
+    [Fact]
+    public void Meta_regex_that_empties_the_value_drops_the_field()
+    {
+        const string html = """<div class="card" data-url="https://example.com/a"><h2 class="t">Site Name</h2></div>""";
+        var config = new Dictionary<string, string>
+        {
+            [ScraperSourceInterpreter.ItemSelectorKey] = ".card",
+            [ScraperSourceInterpreter.LinkAttributeKey] = "data-url",
+            ["meta.title"] = "h2.t",
+            ["meta.title.regex"] = "^Site Name$",
+        };
+
+        var links = ScraperSourceInterpreter.Parse(html, "https://example.com", config);
+
+        var link = Assert.Single(links);
+        Assert.Null(link.Metadata);
+    }
+
+    [Fact]
+    public void Unparseable_meta_regex_is_rejected_on_validate()
+    {
+        // ValidateConfig never touches the http factory.
+        var interpreter = new ScraperSourceInterpreter(null!);
+        var config = new Dictionary<string, string>
+        {
+            [ScraperSourceInterpreter.UrlKey] = "https://example.com",
+            [ScraperSourceInterpreter.ItemSelectorKey] = ".card",
+            ["meta.title"] = "h2.t",
+            ["meta.title.regex"] = "([unclosed",
+        };
+
+        var ex = Assert.Throws<ValidationException>(() => interpreter.ValidateConfig(config));
+        Assert.Contains("config.meta.title.regex", ex.Errors.Keys);
     }
 
     [Fact]

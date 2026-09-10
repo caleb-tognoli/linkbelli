@@ -15,19 +15,30 @@ All types discover up to 100 links per run (then capped again by your `maxItemsP
 | Type | Config keys | Notes |
 |------|-------------|-------|
 | `Rss` | `feedUrl` | RSS or Atom feed. Uses conditional GET (ETag/Last-Modified) to skip unchanged feeds. |
-| `Scraper` | `url`, `itemSelector`, `linkAttribute?`, `titleSelector?` | Scrapes a page with CSS selectors. `itemSelector` selects link-bearing elements; `linkAttribute` (default `href`) holds the URL; `titleSelector` (within each element) or the element text supplies the title. Relative URLs resolve against `url`. |
+| `Scraper` | `url`, `itemSelector`, `linkSelector?`, `linkAttribute?`, `meta.*`, `header.*` | Scrapes a page with CSS selectors. `itemSelector` selects each item container; `linkSelector` (within the item, optional) picks the URL-bearing element; `linkAttribute` (default `href`, empty = text content) holds the URL. Relative URLs resolve against `url`. Metadata comes from `meta.<name>` (CSS selector within the item) plus optional `meta.<name>.attr` (attribute to read; absent = text content), `meta.<name>.regex` and `meta.<name>.replacement` — see below. Any `header.<Name>` key is sent as a request header **and treated as a secret**. |
 | `JsonApi` | `url`, `itemsPath`, `urlPath?`, `urlTemplate?`, `titlePath?`, `header.*` | Fetches JSON and extracts links via JSONPath. `itemsPath` selects item nodes; `urlPath`/`titlePath` are evaluated relative to each item. Either `urlPath` **or** `urlTemplate` must be set. `urlTemplate` builds a URL from item fields via `{jsonpath}` placeholders — e.g. `https://site.tld/movie/{id}` or `https://site.tld/r/{subreddit}/{id}/{meta.slug}`; items where any placeholder resolves empty are skipped. Any `header.<Name>` key is sent as a request header **and treated as a secret** (encrypted at rest, shown as `***` in responses). |
 
 ```jsonc
 // Scraper config
 { "url": "https://news.example/section",
-  "itemSelector": "a.headline", "titleSelector": null }
+  "itemSelector": "li.story", "linkSelector": "a.headline",
+  "meta.title": "a.headline",
+  "meta.title.regex": "\\s*\\|\\s*News Example$",   // strips a trailing " | News Example"
+  "meta.author": ".byline",
+  "meta.author.regex": "^Posted by (.+)$", "meta.author.replacement": "$1" }
 
 // JSON-API config (with an auth header secret)
 { "url": "https://api.example/v1/posts",
   "itemsPath": "$.data.posts[*]", "urlPath": "permalink", "titlePath": "title",
   "header.Authorization": "Bearer <token>" }
 ```
+
+> **Metadata regex (Scraper):** `meta.<name>.regex` post-processes the value a `meta.<name>`
+> selector extracted, as a find/replace: every match of the pattern is replaced with
+> `meta.<name>.replacement` (absent = the match is deleted), which may reference capture groups
+> as `$1`. A value the pattern never matches passes through unchanged; one the pattern empties
+> is dropped from the item's metadata. Patterns are .NET regex, validated on create/update, and
+> run with a 250 ms per-value timeout.
 
 > **Secrets:** `header.*` values are encrypted with ASP.NET Core Data Protection before storage
 > and returned redacted (`***`). On update, re-send `***` (or omit the key) to keep the existing
