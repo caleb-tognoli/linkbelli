@@ -109,22 +109,36 @@ public sealed class SourceRunner(
             }
             run.ItemsAdded = addedUrls.ToArray();
 
-            // Append to each attached playlist (existing link ids + next position preloaded once
-            // per playlist), then persist all new items in a single SaveChanges (the finally).
+            // Membership and next-position are read for every attached playlist in two queries,
+            // both narrowed to this run's candidates. Loading a playlist's entire LinkId set to
+            // test at most MaxItemsPerRun candidates meant a 10k-item playlist on a 5-minute
+            // source re-read 10k ids every 5 minutes.
+            var candidateLinkIds = resolved.Select(r => r.link.Id).Distinct().ToList();
+
+            var present = (await db.PlaylistItems
+                    .Where(i => playlistIds.Contains(i.PlaylistId) && candidateLinkIds.Contains(i.LinkId))
+                    .Select(i => new { i.PlaylistId, i.LinkId })
+                    .ToListAsync(cancellationToken))
+                .GroupBy(x => x.PlaylistId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.LinkId).ToHashSet());
+
+            var nextPositions = (await db.PlaylistItems
+                    .Where(i => playlistIds.Contains(i.PlaylistId))
+                    .GroupBy(i => i.PlaylistId)
+                    .Select(g => new { PlaylistId = g.Key, Max = g.Max(i => i.Position) })
+                    .ToListAsync(cancellationToken))
+                .ToDictionary(x => x.PlaylistId, x => x.Max);
+
+            // Append to each attached playlist, then persist all new items in a single
+            // SaveChanges (the finally).
             foreach (var playlistId in playlistIds)
             {
-                var present = (await db.PlaylistItems
-                        .Where(i => i.PlaylistId == playlistId)
-                        .Select(i => i.LinkId)
-                        .ToListAsync(cancellationToken))
-                    .ToHashSet();
-                var nextPosition = await db.PlaylistItems
-                    .Where(i => i.PlaylistId == playlistId)
-                    .MaxAsync(i => (long?)i.Position, cancellationToken) ?? 0;
+                var playlistLinks = present.TryGetValue(playlistId, out var existing) ? existing : [];
+                var nextPosition = nextPositions.GetValueOrDefault(playlistId);
 
                 foreach (var (link, _, metadata) in resolved)
                 {
-                    if (!present.Add(link.Id))
+                    if (!playlistLinks.Add(link.Id))
                     {
                         continue;
                     }
