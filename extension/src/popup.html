@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Save to Linkbelli</title>
+		<link rel="stylesheet" href="popup.css" />
+	</head>
+	<body>
+		<main id="app">
+			<!-- Shown while the current tab and playlists are being read. -->
+			<p id="loading" class="muted">Loading…</p>
+
+			<!-- Shown when there is no server address or key yet. -->
+			<section id="unconfigured" hidden>
+				<p>Linkbelli needs to know where your server is.</p>
+				<button id="open-options" class="primary" type="button">Set it up</button>
+			</section>
+
+			<section id="form" hidden>
+				<p id="page-title" class="title"></p>
+				<p id="page-url" class="muted url"></p>
+
+				<p id="already" class="already" hidden></p>
+
+				<label for="playlist">Playlist</label>
+				<select id="playlist"></select>
+
+				<label for="note">Note <span class="muted">(optional)</span></label>
+				<textarea id="note" rows="2" placeholder="Why you saved it…"></textarea>
+
+				<button id="save" class="primary" type="button">Save</button>
+			</section>
+
+			<p id="message" role="status" hidden></p>
+		</main>
+
+		<script type="module" src="popup.js"></script>
+	</body>
+</html>

@@ -11,6 +11,7 @@ backend-for-frontend (BFF) auth layer.
 api/   ASP.NET Core Minimal APIs  ─ Layered: Contracts → Core → Application → Infrastructure → Api
        EF Core 10 + Npgsql (PostgreSQL 17), Hangfire (Postgres storage) for scheduled source runs
 web/   SvelteKit 2 / Svelte 5 (adapter-node). BFF proxies /api/v1; tokens live in httpOnly cookies
+extension/  Manifest V3 browser extension — saves the current tab into a playlist (no build step)
 ```
 
 - Auth is dual-scheme: Identity bearer tokens (for the web BFF) and `X-Api-Key` keys.
@@ -56,10 +57,14 @@ dotnet test tests/Linkbelli.IntegrationTests/Linkbelli.IntegrationTests.csproj  
 cd web
 npm run check   # svelte-check / type-check
 npm test        # Vitest unit suite
+
+cd extension
+npm test        # Vitest unit suite (chrome.* is stubbed; no browser needed)
 ```
 
 CI (`.github/workflows/ci.yml`) runs the unit suite, a vulnerable-dependency scan, the
-integration suite (with Docker), and the web type-check, unit tests and build.
+integration suite (with Docker), the web type-check, unit tests and build, and the extension's
+unit tests.
 
 ## Required production configuration
 

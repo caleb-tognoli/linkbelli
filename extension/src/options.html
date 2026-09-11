@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Linkbelli settings</title>
+		<link rel="stylesheet" href="popup.css" />
+		<style>
+			body { width: 30rem; }
+			code { background: var(--surface); padding: 0.1em 0.3em; border-radius: 3px; }
+			input { width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--border);
+				border-radius: 4px; background: var(--bg); color: inherit; font: inherit; }
+			ul { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1 style="margin: 0; font-size: 1.1rem">Linkbelli</h1>
+
+			<label for="server">Server address</label>
+			<input id="server" type="url" placeholder="https://linkbelli.example" />
+
+			<label for="key">API key</label>
+			<input id="key" type="password" placeholder="lb_…" autocomplete="off" />
+
+			<p class="muted">
+				Make a key under <strong>Profile → API keys</strong> in Linkbelli. These scopes are
+				all it needs:
+			</p>
+			<ul class="muted" id="scopes"></ul>
+
+			<button id="save" class="primary" type="button">Save</button>
+			<p id="message" role="status" hidden></p>
+		</main>
+
+		<script type="module" src="options.js"></script>
+	</body>
+</html>

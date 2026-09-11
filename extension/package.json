@@ -1,0 +1,13 @@
+{
+  "name": "linkbelli-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser extension for saving the current page to a Linkbelli playlist.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.0"
+  }
+}
