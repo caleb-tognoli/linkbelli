@@ -46,6 +46,7 @@ export interface PlaylistView {
 	status: string | null;
 	showUrls: boolean;
 	showThumbnails: boolean;
+	viewMode: string | null;
 }
 
 export interface Paged<T> {

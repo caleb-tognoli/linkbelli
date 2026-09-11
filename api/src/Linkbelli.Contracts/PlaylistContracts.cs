@@ -50,7 +50,9 @@ public record PlaylistViewPreferences(
     string? Source,
     string? Status,
     bool ShowUrls,
-    bool ShowThumbnails);
+    bool ShowThumbnails,
+    /// <summary>"table" or "grid"; null means the view's own default.</summary>
+    string? ViewMode = null);
 
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(

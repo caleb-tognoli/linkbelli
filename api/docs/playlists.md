@@ -42,7 +42,10 @@ none, which means opening a playlist needs no second round trip.
 
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
-| `PUT` | `/api/v1/playlists/{id}/view` | `sort?`, `source?`, `status?`, `showUrls`, `showThumbnails` | Replace the saved view |
+| `PUT` | `/api/v1/playlists/{id}/view` | `sort?`, `source?`, `status?`, `showUrls`, `showThumbnails`, `viewMode?` | Replace the saved view |
+
+`viewMode` is `table` or `grid` — a reading queue reads best as a list, a playlist of videos does
+not. Null means the client applies its own default rather than the server guessing one.
 
 The body replaces the whole view rather than patching it, so a client sends the state it wants.
 Anonymous readers have no account to save against and fall back to a browser cookie.

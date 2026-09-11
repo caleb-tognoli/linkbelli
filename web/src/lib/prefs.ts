@@ -4,6 +4,8 @@ export interface PlaylistPrefs {
 	status: string | null; // null = use component default
 	showUrls: boolean;
 	showThumbnails: boolean;
+	/** "table" or "grid". A list of videos or images wants a grid; a reading queue doesn't. */
+	viewMode: string;
 }
 
 const COOKIE = 'pl_prefs';
@@ -54,5 +56,12 @@ function readMap(): Record<string, Partial<PlaylistPrefs>> {
 }
 
 export function defaultPrefs(): PlaylistPrefs {
-	return { sort: 'position', source: null, status: null, showUrls: false, showThumbnails: true };
+	return {
+		sort: 'position',
+		source: null,
+		status: null,
+		showUrls: false,
+		showThumbnails: true,
+		viewMode: 'table'
+	};
 }

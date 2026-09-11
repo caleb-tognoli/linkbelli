@@ -3,7 +3,7 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
-	import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, MoreVertical, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
@@ -55,6 +55,7 @@
 
 	let sortMode = $state<SortMode>(serverSortToMode(initialPrefs?.sort, readonly));
 	let showThumbnails = $state(initialPrefs?.showThumbnails ?? true);
+	let viewMode = $state(initialPrefs?.viewMode === 'grid' ? 'grid' : 'table');
 	let showUrls = $state(initialPrefs?.showUrls ?? false);
 	let forceShowScore = $state(false);
 
@@ -667,6 +668,25 @@
 			</Popover.Content>
 		</Popover.Root>
 
+		<!-- Layout switch. A reading queue reads best as a list; a list of videos does not. -->
+		<div class="inline-flex divide-x overflow-hidden rounded-full border" style="border-color: var(--color-border)">
+			{#each [['table', 'List', Rows3], ['grid', 'Grid', LayoutGrid]] as const as [mode, label, Icon] (mode)}
+				<button
+					type="button"
+					onclick={() => { viewMode = mode; if (playlistId) savePrefs(playlistId, { viewMode: mode }); }}
+					class="px-2.5 py-0.5"
+					style={viewMode === mode
+						? 'background: var(--color-surface); color: var(--color-accent)'
+						: 'color: var(--color-muted)'}
+					title={`${label} view`}
+					aria-label={`${label} view`}
+					aria-pressed={viewMode === mode}
+				>
+					<Icon size={13} aria-hidden="true" />
+				</button>
+			{/each}
+		</div>
+
 		<button
 			type="button"
 			onclick={() => { showThumbnails = !showThumbnails; if (playlistId) savePrefs(playlistId, { showThumbnails }); }}
@@ -790,7 +810,70 @@
 		</div>
 	{/if}
 
-	<div class="overflow-x-auto">
+	{#if viewMode === 'grid'}
+		<!-- A list of videos or images is unreadable as a table of titles. Cards lead with the
+		     picture, which is the thing being chosen between. -->
+		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			{#each displayItems as item (item.id)}
+				{@const thumb = item.metadata?.thumbnail ?? item.link.thumbnailUrl}
+				<li
+					class="flex flex-col overflow-hidden rounded-lg border"
+					style="border-color: var(--color-border); background: var(--color-surface); {item.status === 'Watched' ? 'opacity: 0.5' : ''}"
+				>
+					<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="block">
+						{#if thumb}
+							<img
+								src={`/api/v1/thumbnails/${item.link.id}`}
+								alt=""
+								class="aspect-video w-full object-cover"
+								loading="lazy"
+								onerror={(e) => e.currentTarget.remove()}
+							/>
+						{:else}
+							<span
+								class="flex aspect-video w-full items-center justify-center"
+								style="background: var(--color-bg)"
+							>
+								{#if item.link.favicon}
+									<img src={item.link.favicon} alt="" class="size-7 object-contain" loading="lazy" />
+								{/if}
+							</span>
+						{/if}
+					</a>
+
+					<div class="flex min-w-0 flex-1 flex-col gap-1 p-3">
+						<a
+							href={item.link.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="line-clamp-2 text-sm font-medium hover:underline"
+						>
+							{item.metadata?.title ?? item.link.title ?? item.link.url}
+						</a>
+
+						{#if item.link.nsfw}<span><NsfwBadge /></span>{/if}
+
+						<p class="mt-auto flex items-center gap-2 pt-1 text-xs" style="color: var(--color-muted)">
+							<span class="truncate">{item.link.host}</span>
+							{#if item.score !== null}
+								<span class="ml-auto shrink-0 tabular-nums">{item.score}</span>
+							{/if}
+						</p>
+
+						{#if !readonly}
+							<button
+								type="button"
+								onclick={() => toggleWatched(item)}
+								class="mt-1 w-full rounded border py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+								style="border-color: var(--color-border); color: var(--color-muted)"
+							>{item.status === 'Watched' ? 'Mark unwatched' : 'Mark watched'}</button>
+						{/if}
+					</div>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<div class="overflow-x-auto">
 			<table class="w-full border-collapse text-sm">
 				<thead>
 					<tr class="text-left" style="color: var(--color-muted)">
@@ -867,6 +950,7 @@
 				{/if}
 			</table>
 		</div>
+	{/if}
 {/if}
 
 {#if !readonly && playlistId}

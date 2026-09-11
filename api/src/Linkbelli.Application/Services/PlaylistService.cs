@@ -144,7 +144,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
                 db.PlaylistPreferences
                     .Where(pp => pp.OwnerId == ownerId && pp.PlaylistId == p.Id)
                     .Select(pp => new PlaylistViewPreferences(
-                        pp.Sort, pp.Source, pp.Status, pp.ShowUrls, pp.ShowThumbnails))
+                        pp.Sort, pp.Source, pp.Status, pp.ShowUrls, pp.ShowThumbnails, pp.ViewMode))
                     .FirstOrDefault()))
             .FirstOrDefaultAsync(ct);
 
@@ -275,6 +275,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
         preference.Status = Trim(view.Status, 16);
         preference.ShowUrls = view.ShowUrls;
         preference.ShowThumbnails = view.ShowThumbnails;
+        preference.ViewMode = Trim(view.ViewMode, 16);
 
         await db.SaveChangesAsync(ct);
     }

@@ -23,5 +23,8 @@ public class PlaylistPreference : BaseEntity<Guid>
 
     public bool ShowThumbnails { get; set; } = true;
 
+    /// <summary>"table" or "grid". A list of videos or images wants a grid; a reading queue doesn't.</summary>
+    public string? ViewMode { get; set; }
+
     public Playlist? Playlist { get; set; }
 }

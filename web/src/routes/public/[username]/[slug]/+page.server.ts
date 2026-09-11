@@ -47,11 +47,19 @@ function readPrefsCookie(raw: string | undefined, playlistId: string): PlaylistP
 				source: typeof s.source === 'string' ? s.source : null,
 				status: VALID_STATUSES.has(s.status ?? '') ? (s.status ?? null) : null,
 				showUrls: s.showUrls ?? false,
-				showThumbnails: s.showThumbnails ?? true
+				showThumbnails: s.showThumbnails ?? true,
+				viewMode: s.viewMode === 'grid' ? 'grid' : 'table'
 			};
 		} catch { /* fall through */ }
 	}
-	return { sort: 'position', source: null, status: null, showUrls: false, showThumbnails: true };
+	return {
+		sort: 'position',
+		source: null,
+		status: null,
+		showUrls: false,
+		showThumbnails: true,
+		viewMode: 'table'
+	};
 }
 
 function buildItemsQuery(sort: string, source: string | null, status: string): string {
