@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Observability;
 using Linkbelli.Application.Services;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Playlists;
@@ -18,6 +19,7 @@ public sealed class SourceRunner(
     SourceConfigSecrets secrets,
     IUserQuotaService quotas,
     ISourceScheduler scheduler,
+    AppMetrics metrics,
     ILogger<SourceRunner> logger) : ISourceRunner
 {
     /// <summary>
@@ -242,6 +244,13 @@ public sealed class SourceRunner(
             run.FinishedAt = DateTimeOffset.UtcNow;
             source.LastRunAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+
+            metrics.SourceRun(
+                run.Status.ToString().ToLowerInvariant(),
+                source.Type.ToString().ToLowerInvariant(),
+                run.FoundCount,
+                run.AddedCount,
+                run.SkippedCount);
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Linkbelli.Application.Auth;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
+using Linkbelli.Application.Observability;
 using Linkbelli.Application.Http;
 using Linkbelli.Application.Identity;
 using Linkbelli.Core.Entities;
@@ -131,6 +132,7 @@ public class LinkEnricherYouTubeTests
             new ArticleExtractor(),
             db,
             new NullThrottle(),
+            new AppMetrics(),
             NullLogger<LinkEnricher>.Instance);
         return (enricher, db, handler);
     }

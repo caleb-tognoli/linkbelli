@@ -3,6 +3,8 @@ using System.Net.Http;
 using System.Text.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Http;
+using System.Diagnostics;
+using Linkbelli.Application.Observability;
 using Linkbelli.Core.Content;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Url;
@@ -17,6 +19,7 @@ public class LinkEnricher(
     ArticleExtractor articles,
     IAppDbContext db,
     IHostThrottle throttle,
+    AppMetrics metrics,
     ILogger<LinkEnricher> logger) : ILinkEnricher
 {
     private static readonly HashSet<string> YouTubeHosts = new(StringComparer.Ordinal)
@@ -31,6 +34,10 @@ public class LinkEnricher(
         {
             return;
         }
+
+        // Timed from here, including the per-host wait: that wait is part of how long a link
+        // actually takes to appear, whatever the reason for it.
+        var started = Stopwatch.GetTimestamp();
 
         try
         {
@@ -59,6 +66,7 @@ public class LinkEnricher(
                 {
                     StampFailure(link, DescribeStatus(status), ClassifyStatus(status));
                     await db.SaveChangesAsync(cancellationToken);
+                    Record(link, started);
                     return;
                 }
 
@@ -70,6 +78,7 @@ public class LinkEnricher(
             {
                 StampFailure(link, $"That address is not a web page ({mediaType}).");
                 await db.SaveChangesAsync(cancellationToken);
+                Record(link, started);
                 return;
             }
 
@@ -115,15 +124,28 @@ public class LinkEnricher(
 
             StampSuccess(link);
             await db.SaveChangesAsync(cancellationToken);
+
+            Record(link, started);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Transient (network/timeout/SSRF-block/oversize): rethrow so the job runner
             // retries with backoff. Permanent failures are stamped above and return normally.
+            Record(link, started, "errored");
             logger.LogWarning(ex, "Enrichment failed for link {LinkId} ({Url})", linkId, link.CanonicalUrl);
             throw;
         }
     }
+
+    /// <summary>
+    /// Counts one attempt. The outcome comes from the link's own status unless the fetch threw,
+    /// which is a different thing from a page that answered with an error.
+    /// </summary>
+    private void Record(Link link, long started, string? outcome = null) =>
+        metrics.Enrichment(
+            outcome ?? link.EnrichmentStatus.ToString().ToLowerInvariant(),
+            link.Host?.Hostname ?? "unknown",
+            Stopwatch.GetElapsedTime(started).TotalMilliseconds);
 
     private async Task EnrichViaYouTubeOEmbedAsync(Link link, HttpClient client, CancellationToken ct)
     {

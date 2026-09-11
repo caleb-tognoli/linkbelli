@@ -4,6 +4,7 @@ using Linkbelli.Application.Auth;
 using Linkbelli.Application.Archiving;
 using Linkbelli.Application.Automation;
 using Linkbelli.Application.Enrichment;
+using Linkbelli.Application.Observability;
 using Linkbelli.Application.Http;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
@@ -42,6 +43,7 @@ public static class DependencyInjection
         // --- Link enrichment --- (ILinkEnrichmentQueue is implemented in Infrastructure via Hangfire)
         services.AddSingleton<LinkMetadataExtractor>();
         services.AddSingleton<ArticleExtractor>();
+        services.AddSingleton<AppMetrics>();
         services.AddScoped<ILinkClassificationSweep, LinkClassificationSweep>();
         services.AddScoped<IAutomationRuleService, AutomationRuleService>();
         services.AddScoped<IAutomationRunner, AutomationRunner>();

@@ -1,4 +1,5 @@
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Observability;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ public interface ILinkArchiveSweep
 public sealed class LinkArchiveSweep(
     IAppDbContext db,
     IArchiver archiver,
+    AppMetrics metrics,
     ILogger<LinkArchiveSweep> logger) : ILinkArchiveSweep
 {
     /// <summary>
@@ -50,6 +52,8 @@ public sealed class LinkArchiveSweep(
         foreach (var link in links)
         {
             var result = await archiver.ArchiveAsync(link.CanonicalUrl, cancellationToken);
+
+            metrics.Archive(result.Url is not null ? "archived" : result.Retry ? "deferred" : "refused");
 
             if (result.Url is not null)
             {

@@ -1,6 +1,7 @@
 using Linkbelli.Api.Auth;
 using Linkbelli.Api.Common;
 using Linkbelli.Api.Endpoints;
+using Linkbelli.Api.Observability;
 using Linkbelli.Api.OpenApi;
 using Linkbelli.Application;
 using Linkbelli.Application.Auth;
@@ -108,6 +109,9 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 
+// Metrics always; tracing only when somewhere was configured to send it.
+builder.Services.AddAppTelemetry(builder.Configuration);
+
 var app = builder.Build();
 
 if (builder.Configuration.GetValue<bool>("Database:MigrateAtStartup"))
@@ -116,6 +120,8 @@ if (builder.Configuration.GetValue<bool>("Database:MigrateAtStartup"))
 }
 
 app.UseExceptionHandler();
+
+app.MapAppMetrics();
 
 if (app.Environment.IsDevelopment())
 {

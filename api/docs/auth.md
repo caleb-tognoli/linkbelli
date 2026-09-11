@@ -182,3 +182,31 @@ one gets picked from at random.
   Takedowns are written to the [audit log](#audit-log).
 - **The queue lists open reports first.** Sorted purely by date, what still needs doing gets
   buried under what has already been handled.
+
+## Metrics and tracing
+
+Observability was one health check and Hangfire's dashboard: enough to say the process was alive,
+and nothing about whether it was doing its job.
+
+`GET /metrics` serves Prometheus exposition. **Behind the Admin role by default** — metrics name
+every host this instance fetches and how much of everything there is, which is not a public fact
+about somebody's private collection. Set `Telemetry:Metrics:AllowAnonymous` to `true` when the
+port is only reachable from a scraper, or `Telemetry:Metrics:Enabled` to `false` to turn it off.
+
+Beyond the ASP.NET, HttpClient and runtime instrumentation, the app's own meter (`Linkbelli`)
+reports:
+
+| Metric | What it says |
+|--------|--------------|
+| `linkbelli.enrichment.attempts` | Pages fetched, tagged by outcome and host |
+| `linkbelli.enrichment.duration` | How long a fetch took, including the per-host wait — that wait is part of how long a link really takes to appear |
+| `linkbelli.source.runs` | Source runs, tagged by outcome and source type |
+| `linkbelli.source.links` | Links a run found, added, or skipped by its filter |
+| `linkbelli.archive.attempts` | Snapshots asked for: archived, refused, or deferred |
+
+The host is a tag on the attempt counter but **not** on the duration histogram: a per-host latency
+series for a collection spanning thousands of sites is a cardinality problem, not a measurement.
+
+Tracing is exported only when `Telemetry:Otlp:Endpoint` names a collector — collecting spans and
+dropping them on the floor costs the same as collecting spans somebody reads. The scrape endpoint
+is excluded from traces: it is hit constantly and says nothing.
