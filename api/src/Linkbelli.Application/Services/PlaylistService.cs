@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Services;
 
-public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : IPlaylistService
+public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITagResolver tags) : IPlaylistService
 {
     private const int MaxTagResults = 200;
 
@@ -99,7 +99,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             throw new ValidationException("name", "Name is required.");
         }
 
-        var tags = await ResolveTagsAsync(TagNormalizer.Normalize(request.Tags), ct);
+        var resolvedTags = await tags.ResolveAsync(TagNormalizer.Normalize(request.Tags), ct);
 
         var playlist = new Playlist
         {
@@ -110,14 +110,14 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             Visibility = request.Visibility ?? PlaylistVisibility.Private,
         };
         db.Playlists.Add(playlist);
-        foreach (var t in tags)
+        foreach (var t in resolvedTags)
         {
             db.PlaylistTags.Add(new PlaylistTag { PlaylistId = playlist.Id, TagId = t.Id });
         }
 
         await db.SaveChangesAsync(ct);
 
-        return playlist.ToResponse(0, tags.Select(t => t.Name), nsfw: false);
+        return playlist.ToResponse(0, resolvedTags.Select(t => t.Name), nsfw: false);
     }
 
     public async Task<PlaylistResponse> GetAsync(Guid ownerId, Guid id, CancellationToken ct = default)
@@ -190,10 +190,10 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
 
         if (request.Tags is not null)
         {
-            var tags = await ResolveTagsAsync(TagNormalizer.Normalize(request.Tags), ct);
+            var resolvedTags = await tags.ResolveAsync(TagNormalizer.Normalize(request.Tags), ct);
             var existing = await db.PlaylistTags.Where(pt => pt.PlaylistId == id).ToListAsync(ct);
             db.PlaylistTags.RemoveRange(existing);
-            foreach (var t in tags)
+            foreach (var t in resolvedTags)
             {
                 db.PlaylistTags.Add(new PlaylistTag { PlaylistId = id, TagId = t.Id });
             }
@@ -551,39 +551,6 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
     }
 
     /// <summary>Get-or-create tags by normalized name (race-safe, like Host/Link).</summary>
-    private async Task<List<Tag>> ResolveTagsAsync(IReadOnlyList<string> names, CancellationToken ct)
-    {
-        if (names.Count == 0)
-        {
-            return [];
-        }
-
-        var resolved = await db.Tags.Where(t => names.Contains(t.Name)).ToListAsync(ct);
-        var missing = names.Where(n => resolved.All(t => t.Name != n)).Select(n => new Tag { Name = n }).ToList();
-        if (missing.Count == 0)
-        {
-            return resolved;
-        }
-
-        db.Tags.AddRange(missing);
-        try
-        {
-            await db.SaveChangesAsync(ct);
-            resolved.AddRange(missing);
-            return resolved;
-        }
-        catch (DbUpdateException)
-        {
-            // Lost a race creating one or more tags — re-read the authoritative rows.
-            foreach (var t in missing)
-            {
-                db.Entry(t).State = EntityState.Detached;
-            }
-
-            return await db.Tags.Where(t => names.Contains(t.Name)).ToListAsync(ct);
-        }
-    }
-
     private async Task<string> GenerateUniqueSlugAsync(Guid ownerId, string name, CancellationToken ct)
     {
         var baseSlug = Slugify(name);

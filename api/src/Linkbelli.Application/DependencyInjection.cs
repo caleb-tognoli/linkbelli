@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.Configure<QuotaOptions>(configuration.GetSection("Quota"));
         services.AddScoped<ILinkService, LinkService>();
         services.AddScoped<IPlaylistService, PlaylistService>();
+        services.AddScoped<ITagResolver, TagResolver>();
         services.AddScoped<IPlaylistItemService, PlaylistItemService>();
         services.AddScoped<IFolderService, FolderService>();
         services.AddScoped<IApiKeyService, ApiKeyService>();

@@ -73,7 +73,10 @@ public record TagSummary(string Name, int PlaylistCount);
 // --- Items ---
 public record AddItemRequest(string Url, string? Note);
 
-public record UpdateItemRequest(string? Note, PlaylistItemStatus? Status = null);
+public record UpdateItemRequest(
+    string? Note, PlaylistItemStatus? Status = null,
+    /// <summary>Replaces the item's whole tag set. Omit to leave the tags alone.</summary>
+    string[]? Tags = null);
 
 public record SetScoreRequest(int? Score);
 
@@ -84,7 +87,9 @@ public record PlaylistItemResponse(
     Guid Id, long Position, string? Note, PlaylistItemStatus Status, LinkResponse Link, DateTimeOffset CreationTime,
     IReadOnlyDictionary<string, string>? Metadata = null, Guid? SourceId = null, int? Score = null,
     /// <summary>When the status last changed; null if it never has.</summary>
-    DateTimeOffset? StatusChangedAt = null);
+    DateTimeOffset? StatusChangedAt = null,
+    /// <summary>Tags on the link itself, as opposed to on the playlist holding it.</summary>
+    string[]? Tags = null);
 
 // --- Links ---
 public record CreateLinkRequest(string Url);

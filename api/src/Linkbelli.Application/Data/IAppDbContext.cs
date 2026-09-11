@@ -26,6 +26,7 @@ public interface IAppDbContext
     DbSet<Tag> Tags { get; }
     DbSet<PlaylistTag> PlaylistTags { get; }
     DbSet<PlaylistPreference> PlaylistPreferences { get; }
+    DbSet<PlaylistItemTag> PlaylistItemTags { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }
 

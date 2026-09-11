@@ -145,6 +145,8 @@ export interface PlaylistItem {
 	metadata: Record<string, string> | null;
 	sourceId: string | null;
 	score: number | null;
+	/** Tags on the link itself, as opposed to on the playlist holding it. */
+	tags?: string[];
 }
 
 export interface LinkPreview {
@@ -285,6 +287,8 @@ export interface SearchHit {
 	addedAt: string;
 	/** When the status last changed; null if it never has. */
 	statusChangedAt: string | null;
+	/** Tags on the link itself. */
+	tags: string[];
 }
 
 /** A site the caller saves from, and how many of their links are on it. */

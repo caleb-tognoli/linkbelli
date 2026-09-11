@@ -23,6 +23,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PlaylistTag> PlaylistTags => Set<PlaylistTag>();
     public DbSet<PlaylistPreference> PlaylistPreferences => Set<PlaylistPreference>();
+    public DbSet<PlaylistItemTag> PlaylistItemTags => Set<PlaylistItemTag>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
 
@@ -125,6 +126,15 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(pt => pt.TagId); // tag → playlists (global search, counts)
             e.HasOne(pt => pt.Playlist).WithMany(p => p.Tags).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(pt => pt.Tag).WithMany(t => t.Playlists).OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<PlaylistItemTag>(e =>
+        {
+            e.HasIndex(it => new { it.PlaylistItemId, it.TagId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(it => it.TagId); // tag → items, for filtering a search by tag
+            e.HasOne(it => it.PlaylistItem).WithMany(i => i.Tags).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(it => it.Tag).WithMany().OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 

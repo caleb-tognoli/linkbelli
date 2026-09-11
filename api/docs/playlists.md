@@ -49,6 +49,11 @@ Anonymous readers have no account to save against and fall back to a browser coo
 
 ### Tags
 
+Playlist tags describe a list. **Item tags** describe the link itself, which is what makes
+something findable across the lists it happens to sit in — `PATCH /items/{id}` takes a `tags`
+array that replaces the whole set, and search takes `?itemTag=` (repeatable, AND). Both kinds
+share the same globally deduplicated tag rows.
+
 Tags are stored normalized and shared across the system (deduplicated by name), so they can be
 listed and counted globally.
 
@@ -106,7 +111,7 @@ title/description/thumbnail/site, flipping `enriched` to `true` — usually with
 |--------|------|------|---------|
 | `GET`    | `/api/v1/playlists/{id}/items` | — (`?limit=`, `?cursor=`) | List items in order |
 | `POST`   | `/api/v1/playlists/{id}/items` | `url`, `note?` | Add a link to the end |
-| `PATCH`  | `/api/v1/items/{id}`           | `note?`, `status?` | Update an item's note or status |
+| `PATCH`  | `/api/v1/items/{id}`           | `note?`, `status?`, `tags?` | Update an item's note, status or tags |
 | `DELETE` | `/api/v1/items/{id}`           | — | Soft delete (remove from playlist) |
 | `POST`   | `/api/v1/items/{id}/move`      | `afterItemId?` | Reorder: place after the given item; `null` = move to front |
 
@@ -222,7 +227,8 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 |-----------|---------|
 | `q`        | Free text over title, description, site name, **your note**, URL and hostname. A pasted URL is canonicalized and matched on the dedup hash instead |
 | `host`     | Restrict to one hostname |
-| `tag`      | Repeatable; the playlist must carry **all** of them |
+| `tag`      | Repeatable; the **playlist** must carry all of them |
+| `itemTag`  | Repeatable; the **link** must carry all of them — which is what finds the same subject across different lists |
 | `status`   | `watched` or `unwatched` |
 | `minScore` | Only items you scored at least this highly |
 | `finishedSince` | Only items you marked watched at or after this instant — "what did I get through this week" |

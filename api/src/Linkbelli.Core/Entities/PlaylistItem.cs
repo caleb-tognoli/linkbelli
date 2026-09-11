@@ -30,6 +30,9 @@ public class PlaylistItem : BaseEntity<Guid>
     /// <summary>Owner-assigned score (0–100). Null means unrated.</summary>
     public int? Score { get; set; }
 
+    /// <summary>Tags on the link itself, as opposed to on the playlist holding it.</summary>
+    public List<PlaylistItemTag> Tags { get; set; } = [];
+
     public Playlist? Playlist { get; set; }
     public Link? Link { get; set; }
     public Source? Source { get; set; }

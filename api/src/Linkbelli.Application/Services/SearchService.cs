@@ -41,7 +41,8 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         i.Status,
         i.Score,
         i.CreationTime,
-        i.StatusChangedAt);
+        i.StatusChangedAt,
+        i.Tags.Select(t => t.Tag!.Name).ToArray());
 
     public async Task<PagedResult<SearchHit>> SearchAsync(Guid ownerId, SearchQuery query, CancellationToken ct = default)
     {
@@ -54,6 +55,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         items = ApplyText(items, query.Q);
         items = ApplyHost(items, query.Host);
         items = ApplyTags(items, query.Tags);
+        items = ApplyItemTags(items, query.ItemTags);
         items = ApplyStatus(items, query.Status);
 
         if (query.MinScore is { } minScore)
@@ -171,6 +173,25 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             if (string.IsNullOrEmpty(tag)) continue;
 
             items = items.Where(i => i.Playlist!.Tags.Any(pt => pt.Tag!.Name == tag));
+        }
+
+        return items;
+    }
+
+    /// <summary>
+    /// Every tag must be present (AND). Tags on the link itself, as opposed to on the list it
+    /// happens to sit in — which is what makes something findable across lists.
+    /// </summary>
+    private static IQueryable<PlaylistItem> ApplyItemTags(IQueryable<PlaylistItem> items, string[]? tags)
+    {
+        if (tags is null || tags.Length == 0) return items;
+
+        foreach (var raw in tags)
+        {
+            var tag = TagNormalizer.NormalizeOne(raw);
+            if (string.IsNullOrEmpty(tag)) continue;
+
+            items = items.Where(i => i.Tags.Any(t => t.Tag!.Name == tag));
         }
 
         return items;

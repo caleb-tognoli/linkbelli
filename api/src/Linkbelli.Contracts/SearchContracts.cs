@@ -16,7 +16,9 @@ public record SearchHit(
     int? Score,
     DateTimeOffset AddedAt,
     /// <summary>When the status last changed; null if it never has.</summary>
-    DateTimeOffset? StatusChangedAt);
+    DateTimeOffset? StatusChangedAt,
+    /// <summary>Tags on the link itself.</summary>
+    string[] Tags);
 
 /// <summary>Filters a search can be narrowed by, beyond the text itself.</summary>
 public record SearchQuery(
@@ -25,6 +27,8 @@ public record SearchQuery(
     string? Host,
     /// <summary>Restrict to playlists carrying every one of these tags.</summary>
     string[]? Tags,
+    /// <summary>Restrict to links carrying every one of these tags, whatever list they sit in.</summary>
+    string[]? ItemTags,
     /// <summary>"watched" or "unwatched".</summary>
     string? Status,
     /// <summary>Only items scored at least this highly.</summary>

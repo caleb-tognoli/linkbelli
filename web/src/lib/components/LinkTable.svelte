@@ -148,6 +148,7 @@
 
 	let noteEditId = $state<string | null>(null);
 	let draftNote = $state('');
+	let draftTags = $state('');
 	let actionFlyoutId = $state<string | null>(null);
 	let shareItem = $state<PlaylistItem | null>(null);
 	let shareOpen = $state(false);
@@ -171,8 +172,17 @@
 
 	async function saveNote(item: PlaylistItem) {
 		const note = draftNote.trim() || null;
-		const res = await api.patch(`/items/${item.id}`, { note });
-		if (res.ok) items = items.map((i) => (i.id === item.id ? { ...i, note } : i));
+		// Comma-separated, because that is how the playlist tag editor already takes them.
+		const tags = draftTags
+			.split(',')
+			.map((t) => t.trim())
+			.filter(Boolean);
+
+		const res = await api.patch(`/items/${item.id}`, { note, tags });
+		if (res.ok) {
+			const saved = (await res.json()) as PlaylistItem;
+			items = items.map((i) => (i.id === item.id ? { ...i, note, tags: saved.tags ?? [] } : i));
+		}
 	}
 
 	// Returns the saved score (or undefined if nothing changed / invalid).
@@ -296,6 +306,18 @@
 					{#if item.note && readonly}
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.note}</p>
 					{/if}
+					{#if item.tags?.length}
+						<span class="mt-1 flex flex-wrap gap-1">
+							{#each item.tags as tag (tag)}
+								<a
+									href={`/search?itemTag=${encodeURIComponent(tag)}`}
+									class="rounded px-1.5 py-0.5 text-xs hover:underline"
+									style="background: var(--color-bg); color: var(--color-muted)"
+									title={`Find everything tagged ${tag}`}
+								>{tag}</a>
+							{/each}
+						</span>
+					{/if}
 					{#if item.link.enrichmentStatus === 'Failed' || item.link.enrichmentStatus === 'Broken'}
 						<!-- Without this the row is a bare URL and nothing says why. -->
 						<p class="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs" style="color: var(--color-muted)">
@@ -407,7 +429,7 @@
 								onclick={() => {
 									actionFlyoutId = null;
 									if (noteEditId === item.id) { noteEditId = null; }
-									else { noteEditId = item.id; draftNote = item.note ?? ''; }
+									else { noteEditId = item.id; draftNote = item.note ?? ''; draftTags = (item.tags ?? []).join(', '); }
 								}}
 								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
 								style={isPending(item) ? 'color: var(--color-muted)' : item.note ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
@@ -441,17 +463,30 @@
 		<tr class="border-t" style="border-color: var(--color-border)">
 			<td colspan={colCount} class="px-2 py-2">
 				<div class="flex items-start gap-2">
-					<textarea
-						bind:value={draftNote}
-						placeholder="Add note…"
-						rows={3}
-						class="flex-1 resize-none rounded border px-2 py-1 text-sm"
-						style="border-color: var(--color-border); background: var(--color-bg)"
-						onkeydown={(e) => {
-							if (e.key === 'Enter' && e.ctrlKey) { saveNote(item); noteEditId = null; }
-							if (e.key === 'Escape') { noteEditId = null; }
-						}}
-					></textarea>
+					<div class="flex flex-1 flex-col gap-1.5">
+						<textarea
+							bind:value={draftNote}
+							placeholder="Add note…"
+							rows={3}
+							class="resize-none rounded border px-2 py-1 text-sm"
+							style="border-color: var(--color-border); background: var(--color-bg)"
+							onkeydown={(e) => {
+								if (e.key === 'Enter' && e.ctrlKey) { saveNote(item); noteEditId = null; }
+								if (e.key === 'Escape') { noteEditId = null; }
+							}}
+						></textarea>
+						<input
+							bind:value={draftTags}
+							placeholder="Tags, comma separated…"
+							aria-label="Tags for this link"
+							class="rounded border px-2 py-1 text-sm"
+							style="border-color: var(--color-border); background: var(--color-bg)"
+							onkeydown={(e) => {
+								if (e.key === 'Enter') { saveNote(item); noteEditId = null; }
+								if (e.key === 'Escape') { noteEditId = null; }
+							}}
+						/>
+					</div>
 					<div class="flex flex-col gap-1">
 						<button
 							type="button"

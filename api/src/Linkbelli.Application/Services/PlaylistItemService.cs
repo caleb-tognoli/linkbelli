@@ -4,12 +4,14 @@ using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Playlists;
+using Linkbelli.Core.Tags;
 using Linkbelli.Core.Url;
 using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Services;
 
-public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPreferenceService prefs) : IPlaylistItemService
+public class PlaylistItemService(
+    IAppDbContext db, ILinkService links, IUserPreferenceService prefs, ITagResolver tags) : IPlaylistItemService
 {
     private static readonly Expression<Func<PlaylistItem, PlaylistItemResponse>> ToResponse = i =>
         new PlaylistItemResponse(
@@ -22,7 +24,8 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             i.Metadata,
             i.SourceId,
             i.Score,
-            i.StatusChangedAt);
+            i.StatusChangedAt,
+            i.Tags.Select(t => t.Tag!.Name).ToArray());
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)
@@ -88,6 +91,20 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         {
             item.Status = request.Status.Value;
             item.StatusChangedAt = DateTimeOffset.UtcNow;
+        }
+
+        if (request.Tags is not null)
+        {
+            // Replaces the whole set, the same way playlist tags do — a client sends the tags it
+            // wants rather than a patch, so removing one doesn't need its own verb.
+            var resolved = await tags.ResolveAsync(TagNormalizer.Normalize(request.Tags), ct);
+            var existing = await db.PlaylistItemTags.Where(t => t.PlaylistItemId == itemId).ToListAsync(ct);
+            db.PlaylistItemTags.RemoveRange(existing);
+
+            foreach (var tag in resolved)
+            {
+                db.PlaylistItemTags.Add(new PlaylistItemTag { PlaylistItemId = itemId, TagId = tag.Id });
+            }
         }
 
         await db.SaveChangesAsync(ct);
