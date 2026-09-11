@@ -160,6 +160,10 @@ var v1 = app.MapGroup(ApiRoutes.V1);
 // Opt-in by header: a POST carrying an Idempotency-Key can be retried safely, and one without
 // behaves exactly as it always did.
 v1.AddEndpointFilter<IdempotencyFilter>();
+
+// Conditional GETs. Everything that polls this API re-downloaded an identical payload every
+// time it looked.
+v1.AddEndpointFilter<ETagFilter>();
 v1.MapAuthEndpoints();
 v1.MapMeEndpoints();
 v1.MapApiKeyEndpoints();

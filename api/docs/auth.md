@@ -245,3 +245,20 @@ Two new scopes: `admin:read` (the overview, the audit trail, the moderation queu
   every general-purpose key an admin ever minted would quietly be an instance-wide credential.
   Admin access by key is opt-in, per key, by name.
 - Interactive bearer principals were never scope-limited and still are not.
+
+## Conditional GETs
+
+Everything that polls this API — the extension, the sync client, a feed reader — re-downloaded an
+identical payload every time it looked.
+
+Every successful `GET` under `/api/v1` carries a weak `ETag`. Send it back as `If-None-Match` and
+an unchanged response comes back as `304 Not Modified` with no body.
+
+- **The tag is derived from the response itself**, so it is right by construction rather than by
+  someone remembering to bump a version when a field changes.
+- **Weak, deliberately**: it compares one serialization byte for byte, which is not a claim about
+  the resource.
+- **Failures are never tagged.** Caching a `404` under an entity tag is how a transient failure
+  becomes a sticky one.
+- `*` is honoured, and a tag that lost its `W/` marker in transit is still recognised — refusing
+  it would just resend the body.
