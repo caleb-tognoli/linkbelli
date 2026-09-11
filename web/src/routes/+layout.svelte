@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import GlobalDialog from '$lib/components/GlobalDialog.svelte';
+	import FolderTree from '$lib/components/FolderTree.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -59,6 +60,14 @@
 			</a>
 		{/each}
 	</nav>
+
+	{#if showLabels && data.folders.length > 0}
+		<!-- Folders are a ten-deep tree in the API and were only reachable one page at a time. -->
+		<div class="mt-4 border-t pt-3" style="border-color: var(--color-border)">
+			<p class="px-3 pb-1.5 text-xs font-medium" style="color: var(--color-muted)">Folders</p>
+			<FolderTree folders={data.folders} />
+		</div>
+	{/if}
 
 	<div class="mt-auto flex {showLabels ? 'items-center gap-1' : 'flex-col gap-1'} border-t pt-3" style="border-color: var(--color-border)">
 		<a
