@@ -40,7 +40,11 @@ public record PlaylistResponse(
     /// <summary>How many items carry a score. Without it an average says nothing about its weight.</summary>
     int? ScoredCount = null,
     /// <summary>How the caller last looked at this playlist. Null when they have no saved view.</summary>
-    PlaylistViewPreferences? View = null);
+    PlaylistViewPreferences? View = null,
+    /// <summary>How many people have liked it. The lightest signal a public list gets.</summary>
+    int LikeCount = 0,
+    /// <summary>Whether the caller is one of them. False when anonymous.</summary>
+    bool LikedByMe = false);
 
 /// <summary>
 /// How one person looks at one playlist: sort, filters, and what the rows show. Saved per
@@ -58,7 +62,10 @@ public record PlaylistViewPreferences(
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(
     string OwnerUsername, string Slug, string Name, string? Description,
-    int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw);
+    int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw,
+    int LikeCount = 0,
+    /// <summary>When the newest link was added — what "recently active" is measured on.</summary>
+    DateTimeOffset? LastItemAt = null);
 
 /// <summary>
 /// A user as seen from the outside: who they are and what they have published. Deliberately
@@ -164,3 +171,6 @@ public record SharedItemResponse(
     bool Nsfw,
     ContentKind Kind,
     int? WordCount);
+
+/// <summary>The state of a like after changing it, so a client needn't re-read the playlist.</summary>
+public record PlaylistLikeResponse(Guid PlaylistId, int LikeCount, bool LikedByMe);

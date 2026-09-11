@@ -241,7 +241,14 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
                 db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
                     .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
                 db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
-                    .Select(fp => fp.Folder!.Name).FirstOrDefault()))
+                    .Select(fp => fp.Folder!.Name).FirstOrDefault(),
+                NsfwSetting: null,
+                PendingCount: null,
+                AverageScore: null,
+                ScoredCount: null,
+                View: null,
+                db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == viewerId)))
             .FirstOrDefaultAsync(ct);
 
         // Private/missing — and NSFW for viewers who haven't opted in — are all indistinguishable.
@@ -252,6 +259,60 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
 
         return playlist;
     }
+
+    public async Task<PlaylistLikeResponse> LikeAsync(
+        Guid userId, Guid playlistId, CancellationToken ct = default)
+    {
+        await EnsureVisibleAsync(userId, playlistId, ct);
+
+        // Idempotent: a double tap is one like, not two.
+        if (!await db.PlaylistLikes.AnyAsync(l => l.PlaylistId == playlistId && l.UserId == userId, ct))
+        {
+            db.PlaylistLikes.Add(new PlaylistLike { PlaylistId = playlistId, UserId = userId });
+            await db.SaveChangesAsync(ct);
+        }
+
+        return await LikeStateAsync(userId, playlistId, ct);
+    }
+
+    public async Task<PlaylistLikeResponse> UnlikeAsync(
+        Guid userId, Guid playlistId, CancellationToken ct = default)
+    {
+        await EnsureVisibleAsync(userId, playlistId, ct);
+
+        var like = await db.PlaylistLikes
+            .FirstOrDefaultAsync(l => l.PlaylistId == playlistId && l.UserId == userId, ct);
+
+        if (like is not null)
+        {
+            db.PlaylistLikes.Remove(like);
+            await db.SaveChangesAsync(ct);
+        }
+
+        return await LikeStateAsync(userId, playlistId, ct);
+    }
+
+    /// <summary>
+    /// A playlist has to be visible to be liked — you cannot vote on something you were never
+    /// shown. Private playlists you own are allowed, which costs nothing and saves a special case.
+    /// </summary>
+    private async Task EnsureVisibleAsync(Guid userId, Guid playlistId, CancellationToken ct)
+    {
+        var visible = await db.Playlists.AnyAsync(
+            p => p.Id == playlistId
+                && (p.Visibility != PlaylistVisibility.Private || p.OwnerId == userId),
+            ct);
+
+        if (!visible)
+        {
+            throw new NotFoundException("Playlist not found.");
+        }
+    }
+
+    private async Task<PlaylistLikeResponse> LikeStateAsync(Guid userId, Guid playlistId, CancellationToken ct) =>
+        new(playlistId,
+            await db.PlaylistLikes.CountAsync(l => l.PlaylistId == playlistId, ct),
+            await db.PlaylistLikes.AnyAsync(l => l.PlaylistId == playlistId && l.UserId == userId, ct));
 
     public async Task SaveViewAsync(
         Guid ownerId, Guid playlistId, PlaylistViewPreferences view, CancellationToken ct = default)
@@ -341,7 +402,9 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
                               u.UserName!, p.Slug, p.Name, p.Description,
                               p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
                               p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)))
+                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+                              db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                              p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
             .Skip(offset).Take(take + 1)
             .ToListAsync(ct);
 
@@ -383,7 +446,9 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
                               u.UserName!, p.Slug, p.Name, p.Description,
                               p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
                               p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)))
+                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+                              db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                              p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
             .Skip(offset).Take(take + 1)
             .ToListAsync(ct);
 

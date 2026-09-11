@@ -53,4 +53,12 @@ public interface IPlaylistService
 
     /// <summary>Shared sources attached to a public (non-private) playlist — safe for anonymous callers.</summary>
     Task<IReadOnlyList<AttachedSourceSummary>> ListPublicAttachedSourcesAsync(string username, string slug, CancellationToken ct = default);
+    /// <summary>
+    /// Likes a playlist the caller can see. Idempotent: liking twice is one like, because a
+    /// double tap should not be a way to inflate a number.
+    /// </summary>
+    Task<PlaylistLikeResponse> LikeAsync(Guid userId, Guid playlistId, CancellationToken ct = default);
+
+    /// <summary>Takes the like back. Also idempotent.</summary>
+    Task<PlaylistLikeResponse> UnlikeAsync(Guid userId, Guid playlistId, CancellationToken ct = default);
 }

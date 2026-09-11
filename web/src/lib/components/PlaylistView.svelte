@@ -9,7 +9,7 @@
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
-	import { ChevronDown, Download, EyeOff, Globe, Lock, Star, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, Download, EyeOff, Globe, Heart, Lock, Star, Trash2 } from '@lucide/svelte';
 	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -43,6 +43,32 @@
 		backLabel?: string;
 		initialPrefs?: PlaylistPrefs;
 	} = $props();
+
+	// Held locally so the button responds at once rather than after a round trip and a reload.
+	let likeCount = $state(playlist.likeCount ?? 0);
+	let likedByMe = $state(playlist.likedByMe ?? false);
+	let liking = $state(false);
+
+	async function toggleLike() {
+		if (!isLoggedIn) return;
+
+		liking = true;
+		try {
+			const res = likedByMe
+				? await api.del(`/playlists/${playlist.id}/like`)
+				: await api.post(`/playlists/${playlist.id}/like`);
+
+			if (res.ok) {
+				// The server's own count, not an increment: two tabs, or a double tap, would
+				// otherwise drift away from the real number.
+				const state = (await res.json()) as { likeCount: number; likedByMe: boolean };
+				likeCount = state.likeCount;
+				likedByMe = state.likedByMe;
+			}
+		} finally {
+			liking = false;
+		}
+	}
 
 	const resolvedBackHref = $derived(backHref ?? (isOwner ? '/playlists' : '/discover'));
 	const resolvedBackLabel = $derived(backLabel ?? (isOwner ? 'Playlists' : 'Discover'));
@@ -266,6 +292,26 @@
 						{/each}
 					</Popover.Content>
 				</Popover.Root>
+			{/if}
+			{#if !isOwner}
+				<!-- The lightest thing a visitor can say about someone else's list, and the only
+				     thing they do here that its owner ever sees. Shown to anonymous visitors as a
+				     count they can read but not add to. -->
+				<button
+					type="button"
+					onclick={toggleLike}
+					disabled={!isLoggedIn || liking}
+					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs disabled:cursor-default"
+					style="border-color: {likedByMe ? 'var(--color-accent)' : 'var(--color-border)'};
+					       color: {likedByMe ? 'var(--color-accent)' : 'var(--color-muted)'}"
+					title={isLoggedIn
+						? (likedByMe ? 'You like this' : 'Like this playlist')
+						: 'Sign in to like this'}
+					aria-pressed={likedByMe}
+				>
+					<Heart size={13} aria-hidden="true" fill={likedByMe ? 'currentColor' : 'none'} />
+					{likeCount}
+				</button>
 			{/if}
 			{#if isLoggedIn}
 				<SaveToFolderDialog

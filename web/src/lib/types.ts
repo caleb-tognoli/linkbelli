@@ -39,6 +39,10 @@ export interface Playlist {
 	scoredCount?: number | null;
 	/** How the caller last looked at this playlist; null when they have no saved view. */
 	view?: PlaylistView | null;
+	/** How many people have liked it. */
+	likeCount?: number;
+	/** Whether the caller is one of them. False when anonymous. */
+	likedByMe?: boolean;
 }
 
 /** How one person looks at one playlist. Saved per account, so it follows them between devices. */
@@ -109,6 +113,9 @@ export interface PublicPlaylistSummary {
 	creationTime: string;
 	tags: string[];
 	nsfw: boolean;
+	likeCount?: number;
+	/** When the newest link was added — what "recently active" is measured on. */
+	lastItemAt?: string | null;
 }
 
 export type SourceType = 'Rss' | 'Scraper' | 'JsonApi';

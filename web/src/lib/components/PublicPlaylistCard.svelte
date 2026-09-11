@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Heart } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import type { PublicPlaylistSummary } from '$lib/types';
 
@@ -29,6 +30,14 @@
 
 	<div class="mt-auto flex justify-between text-xs" style="color: var(--color-muted)">
 		<span>@{playlist.ownerUsername}</span>
-		<span>{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}</span>
+		<span class="flex items-center gap-2">
+			{#if playlist.likeCount}
+				<span class="inline-flex items-center gap-1">
+					<Heart size={11} aria-hidden="true" />
+					{playlist.likeCount}
+				</span>
+			{/if}
+			<span>{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}</span>
+		</span>
 	</div>
 </a>

@@ -271,6 +271,27 @@ twenty minutes, in batches) using the same rules and nothing but the row — no 
 > playlist filling up after a source run says so, rather than its count creeping upward on its
 > own. Public reads omit `pendingCount`: a visitor can't act on it.
 
+## Likes
+
+Nothing anyone did on a public playlist was visible to its owner, or to anyone else browsing.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST`   | `/api/v1/playlists/{id}/like` | Like it |
+| `DELETE` | `/api/v1/playlists/{id}/like` | Take it back |
+
+Both return `{ playlistId, likeCount, likedByMe }`, so a client needn't re-read the playlist.
+
+- **Signing in is required.** A count anyone can run up says nothing, and this is what discovery
+  ranks on. Anonymous visitors see the number and cannot add to it.
+- **Idempotent both ways.** Liking twice is one like; unliking what you never liked is not an
+  error.
+- **Only on playlists you were shown.** Liking a private playlist you can't see returns `404` —
+  which also doesn't confirm it exists.
+- Distinct from saving to a folder, which is private filing. A like is public.
+
+`likeCount` appears on the playlist and on every discovery row; `likedByMe` on the playlist.
+
 ## Sharing one link
 
 Sending a single saved link used to mean making the whole playlist public, or pasting a bare

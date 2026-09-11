@@ -40,6 +40,18 @@ public static class PlaylistEndpoints
             Results.Ok(await svc.GetAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
 
+        // The lightest thing a visitor can say about someone else's list. Signed in, because a
+        // count anyone can run up says nothing — and it is what discovery ranks on.
+        group.MapPost("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+            Results.Ok(await svc.LikeAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("LikePlaylist");
+
+        group.MapDelete("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+            Results.Ok(await svc.UnlikeAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("UnlikePlaylist");
+
         group.MapPatch("/{id:guid}", async (Guid id, UpdatePlaylistRequest req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
             Results.Ok(await svc.UpdateAsync(user.GetUserId(), id, req, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
