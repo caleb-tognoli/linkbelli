@@ -10,7 +10,7 @@ const AUTH_PAGES = ['/login', '/register'];
 const ANON_PREFIXES = ['/discover', '/public', '/api/v1'];
 
 // Served to crawlers, which never carry a session.
-const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml'];
+const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml', '/manifest.webmanifest'];
 
 const startsWithSegment = (path: string, prefix: string) =>
 	path === prefix || path.startsWith(prefix + '/');

@@ -5,7 +5,8 @@
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Switch from '$lib/components/Switch.svelte';
-	import { Download } from '@lucide/svelte';
+	import { Bookmark, Download } from '@lucide/svelte';
+	import { page } from '$app/state';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -40,6 +41,14 @@
 					{ label: 'In the trash', value: data.usage.inTrash, href: '/trash', action: 'review' }
 				]
 			: []
+	);
+
+	// Built against this origin so it works wherever the app is deployed, and kept to one line
+	// because a bookmarklet is a URL, not a script file.
+	const bookmarklet = $derived(
+		"javascript:(function(){window.open(" +
+			`'${page.url.origin}/save?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)` +
+			",'_blank','noopener,width=460,height=560');})();"
 	);
 
 	function pct(used: number, max: number) {
@@ -134,6 +143,29 @@
 			</div>
 		</div>
 	{/if}
+
+	<div>
+		<h2 class="font-medium">Save from anywhere</h2>
+		<p class="mt-1 text-sm" style="color: var(--color-muted)">
+			Drag this to your bookmarks bar. Clicking it on any page opens Linkbelli with the address
+			already filled in — no extension needed.
+		</p>
+		<p class="mt-3">
+			<!-- A javascript: href is exactly what a bookmarklet is; it never runs from this page. -->
+			<a
+				href={bookmarklet}
+				onclick={(e) => e.preventDefault()}
+				class="inline-flex cursor-grab items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium"
+				style="border-color: var(--color-accent); color: var(--color-accent)"
+				title="Drag me to your bookmarks bar"
+			>
+				<Bookmark size={15} aria-hidden="true" /> Save to Linkbelli
+			</a>
+		</p>
+		<p class="mt-2 text-xs" style="color: var(--color-muted)">
+			On a phone, install Linkbelli to your home screen and it shows up in the system share sheet.
+		</p>
+	</div>
 
 	<div>
 		<h2 class="font-medium">Export</h2>

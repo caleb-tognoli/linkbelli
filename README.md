@@ -14,6 +14,10 @@ web/   SvelteKit 2 / Svelte 5 (adapter-node). BFF proxies /api/v1; tokens live i
 extension/  Manifest V3 browser extension — saves the current tab into a playlist (no build step)
 ```
 
+Three ways to save a link without opening the app: the browser extension, a bookmarklet (on the
+profile page — drag it to the bookmarks bar), and the system share sheet once the web app is
+installed to a phone's home screen. All three land on `/save`, which pre-fills the address.
+
 - Auth is dual-scheme: Identity bearer tokens (for the web BFF) and `X-Api-Key` keys.
 - The web app never exposes tokens to browser JS — they're held in httpOnly cookies and
   proxied through `/api/v1`, with an Origin check on unsafe methods as CSRF defense.
