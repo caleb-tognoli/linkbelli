@@ -5,6 +5,7 @@
 	import SourcesPanel from './SourcesPanel.svelte';
 	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
 	import ShareWithDialog from './ShareWithDialog.svelte';
+	import ReportDialog from './ReportDialog.svelte';
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { savePrefs } from '$lib/prefs';
@@ -364,6 +365,11 @@
 			{/if}
 			{#if isOwner}
 				<ShareWithDialog playlistId={playlist.id} />
+			{/if}
+			{#if !isOwner && isLoggedIn && ownerUsername}
+				<!-- Moderation was a host blocklist and nothing else: someone who found a problem
+				     had no way to say so. -->
+				<ReportDialog username={ownerUsername} slug={playlist.slug} />
 			{/if}
 			{#if isLoggedIn}
 				<SaveToFolderDialog

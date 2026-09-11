@@ -33,6 +33,7 @@ public interface IAppDbContext
     DbSet<Follow> Follows { get; }
     DbSet<PlaylistMember> PlaylistMembers { get; }
     DbSet<AuditEntry> AuditEntries { get; }
+    DbSet<ContentReport> ContentReports { get; }
     DbSet<SourceTemplate> SourceTemplates { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }

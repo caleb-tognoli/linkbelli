@@ -65,3 +65,28 @@ public record AuditEntryResponse(
     /// <summary>Raw JSON, shaped per action.</summary>
     string? Details,
     DateTimeOffset At);
+
+/// <summary>Somebody telling whoever runs this instance that something published here is wrong.</summary>
+public record ContentReportResponse(
+    Guid Id,
+    Guid PlaylistId,
+    string PlaylistName,
+    string PlaylistSlug,
+    string OwnerUsername,
+    /// <summary>Where the playlist stands now — a taken-down one reads Private.</summary>
+    PlaylistVisibility Visibility,
+    string ReportedBy,
+    ReportReason Reason,
+    string? Note,
+    ReportStatus Status,
+    string? Resolution,
+    DateTimeOffset ReportedAt,
+    DateTimeOffset? ResolvedAt);
+
+public record CreateReportRequest(ReportReason Reason, string? Note = null);
+
+/// <summary>
+/// Closing a report. <c>TakeDown</c> makes the playlist private, which is the one remedy short of
+/// deleting somebody's work.
+/// </summary>
+public record ResolveReportRequest(bool Dismiss = false, bool TakeDown = false, string? Resolution = null);

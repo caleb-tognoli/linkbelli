@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import { api } from '$lib/api/client';
 	import { AlertCircle, ExternalLink } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
@@ -29,6 +31,21 @@
 
 	function when(iso: string | null): string {
 		return iso ? new Date(iso).toLocaleString() : 'never';
+	}
+
+	const openReports = $derived(data.reports.filter((r) => r.status === 'Open'));
+
+	let busy = $state<string | null>(null);
+
+	async function resolve(id: string, action: { dismiss?: boolean; takeDown?: boolean }) {
+		busy = id;
+		try {
+			if ((await api.post(`/admin/reports/${id}/resolve`, action)).ok) {
+				await invalidateAll();
+			}
+		} finally {
+			busy = null;
+		}
 	}
 </script>
 
@@ -131,6 +148,63 @@
 							· <span style="color: var(--color-danger)">{host.failedCount} unreadable</span>
 						{/if}
 					</span>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+
+	<h2 class="mt-8 font-medium">
+		Reports
+		{#if openReports.length}
+			<span class="ml-1 text-sm" style="color: var(--color-danger)">{openReports.length} open</span>
+		{/if}
+	</h2>
+	{#if data.reports.length === 0}
+		<p class="mt-2 text-sm" style="color: var(--color-muted)">Nothing reported.</p>
+	{:else}
+		<ul class="mt-3 flex flex-col text-sm">
+			{#each data.reports as report (report.id)}
+				<li class="border-t py-3 first:border-t-0" style="border-color: var(--color-border)">
+					<div class="flex flex-wrap items-baseline justify-between gap-2">
+						<a
+							href={`/public/${encodeURIComponent(report.ownerUsername)}/${encodeURIComponent(report.playlistSlug)}`}
+							class="font-medium hover:underline"
+						>{report.playlistName}</a>
+						<span class="text-xs" style="color: var(--color-muted)">
+							{report.reason} · reported by @{report.reportedBy} ·
+							{new Date(report.reportedAt).toLocaleDateString()}
+						</span>
+					</div>
+
+					{#if report.note}
+						<p class="mt-1" style="color: var(--color-muted)">{report.note}</p>
+					{/if}
+
+					{#if report.status === 'Open'}
+						<div class="mt-2 flex flex-wrap items-center gap-2">
+							<button
+								type="button"
+								onclick={() => resolve(report.id, { dismiss: true })}
+								disabled={busy === report.id}
+								class="rounded-md border px-2.5 py-1 text-xs disabled:opacity-60"
+								style="border-color: var(--color-border)"
+							>Nothing wrong</button>
+							<!-- Private, not deleted: the owner keeps their work, and it stops being
+							     published. Deleting a collection over a report is not recoverable. -->
+							<button
+								type="button"
+								onclick={() => resolve(report.id, { takeDown: true })}
+								disabled={busy === report.id}
+								class="rounded-md border px-2.5 py-1 text-xs disabled:opacity-60"
+								style="border-color: var(--color-danger); color: var(--color-danger)"
+							>Take it down</button>
+						</div>
+					{:else}
+						<p class="mt-1 text-xs" style="color: var(--color-muted)">
+							{report.status}{report.resolution ? ` · ${report.resolution}` : ''}
+							{#if report.visibility === 'Private'} · now private{/if}
+						</p>
+					{/if}
 				</li>
 			{/each}
 		</ul>

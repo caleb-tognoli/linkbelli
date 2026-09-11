@@ -140,6 +140,18 @@ public static class AdminEndpoints
             return Results.Ok(new { link.Id, link.CanonicalUrl, link.Nsfw });
         });
 
+        // The moderation queue. Moderation used to be a host blocklist and nothing else.
+        group.MapGet("/reports", async (
+            IContentReportService svc, ReportStatus? status, int? limit, string? cursor, CancellationToken ct) =>
+            Results.Ok(await svc.ListAsync(status, limit, cursor, ct)))
+            .WithName("ListContentReports");
+
+        group.MapPost("/reports/{id:guid}/resolve", async (
+            Guid id, ResolveReportRequest req, ClaimsPrincipal user, IContentReportService svc,
+            CancellationToken ct) =>
+            Results.Ok(await svc.ResolveAsync(user.GetUserId(), id, req.Dismiss, req.TakeDown, req.Resolution, ct)))
+            .WithName("ResolveContentReport");
+
         // The trail itself. Prefix-matched, so "admin." finds every admin action at once.
         group.MapGet("/audit", async (
             IAuditLog audit, string? action, Guid? actorId, Guid? targetId, int? limit, string? cursor,

@@ -157,3 +157,28 @@ hiding them.
 - **Writing an entry never fails the action.** The thing being recorded has already happened;
   undoing it because the note about it failed would be much the worse outcome.
 - **The table carries no soft-delete filter.** A trail the application can delete from is not one.
+
+## Content reports
+
+Moderation was a host blocklist and nothing else: a visitor who found something wrong had no way
+to say so, and whoever runs the instance had no way to hear it.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/api/v1/public/playlists/{username}/{slug}/report` | Report it (`{ "reason": "Spam", "note": "…" }`). Signed in, rate-limited |
+| `GET`  | `/api/v1/admin/reports` | The queue (`?status=Open`), open first |
+| `POST` | `/api/v1/admin/reports/{id}/resolve` | Close it (`{ "dismiss": true }` or `{ "takeDown": true }`) |
+
+Reasons: `Spam`, `Nsfw`, `Malware`, `Illegal`, `Copyright`, `Other` — a short list, because a long
+one gets picked from at random.
+
+- **Signing in is required.** A queue anyone can fill anonymously is a queue nobody reads.
+- **Reporting the same playlist twice gives back the same open report**, rather than a second row
+  saying the same thing.
+- **You cannot report your own playlist** — you can change it directly.
+- **A private playlist cannot be reported.** Nobody was shown it.
+- **A takedown makes the playlist private; it never deletes it.** It stops being published and its
+  owner keeps their work, because deleting somebody's collection over a report is not recoverable.
+  Takedowns are written to the [audit log](#audit-log).
+- **The queue lists open reports first.** Sorted purely by date, what still needs doing gets
+  buried under what has already been handled.

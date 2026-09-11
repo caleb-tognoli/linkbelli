@@ -644,3 +644,24 @@ export interface AuditEntry {
 	details: string | null;
 	at: string;
 }
+
+export type ReportReason = 'Other' | 'Spam' | 'Nsfw' | 'Malware' | 'Illegal' | 'Copyright';
+export type ReportStatus = 'Open' | 'Resolved' | 'Dismissed';
+
+/** Somebody telling whoever runs this instance that something published here is wrong. */
+export interface ContentReport {
+	id: string;
+	playlistId: string;
+	playlistName: string;
+	playlistSlug: string;
+	ownerUsername: string;
+	/** Where the playlist stands now — a taken-down one reads Private. */
+	visibility: Visibility;
+	reportedBy: string;
+	reason: ReportReason;
+	note: string | null;
+	status: ReportStatus;
+	resolution: string | null;
+	reportedAt: string;
+	resolvedAt: string | null;
+}

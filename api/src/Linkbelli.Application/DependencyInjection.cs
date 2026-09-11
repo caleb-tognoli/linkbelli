@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IPlaylistAccess, PlaylistAccess>();
         services.AddScoped<IAdminOverviewService, AdminOverviewService>();
         services.AddScoped<IAuditLog, AuditLog>();
+        services.AddScoped<IContentReportService, ContentReportService>();
         services.AddScoped<IPlaylistMemberService, PlaylistMemberService>();
         services.AddScoped<IArchiver, WaybackArchiver>();
         services.AddScoped<ILinkArchiveSweep, LinkArchiveSweep>();

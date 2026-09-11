@@ -193,6 +193,7 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
     public DbSet<Follow> Follows => Set<Follow>();
     public DbSet<PlaylistMember> PlaylistMembers => Set<PlaylistMember>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();

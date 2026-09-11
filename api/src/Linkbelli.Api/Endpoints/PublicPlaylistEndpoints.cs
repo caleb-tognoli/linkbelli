@@ -2,6 +2,8 @@ using System.Security.Claims;
 using Linkbelli.Api.Auth;
 using Linkbelli.Application.Feeds;
 using Linkbelli.Application.Services;
+using Linkbelli.Contracts;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Linkbelli.Api.Endpoints;
 
@@ -90,6 +92,16 @@ public static class PublicPlaylistEndpoints
             int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.ListUserPublicPlaylistsAsync(username, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
+
+        // Telling whoever runs this instance that something published here is wrong. Signed in,
+        // because a queue anyone can fill anonymously is a queue nobody reads.
+        group.MapPost("/playlists/{username}/{slug}/report", async (
+            string username, string slug, CreateReportRequest req, ClaimsPrincipal user,
+            IContentReportService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ReportAsync(user.GetUserId(), username, slug, req.Reason, req.Note, ct)))
+            .RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = AuthSchemes.BearerOrApiKey })
+            .RequireRateLimiting("sensitive")
+            .WithName("ReportPlaylist");
 
         // Public tag cloud: tags used across public playlists, with counts.
         group.MapGet("/tags", async (IPlaylistService svc, string? q, CancellationToken ct) =>
