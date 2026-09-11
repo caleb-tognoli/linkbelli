@@ -43,6 +43,9 @@ public class ApiKeyAuthenticationHandler(
             new("auth_method", "apikey"),
         };
         claims.AddRange(principal.Scopes.Select(s => new Claim("scope", s)));
+        // Only ever non-empty for a key granted an admin scope; the role is what the admin
+        // endpoints actually check, and a scope cannot grant one.
+        claims.AddRange(principal.Roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
         var identity = new ClaimsIdentity(claims, ApiKeyAuthenticationDefaults.Scheme);
         return AuthenticateResult.Success(

@@ -1,5 +1,6 @@
 using Linkbelli.Application.Identity;
 using Linkbelli.Core.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -14,6 +15,10 @@ namespace Linkbelli.Application.Data;
 public interface IAppDbContext
 {
     DbSet<ApplicationUser> Users { get; }
+
+    /// <summary>Identity's role tables, for the one question the app asks of them: is this an admin.</summary>
+    DbSet<IdentityUserRole<Guid>> UserRoles { get; }
+    DbSet<IdentityRole<Guid>> Roles { get; }
     DbSet<ApiKey> ApiKeys { get; }
     DbSet<Playlist> Playlists { get; }
     DbSet<Host> Hosts { get; }

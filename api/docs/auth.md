@@ -229,3 +229,19 @@ always did.
 - **A request that never completed gives its key back.** If the endpoint threw, nothing happened,
   so a retry — including a corrected one under the same key — is free to run.
 - Keys are remembered for **24 hours**, then forgotten by an hourly job.
+
+## Admin scopes
+
+Scopes existed, but there was no admin scope and the admin endpoints refused API keys outright —
+so instance maintenance could only be run by a person with a session open in a browser.
+
+Two new scopes: `admin:read` (the overview, the audit trail, the moderation queue) and
+`admin:write` (blocking a host, setting a quota, taking something down).
+
+- **A scope is not a promotion.** It opens the door; the Admin **role** is still checked, and
+  minting a key cannot grant one. A key with `admin:write` held by an ordinary user gets `403`.
+- **An unrestricted key is unrestricted over its owner's own data, never over the instance.** A
+  key with no scopes reaches everything of its owner's and nothing of the instance's — otherwise
+  every general-purpose key an admin ever minted would quietly be an instance-wide credential.
+  Admin access by key is opt-in, per key, by name.
+- Interactive bearer principals were never scope-limited and still are not.

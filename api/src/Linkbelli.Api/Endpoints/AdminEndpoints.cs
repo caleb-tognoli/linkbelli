@@ -17,10 +17,13 @@ public static class AdminEndpoints
 {
     public static void MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
+        // Both schemes now: a key granted an admin scope can reach these, which is what makes
+        // running maintenance from a script possible without a person's session token. The Admin
+        // role is still required, and a scope cannot grant one.
         var group = app.MapGroup("/admin")
             .RequireAuthorization(new AuthorizeAttribute
             {
-                AuthenticationSchemes = IdentityConstants.BearerScheme,
+                AuthenticationSchemes = AuthSchemes.BearerOrApiKey,
                 Roles = AppRoles.Admin,
             })
             .WithTags("Admin");
@@ -29,14 +32,17 @@ public static class AdminEndpoints
         // none of it had a view: failing sources, unreadable links, the enrichment backlog.
         group.MapGet("/overview", async (IAdminOverviewService svc, CancellationToken ct) =>
             Results.Ok(await svc.GetAsync(ct)))
-            .WithName("GetAdminOverview");
+            .WithName("GetAdminOverview")
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminRead));
 
         // User lookup (search by username/email) → resolves the id for quota management.
         group.MapGet("/users", async (IAdminService admin, string? q, int? limit, CancellationToken ct) =>
-            Results.Ok(await admin.SearchUsersAsync(q, limit, ct)));
+            Results.Ok(await admin.SearchUsersAsync(q, limit, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminRead));
 
         group.MapGet("/users/{userId:guid}/quota", async (Guid userId, IUserQuotaService quotas, CancellationToken ct) =>
-            Results.Ok(await quotas.GetStatusAsync(userId, ct)));
+            Results.Ok(await quotas.GetStatusAsync(userId, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminRead));
 
         group.MapPut("/users/{userId:guid}/quota", async (
             Guid userId, SetQuotaRequest req, ClaimsPrincipal user, IUserQuotaService quotas,
@@ -52,11 +58,13 @@ public static class AdminEndpoints
                 $"Set quota for user {userId}.", new { before, after }, asAdmin: true, ct);
 
             return Results.Ok(after);
-        });
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminWrite));
 
         // Host moderation blocklist.
         group.MapGet("/hosts", async (IAdminService admin, string? q, bool? blocked, int? limit, CancellationToken ct) =>
-            Results.Ok(await admin.ListHostsAsync(q, blocked, limit, ct)));
+            Results.Ok(await admin.ListHostsAsync(q, blocked, limit, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminRead));
 
         group.MapPut("/hosts", async (
             SetHostBlockedRequest req, ClaimsPrincipal user, IAdminService admin, IAuditLog audit,
@@ -73,7 +81,8 @@ public static class AdminEndpoints
                 asAdmin: true, ct);
 
             return Results.Ok(host);
-        });
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminWrite));
 
         // Bulk re-enqueue links for enrichment. Handy after fixing an enricher bug or clearing a
         // 429 wave: pass onlyFailed=true (default) to target only links whose last fetch failed;
@@ -116,7 +125,8 @@ public static class AdminEndpoints
                 asAdmin: true, ct);
 
             return Results.Ok(new { queued = ids.Count });
-        });
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminWrite));
 
         // Clear a link's adult flag globally. Detection reads a self-declared meta tag, so it
         // gets false positives; an owner can override their own playlist, but only an admin can
@@ -138,25 +148,29 @@ public static class AdminEndpoints
                 $"Cleared the adult flag on {link.CanonicalUrl}.", null, asAdmin: true, ct);
 
             return Results.Ok(new { link.Id, link.CanonicalUrl, link.Nsfw });
-        });
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminWrite));
 
         // The moderation queue. Moderation used to be a host blocklist and nothing else.
         group.MapGet("/reports", async (
             IContentReportService svc, ReportStatus? status, int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.ListAsync(status, limit, cursor, ct)))
-            .WithName("ListContentReports");
+            .WithName("ListContentReports")
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminRead));
 
         group.MapPost("/reports/{id:guid}/resolve", async (
             Guid id, ResolveReportRequest req, ClaimsPrincipal user, IContentReportService svc,
             CancellationToken ct) =>
             Results.Ok(await svc.ResolveAsync(user.GetUserId(), id, req.Dismiss, req.TakeDown, req.Resolution, ct)))
-            .WithName("ResolveContentReport");
+            .WithName("ResolveContentReport")
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminWrite));
 
         // The trail itself. Prefix-matched, so "admin." finds every admin action at once.
         group.MapGet("/audit", async (
             IAuditLog audit, string? action, Guid? actorId, Guid? targetId, int? limit, string? cursor,
             CancellationToken ct) =>
             Results.Ok(await audit.ListAsync(action, actorId, targetId, limit, cursor, ct)))
-            .WithName("ListAuditLog");
+            .WithName("ListAuditLog")
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminRead));
     }
 }

@@ -8,6 +8,7 @@ using Linkbelli.Application.Observability;
 using Linkbelli.Application.Http;
 using Linkbelli.Application.Identity;
 using Linkbelli.Core.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -197,6 +198,8 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
+    public DbSet<IdentityUserRole<Guid>> UserRoles => Set<IdentityUserRole<Guid>>();
+    public DbSet<IdentityRole<Guid>> Roles => Set<IdentityRole<Guid>>();
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
@@ -215,6 +218,12 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
         // enricher never touches these tables, so unmap them to keep the test context compiling.
         modelBuilder.Entity<PlaylistItem>().Ignore(p => p.Metadata);
         modelBuilder.Entity<Source>().Ignore(s => s.Runs);
+
+        // Identity's own tables come configured by IdentityDbContext, which this plain context is
+        // not. Only their keys matter here — nothing in these tests reads a role.
+        modelBuilder.Entity<IdentityUserRole<Guid>>().HasKey(r => new { r.UserId, r.RoleId });
+        modelBuilder.Entity<IdentityRole<Guid>>().HasKey(r => r.Id);
+
         base.OnModelCreating(modelBuilder);
     }
 }

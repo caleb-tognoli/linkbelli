@@ -24,7 +24,14 @@ public sealed class ScopeAuthorizationHandler : AuthorizationHandler<ScopeRequir
         }
 
         var scopes = user.FindAll("scope").Select(c => c.Value).ToList();
-        if (scopes.Count == 0 || scopes.Contains(requirement.Scope))
+
+        // "Unrestricted" means unrestricted over its owner's own data, never over the instance.
+        // An admin scope has to be asked for by name, so a general-purpose key is not silently an
+        // instance-wide credential.
+        var unrestricted = scopes.Count == 0
+            && !requirement.Scope.StartsWith("admin:", StringComparison.Ordinal);
+
+        if (unrestricted || scopes.Contains(requirement.Scope))
         {
             context.Succeed(requirement);
         }
