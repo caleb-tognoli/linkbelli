@@ -15,6 +15,8 @@ export const GET: RequestHandler = async ({ locals, url, setHeaders }) => {
 		urlEntry(`${url.origin}/discover`, undefined, 'daily')
 	];
 
+	const profiles = new Set<string>();
+
 	let cursor: string | null = null;
 	for (let page = 0; page < MAX_PAGES; page++) {
 		const qs = new URLSearchParams({ limit: String(PAGE_SIZE) });
@@ -32,10 +34,16 @@ export const GET: RequestHandler = async ({ locals, url, setHeaders }) => {
 					'weekly'
 				)
 			);
+			// One profile entry per owner, however many playlists they have published.
+			profiles.add(playlist.ownerUsername);
 		}
 
 		cursor = body.nextCursor;
 		if (!cursor) break;
+	}
+
+	for (const username of profiles) {
+		entries.push(urlEntry(`${url.origin}/public/${encodeURIComponent(username)}`, undefined, 'weekly'));
 	}
 
 	setHeaders({ 'cache-control': 'public, max-age=3600' });

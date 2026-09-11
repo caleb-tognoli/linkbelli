@@ -254,3 +254,11 @@ export interface HostFacet {
 	hostname: string;
 	itemCount: number;
 }
+
+/** A user as seen from the outside: what they published, and nothing personal. */
+export interface PublicProfile {
+	username: string;
+	joinedAt: string;
+	publicPlaylistCount: number;
+	publicItemCount: number;
+}

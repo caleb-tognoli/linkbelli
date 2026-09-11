@@ -14,6 +14,16 @@ public interface IPlaylistService
     /// <summary>Anonymous read of a non-private playlist by owner username + slug. NSFW playlists 404 unless the viewer opted in.</summary>
     Task<PlaylistResponse> GetPublicAsync(string username, string slug, Guid? viewerId, CancellationToken ct = default);
 
+    /// <summary>
+    /// A user as seen from the outside. Throws NotFoundException for an unknown username — a
+    /// profile that doesn't exist and one you can't see look the same.
+    /// </summary>
+    Task<PublicProfile> GetPublicProfileAsync(string username, Guid? viewerId, CancellationToken ct = default);
+
+    /// <summary>One user's public playlists, newest first.</summary>
+    Task<PagedResult<PublicPlaylistSummary>> ListUserPublicPlaylistsAsync(
+        string username, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default);
+
     /// <summary>Discovery of public playlists, filtered by name/tag and the viewer's NSFW preference.</summary>
     Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default);
 

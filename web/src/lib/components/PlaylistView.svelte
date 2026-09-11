@@ -203,7 +203,9 @@
 				<h1 class="text-2xl font-semibold">{playlistName}</h1>
 			{/if}
 			{#if ownerUsername}
-				<p class="mt-0.5 text-sm" style="color: var(--color-muted)">by @{ownerUsername}</p>
+				<p class="mt-0.5 text-sm" style="color: var(--color-muted)">
+					by <a href={`/public/${encodeURIComponent(ownerUsername)}`} class="hover:underline">@{ownerUsername}</a>
+				</p>
 			{/if}
 			{#if playlist.description}
 				<p class="mt-1" style="color: var(--color-muted)">{playlist.description}</p>

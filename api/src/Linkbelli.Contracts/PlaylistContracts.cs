@@ -17,6 +17,16 @@ public record PublicPlaylistSummary(
     string OwnerUsername, string Slug, string Name, string? Description,
     int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw);
 
+/// <summary>
+/// A user as seen from the outside: who they are and what they have published. Deliberately
+/// thin — email and anything else private never appears here.
+/// </summary>
+public record PublicProfile(
+    string Username,
+    DateTimeOffset JoinedAt,
+    int PublicPlaylistCount,
+    int PublicItemCount);
+
 /// <summary>A tag and how many playlists carry it (within the queried scope).</summary>
 public record TagSummary(string Name, int PlaylistCount);
 

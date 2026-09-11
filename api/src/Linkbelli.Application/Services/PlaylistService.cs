@@ -220,6 +220,71 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         return playlist;
     }
 
+    public async Task<PublicProfile> GetPublicProfileAsync(
+        string username, Guid? viewerId, CancellationToken ct = default)
+    {
+        var normalized = username.ToUpperInvariant();
+
+        var user = await db.Users
+            .Where(u => u.NormalizedUserName == normalized)
+            .Select(u => new { u.Id, u.UserName, u.CreatedAt })
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("Profile not found.");
+
+        var published = db.Playlists.Where(p => p.OwnerId == user.Id && p.Visibility == PlaylistVisibility.Public);
+        if (!await prefs.ShowNsfwAsync(viewerId, ct))
+        {
+            published = published.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+        }
+
+        var counts = await published
+            .Select(p => p.Items.Count(i => i.Link!.EnrichedAt != null))
+            .ToListAsync(ct);
+
+        return new PublicProfile(user.UserName!, user.CreatedAt, counts.Count, counts.Sum());
+    }
+
+    public async Task<PagedResult<PublicPlaylistSummary>> ListUserPublicPlaylistsAsync(
+        string username, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default)
+    {
+        var normalized = username.ToUpperInvariant();
+        var ownerId = await db.Users
+            .Where(u => u.NormalizedUserName == normalized)
+            .Select(u => (Guid?)u.Id)
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("Profile not found.");
+
+        var take = Math.Clamp(limit ?? 50, 1, 100);
+        var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
+
+        // Public only: Unlisted is share-by-link, so it never appears in a listing, not even the
+        // owner's own profile page.
+        var query = db.Playlists.Where(p => p.OwnerId == ownerId && p.Visibility == PlaylistVisibility.Public);
+        if (!await prefs.ShowNsfwAsync(viewerId, ct))
+        {
+            query = query.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+        }
+
+        var rows = await (from p in query
+                          join u in db.Users on p.OwnerId equals u.Id
+                          orderby p.CreationTime descending, p.Id descending
+                          select new PublicPlaylistSummary(
+                              u.UserName!, p.Slug, p.Name, p.Description,
+                              p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
+            .Skip(offset).Take(take + 1)
+            .ToListAsync(ct);
+
+        string? next = null;
+        if (rows.Count > take)
+        {
+            rows.RemoveAt(take);
+            next = Cursor.Encode((offset + take).ToString());
+        }
+
+        return new PagedResult<PublicPlaylistSummary>(rows, next);
+    }
+
     public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
         string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default)
     {

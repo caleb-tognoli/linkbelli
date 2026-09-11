@@ -63,6 +63,18 @@ public static class PublicPlaylistEndpoints
             .AllowAnonymous()
             .ExcludeFromDescription();
 
+        // A public playlist names its owner; without these there was nowhere to click through to.
+        group.MapGet("/users/{username}", async (
+            ClaimsPrincipal user, string username, IPlaylistService svc, CancellationToken ct) =>
+            Results.Ok(await svc.GetPublicProfileAsync(username, ViewerId(user), ct)))
+            .AllowAnonymous();
+
+        group.MapGet("/users/{username}/playlists", async (
+            ClaimsPrincipal user, string username, IPlaylistService svc,
+            int? limit, string? cursor, CancellationToken ct) =>
+            Results.Ok(await svc.ListUserPublicPlaylistsAsync(username, limit, cursor, ViewerId(user), ct)))
+            .AllowAnonymous();
+
         // Public tag cloud: tags used across public playlists, with counts.
         group.MapGet("/tags", async (IPlaylistService svc, string? q, CancellationToken ct) =>
             Results.Ok(await svc.ListPublicTagsAsync(q, ct)))

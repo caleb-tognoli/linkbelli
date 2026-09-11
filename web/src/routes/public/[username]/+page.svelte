@@ -1,0 +1,65 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import PublicPlaylistCard from '$lib/components/PublicPlaylistCard.svelte';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+
+	const canonical = $derived(
+		`${page.url.origin}/public/${encodeURIComponent(data.profile.username)}`
+	);
+
+	const counts = $derived(
+		`${data.profile.publicPlaylistCount} ${data.profile.publicPlaylistCount === 1 ? 'playlist' : 'playlists'}` +
+			` · ${data.profile.publicItemCount} ${data.profile.publicItemCount === 1 ? 'link' : 'links'}`
+	);
+
+	const joined = $derived(
+		new Date(data.profile.joinedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+	);
+
+	const description = $derived(`${data.profile.username} has published ${counts} on Linkbelli.`);
+</script>
+
+<svelte:head>
+	<title>{data.profile.username} - linkbelli</title>
+	<meta name="description" content={description} />
+	<link rel="canonical" href={canonical} />
+
+	<meta property="og:type" content="profile" />
+	<meta property="og:site_name" content="Linkbelli" />
+	<meta property="og:title" content={data.profile.username} />
+	<meta property="og:description" content={description} />
+	<meta property="og:url" content={canonical} />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content={data.profile.username} />
+	<meta name="twitter:description" content={description} />
+</svelte:head>
+
+<section class="mx-auto max-w-5xl">
+	<a href="/discover" class="inline-flex items-center gap-1.5 text-sm" style="color: var(--color-muted)">
+		← Discover
+	</a>
+
+	<header class="mt-3">
+		<h1 class="text-2xl font-semibold">@{data.profile.username}</h1>
+		<p class="mt-1 text-sm" style="color: var(--color-muted)">
+			{counts} · here since {joined}
+		</p>
+	</header>
+
+	{#if data.playlists.items.length === 0}
+		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+			<p class="font-medium">Nothing published yet.</p>
+			<p class="mt-1 text-sm" style="color: var(--color-muted)">
+				When {data.profile.username} makes a playlist public, it shows up here.
+			</p>
+		</div>
+	{:else}
+		<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			{#each data.playlists.items as playlist (playlist.slug)}
+				<PublicPlaylistCard {playlist} />
+			{/each}
+		</div>
+	{/if}
+</section>

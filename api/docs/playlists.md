@@ -228,6 +228,21 @@ way; it simply isn't surfaced in any listing, so it acts as a share-by-link.
 Discovery returns only **Public** playlists (Unlisted is share-by-link, never listed). Each
 result carries `ownerUsername` + `slug` so you can deep-link to the read endpoint.
 
+### Profiles
+
+Every result names its owner, so there is somewhere to click through to.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/public/users/{username}`           | A user as seen from the outside |
+| `GET` | `/api/v1/public/users/{username}/playlists` | Their public playlists (paginated) |
+
+- Counts and listings cover **Public** playlists only — `Unlisted` never appears, not even on
+  the owner's own profile, and `Private` is invisible.
+- A profile carries username, join date and counts. Email and everything else private is never
+  included.
+- Usernames match case-insensitively; an unknown one returns **404**.
+
 ```bash
 curl "http://localhost:5180/api/v1/public/playlists?q=cooking&tag=recipes"
 curl http://localhost:5180/api/v1/public/playlists/alice/my-reading-list

@@ -30,7 +30,12 @@ public static class AuthEndpoints
             if (string.IsNullOrWhiteSpace(req.Password)) errors["password"] = ["Password is required."];
             if (errors.Count > 0) return Results.ValidationProblem(errors);
 
-            var user = new ApplicationUser { UserName = req.Username.Trim(), Email = req.Email.Trim() };
+            var user = new ApplicationUser
+            {
+                UserName = req.Username.Trim(),
+                Email = req.Email.Trim(),
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
             var result = await users.CreateAsync(user, req.Password);
             if (!result.Succeeded)
             {
