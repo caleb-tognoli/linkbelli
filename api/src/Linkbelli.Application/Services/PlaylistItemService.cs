@@ -112,46 +112,69 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     {
         var moved = await FindOwnedItemAsync(itemId, ownerId, ct);
 
-        var all = await db.PlaylistItems.Where(i => i.PlaylistId == moved.PlaylistId)
-            .OrderBy(i => i.Position).ToListAsync(ct);
-        var others = all.Where(i => i.Id != itemId).ToList();
+        // Only the two neighbours matter. Materializing the whole playlist to find them meant a
+        // 10k-item list was loaded into memory for every single drag.
+        long? before;
+        long? after;
 
-        int insertIndex;
         if (request.AfterItemId is null)
         {
-            insertIndex = 0;
+            // To the front: the only neighbour is whatever currently sits first.
+            before = null;
+            after = await db.PlaylistItems
+                .Where(i => i.PlaylistId == moved.PlaylistId && i.Id != itemId)
+                .MinAsync(i => (long?)i.Position, ct);
         }
         else
         {
-            var idx = others.FindIndex(i => i.Id == request.AfterItemId.Value);
-            if (idx < 0)
-            {
-                throw new ValidationException("afterItemId", "Target item is not in this playlist.");
-            }
+            before = await db.PlaylistItems
+                .Where(i => i.Id == request.AfterItemId.Value
+                    && i.PlaylistId == moved.PlaylistId
+                    && i.Id != itemId)
+                .Select(i => (long?)i.Position)
+                .FirstOrDefaultAsync(ct)
+                ?? throw new ValidationException("afterItemId", "Target item is not in this playlist.");
 
-            insertIndex = idx + 1;
+            after = await db.PlaylistItems
+                .Where(i => i.PlaylistId == moved.PlaylistId && i.Id != itemId && i.Position > before)
+                .OrderBy(i => i.Position)
+                .Select(i => (long?)i.Position)
+                .FirstOrDefaultAsync(ct);
         }
 
-        long? before = insertIndex - 1 >= 0 ? others[insertIndex - 1].Position : null;
-        long? after = insertIndex < others.Count ? others[insertIndex].Position : null;
         var newPosition = PlaylistOrdering.Between(before, after);
-
-        if (newPosition is null)
-        {
-            // No room — renumber the whole playlist with the item in its target slot.
-            others.Insert(insertIndex, moved);
-            for (var k = 0; k < others.Count; k++)
-            {
-                others[k].Position = (k + 1) * PlaylistOrdering.Gap;
-            }
-        }
-        else
+        if (newPosition is not null)
         {
             moved.Position = newPosition.Value;
+            await db.SaveChangesAsync(ct);
+            return await ProjectAsync(itemId, ct);
+        }
+
+        // The neighbours are adjacent integers, so there is nowhere to land between them. This
+        // is the one case that genuinely needs the whole list, and gapped positions make it rare.
+        await RenumberAsync(moved, request.AfterItemId, ct);
+        return await ProjectAsync(itemId, ct);
+    }
+
+    /// <summary>Respaces every item in the playlist, with the moved one in its target slot.</summary>
+    private async Task RenumberAsync(PlaylistItem moved, Guid? afterItemId, CancellationToken ct)
+    {
+        var others = await db.PlaylistItems
+            .Where(i => i.PlaylistId == moved.PlaylistId && i.Id != moved.Id)
+            .OrderBy(i => i.Position)
+            .ToListAsync(ct);
+
+        var insertIndex = afterItemId is null
+            ? 0
+            : others.FindIndex(i => i.Id == afterItemId.Value) + 1;
+
+        others.Insert(insertIndex, moved);
+        for (var k = 0; k < others.Count; k++)
+        {
+            others[k].Position = (k + 1) * PlaylistOrdering.Gap;
         }
 
         await db.SaveChangesAsync(ct);
-        return await ProjectAsync(itemId, ct);
     }
 
     public async Task<PagedResult<PlaylistItemResponse>> ListPublicAsync(
