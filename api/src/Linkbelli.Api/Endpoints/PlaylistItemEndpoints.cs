@@ -50,6 +50,23 @@ public static class PlaylistItemEndpoints
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
 
+        // One link, with the note that came with it. Sharing used to mean making a whole playlist
+        // public, or sending a bare address and losing the reason for sending it.
+        item.MapPost("/{id:guid}/share", async (
+            Guid id, ClaimsPrincipal user, IItemShareService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ShareAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("ShareItem");
+
+        item.MapDelete("/{id:guid}/share", async (
+            Guid id, ClaimsPrincipal user, IItemShareService svc, CancellationToken ct) =>
+        {
+            await svc.RevokeAsync(user.GetUserId(), id, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("RevokeItemShare");
+
         item.MapPost("/{id:guid}/move", async (Guid id, MoveItemRequest req, ClaimsPrincipal user,
             IPlaylistItemService svc, CancellationToken ct) =>
             Results.Ok(await svc.MoveAsync(user.GetUserId(), id, req, ct)))

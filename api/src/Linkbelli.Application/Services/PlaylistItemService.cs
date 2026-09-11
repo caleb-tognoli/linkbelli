@@ -31,7 +31,8 @@ public class PlaylistItemService(
             i.SourceId,
             i.Score,
             i.StatusChangedAt,
-            i.Tags.Select(t => t.Tag!.Name).ToArray());
+            i.Tags.Select(t => t.Tag!.Name).ToArray(),
+            i.ShareToken);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)

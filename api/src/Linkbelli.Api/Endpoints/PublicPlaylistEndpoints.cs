@@ -22,6 +22,13 @@ public static class PublicPlaylistEndpoints
             Results.Ok(await svc.DiscoverPublicAsync(q, tag, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
 
+        // What a share link opens. The token is the whole secret, so this is deliberately not
+        // enumerable and says nothing about the playlist the item came from.
+        group.MapGet("/items/{token}", async (string token, IItemShareService svc, CancellationToken ct) =>
+            Results.Ok(await svc.GetAsync(token, ct)))
+            .AllowAnonymous()
+            .WithName("GetSharedItem");
+
         group.MapGet("/playlists/{username}/{slug}", async (ClaimsPrincipal user, string username, string slug, IPlaylistService svc, CancellationToken ct) =>
             Results.Ok(await svc.GetPublicAsync(username, slug, ViewerId(user), ct)))
             .AllowAnonymous();

@@ -36,6 +36,21 @@ public class PlaylistItem : BaseEntity<Guid>
     /// </summary>
     public DateTimeOffset? AutomationAppliedAt { get; set; }
 
+    /// <summary>
+    /// The opaque token this item is shared under, or null when it isn't shared. Sharing one
+    /// link otherwise meant making a whole playlist public, or sending a bare URL and losing the
+    /// note that was the reason for sending it.
+    /// </summary>
+    /// <remarks>
+    /// A token rather than the item id: the id appears in the owner's own URLs, and a share link
+    /// gets forwarded — it must not double as a key to anything else, or hint at what else is in
+    /// the playlist it came from.
+    /// </remarks>
+    public string? ShareToken { get; set; }
+
+    /// <summary>When it was first shared. Revoking clears the token, not this.</summary>
+    public DateTimeOffset? SharedAt { get; set; }
+
     /// <summary>Tags on the link itself, as opposed to on the playlist holding it.</summary>
     public List<PlaylistItemTag> Tags { get; set; } = [];
 

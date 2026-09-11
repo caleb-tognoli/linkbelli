@@ -180,6 +180,8 @@ export interface PlaylistItem {
 	score: number | null;
 	/** Tags on the link itself, as opposed to on the playlist holding it. */
 	tags?: string[];
+	/** The token this item is shared under, or null when it isn't shared. */
+	shareToken?: string | null;
 }
 
 export interface LinkPreview {
@@ -485,4 +487,22 @@ export interface AutomationRule {
 export interface AutomationPreview {
 	matches: number;
 	sample: { itemId: string; playlistName: string; url: string; title: string | null }[];
+}
+
+/** One link someone sent you, as an anonymous visitor sees it. */
+export interface SharedItem {
+	url: string;
+	host: string;
+	title: string | null;
+	description: string | null;
+	/** The link id, for the thumbnail proxy. Null when the page had no image. */
+	thumbnailLinkId: string | null;
+	siteName: string | null;
+	/** The sender's own note — usually the reason they sent it. */
+	note: string | null;
+	sharedBy: string;
+	sharedAt: string;
+	nsfw: boolean;
+	kind: ContentKind;
+	wordCount: number | null;
 }

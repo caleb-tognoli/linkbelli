@@ -4,7 +4,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import KindBadge from './KindBadge.svelte';
@@ -211,6 +211,34 @@
 	let draftNote = $state('');
 	let draftTags = $state('');
 	let actionFlyoutId = $state<string | null>(null);
+	/** What the last "copy share link" did, so the row can say so rather than silently succeeding. */
+	let shareToast = $state<string | null>(null);
+
+	async function copyShareLink(item: PlaylistItem) {
+		actionFlyoutId = null;
+
+		// Already shared: the existing link is handed back rather than rotated, so anything
+		// already sent keeps working.
+		const res = await api.post(`/items/${item.id}/share`);
+		if (!res.ok) {
+			shareToast = 'Could not create a share link.';
+			return;
+		}
+
+		const { token } = (await res.json()) as { token: string };
+		const url = `${location.origin}/i/${token}`;
+		item.shareToken = token;
+
+		try {
+			await navigator.clipboard.writeText(url);
+			shareToast = 'Share link copied.';
+		} catch {
+			// Clipboard access is denied often enough (insecure origins, permissions) that the
+			// link itself has to be recoverable from the message.
+			shareToast = url;
+		}
+	}
+
 	let shareItem = $state<PlaylistItem | null>(null);
 	let shareOpen = $state(false);
 
@@ -505,6 +533,20 @@
 							>
 								<Share2 size={16} aria-hidden="true" />
 							</button>
+							{#if !readonly}
+								<!-- A link someone else can open, carrying the note with it. Sharing one
+								     link otherwise meant making the whole playlist public. -->
+								<button
+									type="button"
+									onclick={() => copyShareLink(item)}
+									class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+									style={item.shareToken ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
+									title={item.shareToken ? 'Copy the share link' : 'Create a link to send'}
+									aria-label={item.shareToken ? 'Copy the share link' : 'Create a link to send'}
+								>
+									<Link2 size={16} aria-hidden="true" />
+								</button>
+							{/if}
 							{#if !showScoreCol}
 								<button
 									type="button"
@@ -792,6 +834,22 @@
 			</span>
 		{/if}
 	</div>
+{/if}
+
+{#if shareToast}
+	<p
+		class="mb-2 rounded-md border px-3 py-2 text-sm"
+		style="border-color: var(--color-border); background: var(--color-surface)"
+		role="status"
+	>
+		{shareToast}
+		<button
+			type="button"
+			onclick={() => (shareToast = null)}
+			class="ml-2 underline underline-offset-2"
+			style="color: var(--color-muted)"
+		>Dismiss</button>
+	</p>
 {/if}
 
 {#if items.length === 0}

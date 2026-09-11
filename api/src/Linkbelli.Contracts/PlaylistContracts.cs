@@ -92,7 +92,9 @@ public record PlaylistItemResponse(
     /// <summary>When the status last changed; null if it never has.</summary>
     DateTimeOffset? StatusChangedAt = null,
     /// <summary>Tags on the link itself, as opposed to on the playlist holding it.</summary>
-    string[]? Tags = null);
+    string[]? Tags = null,
+    /// <summary>The token this item is shared under, or null when it isn't shared.</summary>
+    string? ShareToken = null);
 
 // --- Links ---
 public record CreateLinkRequest(string Url);
@@ -139,3 +141,26 @@ public record LinkContentResponse(
     int WordCount,
     /// <summary>Whether the paragraphs are only the start of the article.</summary>
     bool Truncated);
+
+/// <summary>The link an item is shared under. The token is the whole secret.</summary>
+public record ItemShareResponse(Guid ItemId, string Token, DateTimeOffset? SharedAt);
+
+/// <summary>
+/// One shared link, as an anonymous visitor sees it: the page, and the note that was usually the
+/// reason for sending it. Nothing about the playlist it came from, which the sender didn't share.
+/// </summary>
+public record SharedItemResponse(
+    string Url,
+    string Host,
+    string? Title,
+    string? Description,
+    /// <summary>The link id, for the thumbnail proxy — null when there is no image.</summary>
+    Guid? ThumbnailLinkId,
+    string? SiteName,
+    /// <summary>The sender's own note.</summary>
+    string? Note,
+    string SharedBy,
+    DateTimeOffset SharedAt,
+    bool Nsfw,
+    ContentKind Kind,
+    int? WordCount);

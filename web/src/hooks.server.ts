@@ -7,7 +7,9 @@ const AUTH_PAGES = ['/login', '/register'];
 
 // Anonymous-viewable areas. The /api/v1 proxy is included so anonymous browsers can read public
 // endpoints; the API still enforces per-endpoint auth (protected calls get 401).
-const ANON_PREFIXES = ['/discover', '/public', '/embed', '/oembed', '/api/v1'];
+// "/i" is a shared link: it is opened by whoever it was sent to, who by definition has no
+// account here. Bouncing them to a sign-in page would defeat the point of sharing.
+const ANON_PREFIXES = ['/discover', '/public', '/embed', '/oembed', '/i', '/api/v1'];
 
 // Served to crawlers, which never carry a session.
 const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml', '/manifest.webmanifest'];

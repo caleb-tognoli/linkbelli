@@ -87,6 +87,13 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         {
             e.HasIndex(i => new { i.PlaylistId, i.LinkId }).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(i => new { i.PlaylistId, i.Position });
+            e.Property(i => i.ShareToken).HasMaxLength(64);
+            // The lookup a share link makes, and the uniqueness a token needs. Partial: almost
+            // nothing is shared, and an index over every item would be mostly nulls.
+            e.HasIndex(i => i.ShareToken)
+                .IsUnique()
+                .HasDatabaseName("IX_PlaylistItems_ShareToken")
+                .HasFilter("\"ShareToken\" IS NOT NULL");
             // Feeds the automation sweep, which looks for items the rules haven't seen. Partial,
             // so it holds only the backlog rather than every item ever saved.
             e.HasIndex(i => i.CreationTime)

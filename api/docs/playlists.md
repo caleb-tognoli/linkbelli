@@ -271,6 +271,29 @@ twenty minutes, in batches) using the same rules and nothing but the row — no 
 > playlist filling up after a source run says so, rather than its count creeping upward on its
 > own. Public reads omit `pendingCount`: a visitor can't act on it.
 
+## Sharing one link
+
+Sending a single saved link used to mean making the whole playlist public, or pasting a bare
+address — which loses the note that was usually the reason for sending it.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST`   | `/api/v1/items/{id}/share` | Start sharing it; returns the token |
+| `DELETE` | `/api/v1/items/{id}/share` | Stop. Links already sent stop working, which is the point |
+| `GET`    | `/api/v1/public/items/{token}` | What the link opens. **Anonymous** |
+
+The web app puts the token behind `/i/{token}`, an anonymous page with OpenGraph tags, so a
+pasted share unfurls as a card carrying the sender's note.
+
+- **The token is the whole secret** — 128 bits of randomness, not the item id. A share link gets
+  forwarded, so it must not double as a key to anything else or hint at what else is in the
+  playlist it came from.
+- **Sharing twice returns the same link.** Rotating it would break one already sent.
+- **A revoked token answers exactly like one that never existed.** A dead share link should not
+  confirm that it once pointed at something.
+- The shared view carries the page, the note and who sent it — and nothing about the playlist,
+  which is not what was shared.
+
 ## Rules
 
 Everything a source finds lands where the source was pointed and stays there, so filing, tagging
