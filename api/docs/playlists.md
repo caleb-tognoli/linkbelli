@@ -165,6 +165,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `status`   | `watched` or `unwatched` |
 | `minScore` | Only items you scored at least this highly |
 | `finishedSince` | Only items you marked watched at or after this instant — "what did I get through this week" |
+| `broken` | `true` to list only links whose page is gone or can no longer be read — the link rot in your collection |
 | `limit`, `cursor` | Paging; `limit` maxes out at 100 |
 
 - Results are ordered by relevance when `q` is given — a title hit, then a site-name hit, then

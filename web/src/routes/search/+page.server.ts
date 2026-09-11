@@ -8,6 +8,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const host = url.searchParams.get('host') ?? '';
 	const status = url.searchParams.get('status') ?? '';
 	const finished = url.searchParams.get('finished') ?? '';
+	const broken = url.searchParams.get('broken') ?? '';
 
 	const params = new URLSearchParams();
 	if (q) params.set('q', q);
@@ -21,6 +22,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			params.set('finishedSince', new Date(Date.now() - days * 86_400_000).toISOString());
 		}
 	}
+	if (broken) params.set('broken', 'true');
 	params.set('limit', '25');
 
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
@@ -34,6 +36,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		host,
 		status,
 		finished,
+		broken,
 		results: resultsRes.ok ? ((await resultsRes.json()) as Paged<SearchHit>) : EMPTY,
 		hosts: hostsRes.ok ? ((await hostsRes.json()) as HostFacet[]) : []
 	};

@@ -21,10 +21,10 @@ public static class SearchEndpoints
         group.MapGet("/", async (
             ClaimsPrincipal user, ISearchService svc,
             string? q, string? host, string[]? tag, string? status, int? minScore,
-            DateTimeOffset? finishedSince, int? limit, string? cursor, CancellationToken ct) =>
+            DateTimeOffset? finishedSince, bool? broken, int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.SearchAsync(
                 user.GetUserId(),
-                new SearchQuery(q, host, tag, status, minScore, finishedSince, limit, cursor),
+                new SearchQuery(q, host, tag, status, minScore, finishedSince, broken, limit, cursor),
                 ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
             .WithName("Search");

@@ -182,4 +182,42 @@ public class EnrichmentStatusTests(PostgresApiFactory factory)
 
         Assert.DoesNotContain(linkId, candidates);
     }
+
+    private record HitDto(Guid ItemId, string PlaylistName);
+    private record SearchPageDto(List<HitDto> Items, string? NextCursor, int? Total);
+
+    [Fact]
+    public async Task Search_can_surface_the_link_rot_in_a_collection()
+    {
+        var client = await NewUserAsync();
+        var healthy = await NewPlaylistAsync(client, "Still good");
+        var rotten = await NewPlaylistAsync(client, "Gone");
+
+        await factory.SeedEnrichedItemsAsync(healthy, 2);
+        await factory.SeedEnrichedItemsAsync(rotten, 1);
+
+        await StampLinkAsync(healthy, EnrichmentStatus.Succeeded, null);
+        await StampLinkAsync(rotten, EnrichmentStatus.Broken, "The page could not be found (404).");
+
+        var res = await client.GetAsync("/api/v1/search?broken=true");
+        res.EnsureSuccessStatusCode();
+        var page = (await res.Content.ReadFromJsonAsync<SearchPageDto>())!;
+
+        var hit = Assert.Single(page.Items);
+        Assert.Equal("Gone", hit.PlaylistName);
+    }
+
+    [Fact]
+    public async Task A_collection_with_no_rot_reports_none()
+    {
+        var client = await NewUserAsync();
+        var playlist = await NewPlaylistAsync(client, "All fine");
+        await factory.SeedEnrichedItemsAsync(playlist, 2);
+        await StampLinkAsync(playlist, EnrichmentStatus.Succeeded, null);
+
+        var res = await client.GetAsync("/api/v1/search?broken=true");
+        res.EnsureSuccessStatusCode();
+
+        Assert.Equal(0, (await res.Content.ReadFromJsonAsync<SearchPageDto>())!.Total);
+    }
 }

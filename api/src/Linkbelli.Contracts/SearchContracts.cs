@@ -31,5 +31,7 @@ public record SearchQuery(
     int? MinScore,
     /// <summary>Only items finished since this moment — "what did I get through this week".</summary>
     DateTimeOffset? FinishedSince,
+    /// <summary>Only links whose page is gone or unreadable — the link rot in your collection.</summary>
+    bool? Broken,
     int? Limit,
     string? Cursor);

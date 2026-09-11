@@ -61,6 +61,14 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             items = items.Where(i => i.Score != null && i.Score >= minScore);
         }
 
+        if (query.Broken == true)
+        {
+            // Both outcomes count as rot from the reader's side: the page is gone, or it can no
+            // longer be read. Either way the saved link no longer gives them what they saved.
+            items = items.Where(i => i.Link!.EnrichmentStatus == EnrichmentStatus.Broken
+                || i.Link.EnrichmentStatus == EnrichmentStatus.Failed);
+        }
+
         if (query.FinishedSince is { } since)
         {
             items = items.Where(i => i.Status == PlaylistItemStatus.Watched
