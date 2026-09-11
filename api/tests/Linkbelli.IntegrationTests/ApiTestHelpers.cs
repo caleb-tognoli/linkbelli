@@ -100,15 +100,22 @@ public static class ItemSeeder
             UrlCanonicalizer.TryCanonicalize(canonical, out var c);
             var host = await HostForAsync(c.Host);
 
-            var link = new Link
+            // Links are globally deduplicated, so seeding a URL that already exists has to reuse
+            // it — otherwise the seeder can't express the same link saved to two playlists, which
+            // is a perfectly real state of the system.
+            var link = await db.Links.FirstOrDefaultAsync(l => l.UrlHash == c.Hash);
+            if (link is null)
             {
-                CanonicalUrl = c.Url,
-                UrlHash = c.Hash,
-                HostId = host.Id,
-                Title = title?.Invoke(n) ?? $"Seeded item {n}",
-                EnrichedAt = DateTimeOffset.UtcNow,
-            };
-            db.Links.Add(link);
+                link = new Link
+                {
+                    CanonicalUrl = c.Url,
+                    UrlHash = c.Hash,
+                    HostId = host.Id,
+                    Title = title?.Invoke(n) ?? $"Seeded item {n}",
+                    EnrichedAt = DateTimeOffset.UtcNow,
+                };
+                db.Links.Add(link);
+            }
 
             nextPosition += PlaylistItem.PositionGap;
             var item = new PlaylistItem

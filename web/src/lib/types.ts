@@ -304,3 +304,21 @@ export interface PublicProfile {
 	publicPlaylistCount: number;
 	publicItemCount: number;
 }
+
+export type DuplicateKind = 'SameLink' | 'SamePage';
+
+export interface DuplicateCopy {
+	itemId: string;
+	playlistId: string;
+	playlistName: string;
+	url: string;
+	title: string | null;
+	addedAt: string;
+}
+
+/** A set of saved links that are the same thing — always two or more. */
+export interface DuplicateGroup {
+	kind: DuplicateKind;
+	key: string;
+	copies: DuplicateCopy[];
+}

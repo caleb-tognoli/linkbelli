@@ -276,6 +276,22 @@ Import has existed since the CSV importer; this is the way out.
 curl -OJ "http://localhost:5180/api/v1/export?format=csv" -H "Authorization: Bearer <token>"
 ```
 
+## Duplicates
+
+`GET /api/v1/duplicates` finds the same thing saved more than once across playlists you own.
+
+Dedup already stops the identical link landing twice in one playlist, and canonicalization
+strips the tracking parameters it knows about. Neither helps with:
+
+| `kind` | What it catches |
+|--------|-----------------|
+| `SameLink` | The identical link, saved into several playlists |
+| `SamePage` | One page reached by different addresses — same host and path, different query |
+
+Each group carries every copy with the playlist it lives in, so a client can offer "keep this
+one" and delete the rest with `POST /items/bulk`. A trailing slash is not treated as a different
+page, and a link saved by two different **people** is nobody's duplicate.
+
 ## Trash (undo a delete)
 
 Deleting a playlist or an item is a **soft delete**: the row is kept and can be restored for
