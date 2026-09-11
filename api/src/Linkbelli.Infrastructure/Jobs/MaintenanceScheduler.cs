@@ -1,4 +1,5 @@
 using Hangfire;
+using Linkbelli.Application.Archiving;
 using Linkbelli.Application.Automation;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Services;
@@ -22,6 +23,7 @@ public sealed class MaintenanceScheduler(
     public const string RecheckJobId = "links:recheck";
     public const string ClassifyJobId = "links:classify";
     public const string AutomationJobId = "automation:apply";
+    public const string ArchiveJobId = "links:archive";
 
     /// <summary>Nightly, off the hour so it doesn't pile onto every hourly source schedule.</summary>
     public const string Cron = "17 3 * * *";
@@ -44,6 +46,12 @@ public sealed class MaintenanceScheduler(
     /// </summary>
     public const string AutomationCron = "* * * * *";
 
+    /// <summary>
+    /// Every five minutes, ten links at a time. Each one is an outbound request to a service
+    /// doing us a favour, so this is deliberately unhurried rather than a burst.
+    /// </summary>
+    public const string ArchiveCron = "*/5 * * * *";
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         try
@@ -62,6 +70,9 @@ public sealed class MaintenanceScheduler(
 
             recurringJobs.AddOrUpdate<IAutomationRunner>(
                 AutomationJobId, svc => svc.SweepAsync(CancellationToken.None), AutomationCron);
+
+            recurringJobs.AddOrUpdate<ILinkArchiveSweep>(
+                ArchiveJobId, svc => svc.SweepAsync(CancellationToken.None), ArchiveCron);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

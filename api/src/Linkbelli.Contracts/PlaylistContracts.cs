@@ -112,7 +112,12 @@ public record LinkResponse(
     /// </summary>
     int? WordCount = null,
     /// <summary>What this link is — a video, an article, a repository.</summary>
-    ContentKind Kind = ContentKind.Unknown);
+    ContentKind Kind = ContentKind.Unknown,
+    /// <summary>
+    /// A public snapshot of the page, when one is being kept. What someone can still be sent to
+    /// once the original is gone.
+    /// </summary>
+    string? ArchiveUrl = null);
 
 /// <summary>Metadata fetched for a URL without saving anything (paste → preview → confirm).</summary>
 public record LinkPreviewResponse(

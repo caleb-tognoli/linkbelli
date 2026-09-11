@@ -21,10 +21,21 @@
 	];
 
 	let showNsfw = $state(data.user?.showNsfw ?? false);
+	let archiveLinks = $state(data.user?.archiveLinks ?? false);
+
+	// Both go in one request, so sending only the one that changed would reset the other.
+	async function savePreferences() {
+		await api.put('/me/preferences', { showNsfw, archiveLinks });
+	}
 
 	async function setNsfw(value: boolean) {
 		showNsfw = value;
-		await api.put('/me/preferences', { showNsfw: value });
+		await savePreferences();
+	}
+
+	async function setArchive(value: boolean) {
+		archiveLinks = value;
+		await savePreferences();
 	}
 
 	// Counts worth a number, and where a number that isn't zero is worth acting on.
@@ -72,6 +83,21 @@
 			<Switch checked={showNsfw} onchange={setNsfw} />
 			Show NSFW
 		</label>
+	</div>
+
+	<div>
+		<h2 class="font-medium">Archiving</h2>
+		<label class="mt-3 flex items-center gap-2 text-sm">
+			<Switch checked={archiveLinks} onchange={setArchive} />
+			Keep a public snapshot of pages I save
+		</label>
+		<!-- Off by default, and the reason is worth saying out loud rather than burying: this
+		     sends addresses to someone else. -->
+		<p class="mt-2 max-w-prose text-sm" style="color: var(--color-muted)">
+			Asks the Internet Archive for a copy, so a link still leads somewhere once the original
+			is gone. It means sending the addresses you save to a third party, and the snapshots are
+			public — which is why this is off unless you turn it on.
+		</p>
 	</div>
 
 	<div>

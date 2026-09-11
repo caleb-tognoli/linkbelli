@@ -4,7 +4,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import KindBadge from './KindBadge.svelte';
@@ -407,6 +407,19 @@
 								style="color: {item.link.enrichmentStatus === 'Broken' ? 'var(--color-danger)' : 'var(--color-muted)'}"
 							/>
 							{item.link.enrichmentError ?? 'We could not read this page.'}
+							{#if item.link.archiveUrl}
+								<!-- The one moment archiving was for: the page is gone and there is
+								     still somewhere to send someone. -->
+								<a
+									href={item.link.archiveUrl}
+									target="_blank"
+									rel="noreferrer"
+									class="inline-flex items-center gap-1 underline underline-offset-2"
+								>
+									<Archive size={12} aria-hidden="true" />
+									Archived copy
+								</a>
+							{/if}
 							{#if !readonly}
 								<button
 									type="button"

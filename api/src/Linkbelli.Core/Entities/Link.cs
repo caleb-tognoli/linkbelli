@@ -53,6 +53,26 @@ public class Link : BaseEntity<Guid>
     /// addresses without it, and "what can I watch now" has no way to be asked.
     /// </summary>
     public ContentKind Kind { get; set; } = ContentKind.Unknown;
+
+    /// <summary>
+    /// A public snapshot of this page, at the Internet Archive. The point of it is the day the
+    /// original 404s: the stored article text is what the app kept, and this is what anyone can
+    /// still be sent to.
+    /// </summary>
+    public string? ArchiveUrl { get; set; }
+
+    /// <summary>When the snapshot above was found or made.</summary>
+    public DateTimeOffset? ArchivedAt { get; set; }
+
+    /// <summary>
+    /// Failed archive attempts. The Internet Archive refuses plenty of pages — paywalls,
+    /// robots.txt, sites that block it — and retrying those forever would spend the whole
+    /// archiving budget on pages that will never be taken.
+    /// </summary>
+    public int ArchiveAttempts { get; set; }
+
+    /// <summary>Attempts after which a link is left alone.</summary>
+    public const int MaxArchiveAttempts = 3;
     /// <summary>
     /// When we last finished trying to enrich this link, successfully or not. Reads gate on this
     /// being set, so an item appears once we have stopped waiting on it either way.

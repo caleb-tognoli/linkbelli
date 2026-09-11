@@ -9,7 +9,7 @@ public static class Mappers
     public static LinkResponse ToResponse(this Link link) => new(
         link.Id, link.CanonicalUrl, link.Host?.Hostname ?? string.Empty, link.Title, link.Description,
         link.ThumbnailUrl, link.SiteName, link.EnrichedAt != null, link.Nsfw, link.Host?.Favicon,
-        link.EnrichmentStatus, link.EnrichmentError, link.WordCount, link.Kind);
+        link.EnrichmentStatus, link.EnrichmentError, link.WordCount, link.Kind, link.ArchiveUrl);
 
     public static PlaylistResponse ToResponse(
         this Playlist playlist, int itemCount, IEnumerable<string> tags, bool nsfw,

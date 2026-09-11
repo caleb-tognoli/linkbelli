@@ -224,6 +224,30 @@ curl http://localhost:5180/api/v1/links/<id>/content -H "Authorization: Bearer <
   it. Hits that matched **only** there carry a `snippet` — without it the row looks like a mistake,
   since nothing on it contains the word that was typed.
 
+### Archiving
+
+A saved link outlives the page behind it. With archiving on, linkbelli asks the Internet Archive
+to keep a public copy, and a broken link then still has somewhere to send you.
+
+**Off by default, per account.** Turning it on tells a third party every address you save, and
+the snapshots are public — that is a decision about your own privacy, not a sensible default.
+Toggle it with `PUT /api/v1/me/preferences` (`archiveLinks`); omitting the field leaves it as it
+is, so an older client can't switch it off by accident.
+
+- A link is archived when **someone who saved it** has asked for archiving. Links are global rows
+  shared by everyone who saved the same address, so one person opting in never archives another
+  person's reading — but a link they both saved was going to be archived anyway.
+- **Existing snapshots are used where there is one.** The availability API is asked first: most
+  pages worth saving have already been archived by someone, and asking is far cheaper than
+  submitting.
+- **Refusals are permanent, rate limits are not.** A paywall or a robots.txt block counts against
+  the link's three attempts; a 429 or a 5xx does not, because that is their afternoon rather than
+  this page.
+- `archiveUrl` on a link is the snapshot. The web app shows it on links whose page is gone, which
+  is the moment it exists for.
+- The sweep (`links:archive`) takes ten links every five minutes — deliberately unhurried, since
+  every one is a request to a service doing us a favour.
+
 ### What a link is
 
 Every link carries a `kind`: `Article`, `Video`, `Repository`, `Paper`, `Document`, `Audio`,

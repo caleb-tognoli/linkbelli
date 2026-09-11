@@ -6,4 +6,9 @@ public interface IUserPreferenceService
     Task<bool> ShowNsfwAsync(Guid? userId, CancellationToken ct = default);
 
     Task SetShowNsfwAsync(Guid userId, bool showNsfw, CancellationToken ct = default);
+
+    /// <summary>Whether the user asked for public snapshots of the pages they save.</summary>
+    Task<bool> ArchiveLinksAsync(Guid? userId, CancellationToken ct = default);
+
+    Task SetArchiveLinksAsync(Guid userId, bool archiveLinks, CancellationToken ct = default);
 }

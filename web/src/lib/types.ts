@@ -10,6 +10,8 @@ export interface User {
 	authMethod: string;
 	scopes: string[];
 	showNsfw: boolean;
+	/** Whether to ask the Internet Archive for a public snapshot of pages this user saves. */
+	archiveLinks?: boolean;
 }
 
 export type NsfwSetting = 'Auto' | 'Yes' | 'No';
@@ -134,6 +136,8 @@ export interface LinkSummary {
 	wordCount?: number | null;
 	/** What this link is. Unknown until the classifier has seen it. */
 	kind?: ContentKind;
+	/** A public snapshot of the page, when one is being kept. Null when there isn't one. */
+	archiveUrl?: string | null;
 }
 
 export type ContentKind =

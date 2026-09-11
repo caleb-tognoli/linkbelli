@@ -18,4 +18,17 @@ public class UserPreferenceService(IAppDbContext db) : IUserPreferenceService
         user.ShowNsfw = showNsfw;
         await db.SaveChangesAsync(ct);
     }
+
+    public Task<bool> ArchiveLinksAsync(Guid? userId, CancellationToken ct = default) =>
+        userId is null
+            ? Task.FromResult(false)
+            : db.Users.Where(u => u.Id == userId.Value).Select(u => u.ArchiveLinks).FirstOrDefaultAsync(ct);
+
+    public async Task SetArchiveLinksAsync(Guid userId, bool archiveLinks, CancellationToken ct = default)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct)
+            ?? throw new NotFoundException("User not found.");
+        user.ArchiveLinks = archiveLinks;
+        await db.SaveChangesAsync(ct);
+    }
 }

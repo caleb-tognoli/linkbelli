@@ -51,7 +51,8 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         new LinkResponse(
             i.Link!.Id, i.Link.CanonicalUrl, i.Link.Host!.Hostname, i.Link.Title,
             i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw,
-            i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError, i.Link.WordCount, i.Link.Kind),
+            i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError, i.Link.WordCount, i.Link.Kind,
+                i.Link.ArchiveUrl),
         i.Note,
         i.Status,
         i.Score,

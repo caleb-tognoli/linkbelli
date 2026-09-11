@@ -9,6 +9,15 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool ShowNsfw { get; set; }
 
     /// <summary>
+    /// Whether to ask the Internet Archive to keep a copy of the pages this user saves.
+    /// </summary>
+    /// <remarks>
+    /// Off by default, and deliberately so: turning it on tells a third party every address the
+    /// user saves. That is a choice about their own privacy, not a default worth making for them.
+    /// </remarks>
+    public bool ArchiveLinks { get; set; }
+
+    /// <summary>
     /// When the account was created. Identity doesn't track this, and a public profile needs it;
     /// stamped at registration.
     /// </summary>
