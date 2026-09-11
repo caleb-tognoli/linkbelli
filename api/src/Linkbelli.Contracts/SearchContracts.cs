@@ -1,3 +1,4 @@
+using Linkbelli.Core.Content;
 using Linkbelli.Core.Entities;
 
 namespace Linkbelli.Contracts;
@@ -42,6 +43,13 @@ public record SearchQuery(
     DateTimeOffset? FinishedSince,
     /// <summary>Only links whose page is gone or unreadable — the link rot in your collection.</summary>
     bool? Broken,
+    /// <summary>Restrict to one kind: article, video, repository, paper, document, audio, image, social.</summary>
+    string? Kind,
+    /// <summary>
+    /// Only articles that can be read in this many minutes or fewer — which is how people
+    /// actually pick what to open next.
+    /// </summary>
+    int? MaxMinutes,
     /// <summary>"score" for best-rated first; otherwise relevance, or newest when there is no term.</summary>
     string? Sort,
     int? Limit,
@@ -59,7 +67,11 @@ public record SavedSearchResponse(
     int? MinScore,
     bool Broken,
     string? Sort,
-    DateTimeOffset CreationTime);
+    DateTimeOffset CreationTime,
+    /// <summary>Restrict to one kind of thing.</summary>
+    string? Kind = null,
+    /// <summary>Only what can be read in this many minutes.</summary>
+    int? MaxMinutes = null);
 
 public record SaveSearchRequest(
     string Name,
@@ -70,4 +82,6 @@ public record SaveSearchRequest(
     string? Status = null,
     int? MinScore = null,
     bool Broken = false,
-    string? Sort = null);
+    string? Sort = null,
+    string? Kind = null,
+    int? MaxMinutes = null);

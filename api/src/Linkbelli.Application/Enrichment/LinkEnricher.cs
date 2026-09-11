@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Http;
+using Linkbelli.Core.Content;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Url;
 using Microsoft.EntityFrameworkCore;
@@ -93,6 +94,13 @@ public class LinkEnricher(
             link.Content = article.Text;
             link.WordCount = article.Text is null ? null : article.WordCount;
             link.ContentTruncated = article.Truncated;
+
+            link.Kind = ContentClassifier.Classify(
+                link.CanonicalUrl,
+                link.Host.Hostname,
+                metadata.Raw.GetValueOrDefault("og:type"),
+                mediaType,
+                article.Text is null ? null : article.WordCount);
             if (metadata.Nsfw)
             {
                 link.Nsfw = true; // automatic; never cleared
@@ -162,6 +170,10 @@ public class LinkEnricher(
         link.Metadata = JsonSerializer.Serialize(raw);
 
         ApplyHostBranding(link.Host!, providerName, FaviconResolver.Resolve(link.CanonicalUrl, null));
+
+        // oEmbed returns no page to read, so the host is all there is to go on — which for this
+        // path is enough, since only video hosts come down it.
+        link.Kind = ContentClassifier.Classify(link.CanonicalUrl, link.Host!.Hostname);
 
         StampSuccess(link);
         await db.SaveChangesAsync(ct);

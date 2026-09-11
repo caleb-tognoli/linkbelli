@@ -1,3 +1,4 @@
+using Linkbelli.Core.Content;
 using Linkbelli.Core.Entities;
 
 namespace Linkbelli.Contracts;
@@ -109,7 +110,9 @@ public record LinkResponse(
     /// Words in the article kept at enrichment, or null where the page had no article in it —
     /// which is also what says whether there is anything to read back.
     /// </summary>
-    int? WordCount = null);
+    int? WordCount = null,
+    /// <summary>What this link is — a video, an article, a repository.</summary>
+    ContentKind Kind = ContentKind.Unknown);
 
 /// <summary>Metadata fetched for a URL without saving anything (paste → preview → confirm).</summary>
 public record LinkPreviewResponse(

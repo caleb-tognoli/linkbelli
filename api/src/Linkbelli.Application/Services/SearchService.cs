@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
+using Linkbelli.Core.Content;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Tags;
 using Linkbelli.Core.Url;
@@ -50,7 +51,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         new LinkResponse(
             i.Link!.Id, i.Link.CanonicalUrl, i.Link.Host!.Hostname, i.Link.Title,
             i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw,
-            i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError, i.Link.WordCount),
+            i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError, i.Link.WordCount, i.Link.Kind),
         i.Note,
         i.Status,
         i.Score,
@@ -83,6 +84,17 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             // longer be read. Either way the saved link no longer gives them what they saved.
             items = items.Where(i => i.Link!.EnrichmentStatus == EnrichmentStatus.Broken
                 || i.Link.EnrichmentStatus == EnrichmentStatus.Failed);
+        }
+
+        items = ApplyKind(items, query.Kind);
+
+        if (query.MaxMinutes is { } minutes)
+        {
+            // Articles only, and only ones long enough to have been read at all: "under five
+            // minutes" is a question about reading, and a link with no article behind it has no
+            // length to compare. Rounded the same way the reading time on the row is.
+            var words = minutes * WordsPerMinute + WordsPerMinute / 2;
+            items = items.Where(i => i.Link!.WordCount != null && i.Link.WordCount <= words);
         }
 
         if (query.FinishedSince is { } since)
@@ -175,6 +187,8 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             MinScore = request.MinScore,
             Broken = request.Broken,
             Sort = request.Sort?.Trim(),
+            Kind = request.Kind?.Trim(),
+            MaxMinutes = request.MaxMinutes,
         };
 
         db.SavedSearches.Add(saved);
@@ -182,7 +196,8 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
 
         return new SavedSearchResponse(
             saved.Id, saved.Name, saved.Query, saved.Host, saved.Tags, saved.ItemTags,
-            saved.Status, saved.MinScore, saved.Broken, saved.Sort, saved.CreationTime);
+            saved.Status, saved.MinScore, saved.Broken, saved.Sort, saved.CreationTime,
+            saved.Kind, saved.MaxMinutes);
     }
 
     public async Task DeleteSavedAsync(Guid ownerId, Guid id, CancellationToken ct = default)
@@ -205,13 +220,37 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         // rather than the answer.
         return await SearchAsync(ownerId, new SearchQuery(
             saved.Query, saved.Host, saved.Tags, saved.ItemTags, saved.Status, saved.MinScore,
-            FinishedSince: null, saved.Broken ? true : null, saved.Sort, limit, cursor), ct);
+            FinishedSince: null, saved.Broken ? true : null, saved.Kind, saved.MaxMinutes,
+            saved.Sort, limit, cursor), ct);
     }
 
     /// <summary>
     /// The same predicate the in-playlist search uses, so both are served by the trigram indexes
     /// added in AddSearchIndexes. A pasted URL short-circuits to the indexed dedup hash.
     /// </summary>
+    /// <summary>
+    /// The reading speed the web app shows times at. Kept in step with it deliberately: a filter
+    /// for "under five minutes" that disagrees with the "6 min" on the row is worse than no
+    /// filter at all.
+    /// </summary>
+    private const int WordsPerMinute = 220;
+
+    /// <summary>
+    /// Narrows to one kind of thing. An unrecognised name matches nothing rather than everything,
+    /// so a typo returns an empty list instead of quietly ignoring the filter.
+    /// </summary>
+    private static IQueryable<PlaylistItem> ApplyKind(IQueryable<PlaylistItem> items, string? kind)
+    {
+        if (string.IsNullOrWhiteSpace(kind))
+        {
+            return items;
+        }
+
+        return Enum.TryParse<ContentKind>(kind.Trim(), ignoreCase: true, out var parsed)
+            ? items.Where(i => i.Link!.Kind == parsed)
+            : items.Where(_ => false);
+    }
+
     /// <summary>Characters of article text shown around a match.</summary>
     private const int SnippetLength = 240;
 

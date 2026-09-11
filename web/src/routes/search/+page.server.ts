@@ -10,6 +10,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const finished = url.searchParams.get('finished') ?? '';
 	const broken = url.searchParams.get('broken') ?? '';
 	const sort = url.searchParams.get('sort') ?? '';
+	const kind = url.searchParams.get('kind') ?? '';
+	const maxMinutes = url.searchParams.get('maxMinutes') ?? '';
 	const itemTags = url.searchParams.getAll('itemTag');
 
 	const params = new URLSearchParams();
@@ -25,6 +27,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		}
 	}
 	if (broken) params.set('broken', 'true');
+	if (kind) params.set('kind', kind);
+	if (maxMinutes) params.set('maxMinutes', maxMinutes);
 	if (sort) params.set('sort', sort);
 	for (const tag of itemTags) params.append('itemTag', tag);
 	params.set('limit', '25');
@@ -43,6 +47,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		finished,
 		broken,
 		sort,
+		kind,
+		maxMinutes,
 		itemTags,
 		results: resultsRes.ok ? ((await resultsRes.json()) as Paged<SearchHit>) : EMPTY,
 		hosts: hostsRes.ok ? ((await hostsRes.json()) as HostFacet[]) : [],

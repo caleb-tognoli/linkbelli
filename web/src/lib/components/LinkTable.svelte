@@ -7,6 +7,7 @@
 	import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
+	import KindBadge from './KindBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
 	import { isPlainKey, moveFocus } from '$lib/keyboard';
 	import {
@@ -365,6 +366,7 @@
 						{showUrls ? item.link.url : (item.metadata?.title ?? item.link.title ?? item.link.url)}
 					</a>
 					{#if item.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
+					<KindBadge kind={item.link.kind} />
 					{#if item.link.wordCount}
 						<!-- The text was kept at enrichment, so this still works once the page
 						     behind the link has gone. -->

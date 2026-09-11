@@ -224,6 +224,21 @@ curl http://localhost:5180/api/v1/links/<id>/content -H "Authorization: Bearer <
   it. Hits that matched **only** there carry a `snippet` — without it the row looks like a mistake,
   since nothing on it contains the word that was typed.
 
+### What a link is
+
+Every link carries a `kind`: `Article`, `Video`, `Repository`, `Paper`, `Document`, `Audio`,
+`Image`, `Social`, or `Unknown`. A collection is one undifferentiated list of addresses without
+it, and "what can I watch now" has no way to be asked.
+
+It is worked out from what is already known — what was served, the path, the host, the page's own
+`og:type`, and how much prose was found — in that order. The host is checked **before** the prose,
+because a video page with a long description is still a video. Nothing conclusive leaves it
+`Unknown`, which is a real answer: a landing page is not an article, and calling it one would put
+it in front of someone looking for something to read.
+
+Links saved before any of this existed are classified in the background (`links:classify`, every
+twenty minutes, in batches) using the same rules and nothing but the row — no page is re-fetched.
+
 
 
 > **Only enriched items are listed.** Manual adds enrich **immediately** (so they appear at once);
@@ -281,6 +296,8 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `minScore` | Only items you scored at least this highly |
 | `finishedSince` | Only items you marked watched at or after this instant — "what did I get through this week" |
 | `broken` | `true` to list only links whose page is gone or can no longer be read — the link rot in your collection |
+| `kind` | One of `article`, `video`, `repository`, `paper`, `document`, `audio`, `image`, `social`. An unrecognised name matches **nothing** rather than everything, so a typo returns an empty list instead of quietly ignoring the filter |
+| `maxMinutes` | Only what can be read in this many minutes — how people actually pick what to open. Links with no article behind them have no length to compare and are excluded |
 | `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero. `queue` for "what now": rated things first, then whatever has been carried longest — a queue that leads with the newest arrival is how a backlog becomes permanent |
 | `limit`, `cursor` | Paging; `limit` maxes out at 100 |
 

@@ -35,4 +35,10 @@ public class SavedSearch : BaseEntity<Guid>
 
     /// <summary>"score" for best-rated first; otherwise relevance, or newest.</summary>
     public string? Sort { get; set; }
+
+    /// <summary>Restrict to one kind of thing — "article", "video", "paper"…</summary>
+    public string? Kind { get; set; }
+
+    /// <summary>Only what can be read in this many minutes. "Something short" is a saved question.</summary>
+    public int? MaxMinutes { get; set; }
 }

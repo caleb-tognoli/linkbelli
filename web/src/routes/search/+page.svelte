@@ -5,6 +5,7 @@
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
 	import { AlertCircle, BookOpen, Bookmark, Search, Eye, Star, X } from '@lucide/svelte';
+	import KindBadge from '$lib/components/KindBadge.svelte';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
 	import type { Paged, SavedSearch, SearchHit } from '$lib/types';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
@@ -43,6 +44,8 @@
 			finished: data.finished,
 			broken: data.broken,
 			sort: data.sort,
+			kind: data.kind,
+			maxMinutes: data.maxMinutes,
 			...changes
 		};
 		for (const [key, value] of Object.entries(next)) {
@@ -51,7 +54,18 @@
 		goto(`/search?${params}`, { keepFocus: true, noScroll: true });
 	}
 
-	const hasFilters = $derived(!!(data.q || data.host || data.status || data.broken || data.sort));
+	const hasFilters = $derived(
+		!!(data.q || data.host || data.status || data.broken || data.sort || data.kind || data.maxMinutes)
+	);
+
+	/** The kinds worth offering as a filter. Image and Social exist but are rarely what is sought. */
+	const kinds = [
+		{ value: 'article', label: 'Articles' },
+		{ value: 'video', label: 'Videos' },
+		{ value: 'repository', label: 'Repos' },
+		{ value: 'paper', label: 'Papers' },
+		{ value: 'document', label: 'Documents' }
+	];
 
 	/** Saves the question, not the answer — so it keeps up with the collection. */
 	async function saveSearch() {
@@ -65,7 +79,9 @@
 			itemTags: data.itemTags,
 			status: data.status || null,
 			broken: !!data.broken,
-			sort: data.sort || null
+			sort: data.sort || null,
+			kind: data.kind || null,
+			maxMinutes: data.maxMinutes ? Number(data.maxMinutes) : null
 		});
 		if (res.ok) await invalidateAll();
 	}
@@ -77,6 +93,8 @@
 		if (saved.status) params.set('status', saved.status);
 		if (saved.broken) params.set('broken', '1');
 		if (saved.sort) params.set('sort', saved.sort);
+		if (saved.kind) params.set('kind', saved.kind);
+		if (saved.maxMinutes) params.set('maxMinutes', String(saved.maxMinutes));
 		for (const tag of saved.itemTags) params.append('itemTag', tag);
 		goto(`/search?${params}`, { noScroll: true });
 	}
@@ -181,6 +199,33 @@
 			       color: {data.sort === 'score' ? 'var(--color-accent)' : 'inherit'}"
 			title="Your highest-scored links, across every playlist"
 		>Best rated</button>
+
+		<select
+			value={data.kind}
+			onchange={(e) => navigate({ kind: e.currentTarget.value })}
+			aria-label="Kind"
+			class="rounded-md border px-2.5 py-1.5"
+			style="border-color: {data.kind ? 'var(--color-accent)' : 'var(--color-border)'};
+			       color: {data.kind ? 'var(--color-accent)' : 'inherit'};
+			       background: var(--color-bg)"
+		>
+			<option value="">Anything</option>
+			{#each kinds as option (option.value)}
+				<option value={option.value}>{option.label}</option>
+			{/each}
+		</select>
+
+		<!-- The question people actually ask when picking what to open: not "what is good", but
+		     "what fits in the time I have". -->
+		<button
+			type="button"
+			onclick={() => navigate({ maxMinutes: data.maxMinutes ? '' : '5' })}
+			class="rounded-md border px-3 py-1.5"
+			class:font-medium={!!data.maxMinutes}
+			style="border-color: {data.maxMinutes ? 'var(--color-accent)' : 'var(--color-border)'};
+			       color: {data.maxMinutes ? 'var(--color-accent)' : 'inherit'}"
+			title="Articles you could finish in five minutes"
+		>Under 5 min</button>
 
 		<button
 			type="button"
@@ -293,6 +338,7 @@
 							{hit.link.title ?? hit.link.url}
 						</a>
 						{#if hit.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
+						<KindBadge kind={hit.link.kind} />
 
 						{#if hit.note}
 							<p class="mt-0.5 text-sm" style="color: var(--color-muted)">{hit.note}</p>

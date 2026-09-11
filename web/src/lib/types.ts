@@ -132,7 +132,20 @@ export interface LinkSummary {
 	enrichmentError: string | null;
 	/** Words in the article saved at enrichment; null when the page had no article in it. */
 	wordCount?: number | null;
+	/** What this link is. Unknown until the classifier has seen it. */
+	kind?: ContentKind;
 }
+
+export type ContentKind =
+	| 'Unknown'
+	| 'Article'
+	| 'Video'
+	| 'Repository'
+	| 'Paper'
+	| 'Document'
+	| 'Audio'
+	| 'Image'
+	| 'Social';
 
 /** The readable text of a saved page, as it was when it was saved. */
 export interface LinkContent {
@@ -398,6 +411,10 @@ export interface SavedSearch {
 	broken: boolean;
 	sort: string | null;
 	creationTime: string;
+	/** Restrict to one kind of thing. */
+	kind: string | null;
+	/** Only what can be read in this many minutes. */
+	maxMinutes: number | null;
 }
 
 /** One value a source template asks the person for. */

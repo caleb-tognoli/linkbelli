@@ -22,11 +22,14 @@ public static class SearchEndpoints
         group.MapGet("/", async (
             ClaimsPrincipal user, ISearchService svc,
             string? q, string? host, string[]? tag, string[]? itemTag, string? status, int? minScore,
-            DateTimeOffset? finishedSince, bool? broken, string? sort, int? limit, string? cursor,
+            DateTimeOffset? finishedSince, bool? broken, string? kind, int? maxMinutes,
+            string? sort, int? limit, string? cursor,
             CancellationToken ct) =>
             Results.Ok(await svc.SearchAsync(
                 user.GetUserId(),
-                new SearchQuery(q, host, tag, itemTag, status, minScore, finishedSince, broken, sort, limit, cursor),
+                new SearchQuery(
+                    q, host, tag, itemTag, status, minScore, finishedSince, broken, kind, maxMinutes,
+                    sort, limit, cursor),
                 ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
             .WithName("Search");

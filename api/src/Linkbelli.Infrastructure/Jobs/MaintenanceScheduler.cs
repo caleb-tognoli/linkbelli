@@ -9,7 +9,8 @@ namespace Linkbelli.Infrastructure.Jobs;
 
 /// <summary>
 /// Registers the recurring maintenance: expired trash, source run history past its retention,
-/// and re-checking link metadata that has gone stale or failed.
+/// re-checking link metadata that has gone stale or failed, and classifying links saved before
+/// anything was asking what they were.
 /// </summary>
 public sealed class MaintenanceScheduler(
     IRecurringJobManager recurringJobs,
@@ -18,6 +19,7 @@ public sealed class MaintenanceScheduler(
     public const string JobId = "trash:purge";
     public const string RunPruneJobId = "sources:prune-runs";
     public const string RecheckJobId = "links:recheck";
+    public const string ClassifyJobId = "links:classify";
 
     /// <summary>Nightly, off the hour so it doesn't pile onto every hourly source schedule.</summary>
     public const string Cron = "17 3 * * *";
@@ -27,6 +29,12 @@ public sealed class MaintenanceScheduler(
 
     /// <summary>Hourly, in small batches — re-checking is spread out rather than done in one burst.</summary>
     public const string RecheckCron = "23 * * * *";
+
+    /// <summary>
+    /// Every twenty minutes, in batches: this is catching up on links saved before anything
+    /// asked what they were, so it wants to converge quickly and then do nothing.
+    /// </summary>
+    public const string ClassifyCron = "*/20 * * * *";
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -40,6 +48,9 @@ public sealed class MaintenanceScheduler(
 
             recurringJobs.AddOrUpdate<ILinkRecheckService>(
                 RecheckJobId, svc => svc.SweepAsync(CancellationToken.None), RecheckCron);
+
+            recurringJobs.AddOrUpdate<ILinkClassificationSweep>(
+                ClassifyJobId, svc => svc.SweepAsync(CancellationToken.None), ClassifyCron);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

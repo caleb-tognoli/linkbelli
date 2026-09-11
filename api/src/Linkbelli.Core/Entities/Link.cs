@@ -1,3 +1,5 @@
+using Linkbelli.Core.Content;
+
 namespace Linkbelli.Core.Entities;
 
 /// <summary>How the last attempt to fetch a link's page went.</summary>
@@ -45,6 +47,12 @@ public class Link : BaseEntity<Guid>
 
     /// <summary>Whether the stored text is only the start of the article.</summary>
     public bool ContentTruncated { get; set; }
+
+    /// <summary>
+    /// What this link is — a video, an article, a repository. A collection is one flat list of
+    /// addresses without it, and "what can I watch now" has no way to be asked.
+    /// </summary>
+    public ContentKind Kind { get; set; } = ContentKind.Unknown;
     /// <summary>
     /// When we last finished trying to enrich this link, successfully or not. Reads gate on this
     /// being set, so an item appears once we have stopped waiting on it either way.
