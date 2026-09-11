@@ -16,6 +16,7 @@ export interface Command {
 export const PLACES: Command[] = [
 	{ id: 'go-playlists', label: 'Playlists', kind: 'Go', href: '/playlists', keywords: 'lists home' },
 	{ id: 'go-search', label: 'Search', kind: 'Go', href: '/search', keywords: 'find look' },
+	{ id: 'go-queue', label: 'Up next', kind: 'Go', href: '/queue', keywords: 'queue unread backlog' },
 	{ id: 'go-sources', label: 'Sources', kind: 'Go', href: '/sources', keywords: 'feeds scrapers' },
 	{ id: 'go-discover', label: 'Discover', kind: 'Go', href: '/discover', keywords: 'public browse' },
 	{ id: 'go-duplicates', label: 'Duplicates', kind: 'Go', href: '/duplicates', keywords: 'same twice' },

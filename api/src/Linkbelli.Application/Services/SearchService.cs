@@ -289,6 +289,18 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
     /// </summary>
     private static IQueryable<PlaylistItem> Order(IQueryable<PlaylistItem> items, string? q, string? sort)
     {
+        if (string.Equals(sort, "queue", StringComparison.OrdinalIgnoreCase))
+        {
+            // "What should I read next": things you rated highly come first, and among the
+            // unrated, the ones you have been carrying longest — because a queue that always
+            // surfaces the newest arrival is how a backlog becomes permanent.
+            return items
+                .OrderBy(i => i.Score == null ? 1 : 0)
+                .ThenByDescending(i => i.Score)
+                .ThenBy(i => i.CreationTime)
+                .ThenBy(i => i.Id);
+        }
+
         if (string.Equals(sort, "score", StringComparison.OrdinalIgnoreCase))
         {
             // Unrated items sort last rather than as zero: "not rated" isn't "rated badly".

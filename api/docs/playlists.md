@@ -257,7 +257,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `minScore` | Only items you scored at least this highly |
 | `finishedSince` | Only items you marked watched at or after this instant — "what did I get through this week" |
 | `broken` | `true` to list only links whose page is gone or can no longer be read — the link rot in your collection |
-| `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero |
+| `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero. `queue` for "what now": rated things first, then whatever has been carried longest — a queue that leads with the newest arrival is how a backlog becomes permanent |
 | `limit`, `cursor` | Paging; `limit` maxes out at 100 |
 
 - Results are ordered by relevance when `q` is given — a title hit, then a site-name hit, then

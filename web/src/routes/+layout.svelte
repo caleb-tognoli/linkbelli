@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
-	import { Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search } from '@lucide/svelte';
+	import { Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import GlobalDialog from '$lib/components/GlobalDialog.svelte';
@@ -26,6 +26,7 @@
 		},
 		{ href: '/sources', label: 'Sources', Icon: Rss, match: (p: string) => inSection(p, '/sources') },
 		{ href: '/search', label: 'Search', Icon: Search, match: (p: string) => inSection(p, '/search') },
+		{ href: '/queue', label: 'Up next', Icon: ListChecks, match: (p: string) => inSection(p, '/queue') },
 		{ href: '/discover', label: 'Discover', Icon: Compass, match: (p: string) => inSection(p, '/discover') },
 		{ href: '/import', label: 'Import', Icon: Upload, match: (p: string) => inSection(p, '/import') }
 	];
