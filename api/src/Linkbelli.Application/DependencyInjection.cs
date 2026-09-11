@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddSingleton<IHostThrottle, HostThrottle>();
         services.AddScoped<ILinkEnricher, LinkEnricher>();
         services.AddScoped<ILinkRecheckService, LinkRecheckService>();
+        services.AddScoped<IThumbnailCache, ThumbnailCache>();
 
         // --- Sources --- (ISourceScheduler / ISecretProtector are implemented in Infrastructure)
         services.AddScoped<ISourceService, SourceService>();

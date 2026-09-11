@@ -155,6 +155,27 @@ Returns `{ "affected": n, "skipped": n }`.
   re-marking look like progress.
 - A target playlist you don't own returns **404**.
 
+### Thumbnails
+
+`GET /api/v1/thumbnails/{linkId}` serves a link's image from this server, fetched once and cached
+on disk. Anonymous, because thumbnails appear on public playlist pages, and rate-limited, because
+a miss means an outbound fetch.
+
+Rendering the origin URL directly told every site in a playlist the viewer's IP address and what
+they were looking at, and broke outright whenever a host refused hotlinking.
+
+- `404` when the link has no image, or the fetch failed — the page falls back to the site's
+  favicon, exactly as it does for a link that never had one.
+- Only image content types are served: the output is rendered in an `<img>`, and passing through
+  whatever a third-party host returned would be a way to smuggle something else.
+- The fetch goes through the same SSRF-protected client as enrichment; a thumbnail URL is
+  attacker-supplied in exactly the way a page URL is.
+- `thumbnailUrl` in the API keeps reporting the **original** address. Proxying is a rendering
+  decision, and a feed reader or an export wants the real one.
+
+> Set `Thumbnails:CachePath` to a directory that survives restarts. Without it the cache lands in
+> the system temp directory and is refetched whenever that is cleared.
+
 ### Enrichment outcomes
 
 Every link records how its last fetch went, so a page that could not be read is distinguishable

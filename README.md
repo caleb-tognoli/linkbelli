@@ -79,6 +79,7 @@ The API reads these via standard .NET configuration (env vars use `__` for nesti
 | `Hangfire:Dashboard:Username` / `Hangfire:Dashboard:Password` | Basic-auth credentials for the Hangfire dashboard outside Development. If unset, the dashboard is closed. |
 | `Admin:Usernames` | String array of usernames granted the admin role at startup. |
 | `Cors:AllowedOrigins` | String array of allowed browser origins. |
+| `Thumbnails:CachePath` | Directory for cached link thumbnails, which are served from this host rather than hotlinked from the sites they came from. Without it the cache lands in the system temp directory and is refetched whenever that is cleared. |
 | `PublicWebBaseUrl` | The web app's public origin. Used to build the links inside syndicated playlist feeds; without it the API falls back to its own address, which behind a proxy is an internal hostname. |
 | `Database:MigrateAtStartup` | `true` to apply EF migrations on boot. |
 

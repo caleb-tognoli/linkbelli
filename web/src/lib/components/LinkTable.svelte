@@ -266,12 +266,16 @@
 				{#if showThumbnails}
 					{@const thumb = item.metadata?.thumbnail ?? item.link.thumbnailUrl}
 					{#if thumb}
+						<!-- Served through our own host rather than hotlinked: rendering the origin
+						     URL told every site in this playlist the viewer's IP and what they were
+						     looking at, and broke whenever a host refused hotlinking. -->
 						<img
-							src={thumb}
+							src={`/api/v1/thumbnails/${item.link.id}`}
 							alt=""
 							class="shrink-0 rounded object-cover"
 							style="height: 5em; width: auto"
 							loading="lazy"
+							onerror={(e) => e.currentTarget.remove()}
 						/>
 					{:else if item.link.favicon}
 						<!-- No page image: the site's own icon keeps the row's left edge aligned

@@ -28,6 +28,9 @@ services:
       Database__MigrateAtStartup: "true"
       # Persist the Data Protection key ring so tokens/secrets survive container restarts.
       DataProtection__KeyRingPath: /keys
+      # Cached link thumbnails, so they are served from here rather than hotlinked from the
+      # sites they came from. A volume, so a container restart doesn't refetch everything.
+      Thumbnails__CachePath: /thumbnails
       # Where humans read a public playlist, so syndicated feeds link to the web app
       # rather than back at this API.
       PublicWebBaseUrl: http://localhost:5173
@@ -35,6 +38,7 @@ services:
       - "5180:8080"
     volumes:
       - dpkeys:/keys
+      - thumbnails:/thumbnails
 
   web:
     build: ./web
@@ -53,3 +57,4 @@ services:
 volumes:
   pgdata:
   dpkeys:
+  thumbnails:

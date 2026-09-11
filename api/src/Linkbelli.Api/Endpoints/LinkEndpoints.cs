@@ -30,6 +30,34 @@ public static class LinkEndpoints
             .RequireRateLimiting("sensitive")
             .RequireAuthorization(Scopes.Policy(Scopes.LinksWrite));
 
+        // Thumbnails are served from here rather than hotlinked. Rendering the origin URL told
+        // every site in a playlist the viewer's IP and what they were looking at, and broke
+        // outright whenever a host refused hotlinking.
+        //
+        // Anonymous, because thumbnails appear on public playlist pages, and rate-limited,
+        // because a miss means an outbound fetch.
+        app.MapGet("/thumbnails/{id:guid}", async (
+            Guid id, IThumbnailCache cache, HttpContext http, CancellationToken ct) =>
+        {
+            var thumbnail = await cache.GetAsync(id, ct);
+            if (thumbnail is null)
+            {
+                // The page falls back to the site's favicon, exactly as it does for a link that
+                // never had an image.
+                return Results.NotFound();
+            }
+
+            // Immutable for a day: a thumbnail for a given link effectively never changes, and
+            // this is the request a playlist page makes dozens of at a time.
+            http.Response.Headers.CacheControl = "public, max-age=86400";
+
+            return Results.File(thumbnail.Content, thumbnail.ContentType);
+        })
+            .AllowAnonymous()
+            .RequireRateLimiting("sensitive")
+            .WithTags("Links")
+            .WithName("GetThumbnail");
+
         // Try a link again now. Links are global, so this is deliberately not owner-scoped:
         // any signed-in caller who can see a failed link can ask for it to be re-fetched, and
         // the outbound rate limit is what stops that being abused.
