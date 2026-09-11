@@ -140,7 +140,12 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                 // Averaged over the items that were actually rated — counting unrated ones as
                 // zero would drag the number down and say something false about the playlist.
                 p.Items.Where(i => i.Score != null).Average(i => (double?)i.Score),
-                p.Items.Count(i => i.Score != null)))
+                p.Items.Count(i => i.Score != null),
+                db.PlaylistPreferences
+                    .Where(pp => pp.OwnerId == ownerId && pp.PlaylistId == p.Id)
+                    .Select(pp => new PlaylistViewPreferences(
+                        pp.Sort, pp.Source, pp.Status, pp.ShowUrls, pp.ShowThumbnails))
+                    .FirstOrDefault()))
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");
@@ -242,6 +247,41 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         }
 
         return playlist;
+    }
+
+    public async Task SaveViewAsync(
+        Guid ownerId, Guid playlistId, PlaylistViewPreferences view, CancellationToken ct = default)
+    {
+        if (!await db.Playlists.AnyAsync(p => p.Id == playlistId && p.OwnerId == ownerId, ct))
+        {
+            throw new NotFoundException("Playlist not found.");
+        }
+
+        var preference = await db.PlaylistPreferences
+            .FirstOrDefaultAsync(pp => pp.OwnerId == ownerId && pp.PlaylistId == playlistId, ct);
+
+        if (preference is null)
+        {
+            preference = new PlaylistPreference { OwnerId = ownerId, PlaylistId = playlistId };
+            db.PlaylistPreferences.Add(preference);
+        }
+
+        preference.Sort = Trim(view.Sort, 32);
+        preference.Source = Trim(view.Source, 64);
+        preference.Status = Trim(view.Status, 16);
+        preference.ShowUrls = view.ShowUrls;
+        preference.ShowThumbnails = view.ShowThumbnails;
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Keeps a client-supplied value inside the column it has to fit in.</summary>
+    private static string? Trim(string? value, int maxLength)
+    {
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed)) return null;
+
+        return trimmed.Length > maxLength ? trimmed[..maxLength] : trimmed;
     }
 
     public async Task<PublicProfile> GetPublicProfileAsync(

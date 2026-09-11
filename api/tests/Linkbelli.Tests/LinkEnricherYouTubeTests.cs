@@ -184,6 +184,7 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
     public DbSet<UserQuota> UserQuotas => Set<UserQuota>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PlaylistTag> PlaylistTags => Set<PlaylistTag>();
+    public DbSet<PlaylistPreference> PlaylistPreferences => Set<PlaylistPreference>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
 

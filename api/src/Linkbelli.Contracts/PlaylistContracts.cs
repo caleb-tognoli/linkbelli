@@ -37,7 +37,20 @@ public record PlaylistResponse(
     /// <summary>Mean of the scores that were given, or null when nothing here is rated.</summary>
     double? AverageScore = null,
     /// <summary>How many items carry a score. Without it an average says nothing about its weight.</summary>
-    int? ScoredCount = null);
+    int? ScoredCount = null,
+    /// <summary>How the caller last looked at this playlist. Null when they have no saved view.</summary>
+    PlaylistViewPreferences? View = null);
+
+/// <summary>
+/// How one person looks at one playlist: sort, filters, and what the rows show. Saved per
+/// account rather than per browser, so it follows them between devices.
+/// </summary>
+public record PlaylistViewPreferences(
+    string? Sort,
+    string? Source,
+    string? Status,
+    bool ShowUrls,
+    bool ShowThumbnails);
 
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(

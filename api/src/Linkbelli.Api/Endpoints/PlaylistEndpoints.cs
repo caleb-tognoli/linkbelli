@@ -19,6 +19,16 @@ public static class PlaylistEndpoints
             Results.Ok(await svc.ListAsync(user.GetUserId(), limit, cursor, tag, q, unfiled ?? false, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
 
+        // How the caller likes to look at this playlist — sort, filters, what the rows show.
+        // Saved per account rather than per browser, so it follows them between devices.
+        group.MapPut("/{id:guid}/view", async (
+            Guid id, PlaylistViewPreferences req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        {
+            await svc.SaveViewAsync(user.GetUserId(), id, req, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
+
         group.MapPost("/", async (CreatePlaylistRequest req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
         {
             var created = await svc.CreateAsync(user.GetUserId(), req, ct);

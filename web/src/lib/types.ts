@@ -35,6 +35,17 @@ export interface Playlist {
 	averageScore?: number | null;
 	/** How many items carry a score. */
 	scoredCount?: number | null;
+	/** How the caller last looked at this playlist; null when they have no saved view. */
+	view?: PlaylistView | null;
+}
+
+/** How one person looks at one playlist. Saved per account, so it follows them between devices. */
+export interface PlaylistView {
+	sort: string | null;
+	source: string | null;
+	status: string | null;
+	showUrls: boolean;
+	showThumbnails: boolean;
 }
 
 export interface Paged<T> {

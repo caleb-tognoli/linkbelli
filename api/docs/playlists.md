@@ -34,6 +34,19 @@ curl -X POST http://localhost:5180/api/v1/playlists \
 #      "visibility":"Public", "itemCount":0, "creationTime":"...", "tags":["tech","ai"] }
 ```
 
+### How you look at a playlist
+
+Sort, filters and what the rows show are saved **per account**, not per browser — so they follow
+you to another device. A playlist read carries the caller's saved `view`, or null when they have
+none, which means opening a playlist needs no second round trip.
+
+| Method | Path | Body | Purpose |
+|--------|------|------|---------|
+| `PUT` | `/api/v1/playlists/{id}/view` | `sort?`, `source?`, `status?`, `showUrls`, `showThumbnails` | Replace the saved view |
+
+The body replaces the whole view rather than patching it, so a client sends the state it wants.
+Anonymous readers have no account to save against and fall back to a browser cookie.
+
 ### Tags
 
 Tags are stored normalized and shared across the system (deduplicated by name), so they can be

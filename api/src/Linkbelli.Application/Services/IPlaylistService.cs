@@ -15,6 +15,12 @@ public interface IPlaylistService
     Task<PlaylistResponse> GetPublicAsync(string username, string slug, Guid? viewerId, CancellationToken ct = default);
 
     /// <summary>
+    /// Saves how the caller looks at one of their playlists. Replaces the whole view, so a
+    /// client sends the state it wants rather than a patch.
+    /// </summary>
+    Task SaveViewAsync(Guid ownerId, Guid playlistId, PlaylistViewPreferences view, CancellationToken ct = default);
+
+    /// <summary>
     /// A user as seen from the outside. Throws NotFoundException for an unknown username — a
     /// profile that doesn't exist and one you can't see look the same.
     /// </summary>

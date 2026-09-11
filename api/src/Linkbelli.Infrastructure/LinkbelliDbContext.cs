@@ -22,6 +22,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<UserQuota> UserQuotas => Set<UserQuota>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PlaylistTag> PlaylistTags => Set<PlaylistTag>();
+    public DbSet<PlaylistPreference> PlaylistPreferences => Set<PlaylistPreference>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
 
@@ -124,6 +125,18 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(pt => pt.TagId); // tag → playlists (global search, counts)
             e.HasOne(pt => pt.Playlist).WithMany(p => p.Tags).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(pt => pt.Tag).WithMany(t => t.Playlists).OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<PlaylistPreference>(e =>
+        {
+            // One row per person per playlist — read on every playlist open, so it's indexed
+            // on exactly that pair.
+            e.HasIndex(pp => new { pp.OwnerId, pp.PlaylistId }).IsUnique().ExcludeSoftDeleted();
+            e.Property(pp => pp.Sort).HasMaxLength(32);
+            e.Property(pp => pp.Source).HasMaxLength(64);
+            e.Property(pp => pp.Status).HasMaxLength(16);
+            e.HasOne(pp => pp.Playlist).WithMany().OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 

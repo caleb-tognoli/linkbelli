@@ -9,21 +9,24 @@ const VALID_STATUSES = new Set(['All', 'Unwatched', 'Watched']);
 export const load: PageServerLoad = async ({ locals, params, cookies }) => {
 	const { api } = locals;
 
-	const prefs = readPrefsCookie(cookies.get('pl_prefs'), params.id);
+	// The playlist is fetched first because it carries the account-saved view, and the view
+	// decides what to ask for. The cookie is the fallback: it is all an anonymous reader has,
+	// and it still holds the last local state if the account has none yet.
+	const playlistRes = await api(`/api/v1/playlists/${params.id}`);
+	if (playlistRes.status === 404) throw error(404, 'Playlist not found');
+	if (!playlistRes.ok) throw error(playlistRes.status, 'Failed to load playlist');
+
+	const playlist = (await playlistRes.json()) as Playlist;
+	const prefs = resolvePrefs(playlist, cookies.get('pl_prefs'), params.id);
 	const initialStatus = prefs.status ?? 'Unwatched';
 	const itemsQuery = buildItemsQuery(prefs.sort, prefs.source, initialStatus);
 
-	const [playlistRes, itemsRes, attachedRes, ownRes] = await Promise.all([
-		api(`/api/v1/playlists/${params.id}`),
+	const [itemsRes, attachedRes, ownRes] = await Promise.all([
 		api(`/api/v1/playlists/${params.id}/items${itemsQuery}`),
 		api(`/api/v1/playlists/${params.id}/sources`),
 		api('/api/v1/sources')
 	]);
 
-	if (playlistRes.status === 404) throw error(404, 'Playlist not found');
-	if (!playlistRes.ok) throw error(playlistRes.status, 'Failed to load playlist');
-
-	const playlist = (await playlistRes.json()) as Playlist;
 	const items = itemsRes.ok
 		? ((await itemsRes.json()) as Paged<PlaylistItem>)
 		: { items: [], nextCursor: null };
@@ -32,6 +35,22 @@ export const load: PageServerLoad = async ({ locals, params, cookies }) => {
 
 	return { playlist, items, attachedSources, ownSources, initialPrefs: prefs };
 };
+
+/** The account's saved view when there is one, otherwise whatever this browser remembers. */
+function resolvePrefs(playlist: Playlist, cookie: string | undefined, playlistId: string): PlaylistPrefs {
+	const saved = playlist.view;
+	if (saved) {
+		return {
+			sort: VALID_SORTS.has(saved.sort ?? '') ? (saved.sort ?? 'position') : 'position',
+			source: saved.source ?? null,
+			status: VALID_STATUSES.has(saved.status ?? '') ? (saved.status ?? null) : null,
+			showUrls: saved.showUrls,
+			showThumbnails: saved.showThumbnails
+		};
+	}
+
+	return readPrefsCookie(cookie, playlistId);
+}
 
 function readPrefsCookie(raw: string | undefined, playlistId: string): PlaylistPrefs {
 	if (raw) {
