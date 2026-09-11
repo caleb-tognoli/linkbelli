@@ -77,3 +77,29 @@ public record SourceTemplateResponse(
 
 public record SourceTemplateFieldResponse(
     string Key, string Label, string? Placeholder, string? Help, bool Required);
+
+/// <summary>
+/// How a source has actually been doing. Every run is recorded and none of it was ever shown, so
+/// a source quietly finding nothing looked exactly like one working perfectly.
+/// </summary>
+public record SourceHealthResponse(
+    /// <summary>Runs counted, within the window below.</summary>
+    int Runs,
+    int WindowDays,
+    int Succeeded,
+    int Failed,
+    /// <summary>Succeeded, as a percentage of runs. Null when it has never run.</summary>
+    int? SuccessRate,
+    /// <summary>Mean links discovered per successful run.</summary>
+    double? AverageFound,
+    /// <summary>Mean links new to the app per successful run.</summary>
+    double? AverageAdded,
+    /// <summary>
+    /// Successful runs that discovered nothing. A scraper whose selector stopped matching
+    /// succeeds every time and returns an empty list, which no status could ever reveal.
+    /// </summary>
+    int EmptyRuns,
+    int ConsecutiveFailures,
+    DateTimeOffset? LastRunAt,
+    SourceRunStatus? LastRunStatus,
+    string? LastError);

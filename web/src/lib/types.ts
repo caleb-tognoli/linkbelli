@@ -216,6 +216,25 @@ export interface SourceRun {
 	error: string | null;
 }
 
+/** A source's recent record, summarised from its run rows. */
+export interface SourceHealth {
+	/** Finished runs inside the window. Running ones are excluded — they have no outcome yet. */
+	runs: number;
+	windowDays: number;
+	succeeded: number;
+	failed: number;
+	/** Null when nothing has run: a source nobody has used yet is not failing. */
+	successRate: number | null;
+	/** Averaged over successful runs only. Null when none succeeded. */
+	averageFound: number | null;
+	averageAdded: number | null;
+	/** Runs that succeeded and found nothing — how a broken selector looks from the outside. */
+	emptyRuns: number;
+	consecutiveFailures: number;
+	lastRunAt: string | null;
+	lastRunStatus: SourceRunStatus | null;
+	lastError: string | null;
+}
 
 export interface Quota {
 	maxSources: number;

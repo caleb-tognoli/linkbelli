@@ -8,6 +8,7 @@
 
 	const visIcons = { Private: Lock, Unlisted: EyeOff, Public: Globe } as const;
 	import SourceForm from '$lib/components/SourceForm.svelte';
+	import SourceHealthCard from '$lib/components/SourceHealthCard.svelte';
 	import SourceListItem from '$lib/components/SourceListItem.svelte';
 	import type { PageData } from './$types';
 	import type { Paged, Playlist, Source, SourceRun } from '$lib/types';
@@ -187,6 +188,10 @@
 			<SourceForm mode="edit" source={data.source} ondelete={remove} />
 		</div>
 	{/key}
+
+	{#if data.health}
+		<SourceHealthCard health={data.health} />
+	{/if}
 
 	<div class="mt-8 rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
 		<div class="flex items-center justify-between">

@@ -11,6 +11,12 @@ public interface ISourceService
     Task DeleteAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task RunNowAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<SourceRunResponse>> ListRunsAsync(Guid ownerId, Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// How a source has actually been doing: success rate, typical yield, and whether it has
+    /// started coming back empty. Every run was already recorded and none of it was ever shown.
+    /// </summary>
+    Task<SourceHealthResponse> GetHealthAsync(Guid ownerId, Guid id, CancellationToken ct = default);
     Task<PreviewSourceResponse> PreviewAsync(Guid ownerId, PreviewSourceRequest request, CancellationToken ct = default);
 
     /// <summary>Browse shared sources (any owner) so they can be subscribed to a playlist.</summary>

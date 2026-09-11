@@ -90,6 +90,7 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 | `DELETE` | `/api/v1/sources/{id}`     | — | Soft delete + unschedule |
 | `POST`   | `/api/v1/sources/{id}/run` | — | Trigger a run now (202) |
 | `GET`    | `/api/v1/sources/{id}/runs`| — | Recent run history |
+| `GET`    | `/api/v1/sources/{id}/health`| — | The last 30 days summarised |
 
 - `schedule` is a standard **5-field cron** expression (e.g. `*/15 * * * *`), validated to run
   **no more than once every 5 minutes**.
@@ -240,6 +241,27 @@ SSRF-protected client as enrichment.
 `itemsFound` and `itemsAdded` carry **up to 20** of the URLs for inspection — a sample, not a
 record. Runs are the fastest-growing table in the schema, and the URLs are duplicated verbatim
 from the links themselves, which are still there.
+
+### Health
+
+```bash
+curl http://localhost:5180/api/v1/sources/<id>/health -H "Authorization: Bearer <token>"
+# -> { "runs":28, "windowDays":30, "succeeded":26, "failed":2, "successRate":93,
+#      "averageFound":12.4, "averageAdded":1.8, "emptyRuns":9, "consecutiveFailures":0,
+#      "lastRunAt":"...", "lastRunStatus":"Succeeded", "lastError":null }
+```
+
+Finished runs only — a run still in flight has no outcome to count. Two details are deliberate:
+
+- **The averages cover successful runs only.** A failed run found nothing because it failed, not
+  because there was nothing to find, and averaging it in drags every figure down for a reason
+  that has nothing to do with the feed.
+- **`emptyRuns` counts runs that succeeded and found nothing.** This is the failure nothing else
+  can show: a scraper whose selector stopped matching succeeds every single time, reports 100%,
+  and returns an empty list forever. `successRate` is green throughout.
+
+`successRate` and both averages are `null` rather than `0` when there is nothing to compute from
+— a source nobody has run yet is not failing, and a red `0%` would say it is.
 
 **Retention:** successful runs are kept **30 days**, failures **90** (they are the ones you come
 back to diagnose), and the **20 most recent runs per source always survive** however old they

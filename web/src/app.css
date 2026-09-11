@@ -12,6 +12,8 @@
 	--color-accent: #2563eb;
 	--color-accent-contrast: #ffffff;
 	--color-danger: #dc2626;
+	--color-success: #15803d;
+	--color-warning: #b45309;
 }
 
 :root[data-theme='dark'] {
@@ -23,6 +25,8 @@
 	--color-accent: #3b82f6;
 	--color-accent-contrast: #ffffff;
 	--color-danger: #ef4444;
+	--color-success: #4ade80;
+	--color-warning: #fbbf24;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +39,8 @@
 		--color-accent: #3b82f6;
 		--color-accent-contrast: #ffffff;
 		--color-danger: #ef4444;
+		--color-success: #4ade80;
+		--color-warning: #fbbf24;
 	}
 }
 

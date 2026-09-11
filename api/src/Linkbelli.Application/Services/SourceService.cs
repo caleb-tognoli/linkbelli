@@ -239,6 +239,45 @@ public class SourceService(
             .ToListAsync(ct);
     }
 
+    /// <summary>How far back the health figures look. Longer than that is history, not health.</summary>
+    public const int HealthWindowDays = 30;
+
+    public async Task<SourceHealthResponse> GetHealthAsync(Guid ownerId, Guid id, CancellationToken ct = default)
+    {
+        var source = await FindOwnedAsync(ownerId, id, ct);
+        var since = DateTimeOffset.UtcNow.AddDays(-HealthWindowDays);
+
+        var runs = await db.SourceRuns
+            .Where(r => r.SourceId == id && r.CreationTime >= since && r.Status != SourceRunStatus.Running)
+            .Select(r => new { r.Status, r.FoundCount, r.AddedCount })
+            .ToListAsync(ct);
+
+        var last = await db.SourceRuns
+            .Where(r => r.SourceId == id)
+            .OrderByDescending(r => r.CreationTime)
+            .Select(r => new { r.Status, r.Error, r.CreationTime })
+            .FirstOrDefaultAsync(ct);
+
+        var succeeded = runs.Where(r => r.Status == SourceRunStatus.Succeeded).ToList();
+        var failed = runs.Count - succeeded.Count;
+
+        return new SourceHealthResponse(
+            runs.Count,
+            HealthWindowDays,
+            succeeded.Count,
+            failed,
+            runs.Count == 0 ? null : (int)Math.Round(succeeded.Count * 100.0 / runs.Count),
+            // Averaged over successful runs only: a failed run found nothing because it failed,
+            // not because there was nothing to find, and counting it drags the figure down.
+            succeeded.Count == 0 ? null : Math.Round(succeeded.Average(r => (double)r.FoundCount), 1),
+            succeeded.Count == 0 ? null : Math.Round(succeeded.Average(r => (double)r.AddedCount), 1),
+            succeeded.Count(r => r.FoundCount == 0),
+            source.ConsecutiveFailures,
+            last?.CreationTime,
+            last?.Status,
+            last?.Error);
+    }
+
     public async Task<PreviewSourceResponse> PreviewAsync(Guid ownerId, PreviewSourceRequest request, CancellationToken ct = default)
     {
         var interpreter = ResolveInterpreter(request.Type);

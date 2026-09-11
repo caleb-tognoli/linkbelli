@@ -70,5 +70,12 @@ public static class SourceEndpoints
         group.MapGet("/{id:guid}/runs", async (Guid id, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.ListRunsAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead));
+
+        // How the source has actually been doing. Every run was already recorded and none of it
+        // was ever shown, so a scraper quietly finding nothing looked like one working perfectly.
+        group.MapGet("/{id:guid}/health", async (Guid id, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
+            Results.Ok(await svc.GetHealthAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead))
+            .WithName("GetSourceHealth");
     }
 }
