@@ -197,3 +197,13 @@ public record SetPlaylistMemberRequest(PlaylistRole Role);
 public record SharedPlaylistResponse(
     Guid PlaylistId, string Name, string OwnerUsername, PlaylistRole Role, int ItemCount,
     DateTimeOffset SharedAt);
+
+/// <summary>A block of text to pull addresses out of.</summary>
+public record PasteRequest(string Text);
+
+/// <summary>
+/// What a paste did. Rejections are listed rather than dropped: a paste of forty links that
+/// quietly becomes thirty-eight is worse than one that says which two it could not read.
+/// </summary>
+public record PasteResponse(
+    int Found, int Added, int AlreadyThere, IReadOnlyList<string> Rejected);

@@ -355,6 +355,27 @@ newest first, which shows the default rather than an empty page.
 
 Every row carries `likeCount` and `lastItemAt`.
 
+## Pasting a block of links
+
+Adding links one at a time, or exporting a file to import it, were the only two ways in. What
+people actually have in front of them is a chat log, a list of tabs, an email or a note.
+
+```bash
+curl -X POST http://localhost:5180/api/v1/playlists/<id>/items/paste   -H "Authorization: Bearer <token>" -H "Content-Type: application/json"   -d '{ "text": "Worth a look: https://example.com/one and https://example.com/two." }'
+# -> { "found":2, "added":2, "alreadyThere":0, "rejected":[] }
+```
+
+- **The prose around the addresses is ignored**, and the punctuation they pick up from it is
+  trimmed — except where it belongs to the address. A closing bracket is only noise if nothing
+  inside the URL opened one, which is what keeps every Wikipedia link intact.
+- **The order they were pasted in is kept.** A pasted list is usually in a deliberate one.
+- **What could not be read is named, not dropped.** A paste of forty links that quietly becomes
+  thirty-eight is worse than one that says which two it could not take.
+- Up to **200** addresses per paste, and they are queued for enrichment rather than fetched
+  inline — otherwise the request would hold open for a hundred outbound fetches.
+- A **contributor** can paste into a playlist shared with them; it is the same permission as
+  adding one link.
+
 ## Likes
 
 Nothing anyone did on a public playlist was visible to its owner, or to anyone else browsing.

@@ -5,6 +5,7 @@
 	import SourcesPanel from './SourcesPanel.svelte';
 	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
 	import ShareWithDialog from './ShareWithDialog.svelte';
+	import PasteLinksDialog from './PasteLinksDialog.svelte';
 	import ReportDialog from './ReportDialog.svelte';
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
@@ -362,6 +363,9 @@
 					<Rss size={13} aria-hidden="true" />
 					{followedByMe ? 'Following' : 'Follow'}{followerCount ? ` · ${followerCount}` : ''}
 				</button>
+			{/if}
+			{#if canAdd}
+				<PasteLinksDialog playlistId={playlist.id} onpasted={reloadItems} />
 			{/if}
 			{#if isOwner}
 				<ShareWithDialog playlistId={playlist.id} />

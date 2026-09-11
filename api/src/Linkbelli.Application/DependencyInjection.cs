@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IAutomationRunner, AutomationRunner>();
         services.AddScoped<IItemShareService, ItemShareService>();
         services.AddScoped<IWebhookIngestService, WebhookIngestService>();
+        services.AddScoped<IPasteService, PasteService>();
         services.AddScoped<IFollowService, FollowService>();
         services.AddScoped<IPlaylistAccess, PlaylistAccess>();
         services.AddScoped<IAdminOverviewService, AdminOverviewService>();

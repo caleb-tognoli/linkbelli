@@ -29,6 +29,14 @@ public static class PlaylistItemEndpoints
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
 
+        // A chat log, a list of tabs, an email. Adding links one at a time or exporting a file to
+        // import it were the only two ways in.
+        items.MapPost("/paste", async (Guid playlistId, PasteRequest req, ClaimsPrincipal user,
+            IPasteService svc, CancellationToken ct) =>
+            Results.Ok(await svc.PasteAsync(user.GetUserId(), playlistId, req.Text, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("PasteLinks");
+
         var item = app.MapGroup("/items").RequireAuthorization(secured).WithTags("Playlist items");
 
         // One action over a selection. Everything here exists per item already; this is doing it
