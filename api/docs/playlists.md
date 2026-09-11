@@ -125,6 +125,37 @@ Each user has a **Show NSFW** preference (default **off**): `GET /api/v1/me` ret
 items are hidden everywhere — your own lists, item lists, discovery, and public views (a NSFW public
 playlist returns 404). Anonymous viewers are always treated as off.
 
+## Search (across everything you own)
+
+The per-playlist item list answers "where in this list is it". This answers "where did I put it".
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/search`       | Links across **all** your playlists |
+| `GET` | `/api/v1/search/hosts` | Sites you save from, with counts (`?q=` prefix filter) — the facets for a host filter |
+
+| Parameter | Meaning |
+|-----------|---------|
+| `q`        | Free text over title, description, site name, **your note**, URL and hostname. A pasted URL is canonicalized and matched on the dedup hash instead |
+| `host`     | Restrict to one hostname |
+| `tag`      | Repeatable; the playlist must carry **all** of them |
+| `status`   | `watched` or `unwatched` |
+| `minScore` | Only items you scored at least this highly |
+| `limit`, `cursor` | Paging; `limit` maxes out at 100 |
+
+- Results are ordered by relevance when `q` is given — a title hit, then a site-name hit, then
+  anything else — and newest-first when it isn't, which is what a bare browse wants.
+- Each hit carries `playlistId` and `playlistName`, because "which list did I put it in" is most
+  of the question being asked.
+- NSFW items are excluded unless you have opted in.
+
+```bash
+curl "http://localhost:5180/api/v1/search?q=postgres&status=unwatched"   -H "Authorization: Bearer <token>"
+```
+
+> Search matches with `lower(col) LIKE '%term%'`, covered by trigram GIN indexes. Terms shorter
+> than three characters carry too little trigram content for the index and fall back to a scan.
+
 ## Export (data portability)
 
 Import has existed since the CSV importer; this is the way out.

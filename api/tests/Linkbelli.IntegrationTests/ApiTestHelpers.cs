@@ -69,12 +69,24 @@ public static class ItemSeeder
         var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
 
         var tag = Guid.NewGuid().ToString("N")[..8];
-        var host = await db.Hosts.FirstOrDefaultAsync(h => h.Hostname == "seed.example");
-        if (host is null)
+
+        // Host rows are get-or-created per hostname, exactly as LinkService does — a seeded link
+        // at another host has to actually be on that host, or any host-scoped assertion is a lie.
+        var hosts = new Dictionary<string, Host>(StringComparer.Ordinal);
+        async Task<Host> HostForAsync(string hostname)
         {
-            host = new Host { Hostname = "seed.example" };
-            db.Hosts.Add(host);
-            await db.SaveChangesAsync();
+            if (hosts.TryGetValue(hostname, out var cached)) return cached;
+
+            var existing = await db.Hosts.FirstOrDefaultAsync(h => h.Hostname == hostname);
+            if (existing is null)
+            {
+                existing = new Host { Hostname = hostname };
+                db.Hosts.Add(existing);
+                await db.SaveChangesAsync();
+            }
+
+            hosts[hostname] = existing;
+            return existing;
         }
 
         var nextPosition = await db.PlaylistItems
@@ -86,6 +98,7 @@ public static class ItemSeeder
         {
             var canonical = url?.Invoke(n) ?? $"https://seed.example/{tag}/{n}";
             UrlCanonicalizer.TryCanonicalize(canonical, out var c);
+            var host = await HostForAsync(c.Host);
 
             var link = new Link
             {

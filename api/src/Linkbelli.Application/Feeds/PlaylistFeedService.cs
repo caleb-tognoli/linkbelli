@@ -1,13 +1,12 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
-using Linkbelli.Application.Services;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Feeds;
 
 /// <inheritdoc />
-public class PlaylistFeedService(IAppDbContext db, IUserPreferenceService prefs) : IPlaylistFeedService
+public class PlaylistFeedService(IAppDbContext db) : IPlaylistFeedService
 {
     public async Task<FeedDocument> BuildAsync(
         string username, string slug, string selfUrl, string htmlUrl, CancellationToken ct = default)

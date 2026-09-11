@@ -237,3 +237,20 @@ export interface Trash {
 	/** How long a deleted row stays restorable before it is purged. */
 	retentionDays: number;
 }
+
+export interface SearchHit {
+	itemId: string;
+	playlistId: string;
+	playlistName: string;
+	link: LinkSummary;
+	note: string | null;
+	status: string;
+	score: number | null;
+	addedAt: string;
+}
+
+/** A site the caller saves from, and how many of their links are on it. */
+export interface HostFacet {
+	hostname: string;
+	itemCount: number;
+}

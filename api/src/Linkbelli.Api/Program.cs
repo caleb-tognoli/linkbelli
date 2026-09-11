@@ -158,6 +158,7 @@ v1.MapAdminEndpoints();
 v1.MapImportEndpoints();
 v1.MapTrashEndpoints();
 v1.MapExportEndpoints();
+v1.MapSearchEndpoints();
 v1.MapPublicPlaylistEndpoints();
 
 app.Run();
