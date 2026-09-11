@@ -24,7 +24,8 @@ describe('playlist view preferences', () => {
 			source: null,
 			status: null,
 			showUrls: false,
-			showThumbnails: true
+			showThumbnails: true,
+			viewMode: 'table'
 		});
 	});
 

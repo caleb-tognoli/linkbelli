@@ -7,6 +7,7 @@
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
+	import { isPlainKey, moveFocus } from '$lib/keyboard';
 	import {
 		SORT_LABELS,
 		canReorder,
@@ -147,6 +148,63 @@
 
 	const displayItems = $derived(orderForDisplay(items, sortMode));
 
+	// Keyboard navigation. Single letters only fire when nothing is being typed into, which is
+	// most of what this app is made of — see isPlainKey.
+	let focusedIndex = $state(-1);
+	const focusedItem = $derived(focusedIndex >= 0 ? displayItems[focusedIndex] : undefined);
+
+	function onKeydown(event: KeyboardEvent) {
+		if (readonly && event.key !== 'j' && event.key !== 'k' && event.key !== 'o') return;
+		if (!isPlainKey(event)) return;
+
+		switch (event.key) {
+			case 'j':
+			case 'ArrowDown':
+				event.preventDefault();
+				focusedIndex = moveFocus(focusedIndex, 1, displayItems.length);
+				scrollFocusedIntoView();
+				break;
+			case 'k':
+			case 'ArrowUp':
+				event.preventDefault();
+				focusedIndex = moveFocus(focusedIndex, -1, displayItems.length);
+				scrollFocusedIntoView();
+				break;
+			case 'o':
+			case 'Enter':
+				if (focusedItem) {
+					event.preventDefault();
+					window.open(focusedItem.link.url, '_blank', 'noopener');
+				}
+				break;
+			case 'e':
+				if (focusedItem && !readonly) {
+					event.preventDefault();
+					toggleWatched(focusedItem);
+				}
+				break;
+			case 'x':
+				if (focusedItem && !readonly) {
+					event.preventDefault();
+					toggleSelected(focusedItem.id);
+				}
+				break;
+			case 'Escape':
+				focusedIndex = -1;
+				break;
+		}
+	}
+
+	function scrollFocusedIntoView() {
+		// After the row has actually moved, so the browser scrolls to where it is now.
+		requestAnimationFrame(() => {
+			document
+				.querySelector('[data-item-focused="true"]')
+				?.scrollIntoView({ block: 'nearest' });
+		});
+	}
+
+
 	let noteEditId = $state<string | null>(null);
 	let draftNote = $state('');
 	let draftTags = $state('');
@@ -242,7 +300,8 @@
 {#snippet row(item: PlaylistItem, draggable: boolean)}
 	<tr
 		class="border-t align-middle"
-		style="border-color: var(--color-border); {item.status === 'Watched' ? 'opacity: 0.45' : ''}"
+		data-item-focused={focusedItem?.id === item.id}
+		style="border-color: var(--color-border); {item.status === 'Watched' ? 'opacity: 0.45' : ''}{focusedItem?.id === item.id ? '; box-shadow: inset 3px 0 0 var(--color-accent)' : ''}"
 	>
 		{#if !readonly}
 			<td class="pr-1">
@@ -519,6 +578,8 @@
 		</tr>
 	{/if}
 {/snippet}
+
+<svelte:window onkeydown={onKeydown} />
 
 {#if items.length > 0 || sourceFilter !== null || statusFilter !== 'All' || isSearching}
 	<div class="mb-3 flex flex-wrap items-center gap-1.5">
@@ -818,7 +879,8 @@
 				{@const thumb = item.metadata?.thumbnail ?? item.link.thumbnailUrl}
 				<li
 					class="flex flex-col overflow-hidden rounded-lg border"
-					style="border-color: var(--color-border); background: var(--color-surface); {item.status === 'Watched' ? 'opacity: 0.5' : ''}"
+					data-item-focused={focusedItem?.id === item.id}
+					style="border-color: {focusedItem?.id === item.id ? 'var(--color-accent)' : 'var(--color-border)'}; background: var(--color-surface); {item.status === 'Watched' ? 'opacity: 0.5' : ''}"
 				>
 					<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="block">
 						{#if thumb}
@@ -951,6 +1013,11 @@
 			</table>
 		</div>
 	{/if}
+
+	<p class="mt-3 hidden text-xs sm:block" style="color: var(--color-muted)">
+		<kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>o</kbd> to open{#if !readonly}, <kbd>e</kbd> to mark
+			watched, <kbd>x</kbd> to select{/if}.
+	</p>
 {/if}
 
 {#if !readonly && playlistId}
