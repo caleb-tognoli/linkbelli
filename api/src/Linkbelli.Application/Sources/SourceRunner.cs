@@ -16,6 +16,7 @@ public sealed class SourceRunner(
     IEnumerable<ISourceInterpreter> interpreters,
     SourceConfigSecrets secrets,
     IUserQuotaService quotas,
+    ISourceScheduler scheduler,
     ILogger<SourceRunner> logger) : ISourceRunner
 {
     public async Task RunAsync(Guid sourceId, CancellationToken cancellationToken = default)
@@ -160,12 +161,25 @@ public sealed class SourceRunner(
                 }
             }
             run.Status = SourceRunStatus.Succeeded;
+            source.ConsecutiveFailures = 0;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Source run failed for {SourceId}", sourceId);
             run.Status = SourceRunStatus.Failed;
             run.Error = ex.Message;
+            source.ConsecutiveFailures++;
+
+            // A broken config fails identically on every run. Stop scheduling it rather than
+            // burning the owner's daily quota on the same error until they happen to look.
+            if (source.ConsecutiveFailures >= Source.FailureThreshold && source.Status == SourceStatus.Active)
+            {
+                source.Status = SourceStatus.Failing;
+                scheduler.Unschedule(sourceId);
+                logger.LogWarning(
+                    "Source {SourceId} stopped after {Count} consecutive failures.",
+                    sourceId, source.ConsecutiveFailures);
+            }
         }
         finally
         {

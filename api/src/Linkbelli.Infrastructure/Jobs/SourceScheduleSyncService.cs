@@ -10,7 +10,7 @@ namespace Linkbelli.Infrastructure.Jobs;
 
 /// <summary>
 /// On startup, reconciles Hangfire recurring jobs with the database: schedules every active
-/// source and unschedules every paused one. Recurring jobs persist in Hangfire storage, so this
+/// source and unschedules every stopped one (paused by its owner, or failing). Recurring jobs persist in Hangfire storage, so this
 /// mainly recovers schedule and status changes made while the app was down.
 /// </summary>
 public sealed class SourceScheduleSyncService(
@@ -31,9 +31,9 @@ public sealed class SourceScheduleSyncService(
             var paused = 0;
             foreach (var source in sources)
             {
-                if (source.Status == SourceStatus.Paused)
+                if (source.Status != SourceStatus.Active)
                 {
-                    // A source paused while the app was down still has its recurring job in
+                    // A source stopped while the app was down still has its recurring job in
                     // Hangfire storage; drop it rather than reviving it here.
                     scheduler.Unschedule(source.Id);
                     paused++;
@@ -47,7 +47,7 @@ public sealed class SourceScheduleSyncService(
             if (sources.Count > 0)
             {
                 logger.LogInformation(
-                    "Reconciled {Count} source schedules ({Paused} paused).", sources.Count, paused);
+                    "Reconciled {Count} source schedules ({Stopped} stopped).", sources.Count, paused);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

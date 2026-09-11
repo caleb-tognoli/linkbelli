@@ -156,20 +156,27 @@ public class SourceService(
 
         if (request.Status is not null)
         {
+            // Resuming clears the failure streak. Whatever the owner just changed is their
+            // attempt at a fix, and it deserves a fresh count rather than tripping immediately.
+            if (request.Status.Value == SourceStatus.Active && source.Status != SourceStatus.Active)
+            {
+                source.ConsecutiveFailures = 0;
+            }
+
             source.Status = request.Status.Value;
         }
 
         await db.SaveChangesAsync(ct);
 
-        // The recurring job follows the status, not the cron. A paused source keeps its schedule
+        // The recurring job follows the status, not the cron. A stopped source keeps its schedule
         // so resuming restores the owner's cadence instead of guessing a default.
-        if (source.Status == SourceStatus.Paused)
+        if (source.Status == SourceStatus.Active)
         {
-            scheduler.Unschedule(source.Id);
+            scheduler.Schedule(source.Id, source.Schedule);
         }
         else
         {
-            scheduler.Schedule(source.Id, source.Schedule);
+            scheduler.Unschedule(source.Id);
         }
 
         return ToResponse(source, await PlaylistIdsAsync(id, ct));
@@ -295,6 +302,6 @@ public class SourceService(
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
             source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
-            lastRunStatus, source.Status);
+            lastRunStatus, source.Status, source.ConsecutiveFailures);
     }
 }

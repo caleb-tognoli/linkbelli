@@ -70,19 +70,23 @@
 		return 'Last run succeeded';
 	}
 
-	// A paused source shows a hollow ring rather than a filled dot: the fill means "this is
-	// running on a schedule", which is exactly what pausing stops.
-	const paused = (src: Source) => src.status === 'Paused';
+	// A stopped source shows a hollow ring rather than a filled dot: the fill means "this is
+	// running on a schedule", which is exactly what stopping ends. A source that stopped itself
+	// after repeated failures reads as a problem, not a choice.
+	const stopped = (src: Source) => src.status !== 'Active';
+	const failing = (src: Source) => src.status === 'Failing';
 
 	function dotStyle(src: Source): string {
 		const base = 'width: 8px; height: 8px; border-radius: 50%; display: block; flex-shrink: 0;';
-		return paused(src)
-			? `${base} border: 1.5px solid var(--color-muted);`
-			: `${base} background: ${statusColor(src)};`;
+		if (failing(src)) return `${base} border: 1.5px solid var(--color-danger);`;
+		if (stopped(src)) return `${base} border: 1.5px solid var(--color-muted);`;
+		return `${base} background: ${statusColor(src)};`;
 	}
 
 	function dotLabel(src: Source): string {
-		return paused(src) ? `Paused — ${statusLabel(src).toLowerCase()}` : statusLabel(src);
+		if (failing(src)) return `Stopped after ${src.consecutiveFailures} failures`;
+		if (stopped(src)) return `Paused — ${statusLabel(src).toLowerCase()}`;
+		return statusLabel(src);
 	}
 </script>
 
@@ -120,9 +124,11 @@
 					name={src.name}
 					badge={displayType(src.type)}
 					href={`/sources/${src.id}`}
-					subtitle={paused(src)
-						? `paused · last run ${lastRun(src.lastRunAt)}`
-						: `last run ${lastRun(src.lastRunAt)}`}
+					subtitle={failing(src)
+						? `stopped after ${src.consecutiveFailures} failures · last run ${lastRun(src.lastRunAt)}`
+						: stopped(src)
+							? `paused · last run ${lastRun(src.lastRunAt)}`
+							: `last run ${lastRun(src.lastRunAt)}`}
 				>
 					{#snippet leading()}
 						<span

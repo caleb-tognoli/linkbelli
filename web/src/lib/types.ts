@@ -90,7 +90,7 @@ export interface PublicPlaylistSummary {
 export type SourceType = 'Rss' | 'Scraper' | 'JsonApi';
 export type SourceVisibility = 'Private' | 'Shared';
 export type SourceRunStatus = 'Running' | 'Succeeded' | 'Failed';
-export type SourceStatus = 'Active' | 'Paused';
+export type SourceStatus = 'Active' | 'Paused' | 'Failing';
 
 export interface LinkSummary {
 	id: string;
@@ -165,8 +165,10 @@ export interface Source {
 	lastRunStatus: SourceRunStatus | null;
 	creationTime: string;
 	playlistIds: string[];
-	/** Paused sources keep their schedule but are unscheduled; "run now" still works. */
+	/** Stopped sources keep their schedule but are unscheduled; "run now" still works. */
 	status: SourceStatus;
+	/** Failures since the last success. A source stops itself once this hits the threshold. */
+	consecutiveFailures: number;
 }
 
 export interface SourceRun {

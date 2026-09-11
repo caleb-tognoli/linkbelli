@@ -15,6 +15,12 @@ public enum SourceStatus
 
     /// <summary>Deliberately stopped by its owner. Unscheduled; "run now" still works.</summary>
     Paused = 1,
+
+    /// <summary>
+    /// Stopped by the system after too many consecutive failures. Kept distinct from Paused so
+    /// the owner can tell "I turned this off" from "this broke" — they need different actions.
+    /// </summary>
+    Failing = 2,
 }
 
 /// <summary>Who may attach a source to their playlists. Set at creation and immutable.</summary>
@@ -54,6 +60,15 @@ public class Source : BaseEntity<Guid>
     /// <summary>Interpreter persistence between runs: ETag, Last-Modified, cursor… (jsonb).</summary>
     public string? State { get; set; }
     public DateTimeOffset? LastRunAt { get; set; }
+
+    /// <summary>
+    /// Failures since the last success. A scraper whose selector broke fails on every run, and
+    /// nothing was counting — so it kept failing ten times a day, indefinitely, silently.
+    /// </summary>
+    public int ConsecutiveFailures { get; set; }
+
+    /// <summary>Consecutive failures after which a source stops scheduling itself.</summary>
+    public const int FailureThreshold = 5;
 
     public List<PlaylistSource> Playlists { get; set; } = [];
     public List<SourceRun> Runs { get; set; } = [];

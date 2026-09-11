@@ -88,6 +88,9 @@
 	let enabled = $state((source?.status ?? 'Active') === 'Active');
 	const schedule = $derived(buildCron(scheduleCount, scheduleUnit));
 	const status = $derived(enabled ? 'Active' : 'Paused');
+	// A source that stopped itself needs the owner to fix something and switch it back on; the
+	// toggle starts off so saving is a deliberate act rather than an accident.
+	const wasFailing = source?.status === 'Failing';
 
 	// Config field values (non-header) for the current type.
 	let values = $state<Record<string, string>>(initValues());
@@ -285,7 +288,11 @@
 		<div class="flex flex-col gap-2 text-sm">
 			<span>Enabled</span>
 			<Switch bind:checked={enabled} />
-			{#if !enabled}
+			{#if wasFailing && enabled}
+				<span class="text-xs" style="color: var(--color-muted)">
+					Saving clears the {source!.consecutiveFailures} failures and puts it back on schedule.
+				</span>
+			{:else if !enabled}
 				<span class="text-xs" style="color: var(--color-muted)">Paused — runs only when you trigger one.</span>
 			{/if}
 		</div>

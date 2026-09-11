@@ -67,7 +67,7 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 
 ### Pausing
 
-`status` is `Active` (default) or `Paused`.
+`status` is `Active` (default), `Paused`, or `Failing`.
 
 - Pausing **unschedules** the source: it stops running on its cron.
 - The `schedule` is left exactly as you set it, so resuming picks the same cadence back up —
@@ -78,6 +78,20 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 ```bash
 curl -X PATCH http://localhost:5180/api/v1/sources/<id>   -H "Authorization: Bearer <token>" -H "Content-Type: application/json"   -d '{"status":"Paused"}'
 ```
+
+### Failing sources stop themselves
+
+A broken config — a selector that no longer matches, a feed that moved — fails identically on
+every run. Rather than burning the daily quota on the same error indefinitely:
+
+- `consecutiveFailures` counts failures since the last success, and any success resets it.
+- At **5** consecutive failures an `Active` source becomes `Failing` and is **unscheduled**.
+- `Failing` is deliberately distinct from `Paused`: one means "this broke", the other means
+  "I turned this off", and they call for different actions. A source the owner already paused is
+  never relabelled.
+- Setting `status` back to `Active` **clears the failure count** — whatever the owner just
+  changed is their attempt at a fix, and it deserves a fresh count rather than tripping again on
+  the next run.
 
 ### Visibility & subscriptions
 
