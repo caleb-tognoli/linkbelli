@@ -52,17 +52,21 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
 | Method | Path | Body | Purpose |
 |--------|------|------|---------|
 | `GET`    | `/api/v1/sources`          | — | List your sources |
-| `POST`   | `/api/v1/sources`          | `name, type, config, schedule, playlistIds?, visibility?, nsfw?` | Create (active, scheduled immediately) |
+| `POST`   | `/api/v1/sources`          | `name, type, config, schedule, timeZone?, playlistIds?, visibility?, nsfw?` | Create (active, scheduled immediately) |
 | `GET`    | `/api/v1/sources/shared`   | — (`?q=`) | Browse **shared** sources (any owner) to subscribe |
 | `POST`   | `/api/v1/sources/preview`  | `type, config` | Dry-run a config (live fetch, no save); returns up to 10 sample links. Rate-limited. |
 | `GET`    | `/api/v1/sources/{id}`     | — | Get one |
-| `PATCH`  | `/api/v1/sources/{id}`     | `name?, type?, config?, schedule?, playlistIds?, visibility?, status?` | Update (reschedules) |
+| `PATCH`  | `/api/v1/sources/{id}`     | `name?, type?, config?, schedule?, timeZone?, playlistIds?, visibility?, status?` | Update (reschedules) |
 | `DELETE` | `/api/v1/sources/{id}`     | — | Soft delete + unschedule |
 | `POST`   | `/api/v1/sources/{id}/run` | — | Trigger a run now (202) |
 | `GET`    | `/api/v1/sources/{id}/runs`| — | Recent run history |
 
 - `schedule` is a standard **5-field cron** expression (e.g. `*/15 * * * *`), validated to run
-  **no more than once every 5 minutes**. Schedules are interpreted in **UTC**.
+  **no more than once every 5 minutes**.
+- `timeZone` is the IANA zone the schedule is read in (e.g. `Europe/Rome`). Omit it for **UTC**.
+  A zone the server doesn't recognise is **rejected**, not quietly ignored — silently falling
+  back to UTC would run the schedule at the wrong hour with nothing to show for it. Daylight
+  saving is observed, so "every day at 8" stays at 8 all year.
 - `playlistIds` must be playlists you own; discovered links are appended to each.
 
 ### Pausing

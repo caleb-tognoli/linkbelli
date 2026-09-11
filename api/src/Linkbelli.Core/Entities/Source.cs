@@ -53,6 +53,13 @@ public class Source : BaseEntity<Guid>
     public required string Schedule { get; set; }
 
     /// <summary>
+    /// IANA time zone the <see cref="Schedule"/> is read in (e.g. "Europe/Rome"). Null means UTC,
+    /// which is what every schedule silently was: "every day at 8" meant 08:00 UTC for everybody,
+    /// and shifted under daylight saving for most of the world.
+    /// </summary>
+    public string? TimeZone { get; set; }
+
+    /// <summary>
     /// Whether the schedule is live. Pausing unschedules the recurring job; it does not touch
     /// <see cref="Schedule"/>, and it does not block an explicit "run now".
     /// </summary>

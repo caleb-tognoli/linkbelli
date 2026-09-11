@@ -92,6 +92,11 @@
 	// toggle starts off so saving is a deliberate act rather than an accident.
 	const wasFailing = source?.status === 'Failing';
 
+	// A new source is scheduled in the browser's own zone, so "every day at 8" means eight where
+	// the person setting it lives. Existing sources keep whatever they were created with.
+	const timeZone =
+		source?.timeZone ?? (source ? null : Intl.DateTimeFormat().resolvedOptions().timeZone);
+
 	// Config field values (non-header) for the current type.
 	let values = $state<Record<string, string>>(initValues());
 	let headers = $state<{ name: string; value: string }[]>(initHeaders());
@@ -176,7 +181,7 @@
 			const config = buildConfig();
 			let res: Response;
 			if (mode === 'create') {
-				res = await api.post('/sources', { name, type, config, schedule, visibility, status });
+				res = await api.post('/sources', { name, type, config, schedule, visibility, status, timeZone });
 			} else {
 				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility, status });
 			}

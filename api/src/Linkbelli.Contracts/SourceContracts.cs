@@ -8,7 +8,9 @@ public record CreateSourceRequest(
     IReadOnlyDictionary<string, string> Config,
     string Schedule,
     Guid[]? PlaylistIds,
-    SourceVisibility? Visibility);
+    SourceVisibility? Visibility,
+    /// <summary>IANA zone the schedule is read in (e.g. "Europe/Rome"). Omit for UTC.</summary>
+    string? TimeZone = null);
 
 public record UpdateSourceRequest(
     string? Name,
@@ -17,7 +19,9 @@ public record UpdateSourceRequest(
     string? Schedule,
     Guid[]? PlaylistIds,
     SourceVisibility? Visibility,
-    SourceStatus? Status = null);
+    SourceStatus? Status = null,
+    /// <summary>IANA zone the schedule is read in. Omit to leave it as it is.</summary>
+    string? TimeZone = null);
 
 public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,
@@ -25,7 +29,9 @@ public record SourceResponse(
     DateTimeOffset? LastRunAt, DateTimeOffset CreationTime, Guid[] PlaylistIds,
     SourceRunStatus? LastRunStatus, SourceStatus Status = SourceStatus.Active,
     /// <summary>Failures since the last success. A source stops itself once this hits the threshold.</summary>
-    int ConsecutiveFailures = 0);
+    int ConsecutiveFailures = 0,
+    /// <summary>IANA zone the schedule is read in; null means UTC.</summary>
+    string? TimeZone = null);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
 public record SharedSourceSummary(

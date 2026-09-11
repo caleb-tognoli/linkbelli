@@ -75,6 +75,7 @@ public class SourceService(
             Config = JsonSerializer.Serialize(secrets.Encrypt(request.Type, request.Config, stored: null)),
             Schedule = request.Schedule.Trim(),
             Visibility = request.Visibility ?? SourceVisibility.Private,
+            TimeZone = NormalizeTimeZone(request.TimeZone),
         };
         db.Sources.Add(source);
 
@@ -84,7 +85,7 @@ public class SourceService(
         }
 
         await db.SaveChangesAsync(ct);
-        scheduler.Schedule(source.Id, source.Schedule);
+        scheduler.Schedule(source.Id, source.Schedule, source.TimeZone);
 
         return ToResponse(source, (request.PlaylistIds ?? []).ToArray());
     }
@@ -121,6 +122,11 @@ public class SourceService(
         {
             ValidateCron(request.Schedule);
             source.Schedule = request.Schedule.Trim();
+        }
+
+        if (request.TimeZone is not null)
+        {
+            source.TimeZone = NormalizeTimeZone(request.TimeZone);
         }
 
         if (request.Visibility is not null && request.Visibility.Value != source.Visibility)
@@ -172,7 +178,7 @@ public class SourceService(
         // so resuming restores the owner's cadence instead of guessing a default.
         if (source.Status == SourceStatus.Active)
         {
-            scheduler.Schedule(source.Id, source.Schedule);
+            scheduler.Schedule(source.Id, source.Schedule, source.TimeZone);
         }
         else
         {
@@ -246,6 +252,26 @@ public class SourceService(
 
     public const int MinIntervalMinutes = 5;
 
+    /// <summary>
+    /// Accepts an IANA zone this host can schedule against; an empty value means UTC. Rejected
+    /// rather than silently ignored, so a typo doesn't quietly run a schedule in the wrong hours.
+    /// </summary>
+    private static string? NormalizeTimeZone(string? timeZone)
+    {
+        var trimmed = timeZone?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+
+        if (!SourceTimeZone.IsValid(trimmed))
+        {
+            throw new ValidationException("timeZone", $"'{trimmed}' is not a time zone this server recognises.");
+        }
+
+        return trimmed;
+    }
+
     private static void ValidateCron(string schedule)
     {
         if (!CronSchedule.IsValid(schedule, MinIntervalMinutes))
@@ -302,6 +328,6 @@ public class SourceService(
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
             source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
-            lastRunStatus, source.Status, source.ConsecutiveFailures);
+            lastRunStatus, source.Status, source.ConsecutiveFailures, source.TimeZone);
     }
 }

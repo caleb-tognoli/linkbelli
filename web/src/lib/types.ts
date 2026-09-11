@@ -179,6 +179,8 @@ export interface Source {
 	status: SourceStatus;
 	/** Failures since the last success. A source stops itself once this hits the threshold. */
 	consecutiveFailures: number;
+	/** IANA zone the schedule is read in; null means UTC. */
+	timeZone: string | null;
 }
 
 export interface SourceRun {

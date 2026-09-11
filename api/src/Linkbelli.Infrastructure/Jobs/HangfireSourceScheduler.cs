@@ -10,9 +10,12 @@ public sealed class HangfireSourceScheduler(
 {
     public static string RecurringJobId(Guid sourceId) => $"source:{sourceId}";
 
-    public void Schedule(Guid sourceId, string cron) =>
+    public void Schedule(Guid sourceId, string cron, string? timeZone = null) =>
         recurringJobs.AddOrUpdate<ISourceRunner>(
-            RecurringJobId(sourceId), runner => runner.RunAsync(sourceId, CancellationToken.None), cron);
+            RecurringJobId(sourceId),
+            runner => runner.RunAsync(sourceId, CancellationToken.None),
+            cron,
+            new RecurringJobOptions { TimeZone = SourceTimeZone.Resolve(timeZone) });
 
     public void Unschedule(Guid sourceId) =>
         recurringJobs.RemoveIfExists(RecurringJobId(sourceId));

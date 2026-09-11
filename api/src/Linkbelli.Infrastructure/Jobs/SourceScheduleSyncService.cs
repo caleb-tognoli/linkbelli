@@ -25,7 +25,7 @@ public sealed class SourceScheduleSyncService(
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var sources = await db.Sources
-                .Select(s => new { s.Id, s.Schedule, s.Status })
+                .Select(s => new { s.Id, s.Schedule, s.Status, s.TimeZone })
                 .ToListAsync(cancellationToken);
 
             var paused = 0;
@@ -40,7 +40,7 @@ public sealed class SourceScheduleSyncService(
                 }
                 else
                 {
-                    scheduler.Schedule(source.Id, source.Schedule);
+                    scheduler.Schedule(source.Id, source.Schedule, source.TimeZone);
                 }
             }
 
