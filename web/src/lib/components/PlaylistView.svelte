@@ -10,7 +10,7 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
 	import { ChevronDown, Download, EyeOff, Globe, Lock, Trash2 } from '@lucide/svelte';
-	import type { AttachedSource, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
+	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
 	type VisOption = { label: string; icon: typeof Lock };
@@ -64,6 +64,31 @@
 	let visibility = $state(playlist.visibility);
 	let visOpen = $state(false);
 	let exportOpen = $state(false);
+	let nsfwOpen = $state(false);
+
+	// Adult detection reads a meta tag the site declares about itself, so it gets false
+	// positives — and a wrongly flagged playlist is hidden from everyone who hasn't opted in.
+	let nsfwSetting = $state<NsfwSetting>(playlist.nsfwSetting ?? 'Auto');
+	let isNsfw = $state(playlist.nsfw);
+
+	const NSFW_LABELS: Record<NsfwSetting, string> = {
+		Auto: 'Automatic',
+		Yes: 'Adult',
+		No: 'Not adult'
+	};
+
+	async function setNsfw(next: NsfwSetting) {
+		const previous = nsfwSetting;
+		nsfwSetting = next;
+		nsfwOpen = false;
+
+		const res = await api.patch(`/playlists/${playlist.id}`, { nsfw: next });
+		if (res.ok) {
+			isNsfw = ((await res.json()) as Playlist).nsfw;
+		} else {
+			nsfwSetting = previous;
+		}
+	}
 
 	const PLAYLIST_EXPORTS = [
 		{ format: 'json', label: 'JSON' },
@@ -248,6 +273,38 @@
 					currentFolderId={playlist.folderId}
 					currentFolderName={playlist.folderName}
 				/>
+			{/if}
+			{#if isOwner && (isNsfw || nsfwSetting !== 'Auto')}
+				<Popover.Root bind:open={nsfwOpen}>
+					<Popover.Trigger
+						class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
+						style="border-color: {isNsfw ? 'var(--color-danger)' : 'var(--color-border)'};
+						       color: {isNsfw ? 'var(--color-danger)' : 'var(--color-muted)'}"
+						title="Adult content"
+					>
+						{isNsfw ? 'Adult' : 'Not adult'}
+						<ChevronDown size={13} aria-hidden="true" />
+					</Popover.Trigger>
+					<Popover.Content
+						class="popover-surface z-30 w-56 overflow-hidden rounded-md border shadow-md"
+						sideOffset={4}
+						align="end"
+					>
+						{#each ['Auto', 'No', 'Yes'] as const as option (option)}
+							<button
+								type="button"
+								onclick={() => setNsfw(option)}
+								class="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10"
+								class:font-medium={nsfwSetting === option}
+							>
+								{NSFW_LABELS[option]}
+								{#if option === 'Auto'}
+									<span class="text-xs" style="color: var(--color-muted)">Go by what the sites declare</span>
+								{/if}
+							</button>
+						{/each}
+					</Popover.Content>
+				</Popover.Root>
 			{/if}
 			{#if isOwner}
 				<Popover.Root bind:open={exportOpen}>

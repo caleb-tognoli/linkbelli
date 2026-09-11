@@ -24,7 +24,7 @@ public class PlaylistFeedService(IAppDbContext db) : IPlaylistFeedService
                 p.Description,
                 p.CreationTime,
                 OwnerName = db.Users.Where(u => u.Id == p.OwnerId).Select(u => u.UserName!).First(),
-                Nsfw = p.Items.Any(i => i.Link!.Nsfw),
+                Nsfw = p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
             })
             .FirstOrDefaultAsync(ct);
 

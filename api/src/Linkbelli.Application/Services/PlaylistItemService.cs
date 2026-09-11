@@ -187,7 +187,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             .Where(p => p.Slug == slug
                 && p.Visibility != PlaylistVisibility.Private
                 && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
-            .Select(p => new { p.Id, Nsfw = p.Items.Any(i => i.Link!.Nsfw) })
+            .Select(p => new { p.Id, Nsfw = p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw) })
             .FirstOrDefaultAsync(ct);
 
         var showNsfw = await prefs.ShowNsfwAsync(viewerId, ct);

@@ -139,9 +139,28 @@ failure backs off exponentially from 6 hours and is given up on after 6 attempts
 
 ## NSFW
 
-Links can be flagged adult **automatically** (via the page's `rating`/RTA meta tag during
-enrichment, or by being ingested from an [NSFW source](sources.md#nsfw-sources)) — there is no
-manual per-link flag. A **playlist is NSFW** if it contains any NSFW item.
+Links are flagged adult **automatically** (via the page's `rating`/RTA meta tag during
+enrichment, or by being ingested from an [NSFW source](sources.md#nsfw-sources)). By default a
+**playlist is NSFW** if it contains any NSFW item.
+
+### Overriding the automatic reading
+
+Detection reads a signal a site declares about itself, so it gets false positives — and one of
+those used to hide a playlist from everyone who hadn't opted in, permanently, with no appeal.
+
+`PATCH /playlists/{id}` accepts `nsfw`:
+
+| Value | Meaning |
+|-------|---------|
+| `Auto` | Work it out from the items (the default) |
+| `Yes`  | Adult, whatever the items say |
+| `No`   | Not adult, whatever the items say |
+
+The playlist read reports the current choice as `nsfwSetting`. Listings omit it rather than
+defaulting to `Auto` and misreporting an override.
+
+Admins can correct a link at its source — `POST /admin/links/{id}/clear-nsfw` clears the flag
+globally, for everyone who has that link.
 
 Each user has a **Show NSFW** preference (default **off**): `GET /api/v1/me` returns `showNsfw`,
 `PUT /api/v1/me/preferences { "showNsfw": true|false }` updates it. While off, NSFW playlists and

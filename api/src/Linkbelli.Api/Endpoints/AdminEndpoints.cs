@@ -3,6 +3,7 @@ using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
+using Linkbelli.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -41,8 +42,8 @@ public static class AdminEndpoints
             Results.Ok(await admin.SetHostBlockedAsync(req.Hostname, req.Blocked, ct)));
 
         // Bulk re-enqueue links for enrichment. Handy after fixing an enricher bug or clearing a
-        // 429 wave: pass onlyFailed=true (default) to target only links whose Metadata carries
-        // an enrichmentError stamp; add host= to further narrow to one origin (e.g. themoviedb.org).
+        // 429 wave: pass onlyFailed=true (default) to target only links whose last fetch failed;
+        // add host= to further narrow to one origin (e.g. themoviedb.org).
         group.MapPost("/links/re-enrich", async (
             IAppDbContext db,
             ILinkEnrichmentQueue queue,
@@ -53,9 +54,11 @@ public static class AdminEndpoints
             var query = db.Links.AsQueryable();
             if (onlyFailed ?? true)
             {
-                // Metadata is jsonb — string.Contains isn't translatable, but Npgsql's
-                // JsonExists checks whether the failure stamp's top-level key is present.
-                query = query.Where(l => l.Metadata != null && EF.Functions.JsonExists(l.Metadata, "enrichmentError"));
+                // Reads the status column. This used to probe the metadata bag for an
+                // "enrichmentError" key, which stopped matching anything the moment failures got
+                // a column of their own.
+                query = query.Where(l => l.EnrichmentStatus == EnrichmentStatus.Failed
+                    || l.EnrichmentStatus == EnrichmentStatus.Broken);
             }
 
             if (!string.IsNullOrWhiteSpace(host))
@@ -71,6 +74,24 @@ public static class AdminEndpoints
             }
 
             return Results.Ok(new { queued = ids.Count });
+        });
+
+        // Clear a link's adult flag globally. Detection reads a self-declared meta tag, so it
+        // gets false positives; an owner can override their own playlist, but only an admin can
+        // correct the link itself for everyone who has it.
+        group.MapPost("/links/{id:guid}/clear-nsfw", async (
+            Guid id, IAppDbContext db, CancellationToken ct) =>
+        {
+            var link = await db.Links.FirstOrDefaultAsync(l => l.Id == id, ct);
+            if (link is null)
+            {
+                return Results.NotFound();
+            }
+
+            link.Nsfw = false;
+            await db.SaveChangesAsync(ct);
+
+            return Results.Ok(new { link.Id, link.CanonicalUrl, link.Nsfw });
         });
     }
 }

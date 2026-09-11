@@ -12,6 +12,8 @@ export interface User {
 	showNsfw: boolean;
 }
 
+export type NsfwSetting = 'Auto' | 'Yes' | 'No';
+
 export interface Playlist {
 	id: string;
 	name: string;
@@ -25,6 +27,8 @@ export interface Playlist {
 	/** The folder this playlist is filed in for the current user (null = unfiled / root). */
 	folderId: string | null;
 	folderName: string | null;
+	/** Whether the owner set the adult flag by hand. Null in listings, which don't report it. */
+	nsfwSetting?: NsfwSetting | null;
 }
 
 export interface Paged<T> {

@@ -80,7 +80,7 @@ public class FolderService(IAppDbContext db, IUserPreferenceService prefs) : IFo
 
         if (!showNsfw)
         {
-            entries = entries.Where(x => !x.p.Items.Any(i => i.Link!.Nsfw));
+            entries = entries.Where(x => !(x.p.NsfwOverride != null ? x.p.NsfwOverride.Value : x.p.Items.Any(i => i.Link!.Nsfw)));
         }
 
         var playlists = await entries
@@ -89,7 +89,7 @@ public class FolderService(IAppDbContext db, IUserPreferenceService prefs) : IFo
                 x.p.Id, x.p.Name, x.p.Slug, x.p.Description, x.p.Visibility,
                 x.p.Items.Count(i => i.Link!.EnrichedAt != null),
                 x.p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                x.p.Items.Any(i => i.Link!.Nsfw),
+                x.p.NsfwOverride != null ? x.p.NsfwOverride.Value : x.p.Items.Any(i => i.Link!.Nsfw),
                 x.p.OwnerId == ownerId, x.OwnerUsername))
             .ToListAsync(ct);
 

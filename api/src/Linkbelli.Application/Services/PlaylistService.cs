@@ -52,7 +52,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
         if (!showNsfw)
         {
-            query = query.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+            query = query.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
         }
 
         // "Recently updated" = most recent of the playlist's own creation and its newest item.
@@ -65,7 +65,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                 LastActivity = p.Items.Max(i => (DateTimeOffset?)i.CreationTime) ?? p.CreationTime,
                 ItemCount = p.Items.Count(i => i.Link!.EnrichedAt != null),
                 Tags = p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                Nsfw = p.Items.Any(i => i.Link!.Nsfw),
+                Nsfw = p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
                 FolderId = db.FolderPlaylists
                     .Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
                     .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
@@ -126,11 +126,15 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             .Select(p => new PlaylistResponse(
                 p.Id, p.Name, p.Slug, p.Description, p.Visibility,
                 p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw),
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
                 db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
                     .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
                 db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
-                    .Select(fp => fp.Folder!.Name).FirstOrDefault()))
+                    .Select(fp => fp.Folder!.Name).FirstOrDefault(),
+                // The owner's own read reports whether they set the flag by hand, so the control
+                // can show its real state rather than guessing.
+                p.NsfwOverride == null ? NsfwSetting.Auto : p.NsfwOverride.Value ? NsfwSetting.Yes : NsfwSetting.No))
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");
@@ -161,6 +165,18 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             playlist.Visibility = request.Visibility.Value;
         }
 
+        if (request.Nsfw is not null)
+        {
+            // Three states on the wire: "yes", "no", and "auto" — which hands the decision back
+            // to the items. Detection is a self-declared meta tag, so the owner gets the last word.
+            playlist.NsfwOverride = request.Nsfw.Value switch
+            {
+                NsfwSetting.Yes => true,
+                NsfwSetting.No => false,
+                _ => null,
+            };
+        }
+
         if (request.Tags is not null)
         {
             var tags = await ResolveTagsAsync(TagNormalizer.Normalize(request.Tags), ct);
@@ -175,7 +191,8 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         await db.SaveChangesAsync(ct);
 
         var count = await db.PlaylistItems.CountAsync(i => i.PlaylistId == id && i.Link!.EnrichedAt != null, ct);
-        var nsfw = await db.PlaylistItems.AnyAsync(i => i.PlaylistId == id && i.Link!.Nsfw, ct);
+        var nsfw = playlist.NsfwOverride
+            ?? await db.PlaylistItems.AnyAsync(i => i.PlaylistId == id && i.Link!.Nsfw, ct);
         var tagNames = await db.PlaylistTags.Where(pt => pt.PlaylistId == id).Select(pt => pt.Tag!.Name).ToArrayAsync(ct);
         var folder = await db.FolderPlaylists
             .Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == id)
@@ -203,7 +220,8 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             .Select(p => new PlaylistResponse(
                 p.Id, p.Name, p.Slug, p.Description, p.Visibility,
                 p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw),
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
                 // The viewer's own private folder placement (if they saved this playlist); null when anonymous.
                 db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
                     .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
@@ -234,7 +252,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         var published = db.Playlists.Where(p => p.OwnerId == user.Id && p.Visibility == PlaylistVisibility.Public);
         if (!await prefs.ShowNsfwAsync(viewerId, ct))
         {
-            published = published.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+            published = published.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
         }
 
         var counts = await published
@@ -262,7 +280,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
         var query = db.Playlists.Where(p => p.OwnerId == ownerId && p.Visibility == PlaylistVisibility.Public);
         if (!await prefs.ShowNsfwAsync(viewerId, ct))
         {
-            query = query.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+            query = query.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
         }
 
         var rows = await (from p in query
@@ -271,7 +289,8 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                           select new PublicPlaylistSummary(
                               u.UserName!, p.Slug, p.Name, p.Description,
                               p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
+                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)))
             .Skip(offset).Take(take + 1)
             .ToListAsync(ct);
 
@@ -303,7 +322,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
 
         if (!await prefs.ShowNsfwAsync(viewerId, ct))
         {
-            query = query.Where(p => !p.Items.Any(i => i.Link!.Nsfw));
+            query = query.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
         }
 
         var rows = await (from p in query
@@ -312,7 +331,8 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                           select new PublicPlaylistSummary(
                               u.UserName!, p.Slug, p.Name, p.Description,
                               p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(), p.Items.Any(i => i.Link!.Nsfw)))
+                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)))
             .Skip(offset).Take(take + 1)
             .ToListAsync(ct);
 

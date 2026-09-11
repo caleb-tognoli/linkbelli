@@ -5,12 +5,29 @@ namespace Linkbelli.Contracts;
 // --- Playlists ---
 public record CreatePlaylistRequest(string Name, string? Description, PlaylistVisibility? Visibility, string[]? Tags);
 
-public record UpdatePlaylistRequest(string? Name, string? Description, PlaylistVisibility? Visibility, string[]? Tags);
+/// <summary>The owner's answer on whether a playlist is adult.</summary>
+public enum NsfwSetting
+{
+    /// <summary>Work it out from the items — the default.</summary>
+    Auto = 0,
+    Yes = 1,
+    No = 2,
+}
+
+public record UpdatePlaylistRequest(
+    string? Name, string? Description, PlaylistVisibility? Visibility, string[]? Tags,
+    /// <summary>Override the automatic adult-content reading. Omit to leave it as it is.</summary>
+    NsfwSetting? Nsfw = null);
 
 public record PlaylistResponse(
     Guid Id, string Name, string Slug, string? Description,
     PlaylistVisibility Visibility, int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw,
-    Guid? FolderId = null, string? FolderName = null);
+    Guid? FolderId = null, string? FolderName = null,
+    /// <summary>
+    /// Whether the owner set the adult flag by hand, or left it automatic. Null in listings,
+    /// which don't report it — rather than defaulting to Auto and misreporting an override.
+    /// </summary>
+    NsfwSetting? NsfwSetting = null);
 
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(
