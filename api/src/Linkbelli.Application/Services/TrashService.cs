@@ -11,7 +11,7 @@ namespace Linkbelli.Application.Services;
 /// Deleting a playlist or an item stamps DeletionTime and keeps the row. This is what makes that
 /// recoverable — and what eventually clears it out, so retained rows don't accumulate forever.
 /// </summary>
-public class TrashService(IAppDbContext db, ILogger<TrashService> logger) : ITrashService
+public class TrashService(IAppDbContext db, IAuditLog audit, ILogger<TrashService> logger) : ITrashService
 {
     /// <summary>How long a deleted row can still be restored before it is purged for good.</summary>
     public const int RetentionDays = 30;
@@ -108,11 +108,24 @@ public class TrashService(IAppDbContext db, ILogger<TrashService> logger) : ITra
         await db.SaveChangesAsync(ct);
     }
 
-    public Task<int> EmptyAsync(Guid ownerId, CancellationToken ct = default) =>
-        PurgeAsync(
+    public async Task<int> EmptyAsync(Guid ownerId, CancellationToken ct = default)
+    {
+        var removed = await PurgeAsync(
             p => p.OwnerId == ownerId && p.DeletionTime != null,
             i => i.DeletionTime != null && db.Playlists.IgnoreQueryFilters().Any(p => p.Id == i.PlaylistId && p.OwnerId == ownerId),
             ct);
+
+        // The one action in the app that destroys rows outright rather than hiding them, so it
+        // is the one most worth having a record of.
+        if (removed > 0)
+        {
+            await audit.RecordAsync(
+                ownerId, "trash.empty", summary: $"Permanently removed {removed} rows from the trash.",
+                details: new { removed }, ct: ct);
+        }
+
+        return removed;
+    }
 
     public async Task<int> PurgeExpiredAsync(CancellationToken ct = default)
     {

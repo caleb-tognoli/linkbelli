@@ -29,6 +29,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<PlaylistLike> PlaylistLikes => Set<PlaylistLike>();
     public DbSet<Follow> Follows => Set<Follow>();
     public DbSet<PlaylistMember> PlaylistMembers => Set<PlaylistMember>();
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
@@ -74,6 +75,21 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(l => l.HostId);
             e.HasOne(l => l.Host).WithMany().OnDelete(DeleteBehavior.Restrict);
             e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<AuditEntry>(e =>
+        {
+            e.Property(a => a.ActorName).HasMaxLength(256);
+            e.Property(a => a.Action).HasMaxLength(100);
+            e.Property(a => a.TargetType).HasMaxLength(50);
+            e.Property(a => a.Summary).HasMaxLength(1000);
+            e.Property(a => a.Details).HasColumnType("jsonb");
+            e.HasIndex(a => a.CreationTime);
+            e.HasIndex(a => new { a.Action, a.CreationTime });
+            e.HasIndex(a => a.ActorId);
+            e.HasIndex(a => a.TargetId);
+            // Deliberately no soft-delete filter: an audit trail that can be deleted from the
+            // application is not one.
         });
 
         modelBuilder.Entity<PlaylistMember>(e =>

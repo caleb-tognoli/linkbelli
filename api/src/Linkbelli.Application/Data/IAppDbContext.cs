@@ -32,6 +32,7 @@ public interface IAppDbContext
     DbSet<PlaylistLike> PlaylistLikes { get; }
     DbSet<Follow> Follows { get; }
     DbSet<PlaylistMember> PlaylistMembers { get; }
+    DbSet<AuditEntry> AuditEntries { get; }
     DbSet<SourceTemplate> SourceTemplates { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }

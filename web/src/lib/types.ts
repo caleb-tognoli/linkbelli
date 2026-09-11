@@ -628,3 +628,19 @@ export interface AdminOverview {
 		lastCheckedAt: string | null;
 	}[];
 }
+
+/** One recorded action: who, what, to what, and the before/after if there was one. */
+export interface AuditEntry {
+	id: string;
+	actorId: string | null;
+	/** Their name as it was at the time, kept even if the account goes. */
+	actorName: string;
+	asAdmin: boolean;
+	action: string;
+	targetType: string | null;
+	targetId: string | null;
+	summary: string | null;
+	/** Raw JSON, shaped per action. */
+	details: string | null;
+	at: string;
+}

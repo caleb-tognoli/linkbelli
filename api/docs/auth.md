@@ -136,3 +136,24 @@ better than a console that 500s exactly when it is needed.
 
 `GET /api/v1/me` reports `roles`, so a client can offer this to the people it will work for
 rather than showing everyone a link that 403s.
+
+## Audit log
+
+`GET /api/v1/admin/audit` — Admin only, like the rest of `/admin`. Filters: `action` (prefix, so
+`admin.` finds every admin action), `actorId`, `targetId`, plus `limit` and `cursor`.
+
+Admin actions reach into other people's data and a few user actions destroy rows outright.
+Neither left any trace — the only record that a host had been blocked, or a trash emptied, was
+the absence of what used to be there.
+
+Recorded today: `admin.host.block` / `admin.host.unblock`, `admin.quota.set` (with the whole
+before and after), `admin.links.re-enrich`, `admin.link.clear-nsfw`, `playlist.delete` (with what
+went with it), and `trash.empty` — the one action in the app that really deletes rows rather than
+hiding them.
+
+- **The actor's name is stored, not just their id.** An audit trail that stops naming people once
+  their account goes is not an audit trail.
+- **`asAdmin` marks the entries where someone was acting on data that was not theirs.**
+- **Writing an entry never fails the action.** The thing being recorded has already happened;
+  undoing it because the note about it failed would be much the worse outcome.
+- **The table carries no soft-delete filter.** A trail the application can delete from is not one.

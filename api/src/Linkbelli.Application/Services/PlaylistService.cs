@@ -11,7 +11,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Linkbelli.Application.Services;
 
 public class PlaylistService(
-    IAppDbContext db, IUserPreferenceService prefs, ITagResolver tags, IPlaylistAccess access) : IPlaylistService
+    IAppDbContext db,
+    IUserPreferenceService prefs,
+    ITagResolver tags,
+    IPlaylistAccess access,
+    IAuditLog audit) : IPlaylistService
 {
     private const int MaxTagResults = 200;
 
@@ -246,8 +250,16 @@ public class PlaylistService(
         var playlist = await db.Playlists.FirstOrDefaultAsync(p => p.Id == id && p.OwnerId == ownerId, ct)
                        ?? throw new NotFoundException("Playlist not found.");
 
+        var itemCount = await db.PlaylistItems.CountAsync(i => i.PlaylistId == id, ct);
+
         db.Playlists.Remove(playlist); // soft delete
         await db.SaveChangesAsync(ct);
+
+        await audit.RecordAsync(
+            ownerId, "playlist.delete", "playlist", id,
+            $"Deleted \"{playlist.Name}\" and its {itemCount} items.",
+            new { playlist.Name, playlist.Slug, playlist.Visibility, itemCount },
+            ct: ct);
     }
 
     public async Task<PlaylistResponse> GetPublicAsync(string username, string slug, Guid? viewerId, CancellationToken ct = default)

@@ -136,6 +136,40 @@
 		</ul>
 	{/if}
 
+	<h2 class="mt-8 font-medium">Recent actions</h2>
+	{#if data.audit.length === 0}
+		<p class="mt-2 text-sm" style="color: var(--color-muted)">Nothing recorded yet.</p>
+	{:else}
+		<ul class="mt-3 flex flex-col text-sm">
+			{#each data.audit as entry (entry.id)}
+				<li class="border-t py-2 first:border-t-0" style="border-color: var(--color-border)">
+					<div class="flex flex-wrap items-baseline gap-x-2">
+						<span class="font-medium">@{entry.actorName}</span>
+						{#if entry.asAdmin}
+							<!-- Reaching into other people's data is the part worth marking. -->
+							<span
+								class="rounded px-1.5 py-0.5 text-xs"
+								style="background: var(--color-bg); color: var(--color-danger)"
+							>admin</span>
+						{/if}
+						<span style="color: var(--color-muted)">{entry.summary ?? entry.action}</span>
+					</div>
+					<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
+						{entry.action} · {new Date(entry.at).toLocaleString()}
+					</p>
+					{#if entry.details}
+						<details class="mt-1">
+							<summary class="cursor-pointer text-xs" style="color: var(--color-muted)">Details</summary>
+							<pre
+								class="mt-1 overflow-x-auto rounded p-2 text-xs"
+								style="background: var(--color-bg)">{entry.details}</pre>
+						</details>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	{/if}
+
 	<h2 class="mt-8 font-medium">Recent fetch errors</h2>
 	{#if o.recentErrors.length === 0}
 		<p class="mt-2 pb-10 text-sm" style="color: var(--color-muted)">

@@ -50,3 +50,18 @@ public record AdminOverviewResponse(
     IReadOnlyList<AdminFailingSource> TopFailingSources,
     IReadOnlyList<AdminHostVolume> TopHosts,
     IReadOnlyList<AdminLinkError> RecentErrors);
+
+/// <summary>One recorded action: who, what, to what, and the before/after if there was one.</summary>
+public record AuditEntryResponse(
+    Guid Id,
+    Guid? ActorId,
+    /// <summary>Their name as it was at the time, kept even if the account goes.</summary>
+    string ActorName,
+    bool AsAdmin,
+    string Action,
+    string? TargetType,
+    Guid? TargetId,
+    string? Summary,
+    /// <summary>Raw JSON, shaped per action.</summary>
+    string? Details,
+    DateTimeOffset At);
