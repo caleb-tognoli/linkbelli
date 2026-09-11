@@ -123,6 +123,10 @@ app.UseExceptionHandler();
 
 app.MapAppMetrics();
 
+// Ahead of routing on purpose: parameter binding consumes the body before any endpoint filter
+// runs, so a request that wants its body hashed has to be made re-readable first.
+app.Use(IdempotencyFilter.EnableBuffering);
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -152,6 +156,10 @@ app.MapGet("/", () => Results.Ok(new { name = "Linkbelli API", version = "v1" })
 // All business endpoints are versioned under /api/v1. Infra routes (/, /health, /openapi,
 // /scalar, /hangfire) stay unversioned.
 var v1 = app.MapGroup(ApiRoutes.V1);
+
+// Opt-in by header: a POST carrying an Idempotency-Key can be retried safely, and one without
+// behaves exactly as it always did.
+v1.AddEndpointFilter<IdempotencyFilter>();
 v1.MapAuthEndpoints();
 v1.MapMeEndpoints();
 v1.MapApiKeyEndpoints();

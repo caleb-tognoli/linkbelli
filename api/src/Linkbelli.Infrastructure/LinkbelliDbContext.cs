@@ -31,6 +31,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<PlaylistMember> PlaylistMembers => Set<PlaylistMember>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
@@ -76,6 +77,17 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(l => l.HostId);
             e.HasOne(l => l.Host).WithMany().OnDelete(DeleteBehavior.Restrict);
             e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<IdempotencyRecord>(e =>
+        {
+            e.Property(r => r.Key).HasMaxLength(200);
+            e.Property(r => r.Endpoint).HasMaxLength(500);
+            e.Property(r => r.RequestHash).HasMaxLength(64);
+            // Per caller: two clients picking the same UUID must not collide. Unique, because it
+            // is what makes two simultaneous retries resolve to one execution.
+            e.HasIndex(r => new { r.UserId, r.Key }).IsUnique();
+            e.HasIndex(r => r.CreationTime);
         });
 
         modelBuilder.Entity<ContentReport>(e =>

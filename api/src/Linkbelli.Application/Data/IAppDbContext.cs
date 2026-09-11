@@ -34,6 +34,7 @@ public interface IAppDbContext
     DbSet<PlaylistMember> PlaylistMembers { get; }
     DbSet<AuditEntry> AuditEntries { get; }
     DbSet<ContentReport> ContentReports { get; }
+    DbSet<IdempotencyRecord> IdempotencyRecords { get; }
     DbSet<SourceTemplate> SourceTemplates { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }

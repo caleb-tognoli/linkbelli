@@ -210,3 +210,22 @@ series for a collection spanning thousands of sites is a cardinality problem, no
 Tracing is exported only when `Telemetry:Otlp:Endpoint` names a collector — collecting spans and
 dropping them on the floor costs the same as collecting spans somebody reads. The scrape endpoint
 is excluded from traces: it is hit constantly and says nothing.
+
+## Idempotency keys
+
+A scripted client whose request times out cannot tell "the server never got it" from "the server
+did it and the reply was lost". Retrying was a coin flip between a duplicate and a missing row.
+
+Send `Idempotency-Key: <your own unique string>` on any `POST` under `/api/v1`. The first request
+runs; a retry with the same key returns the **same status and the same body**, with
+`Idempotent-Replay: true` on the response. Requests without the header behave exactly as they
+always did.
+
+- **Keys are scoped to the caller**, so two clients picking the same UUID never collide.
+- **The same key with a different body or a different path is a `409`.** Replaying the first
+  answer there would hide a client bug and silently drop the second request.
+- **A retry that arrives while the first is still running gets a `409`** telling it to try again
+  shortly, rather than racing it.
+- **A request that never completed gives its key back.** If the endpoint threw, nothing happened,
+  so a retry — including a corrected one under the same key — is free to run.
+- Keys are remembered for **24 hours**, then forgotten by an hourly job.

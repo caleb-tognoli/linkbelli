@@ -24,6 +24,7 @@ public sealed class MaintenanceScheduler(
     public const string ClassifyJobId = "links:classify";
     public const string AutomationJobId = "automation:apply";
     public const string ArchiveJobId = "links:archive";
+    public const string IdempotencyJobId = "idempotency:purge";
 
     /// <summary>Nightly, off the hour so it doesn't pile onto every hourly source schedule.</summary>
     public const string Cron = "17 3 * * *";
@@ -52,6 +53,9 @@ public sealed class MaintenanceScheduler(
     /// </summary>
     public const string ArchiveCron = "*/5 * * * *";
 
+    /// <summary>Hourly: keys are only remembered for a day, so this never has much to do.</summary>
+    public const string IdempotencyCron = "8 * * * *";
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         try
@@ -73,6 +77,9 @@ public sealed class MaintenanceScheduler(
 
             recurringJobs.AddOrUpdate<ILinkArchiveSweep>(
                 ArchiveJobId, svc => svc.SweepAsync(CancellationToken.None), ArchiveCron);
+
+            recurringJobs.AddOrUpdate<IIdempotencyRetention>(
+                IdempotencyJobId, svc => svc.PurgeAsync(CancellationToken.None), IdempotencyCron);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
