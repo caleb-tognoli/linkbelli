@@ -36,7 +36,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         query = ApplyStatusFilter(query, status);
         query = ApplyQueryFilter(query, q);
 
-        return await PageAsync(query, take, cursor, sort, db, ct);
+        return await PageAsync(query, take, cursor, sort, q, db, ct);
     }
 
     public async Task<PlaylistItemResponse> AddAsync(
@@ -178,7 +178,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
         query = ApplyStatusFilter(query, status);
         query = ApplyQueryFilter(query, q);
 
-        return await PageAsync(query, take, cursor, sort, db, ct);
+        return await PageAsync(query, take, cursor, sort, q, db, ct);
     }
 
     private static IQueryable<PlaylistItem> ApplyStatusFilter(IQueryable<PlaylistItem> query, string? status)
@@ -202,6 +202,9 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             return query.Where(i => i.Link!.UrlHash == hash);
         }
 
+        // lower(col) LIKE '%needle%'. Trigram GIN indexes on those same expressions make this
+        // indexable (see the AddSearchIndexes migration); Postgres still falls back to a scan
+        // for terms under three characters, which have too little trigram content to match on.
         var needle = q.ToLower();
         return query.Where(i =>
             (i.Link!.Title != null && i.Link.Title.ToLower().Contains(needle))
@@ -209,6 +212,28 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             || (i.Link!.SiteName != null && i.Link.SiteName.ToLower().Contains(needle))
             || i.Link!.CanonicalUrl.ToLower().Contains(needle)
             || i.Link!.Host!.Hostname.ToLower().Contains(needle));
+    }
+
+    /// <summary>
+    /// Whether a search term should drive the ordering. A term the user typed is a stronger
+    /// signal about what they want to see first than the playlist's resting order — but only
+    /// when they haven't asked for a specific sort, which is an explicit instruction.
+    /// </summary>
+    private static bool RanksByRelevance(string? q, string? sort) =>
+        !string.IsNullOrWhiteSpace(q) && sort is null or "" or "position";
+
+    /// <summary>
+    /// Relevance buckets, best first: a title hit beats a site-name hit beats everything else
+    /// (description, URL, hostname). Ties fall back to the playlist's own order.
+    /// </summary>
+    private static IOrderedQueryable<PlaylistItem> OrderByRelevance(IQueryable<PlaylistItem> query, string q)
+    {
+        var needle = q.ToLower();
+        return query
+            .OrderBy(i => i.Link!.Title != null && i.Link.Title.ToLower().Contains(needle) ? 0
+                : i.Link!.SiteName != null && i.Link.SiteName.ToLower().Contains(needle) ? 1
+                : 2)
+            .ThenBy(i => i.Position);
     }
 
     private static IQueryable<PlaylistItem> ApplySourceFilter(IQueryable<PlaylistItem> query, string? source)
@@ -219,7 +244,7 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
     }
 
     private static async Task<PagedResult<PlaylistItemResponse>> PageAsync(
-        IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, IAppDbContext db, CancellationToken ct)
+        IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, string? q, IAppDbContext db, CancellationToken ct)
     {
         // The total is counted once, on the first page, then carried inside the cursor. Counting on
         // every "load more" ran a second full pass over the filtered set — doubling the cost of
@@ -305,10 +330,22 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             bool asc = sort == "score-asc";
             int offset = int.TryParse(payload, out var o) ? o : 0;
             // NULL scores always sort last regardless of direction.
-            IQueryable<PlaylistItem> q = asc
+            IQueryable<PlaylistItem> ordered = asc
                 ? query.OrderBy(i => i.Score == null ? 1 : 0).ThenBy(i => i.Score).ThenBy(i => i.Position)
                 : query.OrderBy(i => i.Score == null ? 1 : 0).ThenByDescending(i => i.Score).ThenBy(i => i.Position);
-            var rows = await q.Skip(offset).Take(take + 1).Select(ToResponse).ToListAsync(ct);
+            var rows = await ordered.Skip(offset).Take(take + 1).Select(ToResponse).ToListAsync(ct);
+            string? next = null;
+            if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.EncodePage(total, (offset + take).ToString()); }
+            return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
+        }
+
+        if (RanksByRelevance(q, sort))
+        {
+            // Offset paging, not a keyset: the relevance bucket isn't a stored column, so there
+            // is no cursor value to compare the next page against.
+            var offset = int.TryParse(payload, out var searchOffset) ? searchOffset : 0;
+            var rows = await OrderByRelevance(query, q!)
+                .Skip(offset).Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
             if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.EncodePage(total, (offset + take).ToString()); }
             return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
