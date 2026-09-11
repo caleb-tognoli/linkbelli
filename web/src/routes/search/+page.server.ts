@@ -7,11 +7,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const q = url.searchParams.get('q') ?? '';
 	const host = url.searchParams.get('host') ?? '';
 	const status = url.searchParams.get('status') ?? '';
+	const finished = url.searchParams.get('finished') ?? '';
 
 	const params = new URLSearchParams();
 	if (q) params.set('q', q);
 	if (host) params.set('host', host);
 	if (status) params.set('status', status);
+	// "finished" is a plain day count in the URL so the link stays readable and shareable; the
+	// API takes the instant it resolves to.
+	if (finished) {
+		const days = Number(finished);
+		if (Number.isFinite(days) && days > 0) {
+			params.set('finishedSince', new Date(Date.now() - days * 86_400_000).toISOString());
+		}
+	}
 	params.set('limit', '25');
 
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
@@ -24,6 +33,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		q,
 		host,
 		status,
+		finished,
 		results: resultsRes.ok ? ((await resultsRes.json()) as Paged<SearchHit>) : EMPTY,
 		hosts: hostsRes.ok ? ((await hostsRes.json()) as HostFacet[]) : []
 	};

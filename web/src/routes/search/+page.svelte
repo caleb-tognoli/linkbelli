@@ -33,7 +33,7 @@
 	/** The search state lives in the URL, so a result list is a link someone can keep. */
 	function navigate(changes: Record<string, string>) {
 		const params = new URLSearchParams();
-		const next = { q: term, host: data.host, status: data.status, ...changes };
+		const next = { q: term, host: data.host, status: data.status, finished: data.finished, ...changes };
 		for (const [key, value] of Object.entries(next)) {
 			if (value) params.set(key, value);
 		}
@@ -54,6 +54,12 @@
 			if (data.q) params.set('q', data.q);
 			if (data.host) params.set('host', data.host);
 			if (data.status) params.set('status', data.status);
+			if (data.finished) {
+				params.set(
+					'finishedSince',
+					new Date(Date.now() - Number(data.finished) * 86_400_000).toISOString()
+				);
+			}
 
 			const res = await api.get(`/search?${params}`);
 			if (res.ok) {
@@ -103,6 +109,16 @@
 			{/each}
 		</div>
 
+		<button
+			type="button"
+			onclick={() => navigate({ finished: data.finished ? '' : '7', status: '' })}
+			class="rounded-md border px-3 py-1.5"
+			class:font-medium={!!data.finished}
+			style="border-color: {data.finished ? 'var(--color-accent)' : 'var(--color-border)'};
+			       color: {data.finished ? 'var(--color-accent)' : 'inherit'}"
+			title="Items you marked watched in the last week"
+		>Finished this week</button>
+
 		{#if data.host}
 			<button
 				type="button"
@@ -141,10 +157,10 @@
 	{#if hits.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">
-				{data.q || data.host || data.status ? 'Nothing matched.' : 'Search across everything you have saved.'}
+				{data.q || data.host || data.status || data.finished ? 'Nothing matched.' : 'Search across everything you have saved.'}
 			</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				{data.q || data.host || data.status
+				{data.q || data.host || data.status || data.finished
 					? 'Try fewer words, or a different filter.'
 					: 'Type above, or pick a site to browse what you saved from it.'}
 			</p>

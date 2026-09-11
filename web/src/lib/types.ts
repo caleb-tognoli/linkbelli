@@ -111,6 +111,8 @@ export interface PlaylistItem {
 	position: number;
 	note: string | null;
 	status: string;
+	/** When the status last changed; null if it never has. */
+	statusChangedAt?: string | null;
 	link: LinkSummary;
 	creationTime: string;
 	metadata: Record<string, string> | null;
@@ -250,6 +252,8 @@ export interface SearchHit {
 	status: string;
 	score: number | null;
 	addedAt: string;
+	/** When the status last changed; null if it never has. */
+	statusChangedAt: string | null;
 }
 
 /** A site the caller saves from, and how many of their links are on it. */

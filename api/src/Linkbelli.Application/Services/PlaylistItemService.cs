@@ -21,7 +21,8 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             i.CreationTime,
             i.Metadata,
             i.SourceId,
-            i.Score);
+            i.Score,
+            i.StatusChangedAt);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)
@@ -83,9 +84,10 @@ public class PlaylistItemService(IAppDbContext db, ILinkService links, IUserPref
             item.Note = request.Note.Trim();
         }
 
-        if (request.Status is not null)
+        if (request.Status is not null && request.Status.Value != item.Status)
         {
             item.Status = request.Status.Value;
+            item.StatusChangedAt = DateTimeOffset.UtcNow;
         }
 
         await db.SaveChangesAsync(ct);

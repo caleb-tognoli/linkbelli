@@ -91,7 +91,7 @@ title/description/thumbnail/site, flipping `enriched` to `true` — usually with
 |--------|------|------|---------|
 | `GET`    | `/api/v1/playlists/{id}/items` | — (`?limit=`, `?cursor=`) | List items in order |
 | `POST`   | `/api/v1/playlists/{id}/items` | `url`, `note?` | Add a link to the end |
-| `PATCH`  | `/api/v1/items/{id}`           | `note?` | Update an item's note |
+| `PATCH`  | `/api/v1/items/{id}`           | `note?`, `status?` | Update an item's note or status |
 | `DELETE` | `/api/v1/items/{id}`           | — | Soft delete (remove from playlist) |
 | `POST`   | `/api/v1/items/{id}/move`      | `afterItemId?` | Reorder: place after the given item; `null` = move to front |
 
@@ -141,6 +141,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `tag`      | Repeatable; the playlist must carry **all** of them |
 | `status`   | `watched` or `unwatched` |
 | `minScore` | Only items you scored at least this highly |
+| `finishedSince` | Only items you marked watched at or after this instant — "what did I get through this week" |
 | `limit`, `cursor` | Paging; `limit` maxes out at 100 |
 
 - Results are ordered by relevance when `q` is given — a title hit, then a site-name hit, then

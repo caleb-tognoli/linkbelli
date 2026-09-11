@@ -18,6 +18,13 @@ public class PlaylistItem : BaseEntity<Guid>
     /// <summary>Null when added manually; otherwise the source that discovered it.</summary>
     public Guid? SourceId { get; set; }
     public PlaylistItemStatus Status { get; set; } = PlaylistItemStatus.Added;
+
+    /// <summary>
+    /// When <see cref="Status"/> last changed. Null while an item has never moved off Added —
+    /// and on items that changed before this was tracked, which is why it is nullable rather
+    /// than falling back to the creation time and inventing history.
+    /// </summary>
+    public DateTimeOffset? StatusChangedAt { get; set; }
     /// <summary>Source-provided metadata (title, thumbnail, author, etc.). Null when added manually.</summary>
     public Dictionary<string, string>? Metadata { get; set; }
     /// <summary>Owner-assigned score (0–100). Null means unrated.</summary>

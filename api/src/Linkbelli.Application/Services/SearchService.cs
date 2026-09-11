@@ -40,7 +40,8 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         i.Note,
         i.Status,
         i.Score,
-        i.CreationTime);
+        i.CreationTime,
+        i.StatusChangedAt);
 
     public async Task<PagedResult<SearchHit>> SearchAsync(Guid ownerId, SearchQuery query, CancellationToken ct = default)
     {
@@ -58,6 +59,13 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         if (query.MinScore is { } minScore)
         {
             items = items.Where(i => i.Score != null && i.Score >= minScore);
+        }
+
+        if (query.FinishedSince is { } since)
+        {
+            items = items.Where(i => i.Status == PlaylistItemStatus.Watched
+                && i.StatusChangedAt != null
+                && i.StatusChangedAt >= since);
         }
 
         var continuing = Common.Cursor.TryDecodePage(query.Cursor, out var total, out var payload);

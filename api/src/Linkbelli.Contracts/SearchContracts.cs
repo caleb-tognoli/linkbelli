@@ -14,7 +14,9 @@ public record SearchHit(
     string? Note,
     PlaylistItemStatus Status,
     int? Score,
-    DateTimeOffset AddedAt);
+    DateTimeOffset AddedAt,
+    /// <summary>When the status last changed; null if it never has.</summary>
+    DateTimeOffset? StatusChangedAt);
 
 /// <summary>Filters a search can be narrowed by, beyond the text itself.</summary>
 public record SearchQuery(
@@ -27,5 +29,7 @@ public record SearchQuery(
     string? Status,
     /// <summary>Only items scored at least this highly.</summary>
     int? MinScore,
+    /// <summary>Only items finished since this moment — "what did I get through this week".</summary>
+    DateTimeOffset? FinishedSince,
     int? Limit,
     string? Cursor);
