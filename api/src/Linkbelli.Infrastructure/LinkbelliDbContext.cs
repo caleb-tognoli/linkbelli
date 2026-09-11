@@ -253,7 +253,11 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         }
     }
 
-    /// <summary>Stamps CreationTime on inserts and converts hard deletes into soft deletes.</summary>
+    /// <summary>
+    /// Stamps CreationTime on inserts, LastModified on anything that changed, and converts hard
+    /// deletes into soft deletes. A soft delete counts as a change: a client syncing has to learn
+    /// that a row went away, and the row is still there to tell it.
+    /// </summary>
     private void ApplyAuditRules()
     {
         var now = DateTimeOffset.UtcNow;
@@ -264,14 +268,24 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
                 continue;
             }
 
-            if (entry.State == EntityState.Added && entity.CreationTime == default)
+            if (entry.State == EntityState.Added)
             {
-                entity.CreationTime = now;
+                if (entity.CreationTime == default)
+                {
+                    entity.CreationTime = now;
+                }
+
+                entity.LastModified = now;
             }
             else if (entry.State == EntityState.Deleted)
             {
                 entry.State = EntityState.Modified;
                 entity.DeletionTime = now;
+                entity.LastModified = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entity.LastModified = now;
             }
         }
     }

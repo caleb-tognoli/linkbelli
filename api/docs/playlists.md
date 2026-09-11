@@ -292,6 +292,28 @@ Import has existed since the CSV importer; this is the way out.
 curl -OJ "http://localhost:5180/api/v1/export?format=csv" -H "Authorization: Bearer <token>"
 ```
 
+## Sync (what changed since I last looked)
+
+`GET /api/v1/sync?since=<instant>` reports everything of yours that changed after that moment.
+Without it a caching client — the browser extension, an offline queue, a mobile app — has only
+two options: re-read everything, or trust a stale copy.
+
+```bash
+curl "http://localhost:5180/api/v1/sync" -H "Authorization: Bearer <token>"
+# -> { "until": "...", "more": false, "playlists": [...], "items": [...] }
+```
+
+- Omit `since` for a first sync, which returns everything.
+- **Deleted rows come back as tombstones** (`"deleted": true`, every other field null) rather
+  than simply being absent. A client that only ever hears about what exists can never learn that
+  something went away.
+- `until` is read from the **server's** clock and is what to pass as `since` next time — a client
+  with a skewed clock would otherwise ask for a window that skips changes it never saw.
+- At most 500 rows of each kind per call; `more` says the page was capped, and `until` then
+  resumes at the last row actually returned rather than skipping what was left behind.
+- Changing an item's **tags** counts as changing the item, even though tags live in their own
+  rows — otherwise a syncing client would never hear about it.
+
 ## Duplicates
 
 `GET /api/v1/duplicates` finds the same thing saved more than once across playlists you own.

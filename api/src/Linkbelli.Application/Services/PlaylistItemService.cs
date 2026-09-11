@@ -105,6 +105,10 @@ public class PlaylistItemService(
             {
                 db.PlaylistItemTags.Add(new PlaylistItemTag { PlaylistItemId = itemId, TagId = tag.Id });
             }
+
+            // Tags live in their own rows, so changing them leaves the item untouched — and a
+            // client syncing on LastModified would never hear about it. Touch the item itself.
+            item.LastModified = DateTimeOffset.UtcNow;
         }
 
         await db.SaveChangesAsync(ct);

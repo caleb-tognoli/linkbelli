@@ -197,6 +197,10 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
             {
                 db.PlaylistTags.Add(new PlaylistTag { PlaylistId = id, TagId = t.Id });
             }
+
+            // Same as item tags: the join rows change, the playlist row does not, and a client
+            // syncing on LastModified would never hear about it.
+            playlist.LastModified = DateTimeOffset.UtcNow;
         }
 
         await db.SaveChangesAsync(ct);
