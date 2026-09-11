@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Linkbelli.Application.Automation;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
@@ -11,7 +12,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Linkbelli.Application.Services;
 
 public class PlaylistItemService(
-    IAppDbContext db, ILinkService links, IUserPreferenceService prefs, ITagResolver tags) : IPlaylistItemService
+    IAppDbContext db,
+    ILinkService links,
+    IUserPreferenceService prefs,
+    ITagResolver tags,
+    IAutomationRunner automation) : IPlaylistItemService
 {
     private static readonly Expression<Func<PlaylistItem, PlaylistItemResponse>> ToResponse = i =>
         new PlaylistItemResponse(
@@ -73,6 +78,11 @@ public class PlaylistItemService(
         };
         db.PlaylistItems.Add(item);
         await db.SaveChangesAsync(ct);
+
+        // Straight away for a manual add, where the person is watching: a rule that files their
+        // link a minute after they saved it looks like the app moved it on its own. The sweep is
+        // what makes the rules reliable; this is what makes them feel immediate.
+        await automation.ApplyAsync([item.Id], ct);
 
         return await ProjectAsync(item.Id, ct);
     }

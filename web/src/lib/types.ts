@@ -451,3 +451,34 @@ export interface Usage {
 	broken: number;
 	inTrash: number;
 }
+
+/** One "when this arrives, do that" over your own collection. Conditions are all required. */
+export interface AutomationRule {
+	id: string;
+	name: string;
+	enabled: boolean;
+	/** Rules run lowest first; one can move an item out from under the next. */
+	position: number;
+	playlistId: string | null;
+	host: string | null;
+	titlePattern: string | null;
+	urlPattern: string | null;
+	kind: ContentKind | null;
+	addTags: string[];
+	moveToPlaylistId: string | null;
+	copyToPlaylistId: string | null;
+	markWatched: boolean;
+	trash: boolean;
+	/** Stop after this one matches, so a specific rule can shield an item from a broad one. */
+	stopOnMatch: boolean;
+	/** How many items it has acted on — what makes a rule that never fires visible. */
+	matchCount: number;
+	lastMatchedAt: string | null;
+	creationTime: string;
+}
+
+/** What a rule would have caught among what is already saved. */
+export interface AutomationPreview {
+	matches: number;
+	sample: { itemId: string; playlistName: string; url: string; title: string | null }[];
+}

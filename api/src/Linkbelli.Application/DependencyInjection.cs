@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using Linkbelli.Application.Auth;
+using Linkbelli.Application.Automation;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Http;
 using Linkbelli.Application.Services;
@@ -41,6 +42,8 @@ public static class DependencyInjection
         services.AddSingleton<LinkMetadataExtractor>();
         services.AddSingleton<ArticleExtractor>();
         services.AddScoped<ILinkClassificationSweep, LinkClassificationSweep>();
+        services.AddScoped<IAutomationRuleService, AutomationRuleService>();
+        services.AddScoped<IAutomationRunner, AutomationRunner>();
         services.AddSingleton<LinkMetadataFetcher>();
         services.AddSingleton<IHostThrottle, HostThrottle>();
         services.AddScoped<ILinkEnricher, LinkEnricher>();

@@ -30,6 +30,12 @@ public class PlaylistItem : BaseEntity<Guid>
     /// <summary>Owner-assigned score (0–100). Null means unrated.</summary>
     public int? Score { get; set; }
 
+    /// <summary>
+    /// When the owner's automation rules were run over this item. Null means they haven't been —
+    /// which is what the sweep looks for, and what stops a rule acting on the same item twice.
+    /// </summary>
+    public DateTimeOffset? AutomationAppliedAt { get; set; }
+
     /// <summary>Tags on the link itself, as opposed to on the playlist holding it.</summary>
     public List<PlaylistItemTag> Tags { get; set; } = [];
 

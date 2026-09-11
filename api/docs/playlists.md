@@ -247,6 +247,65 @@ twenty minutes, in batches) using the same rules and nothing but the row — no 
 > playlist filling up after a source run says so, rather than its count creeping upward on its
 > own. Public reads omit `pendingCount`: a visitor can't act on it.
 
+## Rules
+
+Everything a source finds lands where the source was pointed and stays there, so filing, tagging
+or dismissing it is a decision made again for every single item. A rule is "when this arrives, do
+that", over your own collection.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET`    | `/api/v1/automations`         | Your rules, in the order they run |
+| `POST`   | `/api/v1/automations`         | Create one |
+| `POST`   | `/api/v1/automations/preview` | What a rule **would** have caught among what is already saved |
+| `PATCH`  | `/api/v1/automations/{id}`    | Update (see `clear` below) |
+| `DELETE` | `/api/v1/automations/{id}`    | Delete. Items it already filed stay where they are |
+
+```jsonc
+{
+  "name": "Long reads go to Later",
+  // When ALL of these hold. Omit one to skip that condition.
+  "playlistId": null,            // only items landing in this playlist
+  "host": "example.com",         // exact hostname
+  "titlePattern": "rust|zig",    // regex, case-insensitive
+  "urlPattern": "/blog/",
+  "kind": "Article",
+  // Then:
+  "addTags": ["rust"],
+  "moveToPlaylistId": "…",       // or copyToPlaylistId — not both
+  "markWatched": false,
+  "trash": false,
+  "stopOnMatch": true
+}
+```
+
+Things worth knowing:
+
+- **Conditions are AND, not OR.** A rule that fires when *any* one of several conditions matches
+  is nearly impossible to predict once it has more than one. A rule with **no** conditions matches
+  everything that arrives, which is a legitimate thing to want.
+- **A rule only ever sees what arrives after it.** "When this arrives" is not "reorganise
+  everything I have ever saved" — so writing a rule never touches what is already in your lists.
+  Use `preview` to find out whether it works without waiting to see what it does.
+- **Order matters, and `stopOnMatch` is why.** Rules run lowest `position` first, and one can move
+  an item out from under the next. A specific rule that stops can shield an item from a broad rule
+  underneath it, instead of the broad rule having to enumerate every exception.
+- **Patterns are checked when you save them.** An unparseable one is a `400` naming the field,
+  not a rule that fails silently on every run, and they match on the linear engine wherever the
+  syntax allows so a pattern can't hang the worker.
+- **`trash` is recoverable.** It soft-deletes, like every other delete here — a rule that deleted
+  permanently would be one bad pattern away from losing a collection.
+- **A rule can only file into your own playlists.** Checked when saved *and* when it runs, since a
+  playlist can be deleted or handed over in between.
+- Each rule reports `matchCount` and `lastMatchedAt`. A rule that has never fired is almost always
+  a rule that doesn't work, and nothing else would ever say so.
+
+On `PATCH`, an omitted field is left alone — so clearing a condition takes an explicit
+`"clear": ["host", "titlePattern"]`, because `null` already means "don't touch".
+
+Rules run within a minute of a link being enriched (`automation:apply`), and immediately for a
+manual add, where the person is watching.
+
 ## NSFW
 
 Links are flagged adult **automatically** (via the page's `rating`/RTA meta tag during

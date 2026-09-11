@@ -1,4 +1,5 @@
 using Hangfire;
+using Linkbelli.Application.Automation;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
@@ -20,6 +21,7 @@ public sealed class MaintenanceScheduler(
     public const string RunPruneJobId = "sources:prune-runs";
     public const string RecheckJobId = "links:recheck";
     public const string ClassifyJobId = "links:classify";
+    public const string AutomationJobId = "automation:apply";
 
     /// <summary>Nightly, off the hour so it doesn't pile onto every hourly source schedule.</summary>
     public const string Cron = "17 3 * * *";
@@ -36,6 +38,12 @@ public sealed class MaintenanceScheduler(
     /// </summary>
     public const string ClassifyCron = "*/20 * * * *";
 
+    /// <summary>
+    /// Every minute. Items arrive by several routes and are enriched well after they land, so
+    /// this is what makes the rules reliable rather than only prompt.
+    /// </summary>
+    public const string AutomationCron = "* * * * *";
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         try
@@ -51,6 +59,9 @@ public sealed class MaintenanceScheduler(
 
             recurringJobs.AddOrUpdate<ILinkClassificationSweep>(
                 ClassifyJobId, svc => svc.SweepAsync(CancellationToken.None), ClassifyCron);
+
+            recurringJobs.AddOrUpdate<IAutomationRunner>(
+                AutomationJobId, svc => svc.SweepAsync(CancellationToken.None), AutomationCron);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -25,6 +25,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<PlaylistPreference> PlaylistPreferences => Set<PlaylistPreference>();
     public DbSet<PlaylistItemTag> PlaylistItemTags => Set<PlaylistItemTag>();
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
+    public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
@@ -72,10 +73,25 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasSoftDeleteFilter();
         });
 
+        modelBuilder.Entity<AutomationRule>(e =>
+        {
+            e.Property(r => r.Name).HasMaxLength(200);
+            e.Property(r => r.Host).HasMaxLength(255);
+            e.Property(r => r.TitlePattern).HasMaxLength(200);
+            e.Property(r => r.UrlPattern).HasMaxLength(200);
+            e.HasIndex(r => new { r.OwnerId, r.Position });
+            e.HasSoftDeleteFilter();
+        });
+
         modelBuilder.Entity<PlaylistItem>(e =>
         {
             e.HasIndex(i => new { i.PlaylistId, i.LinkId }).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(i => new { i.PlaylistId, i.Position });
+            // Feeds the automation sweep, which looks for items the rules haven't seen. Partial,
+            // so it holds only the backlog rather than every item ever saved.
+            e.HasIndex(i => i.CreationTime)
+                .HasDatabaseName("IX_PlaylistItems_AwaitingAutomation")
+                .HasFilter("\"AutomationAppliedAt\" IS NULL");
             e.HasOne(i => i.Playlist).WithMany(p => p.Items).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(i => i.Link).WithMany().OnDelete(DeleteBehavior.Restrict);
             e.HasOne(i => i.Source).WithMany().OnDelete(DeleteBehavior.SetNull);
