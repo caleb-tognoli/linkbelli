@@ -246,6 +246,22 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 curl "http://localhost:5180/api/v1/search?q=postgres&status=unwatched"   -H "Authorization: Bearer <token>"
 ```
 
+### Saved searches
+
+A search worth coming back to — "unread, from this site, rated above 70". What it matches is
+whatever matches **now**, so it keeps up with the collection instead of freezing a list of ids.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET`    | `/api/v1/search/saved`      | Your saved searches, newest first |
+| `POST`   | `/api/v1/search/saved`      | Save one (`name` plus any of the search filters) |
+| `GET`    | `/api/v1/search/saved/{id}` | Run it and return what matches now (paginated) |
+| `DELETE` | `/api/v1/search/saved/{id}` | Forget it. The links it found are untouched — it was only a question |
+
+> A saved search is deliberately not a playlist. A playlist can be reordered, added to,
+> syndicated and exported; a query-defined list can do none of those, and making one polymorphic
+> would put that branch into every read of every playlist.
+
 > Search matches with `lower(col) LIKE '%term%'`, covered by trigram GIN indexes. Terms shorter
 > than three characters carry too little trigram content for the index and fall back to a scan.
 

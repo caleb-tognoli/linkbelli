@@ -41,3 +41,28 @@ public record SearchQuery(
     string? Sort,
     int? Limit,
     string? Cursor);
+
+/// <summary>A search someone wants to come back to. Membership is whatever matches right now.</summary>
+public record SavedSearchResponse(
+    Guid Id,
+    string Name,
+    string? Q,
+    string? Host,
+    string[] Tags,
+    string[] ItemTags,
+    string? Status,
+    int? MinScore,
+    bool Broken,
+    string? Sort,
+    DateTimeOffset CreationTime);
+
+public record SaveSearchRequest(
+    string Name,
+    string? Q = null,
+    string? Host = null,
+    string[]? Tags = null,
+    string[]? ItemTags = null,
+    string? Status = null,
+    int? MinScore = null,
+    bool Broken = false,
+    string? Sort = null);

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
@@ -19,6 +20,19 @@ public interface ISearchService
 
     /// <summary>Hosts across the caller's items, most-saved first — the facets for a host filter.</summary>
     Task<IReadOnlyList<HostFacet>> ListHostsAsync(Guid ownerId, string? q, CancellationToken ct = default);
+
+    /// <summary>Searches the caller has saved to come back to, newest first.</summary>
+    Task<IReadOnlyList<SavedSearchResponse>> ListSavedAsync(Guid ownerId, CancellationToken ct = default);
+
+    /// <summary>Saves a search under a name.</summary>
+    Task<SavedSearchResponse> SaveAsync(Guid ownerId, SaveSearchRequest request, CancellationToken ct = default);
+
+    /// <summary>Removes a saved search. The links it matched are untouched — it was only a question.</summary>
+    Task DeleteSavedAsync(Guid ownerId, Guid id, CancellationToken ct = default);
+
+    /// <summary>Runs a saved search and returns what matches right now.</summary>
+    Task<PagedResult<SearchHit>> RunSavedAsync(
+        Guid ownerId, Guid id, int? limit, string? cursor, CancellationToken ct = default);
 }
 
 /// <summary>A site the caller has saved from, and how many of their links are on it.</summary>
@@ -128,6 +142,68 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             .ToListAsync(ct);
 
         return grouped.Select(x => new HostFacet(x.Hostname, x.ItemCount)).ToList();
+    }
+
+    public async Task<IReadOnlyList<SavedSearchResponse>> ListSavedAsync(Guid ownerId, CancellationToken ct = default) =>
+        await db.SavedSearches
+            .Where(ss => ss.OwnerId == ownerId)
+            .OrderByDescending(ss => ss.CreationTime)
+            .Select(ss => new SavedSearchResponse(
+                ss.Id, ss.Name, ss.Query, ss.Host, ss.Tags, ss.ItemTags,
+                ss.Status, ss.MinScore, ss.Broken, ss.Sort, ss.CreationTime))
+            .ToListAsync(ct);
+
+    public async Task<SavedSearchResponse> SaveAsync(
+        Guid ownerId, SaveSearchRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ValidationException("name", "A name is required.");
+        }
+
+        var saved = new SavedSearch
+        {
+            OwnerId = ownerId,
+            Name = request.Name.Trim(),
+            Query = request.Q?.Trim(),
+            Host = request.Host?.Trim().ToLowerInvariant(),
+            Tags = TagNormalizer.Normalize(request.Tags ?? []).ToArray(),
+            ItemTags = TagNormalizer.Normalize(request.ItemTags ?? []).ToArray(),
+            Status = request.Status?.Trim(),
+            MinScore = request.MinScore,
+            Broken = request.Broken,
+            Sort = request.Sort?.Trim(),
+        };
+
+        db.SavedSearches.Add(saved);
+        await db.SaveChangesAsync(ct);
+
+        return new SavedSearchResponse(
+            saved.Id, saved.Name, saved.Query, saved.Host, saved.Tags, saved.ItemTags,
+            saved.Status, saved.MinScore, saved.Broken, saved.Sort, saved.CreationTime);
+    }
+
+    public async Task DeleteSavedAsync(Guid ownerId, Guid id, CancellationToken ct = default)
+    {
+        var saved = await db.SavedSearches.FirstOrDefaultAsync(ss => ss.Id == id && ss.OwnerId == ownerId, ct)
+            ?? throw new NotFoundException("Saved search not found.");
+
+        // Soft, like every other delete here. The links it matched were never owned by it.
+        db.SavedSearches.Remove(saved);
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<PagedResult<SearchHit>> RunSavedAsync(
+        Guid ownerId, Guid id, int? limit, string? cursor, CancellationToken ct = default)
+    {
+        var saved = await db.SavedSearches.FirstOrDefaultAsync(ss => ss.Id == id && ss.OwnerId == ownerId, ct)
+            ?? throw new NotFoundException("Saved search not found.");
+
+        // Run now, not as of when it was saved: that is the whole point of saving the question
+        // rather than the answer.
+        return await SearchAsync(ownerId, new SearchQuery(
+            saved.Query, saved.Host, saved.Tags, saved.ItemTags, saved.Status, saved.MinScore,
+            FinishedSince: null, saved.Broken ? true : null, saved.Sort, limit, cursor), ct);
     }
 
     /// <summary>

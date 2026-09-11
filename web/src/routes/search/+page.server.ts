@@ -1,4 +1,4 @@
-import type { HostFacet, Paged, SearchHit } from '$lib/types';
+import type { HostFacet, Paged, SavedSearch, SearchHit } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 const EMPTY: Paged<SearchHit> = { items: [], nextCursor: null, total: 0 };
@@ -30,9 +30,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	params.set('limit', '25');
 
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
-	const [resultsRes, hostsRes] = await Promise.all([
+	const [resultsRes, hostsRes, savedRes] = await Promise.all([
 		locals.api(`/api/v1/search?${params}`),
-		locals.api('/api/v1/search/hosts')
+		locals.api('/api/v1/search/hosts'),
+		locals.api('/api/v1/search/saved')
 	]);
 
 	return {
@@ -44,6 +45,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		sort,
 		itemTags,
 		results: resultsRes.ok ? ((await resultsRes.json()) as Paged<SearchHit>) : EMPTY,
-		hosts: hostsRes.ok ? ((await hostsRes.json()) as HostFacet[]) : []
+		hosts: hostsRes.ok ? ((await hostsRes.json()) as HostFacet[]) : [],
+		saved: savedRes.ok ? ((await savedRes.json()) as SavedSearch[]) : []
 	};
 };

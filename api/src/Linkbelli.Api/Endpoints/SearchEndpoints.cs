@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Linkbelli.Api.Auth;
+using Linkbelli.Api.Common;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,37 @@ public static class SearchEndpoints
                 ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
             .WithName("Search");
+
+        // Searches worth coming back to. What they match is whatever matches now, so a saved
+        // search keeps up with the collection instead of freezing a list of ids.
+        group.MapGet("/saved", async (ClaimsPrincipal user, ISearchService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListSavedAsync(user.GetUserId(), ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("ListSavedSearches");
+
+        group.MapPost("/saved", async (
+            SaveSearchRequest req, ClaimsPrincipal user, ISearchService svc, CancellationToken ct) =>
+        {
+            var saved = await svc.SaveAsync(user.GetUserId(), req, ct);
+            return Results.Created($"{ApiRoutes.V1}/search/saved/{saved.Id}", saved);
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("SaveSearch");
+
+        group.MapGet("/saved/{id:guid}", async (
+            Guid id, ClaimsPrincipal user, ISearchService svc, int? limit, string? cursor, CancellationToken ct) =>
+            Results.Ok(await svc.RunSavedAsync(user.GetUserId(), id, limit, cursor, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("RunSavedSearch");
+
+        group.MapDelete("/saved/{id:guid}", async (
+            Guid id, ClaimsPrincipal user, ISearchService svc, CancellationToken ct) =>
+        {
+            await svc.DeleteSavedAsync(user.GetUserId(), id, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("DeleteSavedSearch");
 
         // Facets for a host filter: the sites the caller actually saves from.
         group.MapGet("/hosts", async (

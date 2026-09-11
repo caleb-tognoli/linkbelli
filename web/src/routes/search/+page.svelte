@@ -3,9 +3,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
-	import { AlertCircle, Search, Eye, Star, X } from '@lucide/svelte';
+	import { AlertCircle, Bookmark, Search, Eye, Star, X } from '@lucide/svelte';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
-	import type { Paged, SearchHit } from '$lib/types';
+	import type { Paged, SavedSearch, SearchHit } from '$lib/types';
+	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
+	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -46,6 +48,46 @@
 			if (value) params.set(key, value);
 		}
 		goto(`/search?${params}`, { keepFocus: true, noScroll: true });
+	}
+
+	const hasFilters = $derived(!!(data.q || data.host || data.status || data.broken || data.sort));
+
+	/** Saves the question, not the answer — so it keeps up with the collection. */
+	async function saveSearch() {
+		const name = await promptDialog('Name this search', data.q || 'Saved search');
+		if (!name?.trim()) return;
+
+		const res = await api.post('/search/saved', {
+			name,
+			q: data.q || null,
+			host: data.host || null,
+			itemTags: data.itemTags,
+			status: data.status || null,
+			broken: !!data.broken,
+			sort: data.sort || null
+		});
+		if (res.ok) await invalidateAll();
+	}
+
+	function applySaved(saved: SavedSearch) {
+		const params = new URLSearchParams();
+		if (saved.q) params.set('q', saved.q);
+		if (saved.host) params.set('host', saved.host);
+		if (saved.status) params.set('status', saved.status);
+		if (saved.broken) params.set('broken', '1');
+		if (saved.sort) params.set('sort', saved.sort);
+		for (const tag of saved.itemTags) params.append('itemTag', tag);
+		goto(`/search?${params}`, { noScroll: true });
+	}
+
+	async function forgetSaved(saved: SavedSearch) {
+		const ok = await confirmDialog(`Forget "${saved.name}"? The links it finds are not affected.`, {
+			confirmLabel: 'Forget'
+		});
+		if (!ok) return;
+
+		const res = await api.del(`/search/saved/${saved.id}`);
+		if (res.ok) await invalidateAll();
 	}
 
 	let debounce: ReturnType<typeof setTimeout>;
@@ -167,6 +209,41 @@
 			</span>
 		{/if}
 	</div>
+
+	{#if data.saved.length || hasFilters}
+		<div class="mt-3 flex flex-wrap items-center gap-1.5">
+			{#each data.saved as saved (saved.id)}
+				<span
+					class="inline-flex items-center rounded-md border text-xs"
+					style="border-color: var(--color-border)"
+				>
+					<button type="button" onclick={() => applySaved(saved)} class="px-2 py-1 hover:underline">
+						<Bookmark size={11} aria-hidden="true" class="mr-1 inline" />{saved.name}
+					</button>
+					<button
+						type="button"
+						onclick={() => forgetSaved(saved)}
+						class="border-l px-1.5 py-1 hover:bg-black/5 dark:hover:bg-white/10"
+						style="border-color: var(--color-border); color: var(--color-muted)"
+						title={`Forget ${saved.name}`}
+						aria-label={`Forget ${saved.name}`}
+					>
+						<X size={11} aria-hidden="true" />
+					</button>
+				</span>
+			{/each}
+
+			{#if hasFilters}
+				<button
+					type="button"
+					onclick={saveSearch}
+					class="rounded-md border border-dashed px-2 py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+					style="border-color: var(--color-border); color: var(--color-muted)"
+					title="Come back to this search later"
+				>+ Save this search</button>
+			{/if}
+		</div>
+	{/if}
 
 	{#if data.hosts.length > 1 && !data.host}
 		<div class="mt-3 flex flex-wrap gap-1.5">

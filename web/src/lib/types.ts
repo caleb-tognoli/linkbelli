@@ -322,3 +322,18 @@ export interface DuplicateGroup {
 	key: string;
 	copies: DuplicateCopy[];
 }
+
+/** A search someone wants to come back to. What it matches is whatever matches now. */
+export interface SavedSearch {
+	id: string;
+	name: string;
+	q: string | null;
+	host: string | null;
+	tags: string[];
+	itemTags: string[];
+	status: string | null;
+	minScore: number | null;
+	broken: boolean;
+	sort: string | null;
+	creationTime: string;
+}
