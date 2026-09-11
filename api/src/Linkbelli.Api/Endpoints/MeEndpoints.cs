@@ -36,6 +36,13 @@ public static class MeEndpoints
         .RequireAuthorization(secured)
         .WithName("GetMyUsage");
 
+        // Playlists other people share with the caller. They are not in the caller's own list,
+        // which is theirs — but they still have to be findable.
+        app.MapGet("/me/shared", async (ClaimsPrincipal user, IPlaylistMemberService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListSharedWithMeAsync(user.GetUserId(), ct)))
+        .RequireAuthorization(secured)
+        .WithName("ListSharedWithMe");
+
         app.MapPut("/me/preferences", async (UpdatePreferencesRequest req, ClaimsPrincipal user, IUserPreferenceService prefs, CancellationToken ct) =>
         {
             await prefs.SetShowNsfwAsync(user.GetUserId(), req.ShowNsfw, ct);

@@ -47,6 +47,10 @@ export interface Playlist {
 	followerCount?: number;
 	/** Whether the caller does. False when anonymous. */
 	followedByMe?: boolean;
+	/** Whether the caller owns it, as opposed to it having been shared with them. */
+	isOwner?: boolean;
+	/** What a non-owner may do here. Null when they own it. */
+	role?: PlaylistRole | null;
 }
 
 /** How one person looks at one playlist. Saved per account, so it follows them between devices. */
@@ -557,4 +561,23 @@ export interface Following {
 		followedAt: string;
 	}[];
 	users: { username: string; publicPlaylistCount: number; followedAt: string }[];
+}
+
+export type PlaylistRole = 'Viewer' | 'Contributor' | 'Editor';
+
+/** Someone other than the owner with access to a playlist. */
+export interface PlaylistMember {
+	username: string;
+	role: PlaylistRole;
+	addedAt: string;
+}
+
+/** A playlist somebody else shared with the caller. */
+export interface SharedPlaylist {
+	playlistId: string;
+	name: string;
+	ownerUsername: string;
+	role: PlaylistRole;
+	itemCount: number;
+	sharedAt: string;
 }

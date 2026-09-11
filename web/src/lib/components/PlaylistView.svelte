@@ -4,13 +4,14 @@
 	import TagEditor from './TagEditor.svelte';
 	import SourcesPanel from './SourcesPanel.svelte';
 	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
+	import ShareWithDialog from './ShareWithDialog.svelte';
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
 	import { ChevronDown, Download, EyeOff, Globe, Heart, Lock, Rss, Star, Trash2 } from '@lucide/svelte';
-	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
+	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, PlaylistRole, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
 	type VisOption = { label: string; icon: typeof Lock };
@@ -26,6 +27,7 @@
 		attachedSources,
 		ownSources = [],
 		isOwner = true,
+		role = undefined,
 		isLoggedIn = true,
 		ownerUsername = undefined,
 		backHref = undefined,
@@ -37,12 +39,19 @@
 		attachedSources: AttachedSource[];
 		ownSources?: SourceSummary[];
 		isOwner?: boolean;
+		/** What a non-owner may do here, when this playlist was shared with them. */
+		role?: PlaylistRole;
 		isLoggedIn?: boolean;
 		ownerUsername?: string;
 		backHref?: string;
 		backLabel?: string;
 		initialPrefs?: PlaylistPrefs;
 	} = $props();
+
+	// Adding and editing are deliberately different permissions: "help me collect things" should
+	// not also mean "delete things".
+	const canAdd = $derived(isOwner || role === 'Contributor' || role === 'Editor');
+	const canEdit = $derived(isOwner || role === 'Editor');
 
 	// Held locally so the button responds at once rather than after a round trip and a reload.
 	let likeCount = $state(playlist.likeCount ?? 0);
@@ -353,6 +362,9 @@
 					{followedByMe ? 'Following' : 'Follow'}{followerCount ? ` · ${followerCount}` : ''}
 				</button>
 			{/if}
+			{#if isOwner}
+				<ShareWithDialog playlistId={playlist.id} />
+			{/if}
 			{#if isLoggedIn}
 				<SaveToFolderDialog
 					playlistId={playlist.id}
@@ -450,7 +462,7 @@
 	{/if}
 
 	<div class="mt-3">
-		<TagEditor playlistId={playlist.id} bind:tags readonly={!isOwner} />
+		<TagEditor playlistId={playlist.id} bind:tags readonly={!canEdit} />
 	</div>
 
 	{#if isOwner || attached.length > 0}
@@ -471,7 +483,7 @@
 	<div class="mt-5">
 		<PlaylistSearchBar
 			playlistId={playlist.id}
-			{isOwner}
+			isOwner={canAdd}
 			bind:query
 			resultCount={items.length}
 			{onAdded}
@@ -481,7 +493,7 @@
 	<div class="mt-5">
 		<LinkTable
 			bind:items
-			readonly={!isOwner}
+			readonly={!canEdit}
 			{onfetchsort}
 			onmove={reloadItems}
 			playlistId={playlist.id}

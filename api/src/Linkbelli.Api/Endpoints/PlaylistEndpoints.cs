@@ -40,6 +40,30 @@ public static class PlaylistEndpoints
             Results.Ok(await svc.GetAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
 
+        // Sharing was all-or-nothing public: showing one list to one person meant publishing it
+        // to everyone, and collaborating on one meant handing over an account.
+        group.MapGet("/{id:guid}/members", async (
+            Guid id, ClaimsPrincipal user, IPlaylistMemberService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("ListPlaylistMembers");
+
+        group.MapPut("/{id:guid}/members/{username}", async (
+            Guid id, string username, SetPlaylistMemberRequest req, ClaimsPrincipal user,
+            IPlaylistMemberService svc, CancellationToken ct) =>
+            Results.Ok(await svc.SetAsync(user.GetUserId(), id, username, req.Role, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("SetPlaylistMember");
+
+        group.MapDelete("/{id:guid}/members/{username}", async (
+            Guid id, string username, ClaimsPrincipal user, IPlaylistMemberService svc, CancellationToken ct) =>
+        {
+            await svc.RemoveAsync(user.GetUserId(), id, username, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("RemovePlaylistMember");
+
         // The lightest thing a visitor can say about someone else's list. Signed in, because a
         // count anyone can run up says nothing — and it is what discovery ranks on.
         group.MapPost("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>

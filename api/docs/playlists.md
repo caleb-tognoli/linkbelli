@@ -271,6 +271,40 @@ twenty minutes, in batches) using the same rules and nothing but the row — no 
 > playlist filling up after a source run says so, rather than its count creeping upward on its
 > own. Public reads omit `pendingCount`: a visitor can't act on it.
 
+## Sharing with specific people
+
+Sharing was all-or-nothing public: showing one list to one person meant publishing it to
+everyone, and collaborating on one meant handing over an account.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET`    | `/api/v1/playlists/{id}/members` | Who else is in it |
+| `PUT`    | `/api/v1/playlists/{id}/members/{username}` | Add someone, or change their role (`{ "role": "Editor" }`) |
+| `DELETE` | `/api/v1/playlists/{id}/members/{username}` | Remove them |
+| `GET`    | `/api/v1/me/shared` | Playlists other people shared with you |
+
+Three roles, each adding to the one before:
+
+| Role | Can |
+|------|-----|
+| `Viewer` | Read it |
+| `Contributor` | …and add links |
+| `Editor` | …and reorder, edit, remove, rename and re-tag |
+
+- **Adding and removing are deliberately different permissions.** "Help me collect things" should
+  not also mean "delete things".
+- **Only the owner shares it, and only the owner publishes it.** An editor edits the playlist;
+  they do not hand out keys to it, and changing visibility is refused for anyone else.
+- **Anyone in a playlist can see who else is in it.** Being in a shared list without knowing who
+  else can read it is worse than not sharing.
+- **Anyone can remove themselves.** Leaving should never require asking the person you are leaving.
+- **Refusals are `404`, not `403`** — a playlist someone may not touch is not confirmed to exist.
+- A playlist shared with you appears under `/me/shared`, never mixed into your own list: someone
+  else's list is not one of yours.
+
+`GET /playlists/{id}` reports `isOwner` and `role`, so a client can show the controls that will
+actually work.
+
 ## Following and the feed
 
 Saving a public playlist to a folder files a copy of it — it says where you put it, not that you

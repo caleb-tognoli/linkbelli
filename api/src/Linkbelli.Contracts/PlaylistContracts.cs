@@ -48,7 +48,11 @@ public record PlaylistResponse(
     /// <summary>How many people follow this playlist.</summary>
     int FollowerCount = 0,
     /// <summary>Whether the caller does. False when anonymous.</summary>
-    bool FollowedByMe = false);
+    bool FollowedByMe = false,
+    /// <summary>Whether the caller owns it. False when it was merely shared with them.</summary>
+    bool IsOwner = true,
+    /// <summary>What a non-owner may do here. Null when they own it, or are only a visitor.</summary>
+    PlaylistRole? Role = null);
 
 /// <summary>
 /// How one person looks at one playlist: sort, filters, and what the rows show. Saved per
@@ -182,3 +186,14 @@ public record SharedItemResponse(
 
 /// <summary>The state of a like after changing it, so a client needn't re-read the playlist.</summary>
 public record PlaylistLikeResponse(Guid PlaylistId, int LikeCount, bool LikedByMe);
+
+/// <summary>Someone other than the owner with access to a playlist.</summary>
+public record PlaylistMemberResponse(string Username, PlaylistRole Role, DateTimeOffset AddedAt);
+
+/// <summary>Adds someone to a playlist, or changes what they may do in it.</summary>
+public record SetPlaylistMemberRequest(PlaylistRole Role);
+
+/// <summary>A playlist somebody else shared with the caller.</summary>
+public record SharedPlaylistResponse(
+    Guid PlaylistId, string Name, string OwnerUsername, PlaylistRole Role, int ItemCount,
+    DateTimeOffset SharedAt);

@@ -28,6 +28,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
     public DbSet<PlaylistLike> PlaylistLikes => Set<PlaylistLike>();
     public DbSet<Follow> Follows => Set<Follow>();
+    public DbSet<PlaylistMember> PlaylistMembers => Set<PlaylistMember>();
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
@@ -72,6 +73,14 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(l => l.UrlHash).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(l => l.HostId);
             e.HasOne(l => l.Host).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<PlaylistMember>(e =>
+        {
+            e.HasIndex(m => new { m.PlaylistId, m.UserId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(m => m.UserId);
+            e.HasOne(m => m.Playlist).WithMany().OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 

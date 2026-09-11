@@ -47,6 +47,8 @@ public static class DependencyInjection
         services.AddScoped<IAutomationRunner, AutomationRunner>();
         services.AddScoped<IItemShareService, ItemShareService>();
         services.AddScoped<IFollowService, FollowService>();
+        services.AddScoped<IPlaylistAccess, PlaylistAccess>();
+        services.AddScoped<IPlaylistMemberService, PlaylistMemberService>();
         services.AddScoped<IArchiver, WaybackArchiver>();
         services.AddScoped<ILinkArchiveSweep, LinkArchiveSweep>();
         services.AddSingleton<LinkMetadataFetcher>();

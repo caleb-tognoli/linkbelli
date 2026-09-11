@@ -18,6 +18,8 @@
 		items={data.items}
 		attachedSources={data.attachedSources}
 		ownSources={data.ownSources}
+		isOwner={data.playlist.isOwner ?? true}
+		role={data.playlist.role ?? undefined}
 		initialPrefs={data.initialPrefs}
 		{backHref}
 		{backLabel}

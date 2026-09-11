@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createPlaylist } from '$lib/api/playlists';
 import { listFolders } from '$lib/api/folders';
-import type { Folder, Paged, Playlist, Visibility } from '$lib/types';
+import type { Folder, Paged, Playlist, SharedPlaylist, Visibility } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 const VISIBILITIES: Visibility[] = ['Private', 'Unlisted', 'Public'];
@@ -14,9 +14,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	qs.set('unfiled', 'true');
 
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
-	const [plRes, folders] = await Promise.all([
+	const [plRes, folders, sharedRes] = await Promise.all([
 		locals.api(`/api/v1/playlists?${qs}`),
-		listFolders(locals.api).catch(() => [] as Folder[])
+		listFolders(locals.api).catch(() => [] as Folder[]),
+		locals.api('/api/v1/me/shared')
 	]);
 
 	const playlists = plRes.ok
@@ -25,7 +26,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	// Only top-level folders belong on the root; subfolders are browsed within a folder.
 	const rootFolders = folders.filter((f) => f.parentId === null);
 
-	return { playlists, rootFolders, activeTags };
+	// Kept apart from the caller's own playlists on purpose: someone else's list, shared with
+	// you, is not one of yours.
+	const shared = sharedRes.ok ? ((await sharedRes.json()) as SharedPlaylist[]) : [];
+
+	return { playlists, rootFolders, shared, activeTags };
 };
 
 export const actions: Actions = {

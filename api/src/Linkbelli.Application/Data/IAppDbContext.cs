@@ -31,6 +31,7 @@ public interface IAppDbContext
     DbSet<AutomationRule> AutomationRules { get; }
     DbSet<PlaylistLike> PlaylistLikes { get; }
     DbSet<Follow> Follows { get; }
+    DbSet<PlaylistMember> PlaylistMembers { get; }
     DbSet<SourceTemplate> SourceTemplates { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }

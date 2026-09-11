@@ -16,7 +16,8 @@ public class PlaylistItemService(
     ILinkService links,
     IUserPreferenceService prefs,
     ITagResolver tags,
-    IAutomationRunner automation) : IPlaylistItemService
+    IAutomationRunner automation,
+    IPlaylistAccess access) : IPlaylistItemService
 {
     private static readonly Expression<Func<PlaylistItem, PlaylistItemResponse>> ToResponse = i =>
         new PlaylistItemResponse(
@@ -37,7 +38,7 @@ public class PlaylistItemService(
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)
     {
-        await EnsureOwnsPlaylistAsync(playlistId, ownerId, ct);
+        await EnsureCanReadAsync(playlistId, ownerId, ct);
 
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
@@ -425,15 +426,32 @@ public class PlaylistItemService(
     private Task<PlaylistItemResponse> ProjectAsync(Guid itemId, CancellationToken ct) =>
         db.PlaylistItems.Where(i => i.Id == itemId).Select(ToResponse).FirstAsync(ct);
 
-    private async Task EnsureOwnsPlaylistAsync(Guid playlistId, Guid ownerId, CancellationToken ct)
-    {
-        if (!await db.Playlists.AnyAsync(p => p.Id == playlistId && p.OwnerId == ownerId, ct))
-        {
-            throw new NotFoundException("Playlist not found.");
-        }
-    }
+    /// <summary>
+    /// Reading a playlist. A playlist shared with someone is theirs to read, which is the whole
+    /// point of sharing it.
+    /// </summary>
+    private Task EnsureCanReadAsync(Guid playlistId, Guid userId, CancellationToken ct) =>
+        access.EnsureAsync(userId, playlistId, PlaylistRole.Viewer, ct);
 
-    private async Task<PlaylistItem> FindOwnedItemAsync(Guid itemId, Guid ownerId, CancellationToken ct) =>
-        await db.PlaylistItems.FirstOrDefaultAsync(i => i.Id == itemId && i.Playlist!.OwnerId == ownerId, ct)
-        ?? throw new NotFoundException("Item not found.");
+    /// <summary>Adding to it. A contributor may put things in without being able to take them out.</summary>
+    private Task EnsureOwnsPlaylistAsync(Guid playlistId, Guid userId, CancellationToken ct) =>
+        access.EnsureAsync(userId, playlistId, PlaylistRole.Contributor, ct);
+
+    /// <summary>
+    /// Changing or removing one item. An editor's job; a contributor adds, which is deliberately
+    /// not the same permission — "help me collect things" should not also mean "delete things".
+    /// </summary>
+    private async Task<PlaylistItem> FindOwnedItemAsync(Guid itemId, Guid userId, CancellationToken ct)
+    {
+        var item = await db.PlaylistItems.FirstOrDefaultAsync(i => i.Id == itemId, ct)
+            ?? throw new NotFoundException("Item not found.");
+
+        var role = await access.RoleAsync(userId, item.PlaylistId, ct);
+        if (role is not PlaylistRole.Editor)
+        {
+            throw new NotFoundException("Item not found.");
+        }
+
+        return item;
+    }
 }

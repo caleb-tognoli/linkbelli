@@ -10,7 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Linkbelli.Application.Services;
 
-public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITagResolver tags) : IPlaylistService
+public class PlaylistService(
+    IAppDbContext db, IUserPreferenceService prefs, ITagResolver tags, IPlaylistAccess access) : IPlaylistService
 {
     private const int MaxTagResults = 200;
 
@@ -122,8 +123,11 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
 
     public async Task<PlaylistResponse> GetAsync(Guid ownerId, Guid id, CancellationToken ct = default)
     {
+        // A playlist shared with someone is theirs to open — that is what sharing it means.
         var playlist = await db.Playlists
-            .Where(p => p.Id == id && p.OwnerId == ownerId)
+            .Where(p => p.Id == id
+                && (p.OwnerId == ownerId
+                    || db.PlaylistMembers.Any(m => m.PlaylistId == p.Id && m.UserId == ownerId)))
             .Select(p => new PlaylistResponse(
                 p.Id, p.Name, p.Slug, p.Description, p.Visibility,
                 p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
@@ -145,6 +149,17 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
                     .Where(pp => pp.OwnerId == ownerId && pp.PlaylistId == p.Id)
                     .Select(pp => new PlaylistViewPreferences(
                         pp.Sort, pp.Source, pp.Status, pp.ShowUrls, pp.ShowThumbnails, pp.ViewMode))
+                    .FirstOrDefault(),
+                LikeCount: 0,
+                LikedByMe: false,
+                FollowerCount: 0,
+                FollowedByMe: false,
+                // What the caller may do here, so the page can show the controls that will
+                // actually work rather than ones that 404 when pressed.
+                p.OwnerId == ownerId,
+                db.PlaylistMembers
+                    .Where(m => m.PlaylistId == p.Id && m.UserId == ownerId)
+                    .Select(m => (PlaylistRole?)m.Role)
                     .FirstOrDefault()))
             .FirstOrDefaultAsync(ct);
 
@@ -153,8 +168,18 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
 
     public async Task<PlaylistResponse> UpdateAsync(Guid ownerId, Guid id, UpdatePlaylistRequest request, CancellationToken ct = default)
     {
-        var playlist = await db.Playlists.FirstOrDefaultAsync(p => p.Id == id && p.OwnerId == ownerId, ct)
+        // Editors can rename and re-tag; who it is shared with, and whether it is public, stays
+        // with the owner and is checked again below.
+        await access.EnsureAsync(ownerId, id, PlaylistRole.Editor, ct);
+
+        var playlist = await db.Playlists.FirstOrDefaultAsync(p => p.Id == id, ct)
                        ?? throw new NotFoundException("Playlist not found.");
+
+        if (request.Visibility is not null && playlist.OwnerId != ownerId)
+        {
+            throw new ValidationException(
+                "visibility", "Only the owner can change who a playlist is shared with.");
+        }
 
         if (request.Name is not null)
         {

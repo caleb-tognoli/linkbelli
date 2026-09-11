@@ -67,4 +67,25 @@
 			</div>
 		{/if}
 	{/if}
+
+	{#if data.shared.length}
+		<!-- Kept apart from your own, on purpose: someone else's list, shared with you, is not
+		     one of yours. -->
+		<h2 class="mt-10 text-sm font-medium" style="color: var(--color-muted)">Shared with you</h2>
+		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			{#each data.shared as entry (entry.playlistId)}
+				<a
+					href={`/playlists/${entry.playlistId}`}
+					class="flex flex-col rounded-lg border p-4 hover:border-[var(--color-accent)]"
+					style="border-color: var(--color-border); background: var(--color-surface)"
+				>
+					<span class="font-medium">{entry.name}</span>
+					<span class="mt-auto flex justify-between pt-3 text-xs" style="color: var(--color-muted)">
+						<span>@{entry.ownerUsername}</span>
+						<span>{entry.role.toLowerCase()} · {entry.itemCount} {entry.itemCount === 1 ? 'link' : 'links'}</span>
+					</span>
+				</a>
+			{/each}
+		</div>
+	{/if}
 </section>
