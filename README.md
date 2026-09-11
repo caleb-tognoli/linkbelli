@@ -55,10 +55,11 @@ dotnet test tests/Linkbelli.IntegrationTests/Linkbelli.IntegrationTests.csproj  
 
 cd web
 npm run check   # svelte-check / type-check
+npm test        # Vitest unit suite
 ```
 
 CI (`.github/workflows/ci.yml`) runs the unit suite, a vulnerable-dependency scan, the
-integration suite (with Docker), and the web type-check + build.
+integration suite (with Docker), and the web type-check, unit tests and build.
 
 ## Required production configuration
 

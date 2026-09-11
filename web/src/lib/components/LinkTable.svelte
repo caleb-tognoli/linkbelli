@@ -7,6 +7,16 @@
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
+	import {
+		SORT_LABELS,
+		canReorder,
+		modeToServerSort,
+		nextDateSort,
+		nextScoreSort,
+		orderForDisplay,
+		serverSortToMode,
+		type SortMode
+	} from '$lib/sorting';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import type { AttachedSource, PlaylistItem } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
@@ -43,32 +53,12 @@
 		total?: number | null;
 	} = $props();
 
-	type SortMode = 'manual' | 'date-asc' | 'date-desc' | 'shuffle' | 'score-asc' | 'score-desc';
-
-	function serverSortToMode(s: string | undefined): SortMode {
-		if (s === 'date-asc') return 'date-asc';
-		if (s === 'date-desc') return 'date-desc';
-		if (s === 'shuffle') return 'shuffle';
-		if (s === 'score-asc') return 'score-asc';
-		if (s === 'score-desc') return 'score-desc';
-		return readonly ? 'date-desc' : 'manual';
-	}
-
-	let sortMode = $state<SortMode>(serverSortToMode(initialPrefs?.sort));
+	let sortMode = $state<SortMode>(serverSortToMode(initialPrefs?.sort, readonly));
 	let showThumbnails = $state(initialPrefs?.showThumbnails ?? true);
 	let showUrls = $state(initialPrefs?.showUrls ?? false);
 	let forceShowScore = $state(false);
 
 	const statusOptions: StatusFilter[] = ['All', 'Unwatched', 'Watched'];
-	const SORT_LABELS: Record<SortMode, string> = {
-		manual: 'Manual',
-		'date-asc': 'Oldest',
-		'date-desc': 'Newest',
-		shuffle: 'Shuffle',
-		'score-asc': 'Score ↑',
-		'score-desc': 'Score ↓'
-	};
-
 	let sourceFilterOpen = $state(false);
 	let statusOpen = $state(false);
 	let sortOpen = $state(false);
@@ -148,40 +138,13 @@
 
 	function setSort(mode: SortMode) {
 		sortMode = mode;
-		const serverSort =
-			mode === 'date-asc' ? 'date-asc'
-			: mode === 'date-desc' ? 'date-desc'
-			: mode === 'shuffle' ? 'shuffle'
-			: mode === 'score-asc' ? 'score-asc'
-			: mode === 'score-desc' ? 'score-desc'
-			: 'position';
-		onfetchsort?.(serverSort);
+		onfetchsort?.(modeToServerSort(mode));
 	}
 
-	function clickAddedHeader() {
-		if (sortMode === 'date-desc') setSort('date-asc');
-		else if (sortMode === 'date-asc') setSort(readonly ? 'date-desc' : 'manual');
-		else setSort('date-desc');
-	}
+	const clickAddedHeader = () => setSort(nextDateSort(sortMode, readonly));
+	const clickScoreHeader = () => setSort(nextScoreSort(sortMode, readonly));
 
-	function clickScoreHeader() {
-		if (sortMode === 'score-desc') setSort('score-asc');
-		else if (sortMode === 'score-asc') setSort(readonly ? 'score-desc' : 'manual');
-		else setSort('score-desc');
-	}
-
-	function sortByDate(arr: PlaylistItem[], asc: boolean) {
-		return [...arr].sort((a, b) => {
-			const diff = new Date(a.creationTime).getTime() - new Date(b.creationTime).getTime();
-			return asc ? diff : -diff;
-		});
-	}
-
-	const displayItems = $derived.by(() => {
-		if (sortMode === 'date-asc') return sortByDate(items, true);
-		if (sortMode === 'date-desc') return sortByDate(items, false);
-		return items; // manual, shuffle, score: server order is canonical
-	});
+	const displayItems = $derived(orderForDisplay(items, sortMode));
 
 	let noteEditId = $state<string | null>(null);
 	let draftNote = $state('');
@@ -190,7 +153,7 @@
 	let shareOpen = $state(false);
 
 	const FLIP = 150;
-	const useDnd = $derived(!readonly && sortMode === 'manual');
+	const useDnd = $derived(canReorder(sortMode, readonly));
 
 	function onConsider(e: CustomEvent<{ items: PlaylistItem[] }>) {
 		dndItems = e.detail.items;
