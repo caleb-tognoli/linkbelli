@@ -31,6 +31,13 @@ public static class PlaylistItemEndpoints
 
         var item = app.MapGroup("/items").RequireAuthorization(secured).WithTags("Playlist items");
 
+        // One action over a selection. Everything here exists per item already; this is doing it
+        // to forty of them without forty round trips.
+        item.MapPost("/bulk", async (BulkItemRequest req, ClaimsPrincipal user,
+            IBulkItemService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ApplyAsync(user.GetUserId(), req, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
+
         item.MapPatch("/{id:guid}", async (Guid id, UpdateItemRequest req, ClaimsPrincipal user,
             IPlaylistItemService svc, CancellationToken ct) =>
             Results.Ok(await svc.UpdateAsync(user.GetUserId(), id, req, ct)))

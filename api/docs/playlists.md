@@ -112,6 +112,31 @@ curl -X POST http://localhost:5180/api/v1/items/<itemId>/move \
 Item ordering uses gapped integer positions, so a move is normally a single-row update; the
 server transparently renumbers a playlist if a gap runs out.
 
+### Acting on a selection
+
+`POST /api/v1/items/bulk` applies one action to up to **500** items at once.
+
+```jsonc
+{ "itemIds": ["…"], "action": "SetStatus", "status": "Watched" }
+```
+
+| `action` | Extra fields | Effect |
+|----------|--------------|--------|
+| `Delete`     | — | Soft delete, recoverable from the trash like any other |
+| `SetStatus`  | `status` | Mark watched / unwatched |
+| `SetScore`   | `score` (null clears) | Set or clear the score |
+| `Move`       | `targetPlaylistId` | Move into another playlist you own |
+| `Copy`       | `targetPlaylistId` | Copy, carrying the note and score across |
+
+Returns `{ "affected": n, "skipped": n }`.
+
+- Items you don't own — and ids that no longer exist — are **skipped**, not fatal. A stale id in
+  a selection is a normal thing to happen, not a reason to throw the other 39 away.
+- On a move or copy, links already in the target are skipped: that's dedup working.
+- `SetStatus` doesn't count items already in that state; stamping a fresh timestamp would make
+  re-marking look like progress.
+- A target playlist you don't own returns **404**.
+
 ### Enrichment outcomes
 
 Every link records how its last fetch went, so a page that could not be read is distinguishable

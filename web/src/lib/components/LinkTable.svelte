@@ -7,6 +7,7 @@
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import type { AttachedSource, PlaylistItem } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -84,6 +85,47 @@
 	// Score column: show when any loaded item has a score, user forced it, or current sort is score-based
 	const hasAnyScore = $derived(items.some((i) => i.score !== null));
 	const showScoreCol = $derived(!readonly && (hasAnyScore || forceShowScore || sortMode === 'score-asc' || sortMode === 'score-desc'));
+
+	// Multi-select. Every action below already exists per item; the point is doing it to a
+	// selection without repeating yourself forty times.
+	let selected = $state(new SvelteSet<string>());
+	let bulkBusy = $state(false);
+	let moveOpen = $state(false);
+	let copyOpen = $state(false);
+
+	const allSelected = $derived(items.length > 0 && selected.size === items.length);
+
+	function toggleSelected(id: string) {
+		if (!selected.delete(id)) selected.add(id);
+	}
+
+	function toggleSelectAll() {
+		if (allSelected) selected.clear();
+		else for (const item of items) selected.add(item.id);
+	}
+
+	async function bulk(body: Record<string, unknown>) {
+		if (selected.size === 0) return;
+		bulkBusy = true;
+		try {
+			const res = await api.post('/items/bulk', { itemIds: [...selected], ...body });
+			if (res.ok) {
+				selected.clear();
+				await onmove?.();
+			}
+		} finally {
+			bulkBusy = false;
+		}
+	}
+
+	async function bulkDelete() {
+		const count = selected.size;
+		const ok = await confirmDialog(
+			`Delete ${count} ${count === 1 ? 'link' : 'links'}? You can put them back from the trash.`,
+			{ danger: true, confirmLabel: 'Delete' }
+		);
+		if (ok) await bulk({ action: 'Delete' });
+	}
 
 	// Links being re-fetched right now, so the button can say so rather than looking inert.
 	let rechecking = $state(new SvelteSet<string>());
@@ -229,6 +271,14 @@
 		style="border-color: var(--color-border); {item.status === 'Watched' ? 'opacity: 0.45' : ''}"
 	>
 		{#if !readonly}
+			<td class="pr-1">
+				<input
+					type="checkbox"
+					checked={selected.has(item.id)}
+					onchange={() => toggleSelected(item.id)}
+					aria-label={`Select ${item.link.title ?? item.link.url}`}
+				/>
+			</td>
 			<td
 				class="select-none pr-1"
 				class:cursor-grab={draggable}
@@ -647,11 +697,113 @@
 		</div>
 	{/if}
 {:else}
+	{#if !readonly && playlistId}
+		{@const count = selected.size}
+		<PlaylistPickerDialog
+			bind:open={moveOpen}
+			title="Move to playlist"
+			subtitle={`${count} ${count === 1 ? 'link' : 'links'} will move out of this playlist.`}
+			excludePlaylistId={playlistId}
+			onselect={async (target) => {
+				await bulk({ action: 'Move', targetPlaylistId: target });
+				return 'Moved';
+			}}
+		/>
+		<PlaylistPickerDialog
+			bind:open={copyOpen}
+			title="Copy to playlist"
+			subtitle={`${count} ${count === 1 ? 'link' : 'links'} will be copied, with their notes and scores.`}
+			excludePlaylistId={playlistId}
+			onselect={async (target) => {
+				await bulk({ action: 'Copy', targetPlaylistId: target });
+				return 'Copied';
+			}}
+		/>
+	{/if}
+
+	{#if !readonly && selected.size > 0}
+		<!-- Appears only with a selection, so it never occupies space it hasn't earned. -->
+		<div
+			class="mb-2 flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm"
+			style="border-color: var(--color-accent); background: var(--color-surface)"
+		>
+			<span class="font-medium tabular-nums">{selected.size} selected</span>
+
+			<button
+				type="button"
+				disabled={bulkBusy}
+				onclick={() => bulk({ action: 'SetStatus', status: 'Watched' })}
+				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				style="border-color: var(--color-border)"
+			>
+				<Eye size={14} aria-hidden="true" /> Watched
+			</button>
+
+			<button
+				type="button"
+				disabled={bulkBusy}
+				onclick={() => bulk({ action: 'SetStatus', status: 'Added' })}
+				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				style="border-color: var(--color-border)"
+			>
+				<EyeOff size={14} aria-hidden="true" /> Unwatched
+			</button>
+
+			{#if playlistId}
+				<button
+					type="button"
+					disabled={bulkBusy}
+					onclick={() => (moveOpen = true)}
+					class="rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+					style="border-color: var(--color-border)"
+				>Move to…</button>
+				<button
+					type="button"
+					disabled={bulkBusy}
+					onclick={() => (copyOpen = true)}
+					class="rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+					style="border-color: var(--color-border)"
+				>Copy to…</button>
+			{/if}
+
+			<button
+				type="button"
+				disabled={bulkBusy}
+				onclick={bulkDelete}
+				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				style="border-color: var(--color-border); color: var(--color-danger)"
+			>
+				<Trash2 size={14} aria-hidden="true" /> Delete
+			</button>
+
+			<button
+				type="button"
+				onclick={() => selected.clear()}
+				class="ml-auto rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+				title="Clear selection"
+				aria-label="Clear selection"
+			>
+				<X size={15} aria-hidden="true" />
+			</button>
+		</div>
+	{/if}
+
 	<div class="overflow-x-auto">
 			<table class="w-full border-collapse text-sm">
 				<thead>
 					<tr class="text-left" style="color: var(--color-muted)">
-						{#if !readonly}<th class="w-6"></th>{/if}
+						{#if !readonly}
+							<th class="w-6">
+								<input
+									type="checkbox"
+									checked={allSelected}
+									indeterminate={selected.size > 0 && !allSelected}
+									onchange={toggleSelectAll}
+									aria-label="Select all"
+								/>
+							</th>
+							<th class="w-6"></th>
+						{/if}
 						<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
 						<th class="py-2 text-center font-medium">
 						<button
