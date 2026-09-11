@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import GlobalDialog from '$lib/components/GlobalDialog.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import FolderTree from '$lib/components/FolderTree.svelte';
 	import type { LayoutData } from './$types';
 
@@ -166,3 +167,7 @@
 {/if}
 
 <GlobalDialog />
+{#if data.user}
+	<!-- Signed-in only: everything it offers needs an account. -->
+	<CommandPalette />
+{/if}

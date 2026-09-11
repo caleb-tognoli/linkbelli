@@ -1016,7 +1016,7 @@
 
 	<p class="mt-3 hidden text-xs sm:block" style="color: var(--color-muted)">
 		<kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>o</kbd> to open{#if !readonly}, <kbd>e</kbd> to mark
-			watched, <kbd>x</kbd> to select{/if}.
+			watched, <kbd>x</kbd> to select{/if}. <kbd>/</kbd> to jump anywhere.
 	</p>
 {/if}
 
