@@ -55,7 +55,7 @@ public class LinkEnricher(
                 var status = (int)response.StatusCode;
                 if (status is >= 400 and < 500 and not 429)
                 {
-                    StampFailure(link, $"HTTP {status}");
+                    StampFailure(link, DescribeStatus(status), ClassifyStatus(status));
                     await db.SaveChangesAsync(cancellationToken);
                     return;
                 }
@@ -66,7 +66,7 @@ public class LinkEnricher(
             var mediaType = response.Content.Headers.ContentType?.MediaType;
             if (mediaType is not null && !mediaType.Contains("html", StringComparison.OrdinalIgnoreCase))
             {
-                StampFailure(link, $"Non-HTML content ({mediaType})");
+                StampFailure(link, $"That address is not a web page ({mediaType}).");
                 await db.SaveChangesAsync(cancellationToken);
                 return;
             }
@@ -97,7 +97,7 @@ public class LinkEnricher(
                 metadata.Raw.GetValueOrDefault("og:site_name"),
                 FaviconResolver.Resolve(link.CanonicalUrl, metadata.FaviconHref));
 
-            link.EnrichedAt = DateTimeOffset.UtcNow;
+            StampSuccess(link);
             await db.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -120,7 +120,9 @@ public class LinkEnricher(
             // 401/404 = private/deleted/unlisted — permanent. Other 4xx (except 429) also permanent.
             if (status is >= 400 and < 500 and not 429)
             {
-                StampFailure(link, $"YouTube oEmbed HTTP {status}");
+                // 401/404 from oEmbed means private, deleted or unlisted — the video is gone.
+                StampFailure(link, DescribeStatus(status),
+                    status is 401 or 404 ? EnrichmentStatus.Broken : EnrichmentStatus.Failed);
                 await db.SaveChangesAsync(ct);
                 return;
             }
@@ -153,7 +155,7 @@ public class LinkEnricher(
 
         ApplyHostBranding(link.Host!, providerName, FaviconResolver.Resolve(link.CanonicalUrl, null));
 
-        link.EnrichedAt = DateTimeOffset.UtcNow;
+        StampSuccess(link);
         await db.SaveChangesAsync(ct);
     }
 
@@ -175,12 +177,49 @@ public class LinkEnricher(
         }
     }
 
+    /// <summary>410 Gone and 404 mean the page is not there; everything else is a fetch problem.</summary>
+    private static EnrichmentStatus ClassifyStatus(int status) =>
+        status is 404 or 410 ? EnrichmentStatus.Broken : EnrichmentStatus.Failed;
+
+    /// <summary>Says what happened in words someone reading a playlist would understand.</summary>
+    private static string DescribeStatus(int status) => status switch
+    {
+        404 => "The page could not be found (404).",
+        410 => "The page has been removed (410).",
+        401 or 403 => $"The site refused the request ({status}).",
+        _ => $"The site returned HTTP {status}.",
+    };
+
     private static string? ReadString(JsonElement obj, string name)
         => obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
-    private static void StampFailure(Link link, string reason)
+    /// <summary>
+    /// A fetch we are not going to retry right now. This used to stamp EnrichedAt and hide the
+    /// reason inside the OpenGraph metadata bag, which made a dead link indistinguishable from a
+    /// successfully enriched one — it simply rendered as a bare URL forever.
+    /// </summary>
+    private static void StampFailure(Link link, string reason, EnrichmentStatus status = EnrichmentStatus.Failed)
     {
-        link.Metadata = JsonSerializer.Serialize(new Dictionary<string, string> { ["enrichmentError"] = reason });
-        link.EnrichedAt = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+
+        link.EnrichmentStatus = status;
+        link.EnrichmentError = reason;
+        link.LastCheckedAt = now;
+        link.FailureCount++;
+
+        // Still stamped, because reads gate on it: the item should appear, labelled, rather than
+        // sit invisible in a playlist its owner can see the count of.
+        link.EnrichedAt ??= now;
+    }
+
+    private static void StampSuccess(Link link)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        link.EnrichmentStatus = EnrichmentStatus.Succeeded;
+        link.EnrichmentError = null;
+        link.LastCheckedAt = now;
+        link.FailureCount = 0;
+        link.EnrichedAt ??= now;
     }
 }

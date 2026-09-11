@@ -110,6 +110,29 @@ curl -X POST http://localhost:5180/api/v1/items/<itemId>/move \
 Item ordering uses gapped integer positions, so a move is normally a single-row update; the
 server transparently renumbers a playlist if a gap runs out.
 
+### Enrichment outcomes
+
+Every link records how its last fetch went, so a page that could not be read is distinguishable
+from one that was:
+
+| `enrichmentStatus` | Meaning |
+|--------------------|---------|
+| `Pending`   | Not fetched yet |
+| `Succeeded` | Fetched and read |
+| `Failed`    | The fetch went wrong — blocked, not a web page, a 4xx |
+| `Broken`    | The page is gone (404/410). The link is fine; the thing it pointed at isn't |
+
+`enrichmentError` carries the reason in words worth showing someone. Previously a permanent
+failure was stamped exactly like a success with the reason hidden inside the OpenGraph metadata
+bag, so a dead link simply rendered as a bare URL forever.
+
+Links are re-checked automatically: a success is trusted for 30 days, then looked at again; a
+failure backs off exponentially from 6 hours and is given up on after 6 attempts.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/api/v1/links/{id}/recheck` | Try a link again now. Clears its backoff first, so an explicit retry isn't swallowed by the wait it was already serving. Rate-limited |
+
 > **Only enriched items are listed.** Manual adds enrich **immediately** (so they appear at once);
 > source-ingested links appear once their metadata has been fetched asynchronously. `itemCount`
 > reflects enriched items.

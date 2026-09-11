@@ -86,8 +86,14 @@ public class LinkEnricherYouTubeTests
         var link = await db.Links.FindAsync(linkId);
         Assert.NotNull(link!.EnrichedAt);
         Assert.Null(link.Title);
-        var meta = JsonSerializer.Deserialize<Dictionary<string, string>>(link.Metadata!)!;
-        Assert.Contains("HTTP 404", meta["enrichmentError"]);
+
+        // A 404 from oEmbed means the video is private, deleted or unlisted — the thing the link
+        // pointed at is gone, which is a different state from "we couldn't fetch it".
+        Assert.Equal(EnrichmentStatus.Broken, link.EnrichmentStatus);
+        Assert.Contains("could not be found", link.EnrichmentError);
+
+        // The reason lives in its own column now, not smuggled through the OpenGraph bag.
+        Assert.Null(link.Metadata);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using Linkbelli.Api.Auth;
 using Linkbelli.Api.Common;
+using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +27,18 @@ public static class LinkEndpoints
         // Live outbound fetch, so rate-limit it like other outbound endpoints.
         group.MapPost("/preview", async (CreateLinkRequest req, ILinkService links, CancellationToken ct) =>
             Results.Ok(await links.PreviewAsync(req.Url, ct)))
+            .RequireRateLimiting("sensitive")
+            .RequireAuthorization(Scopes.Policy(Scopes.LinksWrite));
+
+        // Try a link again now. Links are global, so this is deliberately not owner-scoped:
+        // any signed-in caller who can see a failed link can ask for it to be re-fetched, and
+        // the outbound rate limit is what stops that being abused.
+        group.MapPost("/{id:guid}/recheck", async (
+            Guid id, ILinkRecheckService recheck, CancellationToken ct) =>
+        {
+            await recheck.RecheckAsync(id, ct);
+            return Results.Accepted();
+        })
             .RequireRateLimiting("sensitive")
             .RequireAuthorization(Scopes.Policy(Scopes.LinksWrite));
     }

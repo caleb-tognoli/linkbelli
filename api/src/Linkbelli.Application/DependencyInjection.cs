@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddSingleton<LinkMetadataFetcher>();
         services.AddSingleton<IHostThrottle, HostThrottle>();
         services.AddScoped<ILinkEnricher, LinkEnricher>();
+        services.AddScoped<ILinkRecheckService, LinkRecheckService>();
 
         // --- Sources --- (ISourceScheduler / ISecretProtector are implemented in Infrastructure)
         services.AddScoped<ISourceService, SourceService>();

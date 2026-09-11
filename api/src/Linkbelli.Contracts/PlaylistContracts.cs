@@ -53,7 +53,11 @@ public record LinkResponse(
     Guid Id, string Url, string Host, string? Title, string? Description,
     string? ThumbnailUrl, string? SiteName, bool Enriched, bool Nsfw,
     /// <summary>The site's favicon, shared by every link on that host. Null until a link there has been enriched.</summary>
-    string? Favicon = null);
+    string? Favicon = null,
+    /// <summary>How the last fetch went: Pending, Succeeded, Failed or Broken.</summary>
+    EnrichmentStatus EnrichmentStatus = EnrichmentStatus.Pending,
+    /// <summary>Why the last fetch failed, phrased for a reader. Null when it didn't.</summary>
+    string? EnrichmentError = null);
 
 /// <summary>Metadata fetched for a URL without saving anything (paste → preview → confirm).</summary>
 public record LinkPreviewResponse(

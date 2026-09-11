@@ -104,7 +104,13 @@ export interface LinkSummary {
 	nsfw: boolean;
 	/** The site's favicon, shared by every link on that host. Null until a link there is enriched. */
 	favicon: string | null;
+	/** How the last fetch went. */
+	enrichmentStatus: EnrichmentStatus;
+	/** Why the last fetch failed, phrased for a reader. Null when it didn't. */
+	enrichmentError: string | null;
 }
+
+export type EnrichmentStatus = 'Pending' | 'Succeeded' | 'Failed' | 'Broken';
 
 export interface PlaylistItem {
 	id: string;

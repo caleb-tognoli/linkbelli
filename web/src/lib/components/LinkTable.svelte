@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Popover } from 'bits-ui';
 	import { dndzone } from 'svelte-dnd-action';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
-	import { ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, MoreVertical, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, MoreVertical, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
@@ -83,6 +84,19 @@
 	// Score column: show when any loaded item has a score, user forced it, or current sort is score-based
 	const hasAnyScore = $derived(items.some((i) => i.score !== null));
 	const showScoreCol = $derived(!readonly && (hasAnyScore || forceShowScore || sortMode === 'score-asc' || sortMode === 'score-desc'));
+
+	// Links being re-fetched right now, so the button can say so rather than looking inert.
+	let rechecking = $state(new SvelteSet<string>());
+
+	async function recheck(item: PlaylistItem) {
+		rechecking.add(item.link.id);
+		const res = await api.post(`/links/${item.link.id}/recheck`);
+		if (!res.ok) {
+			rechecking.delete(item.link.id);
+		}
+		// On success the row stays marked until the page is reloaded: enrichment is asynchronous,
+		// so there is nothing truthful to show yet.
+	}
 
 	// DND state — syncs from items when they change externally
 	let dndItems = $state<PlaylistItem[]>([]);
@@ -268,6 +282,25 @@
 					{/if}
 					{#if item.note && readonly}
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.note}</p>
+					{/if}
+					{#if item.link.enrichmentStatus === 'Failed' || item.link.enrichmentStatus === 'Broken'}
+						<!-- Without this the row is a bare URL and nothing says why. -->
+						<p class="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs" style="color: var(--color-muted)">
+							<AlertCircle
+								size={12}
+								aria-hidden="true"
+								style="color: {item.link.enrichmentStatus === 'Broken' ? 'var(--color-danger)' : 'var(--color-muted)'}"
+							/>
+							{item.link.enrichmentError ?? 'We could not read this page.'}
+							{#if !readonly}
+								<button
+									type="button"
+									onclick={() => recheck(item)}
+									disabled={rechecking.has(item.link.id)}
+									class="underline underline-offset-2 disabled:no-underline disabled:opacity-60"
+								>{rechecking.has(item.link.id) ? 'Trying…' : 'Try again'}</button>
+							{/if}
+						</p>
 					{/if}
 				</div>
 			</div>
