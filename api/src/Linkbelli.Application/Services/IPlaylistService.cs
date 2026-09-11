@@ -61,4 +61,19 @@ public interface IPlaylistService
 
     /// <summary>Takes the like back. Also idempotent.</summary>
     Task<PlaylistLikeResponse> UnlikeAsync(Guid userId, Guid playlistId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Browses public playlists in a given order: "active", "liked", "largest", or newest when
+    /// nothing is asked for.
+    /// </summary>
+    Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
+        string? q, string[]? tags, string? sort, int? limit, string? cursor, Guid? viewerId,
+        CancellationToken ct = default);
+
+    /// <summary>Public playlists like this one — sharing its tags, or holding the same links.</summary>
+    Task<IReadOnlyList<PublicPlaylistSummary>> ListSimilarAsync(
+        string username, string slug, int? limit, Guid? viewerId, CancellationToken ct = default);
+
+    /// <summary>Tags on public playlists that have seen activity lately.</summary>
+    Task<IReadOnlyList<TagSummary>> ListTrendingTagsAsync(int? days, CancellationToken ct = default);
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import PlaylistView from '$lib/components/PlaylistView.svelte';
+	import PublicPlaylistCard from '$lib/components/PublicPlaylistCard.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -87,3 +88,16 @@
 		{backLabel}
 	/>
 {/key}
+
+{#if data.similar.length}
+	<!-- Discovery otherwise ends at whatever you happened to open: there was no way from a
+	     playlist you liked to the next one. -->
+	<section class="mx-auto mt-10 max-w-5xl">
+		<h2 class="text-sm font-medium" style="color: var(--color-muted)">More like this</h2>
+		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			{#each data.similar as playlist (playlist.ownerUsername + '/' + playlist.slug)}
+				<PublicPlaylistCard {playlist} />
+			{/each}
+		</div>
+	</section>
+{/if}

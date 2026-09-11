@@ -271,6 +271,30 @@ twenty minutes, in batches) using the same rules and nothing but the row — no 
 > playlist filling up after a source run says so, rather than its count creeping upward on its
 > own. Public reads omit `pendingCount`: a visitor can't act on it.
 
+## Discovery
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/public/playlists` | Browse public playlists (`?q=`, `?tag=`, `?sort=`) |
+| `GET` | `/api/v1/public/playlists/{username}/{slug}/similar` | Lists like this one (`?limit=`, default 6) |
+| `GET` | `/api/v1/public/tags/trending` | Tags that have seen activity lately (`?days=`, default 30) |
+
+`sort` takes `active`, `liked` or `largest`; anything else — including a typo — falls back to
+newest first, which shows the default rather than an empty page.
+
+- **Ordering everything by age rewards being new rather than being good.** A list posted last year
+  that people keep coming back to was unfindable before `liked` existed.
+- **`active` is measured on the links, not the playlist.** An old list someone is still adding to
+  is active; a list created last week and abandoned is not.
+- **Similar playlists are keyed on shared links first, shared tags second** — two lists holding
+  the same twenty pages are about the same thing whatever anyone tagged them. A playlist with
+  nothing in common returns an empty list, because an empty row beats arbitrary playlists dressed
+  up as recommendations.
+- **Trending is the tag cloud narrowed to recent activity.** The all-time cloud is dominated by
+  whatever was popular first and never changes, so nobody looks at it twice.
+
+Every row carries `likeCount` and `lastItemAt`.
+
 ## Likes
 
 Nothing anyone did on a public playlist was visible to its owner, or to anyone else browsing.

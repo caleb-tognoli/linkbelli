@@ -419,7 +419,12 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
     }
 
     public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
-        string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default)
+        string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default) =>
+        await DiscoverPublicAsync(q, tags, sort: null, limit, cursor, viewerId, ct);
+
+    public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
+        string? q, string[]? tags, string? sort, int? limit, string? cursor, Guid? viewerId,
+        CancellationToken ct = default)
     {
         var take = Math.Clamp(limit ?? 50, 1, 100);
         var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
@@ -439,16 +444,18 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
             query = query.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
         }
 
-        var rows = await (from p in query
-                          join u in db.Users on p.OwnerId equals u.Id
-                          orderby p.CreationTime descending, p.Id descending
-                          select new PublicPlaylistSummary(
-                              u.UserName!, p.Slug, p.Name, p.Description,
-                              p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
-                              db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-                              p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
+        // Ordered first, projected second: the owner's name comes from a subquery rather than a
+        // join so the ordering stays expressed over the playlist itself, which is the only form
+        // EF can translate.
+        var rows = await Rank(query, sort)
+            .Select(p => new PublicPlaylistSummary(
+                db.Users.Where(u => u.Id == p.OwnerId).Select(u => u.UserName!).FirstOrDefault()!,
+                p.Slug, p.Name, p.Description,
+                p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+                db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
             .Skip(offset).Take(take + 1)
             .ToListAsync(ct);
 
@@ -461,6 +468,130 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
 
         return new PagedResult<PublicPlaylistSummary>(rows, next);
     }
+
+    /// <summary>
+    /// How discovery orders what it found.
+    /// </summary>
+    /// <remarks>
+    /// Ordering everything by age rewards being new rather than being good, and a list posted
+    /// last year that people keep coming back to was unfindable. Every ordering falls back to the
+    /// creation date, so the page doesn't reshuffle between refreshes on a tie.
+    ///
+    /// Expressed over the entities rather than over the projected summary: EF cannot translate an
+    /// OrderBy that reaches into a type the query has just constructed.
+    /// </remarks>
+    private IOrderedQueryable<Playlist> Rank(IQueryable<Playlist> playlists, string? sort) =>
+        sort?.Trim().ToLowerInvariant() switch
+        {
+            // A list nobody has added to in a year is finished, whatever else it is.
+            "active" => playlists
+                .OrderByDescending(p =>
+                    p.Items.Max(i => (DateTimeOffset?)i.CreationTime) ?? p.CreationTime)
+                .ThenByDescending(p => p.CreationTime),
+
+            "liked" => playlists
+                .OrderByDescending(p => db.PlaylistLikes.Count(l => l.PlaylistId == p.Id))
+                .ThenByDescending(p => p.CreationTime),
+
+            "largest" => playlists
+                .OrderByDescending(p => p.Items.Count(i => i.Link!.EnrichedAt != null))
+                .ThenByDescending(p => p.CreationTime),
+
+            // Newest first: what discovery has always done, and still the right default for a
+            // page whose job is to show you something you haven't seen.
+            _ => playlists
+                .OrderByDescending(p => p.CreationTime)
+                .ThenByDescending(p => p.Id),
+        };
+
+    /// <summary>
+    /// Public playlists that look like this one: sharing its tags, or holding the same links.
+    /// </summary>
+    /// <remarks>
+    /// Shared links are the stronger signal and are weighted accordingly — two lists holding the
+    /// same twenty pages are about the same thing whatever anyone tagged them.
+    /// </remarks>
+    public async Task<IReadOnlyList<PublicPlaylistSummary>> ListSimilarAsync(
+        string username, string slug, int? limit, Guid? viewerId, CancellationToken ct = default)
+    {
+        var take = Math.Clamp(limit ?? 6, 1, 24);
+        var normalized = username.ToUpperInvariant();
+
+        var subject = await db.Playlists
+            .Where(p => p.Slug == slug
+                && p.Visibility != PlaylistVisibility.Private
+                && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
+            .Select(p => new
+            {
+                p.Id,
+                Tags = p.Tags.Select(pt => pt.TagId).ToList(),
+                Links = p.Items.Select(i => i.LinkId).ToList(),
+            })
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("Playlist not found.");
+
+        // Nothing to be similar to. An empty row is better than a row of arbitrary playlists
+        // dressed up as recommendations.
+        if (subject.Tags.Count == 0 && subject.Links.Count == 0)
+        {
+            return [];
+        }
+
+        var candidates = db.Playlists.Where(p =>
+            p.Visibility == PlaylistVisibility.Public && p.Id != subject.Id);
+
+        if (!await prefs.ShowNsfwAsync(viewerId, ct))
+        {
+            candidates = candidates.Where(p =>
+                !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
+        }
+
+        return await (from p in candidates
+                      join u in db.Users on p.OwnerId equals u.Id
+                      let sharedTags = p.Tags.Count(pt => subject.Tags.Contains(pt.TagId))
+                      let sharedLinks = p.Items.Count(i => subject.Links.Contains(i.LinkId))
+                      where sharedTags > 0 || sharedLinks > 0
+                      orderby sharedLinks * SharedLinkWeight + sharedTags descending,
+                              p.CreationTime descending
+                      select new PublicPlaylistSummary(
+                          u.UserName!, p.Slug, p.Name, p.Description,
+                          p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                          p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                          p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+                          db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                          p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
+            .Take(take)
+            .ToListAsync(ct);
+    }
+
+    /// <summary>How much more a shared link counts than a shared tag.</summary>
+    private const int SharedLinkWeight = 3;
+
+    /// <summary>
+    /// The tags on public playlists that have seen activity lately, rather than the ones with the
+    /// biggest all-time count — which is a list that never changes.
+    /// </summary>
+    public async Task<IReadOnlyList<TagSummary>> ListTrendingTagsAsync(
+        int? days, CancellationToken ct = default)
+    {
+        var window = Math.Clamp(days ?? TrendingWindowDays, 1, 365);
+        var since = DateTimeOffset.UtcNow.AddDays(-window);
+
+        var rows = await db.PlaylistTags
+            .Where(pt => pt.Playlist!.Visibility == PlaylistVisibility.Public
+                && (pt.Playlist.CreationTime >= since
+                    || pt.Playlist.Items.Any(i => i.CreationTime >= since)))
+            .GroupBy(pt => pt.Tag!.Name)
+            .Select(g => new { Name = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count).ThenBy(x => x.Name)
+            .Take(MaxTagResults)
+            .ToListAsync(ct);
+
+        return [.. rows.Select(r => new TagSummary(r.Name, r.Count))];
+    }
+
+    /// <summary>How far back "trending" looks when the caller doesn't say.</summary>
+    public const int TrendingWindowDays = 30;
 
     public Task<IReadOnlyList<TagSummary>> ListOwnTagsAsync(Guid ownerId, string? q, CancellationToken ct = default) =>
         ListTagsAsync(db.PlaylistTags.Where(pt => pt.Playlist!.OwnerId == ownerId), q, ct);

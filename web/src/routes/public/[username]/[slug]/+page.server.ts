@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import type { AttachedSource, Paged, Playlist, PlaylistItem } from '$lib/types';
+import type { AttachedSource, Paged, Playlist, PlaylistItem, PublicPlaylistSummary } from '$lib/types';
 import type { PlaylistPrefs } from '$lib/prefs';
 import type { PageServerLoad } from './$types';
 
@@ -24,9 +24,10 @@ export const load: PageServerLoad = async ({ locals, params, parent, cookies }) 
 	const initialStatus = prefs.status ?? 'All';
 	const itemsQuery = buildItemsQuery(prefs.sort, prefs.source, initialStatus);
 
-	const [itemsRes, sourcesRes] = await Promise.all([
+	const [itemsRes, sourcesRes, similarRes] = await Promise.all([
 		locals.api(`${base}/items${itemsQuery}`),
-		locals.api(`${base}/sources`)
+		locals.api(`${base}/sources`),
+		locals.api(`${base}/similar?limit=6`)
 	]);
 
 	const items = itemsRes.ok
@@ -34,7 +35,19 @@ export const load: PageServerLoad = async ({ locals, params, parent, cookies }) 
 		: { items: [], nextCursor: null };
 	const attachedSources = sourcesRes.ok ? ((await sourcesRes.json()) as AttachedSource[]) : [];
 
-	return { playlist, items, attachedSources, username: params.username, slug: params.slug, initialPrefs: prefs };
+	// Where to go next. A nicety on a page that works without it, so a failure here degrades to
+	// an absent row rather than a broken page.
+	const similar = similarRes.ok ? ((await similarRes.json()) as PublicPlaylistSummary[]) : [];
+
+	return {
+		playlist,
+		items,
+		attachedSources,
+		similar,
+		username: params.username,
+		slug: params.slug,
+		initialPrefs: prefs
+	};
 };
 
 function readPrefsCookie(raw: string | undefined, playlistId: string): PlaylistPrefs {

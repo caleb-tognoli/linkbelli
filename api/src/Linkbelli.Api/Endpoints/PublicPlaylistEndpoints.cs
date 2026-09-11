@@ -18,9 +18,18 @@ public static class PublicPlaylistEndpoints
 
         // Discover: search/browse public playlists (by name query and/or tag). NSFW filtered by
         // the viewer's preference if authenticated, otherwise hidden.
-        group.MapGet("/playlists", async (ClaimsPrincipal user, IPlaylistService svc, string? q, string[]? tag, int? limit, string? cursor, CancellationToken ct) =>
-            Results.Ok(await svc.DiscoverPublicAsync(q, tag, limit, cursor, ViewerId(user), ct)))
+        group.MapGet("/playlists", async (ClaimsPrincipal user, IPlaylistService svc, string? q, string[]? tag, string? sort, int? limit, string? cursor, CancellationToken ct) =>
+            Results.Ok(await svc.DiscoverPublicAsync(q, tag, sort, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
+
+        // Lists like this one. Discovery otherwise ends at whatever you happened to open — there
+        // was no way from a playlist you liked to the next one.
+        group.MapGet("/playlists/{username}/{slug}/similar", async (
+            ClaimsPrincipal user, string username, string slug, IPlaylistService svc, int? limit,
+            CancellationToken ct) =>
+            Results.Ok(await svc.ListSimilarAsync(username, slug, limit, ViewerId(user), ct)))
+            .AllowAnonymous()
+            .WithName("ListSimilarPlaylists");
 
         // What a share link opens. The token is the whole secret, so this is deliberately not
         // enumerable and says nothing about the playlist the item came from.
@@ -86,6 +95,13 @@ public static class PublicPlaylistEndpoints
         group.MapGet("/tags", async (IPlaylistService svc, string? q, CancellationToken ct) =>
             Results.Ok(await svc.ListPublicTagsAsync(q, ct)))
             .AllowAnonymous();
+
+        // The same cloud, narrowed to what has actually seen activity. The all-time one is
+        // dominated by whatever was popular first and never changes.
+        group.MapGet("/tags/trending", async (IPlaylistService svc, int? days, CancellationToken ct) =>
+            Results.Ok(await svc.ListTrendingTagsAsync(days, ct)))
+            .AllowAnonymous()
+            .WithName("ListTrendingTags");
     }
 
     /// <summary>
