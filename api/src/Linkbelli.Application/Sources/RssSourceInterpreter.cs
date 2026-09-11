@@ -18,6 +18,10 @@ namespace Linkbelli.Application.Sources;
 public sealed class RssSourceInterpreter(IHttpClientFactory httpClientFactory) : ISourceInterpreter
 {
     public const string FeedUrlKey = "feedUrl";
+
+    /// <summary>Metadata key carrying an entry's publish date, when the feed states one.</summary>
+    public const string PublishedKey = "published";
+
     private const int MaxItemsPerRun = 100;
 
     public SourceType Type => SourceType.Rss;
@@ -79,6 +83,9 @@ public sealed class RssSourceInterpreter(IHttpClientFactory httpClientFactory) :
                 var meta = new Dictionary<string, string>();
                 if (!string.IsNullOrWhiteSpace(i.Title))  meta["title"]  = i.Title!.Trim();
                 if (!string.IsNullOrWhiteSpace(i.Author)) meta["author"] = i.Author!.Trim();
+                // Round-trip format, so a filter reading it back gets the instant the feed meant
+                // rather than whatever the server's locale would have made of it.
+                if (i.PublishingDate is { } published) meta[PublishedKey] = published.ToUniversalTime().ToString("O");
                 var thumb = ExtractThumbnail(i);
                 if (thumb is not null) meta["thumbnail"] = thumb;
                 return new DiscoveredLink(i.Link!.Trim(), null, meta.Count > 0 ? meta : null);

@@ -89,6 +89,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.Property(s => s.Schedule).HasMaxLength(100);
             e.Property(s => s.Config).HasColumnType("jsonb");
             e.Property(s => s.State).HasColumnType("jsonb");
+            e.Property(s => s.Filter).HasColumnType("jsonb");
             e.HasIndex(s => s.OwnerId);
             e.HasSoftDeleteFilter();
         });

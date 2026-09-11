@@ -95,6 +95,7 @@ public class SourceService(
             Schedule = request.Schedule.Trim(),
             Visibility = request.Visibility ?? SourceVisibility.Private,
             TimeZone = NormalizeTimeZone(request.TimeZone),
+            Filter = SourceFilters.Serialize(SourceFilters.Normalize(request.Filter)),
         };
         db.Sources.Add(source);
 
@@ -146,6 +147,13 @@ public class SourceService(
         if (request.TimeZone is not null)
         {
             source.TimeZone = NormalizeTimeZone(request.TimeZone);
+        }
+
+        // An omitted filter leaves the stored one alone; an empty object clears it, which is the
+        // only way to say "stop filtering" when null already means "don't touch".
+        if (request.Filter is not null)
+        {
+            source.Filter = SourceFilters.Serialize(SourceFilters.Normalize(request.Filter));
         }
 
         if (request.Visibility is not null && request.Visibility.Value != source.Visibility)
@@ -235,7 +243,7 @@ public class SourceService(
             .Take(50)
             .Select(r => new SourceRunResponse(
                 r.Id, r.CreationTime, r.FinishedAt, r.Status, r.ItemsFound, r.ItemsAdded, r.Error,
-                r.FoundCount, r.AddedCount))
+                r.FoundCount, r.AddedCount, r.SkippedCount))
             .ToListAsync(ct);
     }
 
@@ -386,6 +394,7 @@ public class SourceService(
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
             source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
-            lastRunStatus, source.Status, source.ConsecutiveFailures, source.TimeZone);
+            lastRunStatus, source.Status, source.ConsecutiveFailures, source.TimeZone,
+            SourceFilters.Deserialize(source.Filter));
     }
 }

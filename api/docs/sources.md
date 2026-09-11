@@ -99,6 +99,8 @@ All paths are under **`/api/v1`**. Reads require the `sources:read` scope and wr
   back to UTC would run the schedule at the wrong hour with nothing to show for it. Daylight
   saving is observed, so "every day at 8" stays at 8 all year.
 - `playlistIds` must be playlists you own; discovered links are appended to each.
+- `filter` decides what the source may bring in — see [Filters](#filters). Omit it entirely to
+  accept everything, which is what every source did before filters existed.
 
 ### Pausing
 
@@ -231,7 +233,7 @@ curl -X POST http://localhost:5180/api/v1/sources/<id>/run -H "Authorization: Be
 
 # Inspect what happened
 curl http://localhost:5180/api/v1/sources/<id>/runs -H "Authorization: Bearer <token>"
-# -> [ { "status":"Succeeded", "itemsFound":37, "itemsAdded":35, "finishedAt":"...", ... } ]
+# -> [ { "status":"Succeeded", "foundCount":37, "addedCount":35, "skippedCount":3, ... } ]
 ```
 
 A run records `foundCount` (discovered) vs `addedCount` (new after dedup), plus `status`
@@ -241,6 +243,46 @@ SSRF-protected client as enrichment.
 `itemsFound` and `itemsAdded` carry **up to 20** of the URLs for inspection — a sample, not a
 record. Runs are the fastest-growing table in the schema, and the URLs are duplicated verbatim
 from the links themselves, which are still there.
+
+### Filters
+
+Everything a source finds lands unless a filter turns it away, which makes a broad feed an
+all-or-nothing decision: take the firehose or don't subscribe.
+
+```jsonc
+{
+  "titleInclude": "rust|zig",       // regex, case-insensitive; null accepts any title
+  "titleExclude": "sponsored",
+  "urlInclude": "^https://blog\.",
+  "urlExclude": "/tag/|/author/",
+  "minAgeHours": 24,                // needs a date from the source; 0-720
+  "maxItems": 20,                   // per run, applied after the patterns
+  "dedupeWindowDays": 7             // 0-30
+}
+```
+
+Every field is optional. A filter that would change nothing is stored as **null**, not as an
+object full of nulls — so `GET` gives back `"filter": null` for a source that accepts everything.
+On `PATCH`, an **omitted** `filter` leaves the stored one alone (as every other field does) and an
+**empty object** clears it: null already means "don't touch".
+
+Details worth knowing:
+
+- **Patterns are checked when you save them**, not when a run meets them: an unparseable one comes
+  back as a `400` naming the field, rather than failing every run at 3am. They run on the linear
+  matching engine where the syntax allows it, and behind a 250ms timeout where it doesn't, so a
+  pattern can't hang the worker.
+- **The patterns run before `maxItems`**, so the cap keeps the items you asked for instead of the
+  first N the feed happened to list.
+- **`minAgeHours` only applies when the source reports a publish date.** A link with no date is
+  accepted: unknown is not new, and a scraper reports no dates at all.
+- **`dedupeWindowDays` is what makes a deletion stick.** Removing something a source found is
+  otherwise temporary — the next run puts it straight back. The window is answered from the
+  removed items themselves, which is why it can't outlast the **30 days** they sit in the trash.
+
+A run reports `skippedCount` alongside `foundCount` and `addedCount`: everything the filter turned
+away, by pattern, by age or by the cap. Without it, a strict filter and a broken selector look
+identical from the outside — both succeed and add nothing.
 
 ### Health
 

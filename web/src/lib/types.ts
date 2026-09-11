@@ -201,6 +201,26 @@ export interface Source {
 	consecutiveFailures: number;
 	/** IANA zone the schedule is read in; null means UTC. */
 	timeZone: string | null;
+	/** What this source may bring in; null accepts everything it finds. */
+	filter: SourceFilter | null;
+}
+
+/**
+ * What a source is allowed to bring in. Every field is optional, and an all-empty filter is
+ * stored as none at all.
+ */
+export interface SourceFilter {
+	/** Regular expressions, matched case-insensitively. */
+	titleInclude: string | null;
+	titleExclude: string | null;
+	urlInclude: string | null;
+	urlExclude: string | null;
+	/** Hold back anything published more recently than this. Needs a date from the source. */
+	minAgeHours: number | null;
+	/** Cap per run, applied after the patterns. */
+	maxItems: number | null;
+	/** Days a removed item stays removed, instead of returning on the next run. */
+	dedupeWindowDays: number | null;
 }
 
 export interface SourceRun {
@@ -213,6 +233,8 @@ export interface SourceRun {
 	itemsAdded: string[];
 	foundCount: number;
 	addedCount: number;
+	/** Links the source's filter turned away — by pattern, by age, or by the cap. */
+	skippedCount: number;
 	error: string | null;
 }
 

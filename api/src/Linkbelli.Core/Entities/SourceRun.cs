@@ -27,6 +27,12 @@ public class SourceRun : BaseEntity<Guid>
     /// <summary>Of those, how many were new to the application.</summary>
     public int AddedCount { get; set; }
 
+    /// <summary>
+    /// How many of the discovered links the source's filter turned away. Without it a strict
+    /// filter and a broken selector look identical from the outside: both succeed and add nothing.
+    /// </summary>
+    public int SkippedCount { get; set; }
+
     /// <summary>Up to <see cref="SampleSize"/> of the discovered URLs, for inspection.</summary>
     public string[] ItemsFound { get; set; } = [];
 

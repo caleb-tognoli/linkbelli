@@ -66,6 +66,12 @@ public class Source : BaseEntity<Guid>
     public SourceStatus Status { get; set; } = SourceStatus.Active;
     /// <summary>Interpreter persistence between runs: ETag, Last-Modified, cursor… (jsonb).</summary>
     public string? State { get; set; }
+
+    /// <summary>
+    /// What this source is allowed to bring in — a serialised <see cref="Core.Sources.SourceFilter"/>,
+    /// or null for everything, which is what every source did before filters existed.
+    /// </summary>
+    public string? Filter { get; set; }
     public DateTimeOffset? LastRunAt { get; set; }
 
     /// <summary>

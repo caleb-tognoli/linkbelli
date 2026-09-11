@@ -1,4 +1,5 @@
 using Linkbelli.Core.Entities;
+using Linkbelli.Core.Sources;
 
 namespace Linkbelli.Contracts;
 
@@ -14,7 +15,9 @@ public record CreateSourceRequest(
     /// <summary>Build the config from this template instead of supplying one.</summary>
     Guid? TemplateId = null,
     /// <summary>Values for the template's fields. Ignored without a TemplateId.</summary>
-    IReadOnlyDictionary<string, string>? Variables = null);
+    IReadOnlyDictionary<string, string>? Variables = null,
+    /// <summary>What this source may bring in. Omit to accept everything it finds.</summary>
+    SourceFilter? Filter = null);
 
 public record UpdateSourceRequest(
     string? Name,
@@ -25,7 +28,12 @@ public record UpdateSourceRequest(
     SourceVisibility? Visibility,
     SourceStatus? Status = null,
     /// <summary>IANA zone the schedule is read in. Omit to leave it as it is.</summary>
-    string? TimeZone = null);
+    string? TimeZone = null,
+    /// <summary>
+    /// What this source may bring in. Omit to leave it as it is; send an empty object to clear
+    /// it, since null already means "don't touch".
+    /// </summary>
+    SourceFilter? Filter = null);
 
 public record SourceResponse(
     Guid Id, string Name, SourceType Type, IReadOnlyDictionary<string, string> Config,
@@ -35,7 +43,9 @@ public record SourceResponse(
     /// <summary>Failures since the last success. A source stops itself once this hits the threshold.</summary>
     int ConsecutiveFailures = 0,
     /// <summary>IANA zone the schedule is read in; null means UTC.</summary>
-    string? TimeZone = null);
+    string? TimeZone = null,
+    /// <summary>What this source may bring in; null accepts everything.</summary>
+    SourceFilter? Filter = null);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
 public record SharedSourceSummary(
@@ -55,7 +65,9 @@ public record SubscribeSourceRequest(Guid SourceId);
 public record SourceRunResponse(
     Guid Id, DateTimeOffset StartedAt, DateTimeOffset? FinishedAt,
     SourceRunStatus Status, string[] ItemsFound, string[] ItemsAdded, string? Error,
-    int FoundCount = 0, int AddedCount = 0);
+    int FoundCount = 0, int AddedCount = 0,
+    /// <summary>Discovered links the source's filter turned away.</summary>
+    int SkippedCount = 0);
 
 /// <summary>Dry-run a source config without saving, returning a few sample candidates.</summary>
 public record PreviewSourceRequest(SourceType Type, IReadOnlyDictionary<string, string> Config);

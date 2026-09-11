@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
@@ -19,6 +20,21 @@ public sealed class SourceRunner(
     ISourceScheduler scheduler,
     ILogger<SourceRunner> logger) : ISourceRunner
 {
+    /// <summary>
+    /// The title a filter matches on. Interpreters put it in metadata rather than in the title
+    /// hint, and a pattern written against what the feed says should see what the feed says.
+    /// </summary>
+    private static string? Title(DiscoveredLink link) =>
+        link.Title ?? (link.Metadata?.TryGetValue("title", out var title) == true ? title : null);
+
+    /// <summary>What the source said the link was published at, when it said anything.</summary>
+    private static DateTimeOffset? Published(DiscoveredLink link) =>
+        link.Metadata?.TryGetValue(RssSourceInterpreter.PublishedKey, out var published) == true
+        && DateTimeOffset.TryParse(
+            published, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)
+            ? parsed
+            : null;
+
     public async Task RunAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
         var source = await db.Sources.FirstOrDefaultAsync(s => s.Id == sourceId, cancellationToken);
@@ -54,9 +70,23 @@ public sealed class SourceRunner(
                 source.State = fetch.State; // persist ETag/cursor for the next run
             }
 
-            var discovered = fetch.Links
-                .Take(quota.MaxItemsPerRun)
+            // Everything a source found used to land unconditionally, which made a broad feed an
+            // all-or-nothing proposition. The filter runs before the quota cap, so the cap keeps
+            // the items the owner asked for rather than the first N the feed happened to list.
+            var filter = SourceFilters.Deserialize(source.Filter)?.Compile();
+            var now = DateTimeOffset.UtcNow;
+
+            var accepted = filter is null
+                ? fetch.Links
+                : [.. fetch.Links.Where(l => filter.Accepts(l.Url, Title(l), Published(l), now))];
+
+            var discovered = accepted
+                .Take(Math.Min(filter?.Filter.MaxItems ?? int.MaxValue, quota.MaxItemsPerRun))
                 .ToList();
+
+            // Everything the run turned away, whether by pattern, by age or by the cap. Without
+            // it a strict filter and a broken selector look identical from the outside.
+            run.SkippedCount = fetch.Links.Count - discovered.Count;
 
             // Determine which candidate URLs are already known to the application before resolving,
             // so ItemsAdded reflects links genuinely new to the system (not just new to a playlist).
@@ -124,6 +154,32 @@ public sealed class SourceRunner(
                     .ToListAsync(cancellationToken))
                 .GroupBy(x => x.PlaylistId)
                 .ToDictionary(g => g.Key, g => g.Select(x => x.LinkId).ToHashSet());
+
+            // Removing something a source found is otherwise temporary: the next run puts it
+            // straight back, with no way to say no permanently. The window is answered from the
+            // removed items themselves, which is why it can't outlast the trash they sit in.
+            if (filter?.Filter.DedupeWindowDays is { } windowDays)
+            {
+                var cutoff = now.AddDays(-windowDays);
+                var removed = await db.PlaylistItems
+                    .IgnoreQueryFilters()
+                    .Where(i => playlistIds.Contains(i.PlaylistId)
+                        && candidateLinkIds.Contains(i.LinkId)
+                        && i.DeletionTime != null
+                        && i.DeletionTime >= cutoff)
+                    .Select(i => new { i.PlaylistId, i.LinkId })
+                    .ToListAsync(cancellationToken);
+
+                foreach (var item in removed)
+                {
+                    if (!present.TryGetValue(item.PlaylistId, out var links))
+                    {
+                        present[item.PlaylistId] = links = [];
+                    }
+
+                    links.Add(item.LinkId);
+                }
+            }
 
             var nextPositions = (await db.PlaylistItems
                     .Where(i => playlistIds.Contains(i.PlaylistId))

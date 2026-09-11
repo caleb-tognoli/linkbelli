@@ -27,6 +27,10 @@
 
 	let historyOpen = $state(false);
 
+	// Only worth a column when something has actually been turned away; a source with no filter
+	// would otherwise carry a permanent column of dashes.
+	const anySkipped = $derived(data.runs.some((run) => run.skippedCount > 0));
+
 	let itemsRun = $state<SourceRun | null>(null);
 	let itemsMode = $state<'found' | 'added'>('found');
 	let itemsOpen = $state(false);
@@ -265,6 +269,9 @@
 						<th class="py-1 font-medium">Status</th>
 						<th class="py-1 font-medium">Found</th>
 						<th class="py-1 font-medium">Added</th>
+						{#if anySkipped}
+							<th class="py-1 font-medium">Skipped</th>
+						{/if}
 						<th class="py-1 font-medium">Started</th>
 						<th class="py-1 font-medium">Duration</th>
 					</tr>
@@ -318,6 +325,9 @@
 									<button type="button" disabled class="rounded px-1.5 py-0.5 opacity-30 cursor-default">0</button>
 								{/if}
 							</td>
+							{#if anySkipped}
+								<td class="py-1 tabular-nums" style="color: var(--color-muted)">{run.skippedCount || '—'}</td>
+							{/if}
 							<td class="py-1" style="color: var(--color-muted)">{fmt(run.startedAt)}</td>
 							<td class="py-1" style="color: var(--color-muted)">{duration(run)}</td>
 						</tr>

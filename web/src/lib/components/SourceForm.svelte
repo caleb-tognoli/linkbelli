@@ -3,9 +3,9 @@
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Popover } from 'bits-ui';
-	import { X, Plus, Save, Lock, Globe, Trash2, Info } from '@lucide/svelte';
+	import { X, Plus, Save, Lock, Globe, Trash2, Info, ChevronRight } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
-	import type { Source, SourceType, SourceVisibility } from '$lib/types';
+	import type { Source, SourceFilter, SourceType, SourceVisibility } from '$lib/types';
 
 	type VisOption = { label: string; icon: typeof Lock };
 	const visConfig: Record<SourceVisibility, VisOption> = {
@@ -105,10 +105,49 @@
 		source?.config?.['auth.loginUrl'] ? 'loginUrl' : 'none'
 	);
 
+	// Everything a source finds lands unless one of these turns it away. Held as strings so the
+	// number boxes can be genuinely empty rather than stuck at a zero that means something.
+	let filter = $state({
+		titleInclude: source?.filter?.titleInclude ?? '',
+		titleExclude: source?.filter?.titleExclude ?? '',
+		urlInclude: source?.filter?.urlInclude ?? '',
+		urlExclude: source?.filter?.urlExclude ?? '',
+		minAgeHours: numeric(source?.filter?.minAgeHours),
+		maxItems: numeric(source?.filter?.maxItems),
+		dedupeWindowDays: numeric(source?.filter?.dedupeWindowDays)
+	});
+
+	let filtersOpen = $state(hasFilter(source?.filter));
+
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 	let visOpen = $state(false);
 	const currentVis = $derived(visConfig[visibility] ?? visConfig.Private);
+
+	function numeric(value: number | null | undefined): string {
+		return value === null || value === undefined ? '' : String(value);
+	}
+
+	function hasFilter(value: SourceFilter | null | undefined): boolean {
+		return !!value && Object.values(value).some((v) => v !== null && v !== undefined);
+	}
+
+	/**
+	 * The filter as the API takes it. Always sent, even empty: an omitted filter means "leave the
+	 * stored one alone", so clearing the last box has to say so explicitly.
+	 */
+	function buildFilter(): Record<string, string | number> {
+		const built: Record<string, string | number> = {};
+		for (const key of ['titleInclude', 'titleExclude', 'urlInclude', 'urlExclude'] as const) {
+			const value = filter[key].trim();
+			if (value) built[key] = value;
+		}
+		for (const key of ['minAgeHours', 'maxItems', 'dedupeWindowDays'] as const) {
+			const value = filter[key].trim();
+			if (value !== '' && Number.isFinite(+value)) built[key] = +value;
+		}
+		return built;
+	}
 
 	function initValues(): Record<string, string> {
 		const v: Record<string, string> = {};
@@ -179,17 +218,18 @@
 		error = null;
 		try {
 			const config = buildConfig();
+			const filterBody = buildFilter();
 			let res: Response;
 			if (mode === 'create') {
-				res = await api.post('/sources', { name, type, config, schedule, visibility, status, timeZone });
+				res = await api.post('/sources', { name, type, config, schedule, visibility, status, timeZone, filter: filterBody });
 			} else {
-				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility, status });
+				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility, status, filter: filterBody });
 			}
 			if (!res.ok) {
 				error =
 					res.status === 429
 						? 'You have reached your source quota.'
-						: 'Could not save — check the name and config.';
+						: ((await problem(res)) ?? 'Could not save — check the name and config.');
 				return;
 			}
 			if (mode === 'create') {
@@ -200,6 +240,20 @@
 			}
 		} finally {
 			busy = false;
+		}
+	}
+
+	/**
+	 * The server's own words, when it has any. A rejected pattern is worth quoting verbatim —
+	 * "Could not save" tells someone nothing about which bracket they left open.
+	 */
+	async function problem(res: Response): Promise<string | null> {
+		try {
+			const body = (await res.json()) as { errors?: Record<string, string[]>; detail?: string };
+			const first = Object.values(body.errors ?? {})[0]?.[0];
+			return first ?? body.detail ?? null;
+		} catch {
+			return null;
 		}
 	}
 
@@ -420,6 +474,68 @@
 				{/if}
 			{/if}
 		</div>
+	</fieldset>
+
+	<fieldset class="rounded-lg border p-4" style="border-color: var(--color-border)">
+		<legend class="px-1 text-xs" style="color: var(--color-muted)">
+			<button
+				type="button"
+				onclick={() => (filtersOpen = !filtersOpen)}
+				class="inline-flex items-center gap-1 hover:opacity-70"
+				aria-expanded={filtersOpen}
+			>
+				<ChevronRight
+					size={12}
+					aria-hidden="true"
+					class="transition-transform duration-150"
+					style={filtersOpen ? 'transform: rotate(90deg)' : ''}
+				/>
+				Filters{#if !filtersOpen && hasFilter(source?.filter)}<span style="color: var(--color-accent)"> · on</span>{/if}
+			</button>
+		</legend>
+
+		{#if filtersOpen}
+			<div class="flex flex-col gap-4">
+				<p class="text-xs" style="color: var(--color-muted)">
+					Without these, everything the source finds lands. Patterns are regular expressions and
+					ignore case; leave a box empty to skip that rule.
+				</p>
+
+				<div class="grid gap-3 sm:grid-cols-2">
+					<label class="flex flex-col gap-1 text-sm">
+						<span class="inline-flex items-center gap-1">Title must match {@render infoTip('Links whose title does not match are skipped')}</span>
+						<input bind:value={filter.titleInclude} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
+					</label>
+					<label class="flex flex-col gap-1 text-sm">
+						<span>Title must not match</span>
+						<input bind:value={filter.titleExclude} spellcheck="false" placeholder="sponsored|advertorial" class="{fieldClass} font-mono" style={fieldStyle} />
+					</label>
+					<label class="flex flex-col gap-1 text-sm">
+						<span>URL must match</span>
+						<input bind:value={filter.urlInclude} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
+					</label>
+					<label class="flex flex-col gap-1 text-sm">
+						<span>URL must not match</span>
+						<input bind:value={filter.urlExclude} spellcheck="false" placeholder="/tag/|/author/" class="{fieldClass} font-mono" style={fieldStyle} />
+					</label>
+				</div>
+
+				<div class="grid gap-3 sm:grid-cols-3">
+					<label class="flex flex-col gap-1 text-sm">
+						<span class="inline-flex items-center gap-1">Minimum age {@render infoTip('Hours. Only applies when the source reports a date')}</span>
+						<input bind:value={filter.minAgeHours} type="number" min="0" max="720" placeholder="any" class={fieldClass} style={fieldStyle} />
+					</label>
+					<label class="flex flex-col gap-1 text-sm">
+						<span class="inline-flex items-center gap-1">Most items a run {@render infoTip('Applied after the patterns, so the cap keeps what matched')}</span>
+						<input bind:value={filter.maxItems} type="number" min="1" placeholder="no limit" class={fieldClass} style={fieldStyle} />
+					</label>
+					<label class="flex flex-col gap-1 text-sm">
+						<span class="inline-flex items-center gap-1">Don't re-add for {@render infoTip('Days. Deleting something this source found otherwise lasts until its next run')}</span>
+						<input bind:value={filter.dedupeWindowDays} type="number" min="0" max="30" placeholder="never" class={fieldClass} style={fieldStyle} />
+					</label>
+				</div>
+			</div>
+		{/if}
 	</fieldset>
 
 	<div class="flex items-center gap-3">
