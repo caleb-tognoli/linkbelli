@@ -313,6 +313,22 @@ Import has existed since the CSV importer; this is the way out.
 curl -OJ "http://localhost:5180/api/v1/export?format=csv" -H "Authorization: Bearer <token>"
 ```
 
+## Embedding a playlist
+
+A public playlist can sit on someone else's page.
+
+| Address | What it is |
+|---------|-----------|
+| `/embed/{username}/{slug}` | A self-contained card, the ten most recent links. `?theme=dark` for a dark host page |
+| `/oembed?url=…` | oEmbed discovery, so anything that speaks oEmbed turns a pasted playlist link into that card |
+
+- The public playlist page advertises its oEmbed endpoint, so a paste is enough.
+- `/oembed` only describes addresses **on this server**. An oEmbed endpoint that described anyone's
+  URL would be a way to make this server fetch and vouch for anything.
+- Only `/embed` is frameable; every other page now sends `frame-ancestors 'none'`, which nothing
+  did before — any page could previously be put inside someone's iframe.
+- An embed is `noindex`: it is a fragment of someone else's page, not one of ours.
+
 ## Sync (what changed since I last looked)
 
 `GET /api/v1/sync?since=<instant>` reports everything of yours that changed after that moment.

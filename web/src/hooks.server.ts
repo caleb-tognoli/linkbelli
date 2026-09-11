@@ -7,7 +7,7 @@ const AUTH_PAGES = ['/login', '/register'];
 
 // Anonymous-viewable areas. The /api/v1 proxy is included so anonymous browsers can read public
 // endpoints; the API still enforces per-endpoint auth (protected calls get 401).
-const ANON_PREFIXES = ['/discover', '/public', '/api/v1'];
+const ANON_PREFIXES = ['/discover', '/public', '/embed', '/oembed', '/api/v1'];
 
 // Served to crawlers, which never carry a session.
 const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml', '/manifest.webmanifest'];
@@ -80,7 +80,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Theme preference (light/dark/system) from a cookie, injected into <html data-theme> so the
 	// server-rendered markup matches the client (no flash of the wrong theme).
 	const theme = cookies.get('lb_theme') ?? 'system';
-	return resolve(event, {
+	const response = await resolve(event, {
 		transformPageChunk: ({ html }) => html.replace('__THEME__', theme)
 	});
+
+	// Only the embed is meant to be framed. Everything else refuses, which it previously did not:
+	// nothing here set a frame policy at all, so any page could be put inside someone's iframe.
+	response.headers.set(
+		'content-security-policy',
+		startsWithSegment(pathname, '/embed') ? 'frame-ancestors *' : "frame-ancestors 'none'"
+	);
+
+	return response;
 };

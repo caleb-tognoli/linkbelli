@@ -55,6 +55,14 @@
 		<meta name="twitter:image" content={cardImage} />
 	{/if}
 
+	<!-- oEmbed discovery: anything that speaks oEmbed turns a pasted link into a card. -->
+	<link
+		rel="alternate"
+		type="application/json+oembed"
+		href={`${page.url.origin}/oembed?url=${encodeURIComponent(canonical)}`}
+		title={data.playlist.name}
+	/>
+
 	<!-- Feed autodiscovery: a reader pointed at this page finds the feeds by itself. -->
 	<link rel="alternate" type="application/rss+xml" title={`${data.playlist.name} (RSS)`} href={`${feedUrl}.rss`} />
 	<link rel="alternate" type="application/atom+xml" title={`${data.playlist.name} (Atom)`} href={`${feedUrl}.atom`} />
