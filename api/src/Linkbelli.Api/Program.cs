@@ -7,8 +7,7 @@ using Linkbelli.Application.Auth;
 using Linkbelli.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
-using System.Security.Cryptography;
-using System.Text;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
@@ -135,8 +134,10 @@ else
 app.UseLinkbelliDashboard(); // Hangfire dashboard at /hangfire (dev only)
 
 app.UseCors();
-app.UseRateLimiter();
+// Authentication first, so the limiter can partition on who is calling rather than on the
+// credential they happened to present. See ResolvePartitionKey.
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
@@ -163,23 +164,28 @@ v1.MapPublicPlaylistEndpoints();
 
 app.Run();
 
-// Partition per credential so callers don't share a bucket. Critically, the web BFF proxies every
-// request from one server IP, so partitioning by IP alone would lump all users into a single bucket;
-// keying on the bearer token (per user session) keeps each user independent.
+// Partition per caller so they don't share a bucket. Critically, the web BFF proxies every request
+// from one server IP, so partitioning by IP alone would lump all users together.
+//
+// Keyed on the authenticated user id, which is why UseRateLimiter runs after UseAuthentication.
+// It used to hash the bearer token instead: refreshing a token minted a brand-new bucket, and
+// every browser session a person had open got its own allowance — fine as a burst guard, useless
+// as anything resembling a per-user limit.
 static string ResolvePartitionKey(HttpContext http)
 {
+    var userId = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!string.IsNullOrEmpty(userId))
+    {
+        return $"user:{userId}";
+    }
+
+    // API keys don't reach UseAuthentication (only the default scheme runs there; the key scheme
+    // is named per-endpoint and resolves during authorization, after this). Their public id is a
+    // stable, non-rotating identifier, so keying on it gives the same guarantee.
     if (http.Request.Headers.TryGetValue(ApiKeyToken.HeaderName, out var header)
         && ApiKeyToken.TryParse(header.ToString(), out var publicId, out _))
     {
         return $"key:{publicId}";
-    }
-
-    var auth = http.Request.Headers.Authorization.ToString();
-    if (auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-    {
-        var token = auth["Bearer ".Length..];
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
-        return $"bearer:{hash[..16]}";
     }
 
     return $"ip:{http.Connection.RemoteIpAddress}";

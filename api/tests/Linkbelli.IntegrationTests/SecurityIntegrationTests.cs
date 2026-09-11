@@ -136,7 +136,7 @@ public class RateLimitTests(PostgresApiFactory factory)
             new { name = "burst", scopes = Array.Empty<string>(), expiresAt = (DateTimeOffset?)null });
         var key = await keyResp.Content.ReadFromJsonAsync<ApiKeyCreatedDto>();
 
-        // A dedicated key gets its own rate-limit partition, so this can't starve other tests.
+        // A dedicated user gets their own rate-limit partition, so this can't starve other tests.
         var keyed = factory.CreateClient();
         keyed.DefaultRequestHeaders.Add("X-Api-Key", key!.Token);
 
@@ -155,5 +155,61 @@ public class RateLimitTests(PostgresApiFactory factory)
 
         Assert.NotNull(throttled);
         Assert.True(throttled!.Headers.Contains("Retry-After"));
+    }
+
+    [Fact]
+    public async Task Refreshing_a_token_does_not_hand_out_a_fresh_allowance()
+    {
+        var username = NewUsername();
+        var client = factory.CreateClient();
+
+        var register = await client.PostAsJsonAsync("/api/v1/auth/register",
+            new { username, email = $"{username}@example.com", password = Password });
+        register.EnsureSuccessStatusCode();
+
+        var login = await client.PostAsJsonAsync("/api/v1/auth/login", new { login = username, password = Password });
+        login.EnsureSuccessStatusCode();
+        var first = (await login.Content.ReadFromJsonAsync<TokenDto>())!;
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", first.AccessToken);
+        for (var i = 0; i < 15; i++)
+        {
+            await client.PostAsJsonAsync("/api/v1/links/preview", new { url = "http://localhost/x" });
+        }
+
+        var refresh = await client.PostAsJsonAsync("/api/v1/auth/refresh", new { refreshToken = first.RefreshToken });
+        refresh.EnsureSuccessStatusCode();
+        var second = (await refresh.Content.ReadFromJsonAsync<TokenDto>())!;
+        Assert.NotEqual(first.AccessToken, second.AccessToken);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", second.AccessToken);
+        var afterRefresh = await client.PostAsJsonAsync("/api/v1/links/preview", new { url = "http://localhost/x" });
+
+        // Partitioning on the token itself meant a refresh minted a brand-new bucket, so anyone
+        // could reset their own limit just by refreshing. The bucket belongs to the person.
+        Assert.Equal(HttpStatusCode.TooManyRequests, afterRefresh.StatusCode);
+    }
+
+    [Fact]
+    public async Task One_persons_burst_does_not_throttle_another()
+    {
+        var heavy = factory.CreateClient();
+        var heavyToken = await heavy.RegisterAndLoginAsync(NewUsername());
+        heavy.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", heavyToken);
+
+        var quiet = factory.CreateClient();
+        var quietToken = await quiet.RegisterAndLoginAsync(NewUsername());
+        quiet.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", quietToken);
+
+        for (var i = 0; i < 15; i++)
+        {
+            await heavy.PostAsJsonAsync("/api/v1/links/preview", new { url = "http://localhost/x" });
+        }
+
+        // Everything reaches the API from the BFF's single address, so partitioning by IP would
+        // have lumped these two together.
+        var response = await quiet.PostAsJsonAsync("/api/v1/links/preview", new { url = "http://localhost/x" });
+
+        Assert.NotEqual(HttpStatusCode.TooManyRequests, response.StatusCode);
     }
 }
