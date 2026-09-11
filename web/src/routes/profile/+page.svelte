@@ -26,6 +26,22 @@
 		await api.put('/me/preferences', { showNsfw: value });
 	}
 
+	// Counts worth a number, and where a number that isn't zero is worth acting on.
+	const usageEntries = $derived(
+		data.usage
+			? [
+					{ label: 'Playlists', value: data.usage.playlists },
+					{ label: 'Links', value: data.usage.items },
+					{ label: 'Sites', value: data.usage.sites },
+					{ label: 'Watched', value: data.usage.watched },
+					{ label: 'Folders', value: data.usage.folders },
+					{ label: 'Sources', value: data.usage.sources },
+					{ label: 'Broken', value: data.usage.broken, href: '/search?broken=1', action: 'review' },
+					{ label: 'In the trash', value: data.usage.inTrash, href: '/trash', action: 'review' }
+				]
+			: []
+	);
+
 	function pct(used: number, max: number) {
 		return max > 0 ? Math.min(100, Math.round((used / max) * 100)) : 0;
 	}
@@ -63,6 +79,30 @@
 			</dl>
 		{/if}
 	</div>
+
+	{#if data.usage}
+		<div>
+			<h2 class="font-medium">What you have here</h2>
+			<dl
+				class="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border p-4 text-sm sm:grid-cols-4"
+				style="border-color: var(--color-border); background: var(--color-surface)"
+			>
+				{#each usageEntries as entry (entry.label)}
+					<div>
+						<dt style="color: var(--color-muted)">{entry.label}</dt>
+						<dd class="text-lg font-semibold tabular-nums">
+							{entry.value}
+							{#if entry.href && entry.value > 0}
+								<a href={entry.href} class="ml-1 text-xs font-normal underline underline-offset-2" style="color: var(--color-accent)">
+									{entry.action}
+								</a>
+							{/if}
+						</dd>
+					</div>
+				{/each}
+			</dl>
+		</div>
+	{/if}
 
 	{#if data.quota}
 		<div>

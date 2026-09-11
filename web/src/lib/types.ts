@@ -358,3 +358,17 @@ export interface SourceTemplate {
 	builtin: boolean;
 	fields: SourceTemplateField[];
 }
+
+/** The size and shape of what someone has here. */
+export interface Usage {
+	playlists: number;
+	items: number;
+	pendingItems: number;
+	folders: number;
+	sources: number;
+	savedSearches: number;
+	sites: number;
+	watched: number;
+	broken: number;
+	inTrash: number;
+}

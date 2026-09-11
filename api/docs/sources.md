@@ -161,6 +161,15 @@ curl http://localhost:5180/api/v1/me/quota -H "Authorization: Bearer <token>"
 # -> { "maxSources":5, "sourcesUsed":3, "maxRunsPerDay":10, "runsUsedToday":2, "maxItemsPerRun":100 }
 ```
 
+`GET /me/usage` reports the collection itself — playlists, links, distinct sites, how many are
+watched, how many are broken, and how much is sitting in the trash. Quotas were only ever visible
+as a 429, and nothing at all reported size, so a hundred rotting links could go unnoticed.
+
+```bash
+curl http://localhost:5180/api/v1/me/usage -H "Authorization: Bearer <token>"
+# -> { "playlists":12, "items":875, "sites":94, "watched":310, "broken":21, "inTrash":3, ... }
+```
+
 ### Admin & moderation
 
 Admins (users in the `Admin` role) manage other users and the host blocklist. Admin endpoints

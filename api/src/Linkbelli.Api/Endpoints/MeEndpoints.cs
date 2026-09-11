@@ -30,6 +30,11 @@ public static class MeEndpoints
         .RequireAuthorization(secured)
         .WithName("GetMyQuota");
 
+        app.MapGet("/me/usage", async (ClaimsPrincipal user, IUsageService usage, CancellationToken ct) =>
+            Results.Ok(await usage.GetAsync(user.GetUserId(), ct)))
+        .RequireAuthorization(secured)
+        .WithName("GetMyUsage");
+
         app.MapPut("/me/preferences", async (UpdatePreferencesRequest req, ClaimsPrincipal user, IUserPreferenceService prefs, CancellationToken ct) =>
         {
             await prefs.SetShowNsfwAsync(user.GetUserId(), req.ShowNsfw, ct);

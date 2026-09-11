@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IApiKeyService, ApiKeyService>();
         services.AddScoped<IApiKeyAuthenticator, ApiKeyAuthenticator>();
         services.AddScoped<IUserQuotaService, UserQuotaService>();
+        services.AddScoped<IUsageService, UsageService>();
         services.AddScoped<IUserPreferenceService, UserPreferenceService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IImportService, ImportService>();
