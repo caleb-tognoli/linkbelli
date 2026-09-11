@@ -39,6 +39,7 @@ public static class DependencyInjection
 
         // --- Link enrichment --- (ILinkEnrichmentQueue is implemented in Infrastructure via Hangfire)
         services.AddSingleton<LinkMetadataExtractor>();
+        services.AddSingleton<ArticleExtractor>();
         services.AddSingleton<LinkMetadataFetcher>();
         services.AddSingleton<IHostThrottle, HostThrottle>();
         services.AddScoped<ILinkEnricher, LinkEnricher>();

@@ -32,6 +32,19 @@ public class Link : BaseEntity<Guid>
     public string? SiteName { get; set; }
     /// <summary>Raw scraped/OpenGraph metadata (jsonb).</summary>
     public string? Metadata { get; set; }
+
+    /// <summary>
+    /// The readable text of the page, kept at enrichment. Without it a saved article is only
+    /// searchable by the handful of words in its title, and can't be read back once it rots.
+    /// Null when the page had no article in it, which most pages don't.
+    /// </summary>
+    public string? Content { get; set; }
+
+    /// <summary>Words in the whole article, even when <see cref="Content"/> stops short of it.</summary>
+    public int? WordCount { get; set; }
+
+    /// <summary>Whether the stored text is only the start of the article.</summary>
+    public bool ContentTruncated { get; set; }
     /// <summary>
     /// When we last finished trying to enrich this link, successfully or not. Reads gate on this
     /// being set, so an item appears once we have stopped waiting on it either way.

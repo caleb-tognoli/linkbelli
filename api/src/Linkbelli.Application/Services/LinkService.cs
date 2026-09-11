@@ -28,6 +28,37 @@ public class LinkService(
         return link.ToResponse();
     }
 
+    public async Task<LinkContentResponse> GetContentAsync(
+        Guid ownerId, Guid linkId, CancellationToken cancellationToken = default)
+    {
+        // Ownership is by having saved it, not by owning the link: links are shared globally, so
+        // the row alone says nothing about who may read the text out of it.
+        var link = await db.Links
+            .AsNoTracking()
+            .Include(l => l.Host)
+            .Where(l => l.Id == linkId
+                && db.PlaylistItems.Any(i => i.LinkId == l.Id && i.Playlist!.OwnerId == ownerId))
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new NotFoundException("Link not found.");
+
+        if (string.IsNullOrEmpty(link.Content))
+        {
+            // Most pages are not articles, and the ones that are may have been saved before the
+            // text was ever kept. Either way there is nothing to read here.
+            throw new NotFoundException("No readable text was found on that page.");
+        }
+
+        return new LinkContentResponse(
+            link.Id,
+            link.CanonicalUrl,
+            link.Host!.Hostname,
+            link.Title,
+            link.SiteName,
+            link.Content.Split(ArticleExtractor.ParagraphSeparator, StringSplitOptions.RemoveEmptyEntries),
+            link.WordCount ?? 0,
+            link.ContentTruncated);
+    }
+
     public async Task<LinkPreviewResponse> PreviewAsync(string url, CancellationToken cancellationToken = default)
     {
         if (!UrlCanonicalizer.TryCanonicalize(url, out var canonical))

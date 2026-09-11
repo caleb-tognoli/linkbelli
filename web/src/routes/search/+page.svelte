@@ -3,7 +3,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
-	import { AlertCircle, Bookmark, Search, Eye, Star, X } from '@lucide/svelte';
+	import { readingLabel } from '$lib/reading';
+	import { AlertCircle, BookOpen, Bookmark, Search, Eye, Star, X } from '@lucide/svelte';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
 	import type { Paged, SavedSearch, SearchHit } from '$lib/types';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
@@ -297,6 +298,12 @@
 							<p class="mt-0.5 text-sm" style="color: var(--color-muted)">{hit.note}</p>
 						{/if}
 
+						{#if hit.snippet}
+							<!-- Only present when nothing else on the row contains the word typed, which
+							     otherwise makes the hit look like a mistake. -->
+							<p class="mt-0.5 text-sm" style="color: var(--color-muted)">…{hit.snippet}…</p>
+						{/if}
+
 						<p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs" style="color: var(--color-muted)">
 							<a href={`/playlists/${hit.playlistId}`} class="hover:underline">{hit.playlistName}</a>
 							<span aria-hidden="true">·</span>
@@ -323,6 +330,12 @@
 								<span class="inline-flex items-center gap-1 tabular-nums">
 									<Star size={12} aria-hidden="true" /> {hit.score}
 								</span>
+							{/if}
+							{#if hit.link.wordCount}
+								<span aria-hidden="true">·</span>
+								<a href={`/read/${hit.link.id}`} class="inline-flex items-center gap-1 hover:underline">
+									<BookOpen size={12} aria-hidden="true" /> {readingLabel(hit.link.wordCount)} read
+								</a>
 							{/if}
 						</p>
 					</div>

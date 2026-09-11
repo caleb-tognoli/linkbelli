@@ -130,6 +130,21 @@ export interface LinkSummary {
 	enrichmentStatus: EnrichmentStatus;
 	/** Why the last fetch failed, phrased for a reader. Null when it didn't. */
 	enrichmentError: string | null;
+	/** Words in the article saved at enrichment; null when the page had no article in it. */
+	wordCount?: number | null;
+}
+
+/** The readable text of a saved page, as it was when it was saved. */
+export interface LinkContent {
+	id: string;
+	url: string;
+	host: string;
+	title: string | null;
+	siteName: string | null;
+	paragraphs: string[];
+	wordCount: number;
+	/** Whether these paragraphs are only the start of the article. */
+	truncated: boolean;
 }
 
 export type EnrichmentStatus = 'Pending' | 'Succeeded' | 'Failed' | 'Broken';
@@ -331,6 +346,11 @@ export interface SearchHit {
 	statusChangedAt: string | null;
 	/** Tags on the link itself. */
 	tags: string[];
+	/**
+	 * Where the term was found in the article text, when it was only found there. Null for a hit
+	 * on the title or the note, where the reason it matched is already on screen.
+	 */
+	snippet: string | null;
 }
 
 /** A site the caller saves from, and how many of their links are on it. */

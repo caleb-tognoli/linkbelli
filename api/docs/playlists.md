@@ -201,6 +201,30 @@ failure backs off exponentially from 6 hours and is given up on after 6 attempts
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/api/v1/links/{id}/recheck` | Try a link again now. Clears its backoff first, so an explicit retry isn't swallowed by the wait it was already serving. Rate-limited |
+| `GET` | `/api/v1/links/{id}/content` | The article text kept when the page was first read — see [Saved articles](#saved-articles) |
+
+### Saved articles
+
+Enrichment keeps the readable part of a page, not just its metadata. The copy on the web is the
+part that rots, so a saved article that can only be re-fetched is a saved address.
+
+```bash
+curl http://localhost:5180/api/v1/links/<id>/content -H "Authorization: Bearer <token>"
+# -> { "title":"...", "host":"...", "paragraphs":["...","..."], "wordCount":1840, "truncated":false }
+```
+
+- **Most pages have no article in them.** Anything under 60 words of prose is stored as nothing at
+  all, and this returns **404** — a reader view of one sentence is worse than none. `wordCount` on
+  a link is what says whether there is anything to read.
+- **Text is capped at 60,000 characters**, cut at a word boundary, with `truncated` saying so.
+  `wordCount` still describes the whole article, not the part that was kept.
+- **Only people who saved the page can read it.** Links are global rows shared by everyone who
+  saved the same address; the text behind one is not.
+- `q` on [search](#search) looks inside this text, so a word from the middle of an article finds
+  it. Hits that matched **only** there carry a `snippet` — without it the row looks like a mistake,
+  since nothing on it contains the word that was typed.
+
+
 
 > **Only enriched items are listed.** Manual adds enrich **immediately** (so they appear at once);
 > source-ingested links appear once their metadata has been fetched asynchronously. `itemCount`
@@ -249,7 +273,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 
 | Parameter | Meaning |
 |-----------|---------|
-| `q`        | Free text over title, description, site name, **your note**, URL and hostname. A pasted URL is canonicalized and matched on the dedup hash instead |
+| `q`        | Free text over title, description, site name, **your note**, the [saved article text](#saved-articles), URL and hostname. A pasted URL is canonicalized and matched on the dedup hash instead |
 | `host`     | Restrict to one hostname |
 | `tag`      | Repeatable; the **playlist** must carry all of them |
 | `itemTag`  | Repeatable; the **link** must carry all of them — which is what finds the same subject across different lists |
@@ -264,6 +288,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
   anything else — and newest-first when it isn't, which is what a bare browse wants.
 - Each hit carries `playlistId` and `playlistName`, because "which list did I put it in" is most
   of the question being asked.
+- A hit that matched only inside the article text carries a `snippet` showing where.
 - NSFW items are excluded unless you have opted in.
 
 ```bash

@@ -18,7 +18,12 @@ public record SearchHit(
     /// <summary>When the status last changed; null if it never has.</summary>
     DateTimeOffset? StatusChangedAt,
     /// <summary>Tags on the link itself.</summary>
-    string[] Tags);
+    string[] Tags,
+    /// <summary>
+    /// Where the term was found in the article text, when it was only found there. Null for a
+    /// hit on the title or the note, where the reason it matched is already on screen.
+    /// </summary>
+    string? Snippet = null);
 
 /// <summary>Filters a search can be narrowed by, beyond the text itself.</summary>
 public record SearchQuery(

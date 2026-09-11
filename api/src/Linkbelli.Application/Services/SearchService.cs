@@ -50,7 +50,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
         new LinkResponse(
             i.Link!.Id, i.Link.CanonicalUrl, i.Link.Host!.Hostname, i.Link.Title,
             i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw,
-            i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError),
+            i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError, i.Link.WordCount),
         i.Note,
         i.Status,
         i.Score,
@@ -114,6 +114,8 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             rows.RemoveAt(take);
             next = Common.Cursor.EncodePage(total, (offset + take).ToString());
         }
+
+        rows = await WithSnippetsAsync(rows, query.Q, ct);
 
         return new PagedResult<SearchHit>(rows, next) { Total = total };
     }
@@ -210,6 +212,54 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
     /// The same predicate the in-playlist search uses, so both are served by the trigram indexes
     /// added in AddSearchIndexes. A pasted URL short-circuits to the indexed dedup hash.
     /// </summary>
+    /// <summary>Characters of article text shown around a match.</summary>
+    private const int SnippetLength = 240;
+
+    /// <summary>
+    /// Adds the sentence a term was found in, for hits that matched on the article text alone.
+    /// A hit whose title doesn't contain the word looks like a mistake without it.
+    /// </summary>
+    /// <remarks>
+    /// One extra query for the page that was just read, and only the window around each match
+    /// comes back — the stored articles themselves are far too big to pull into memory to slice.
+    /// </remarks>
+    private async Task<List<SearchHit>> WithSnippetsAsync(List<SearchHit> rows, string? q, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(q) || rows.Count == 0)
+        {
+            return rows;
+        }
+
+        var needle = q.ToLower();
+        var unexplained = rows
+            .Where(hit => !Explains(hit.Link.Title, needle) && !Explains(hit.Note, needle))
+            .Select(hit => hit.Link.Id)
+            .ToList();
+
+        if (unexplained.Count == 0)
+        {
+            return rows;
+        }
+
+        var snippets = (await db.Links
+            .AsNoTracking()
+            .Where(l => unexplained.Contains(l.Id) && l.Content != null && l.Content.ToLower().Contains(needle))
+            .Select(l => new
+            {
+                l.Id,
+                Text = l.Content!.Substring(l.Content.ToLower().IndexOf(needle), SnippetLength),
+            })
+            .ToListAsync(ct))
+            .ToDictionary(row => row.Id, row => row.Text);
+
+        return [.. rows.Select(hit =>
+            snippets.TryGetValue(hit.Link.Id, out var snippet) ? hit with { Snippet = snippet } : hit)];
+    }
+
+    /// <summary>Whether what is already on screen accounts for the match.</summary>
+    private static bool Explains(string? value, string needle) =>
+        value is not null && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
+
     private static IQueryable<PlaylistItem> ApplyText(IQueryable<PlaylistItem> items, string? q)
     {
         if (string.IsNullOrWhiteSpace(q)) return items;
@@ -226,6 +276,9 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             || (i.Link!.Description != null && i.Link.Description.ToLower().Contains(needle))
             || (i.Link!.SiteName != null && i.Link.SiteName.ToLower().Contains(needle))
             || (i.Note != null && i.Note.ToLower().Contains(needle))
+            // The article itself, so "that piece about the Dutch railways" finds it even when
+            // neither of those words is in the title.
+            || (i.Link!.Content != null && i.Link.Content.ToLower().Contains(needle))
             || i.Link!.CanonicalUrl.ToLower().Contains(needle)
             || i.Link!.Host!.Hostname.ToLower().Contains(needle));
     }

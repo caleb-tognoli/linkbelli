@@ -20,4 +20,10 @@ public interface ILinkService
 
     /// <summary>Canonicalizes a URL and fetches its metadata without saving (preview before save).</summary>
     Task<LinkPreviewResponse> PreviewAsync(string url, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The stored article text, for someone who has this link in one of their own playlists.
+    /// Links are global, so the text is only handed to people who actually saved the page.
+    /// </summary>
+    Task<LinkContentResponse> GetContentAsync(Guid ownerId, Guid linkId, CancellationToken cancellationToken = default);
 }

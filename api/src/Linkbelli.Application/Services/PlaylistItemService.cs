@@ -19,7 +19,7 @@ public class PlaylistItemService(
             new LinkResponse(
                 i.Link!.Id, i.Link.CanonicalUrl, i.Link.Host!.Hostname, i.Link.Title,
                 i.Link.Description, i.Link.ThumbnailUrl, i.Link.SiteName, i.Link.EnrichedAt != null, i.Link.Nsfw,
-                i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError),
+                i.Link.Host.Favicon, i.Link.EnrichmentStatus, i.Link.EnrichmentError, i.Link.WordCount),
             i.CreationTime,
             i.Metadata,
             i.SourceId,

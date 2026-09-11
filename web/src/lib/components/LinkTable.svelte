@@ -3,7 +3,8 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
-	import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { readingLabel } from '$lib/reading';
+	import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
@@ -364,6 +365,19 @@
 						{showUrls ? item.link.url : (item.metadata?.title ?? item.link.title ?? item.link.url)}
 					</a>
 					{#if item.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
+					{#if item.link.wordCount}
+						<!-- The text was kept at enrichment, so this still works once the page
+						     behind the link has gone. -->
+						<a
+							href={`/read/${item.link.id}`}
+							class="ml-1.5 inline-flex items-center gap-1 align-middle text-xs hover:underline"
+							style="color: var(--color-muted)"
+							title="Read the saved article"
+						>
+							<BookOpen size={12} aria-hidden="true" />
+							{readingLabel(item.link.wordCount)}
+						</a>
+					{/if}
 					{#if item.metadata?.author}
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.metadata.author}</p>
 					{/if}

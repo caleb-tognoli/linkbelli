@@ -104,8 +104,30 @@ public record LinkResponse(
     /// <summary>How the last fetch went: Pending, Succeeded, Failed or Broken.</summary>
     EnrichmentStatus EnrichmentStatus = EnrichmentStatus.Pending,
     /// <summary>Why the last fetch failed, phrased for a reader. Null when it didn't.</summary>
-    string? EnrichmentError = null);
+    string? EnrichmentError = null,
+    /// <summary>
+    /// Words in the article kept at enrichment, or null where the page had no article in it —
+    /// which is also what says whether there is anything to read back.
+    /// </summary>
+    int? WordCount = null);
 
 /// <summary>Metadata fetched for a URL without saving anything (paste → preview → confirm).</summary>
 public record LinkPreviewResponse(
     string CanonicalUrl, string Host, string? Title, string? Description, string? ImageUrl, string? SiteName);
+
+/// <summary>
+/// The readable text of a saved page, kept at enrichment — because the copy on the web is the
+/// part that rots, and a saved article nobody can read back is only a saved address.
+/// </summary>
+public record LinkContentResponse(
+    Guid Id,
+    string Url,
+    string Host,
+    string? Title,
+    string? SiteName,
+    /// <summary>Paragraphs, in the order they were read.</summary>
+    IReadOnlyList<string> Paragraphs,
+    /// <summary>Words in the whole article, even where the stored text stops short of it.</summary>
+    int WordCount,
+    /// <summary>Whether the paragraphs are only the start of the article.</summary>
+    bool Truncated);

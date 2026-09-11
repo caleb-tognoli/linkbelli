@@ -30,6 +30,14 @@ public static class LinkEndpoints
             .RequireRateLimiting("sensitive")
             .RequireAuthorization(Scopes.Policy(Scopes.LinksWrite));
 
+        // The article as it was when it was saved. The web copy is the part that rots, so this is
+        // the only version that is still guaranteed to be there.
+        group.MapGet("/{id:guid}/content", async (
+            Guid id, System.Security.Claims.ClaimsPrincipal user, ILinkService links, CancellationToken ct) =>
+            Results.Ok(await links.GetContentAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("GetLinkContent");
+
         // Thumbnails are served from here rather than hotlinked. Rendering the origin URL told
         // every site in a playlist the viewer's IP and what they were looking at, and broke
         // outright whenever a host refused hotlinking.

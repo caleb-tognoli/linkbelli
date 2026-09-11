@@ -128,6 +128,7 @@ public class LinkEnricherYouTubeTests
         var enricher = new LinkEnricher(
             factory,
             new LinkMetadataExtractor(),
+            new ArticleExtractor(),
             db,
             new NullThrottle(),
             NullLogger<LinkEnricher>.Instance);

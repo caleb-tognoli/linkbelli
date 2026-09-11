@@ -13,6 +13,7 @@ namespace Linkbelli.Application.Enrichment;
 public class LinkEnricher(
     IHttpClientFactory httpClientFactory,
     LinkMetadataExtractor extractor,
+    ArticleExtractor articles,
     IAppDbContext db,
     IHostThrottle throttle,
     ILogger<LinkEnricher> logger) : ILinkEnricher
@@ -85,6 +86,13 @@ public class LinkEnricher(
             link.ThumbnailUrl = metadata.ImageUrl;
             link.SiteName = metadata.SiteName;
             link.Metadata = metadata.Raw.Count > 0 ? JsonSerializer.Serialize(metadata.Raw) : null;
+
+            // The page is already here and already parsed once; reading the article out of it now
+            // is the only chance we get, since the copy on the web is the part that rots.
+            var article = articles.Extract(html);
+            link.Content = article.Text;
+            link.WordCount = article.Text is null ? null : article.WordCount;
+            link.ContentTruncated = article.Truncated;
             if (metadata.Nsfw)
             {
                 link.Nsfw = true; // automatic; never cleared
