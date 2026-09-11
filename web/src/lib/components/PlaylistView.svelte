@@ -347,6 +347,13 @@
 		</div>
 	</header>
 
+	{#if isOwner && playlist.pendingCount}
+		<p class="mt-2 text-sm" style="color: var(--color-muted)">
+			{playlist.pendingCount} more {playlist.pendingCount === 1 ? 'link is' : 'links are'} being fetched — they
+			appear here once their pages have been read.
+		</p>
+	{/if}
+
 	<div class="mt-3">
 		<TagEditor playlistId={playlist.id} bind:tags readonly={!isOwner} />
 	</div>

@@ -64,6 +64,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                 Playlist = p,
                 LastActivity = p.Items.Max(i => (DateTimeOffset?)i.CreationTime) ?? p.CreationTime,
                 ItemCount = p.Items.Count(i => i.Link!.EnrichedAt != null),
+                PendingCount = p.Items.Count(i => i.Link!.EnrichedAt == null),
                 Tags = p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
                 Nsfw = p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
                 FolderId = db.FolderPlaylists
@@ -78,7 +79,7 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
             .Select(x => new PlaylistResponse(
                 x.Playlist.Id, x.Playlist.Name, x.Playlist.Slug, x.Playlist.Description,
                 x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags, x.Nsfw,
-                x.FolderId, x.FolderName))
+                x.FolderId, x.FolderName, null, x.PendingCount))
             .ToListAsync(ct);
 
         string? next = null;
@@ -134,7 +135,8 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                     .Select(fp => fp.Folder!.Name).FirstOrDefault(),
                 // The owner's own read reports whether they set the flag by hand, so the control
                 // can show its real state rather than guessing.
-                p.NsfwOverride == null ? NsfwSetting.Auto : p.NsfwOverride.Value ? NsfwSetting.Yes : NsfwSetting.No))
+                p.NsfwOverride == null ? NsfwSetting.Auto : p.NsfwOverride.Value ? NsfwSetting.Yes : NsfwSetting.No,
+                p.Items.Count(i => i.Link!.EnrichedAt == null)))
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");

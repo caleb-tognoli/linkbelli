@@ -27,7 +27,13 @@ public record PlaylistResponse(
     /// Whether the owner set the adult flag by hand, or left it automatic. Null in listings,
     /// which don't report it — rather than defaulting to Auto and misreporting an override.
     /// </summary>
-    NsfwSetting? NsfwSetting = null);
+    NsfwSetting? NsfwSetting = null,
+    /// <summary>
+    /// Links added but not yet fetched. They aren't listed or counted until enrichment finishes,
+    /// so without this the item count of a freshly filled playlist just creeps upward on its own.
+    /// Null on reads that don't report it (a visitor can't do anything about it).
+    /// </summary>
+    int? PendingCount = null);
 
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(

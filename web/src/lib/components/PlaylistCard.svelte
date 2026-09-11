@@ -39,6 +39,12 @@
 			{:else if playlist.visibility === 'Unlisted'}<EyeOff size={11} aria-hidden="true" />
 			{:else}<Globe size={11} aria-hidden="true" />{/if}{playlist.visibility}
 		</span>
-		<span>{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}</span>
+		<span>
+			{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}
+			{#if playlist.pendingCount}
+				<!-- Without this the count just creeps upward on its own while a run lands. -->
+				<span title="Being fetched now">· +{playlist.pendingCount}</span>
+			{/if}
+		</span>
 	</div>
 </a>

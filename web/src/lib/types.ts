@@ -29,6 +29,8 @@ export interface Playlist {
 	folderName: string | null;
 	/** Whether the owner set the adult flag by hand. Null in listings, which don't report it. */
 	nsfwSetting?: NsfwSetting | null;
+	/** Links added but not yet fetched, so not yet listed or counted. */
+	pendingCount?: number | null;
 }
 
 export interface Paged<T> {

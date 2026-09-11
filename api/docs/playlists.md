@@ -135,7 +135,9 @@ failure backs off exponentially from 6 hours and is given up on after 6 attempts
 
 > **Only enriched items are listed.** Manual adds enrich **immediately** (so they appear at once);
 > source-ingested links appear once their metadata has been fetched asynchronously. `itemCount`
-> reflects enriched items.
+> reflects enriched items, and `pendingCount` reports how many are still being fetched — so a
+> playlist filling up after a source run says so, rather than its count creeping upward on its
+> own. Public reads omit `pendingCount`: a visitor can't act on it.
 
 ## NSFW
 
