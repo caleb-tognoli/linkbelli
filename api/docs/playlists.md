@@ -125,6 +125,33 @@ Each user has a **Show NSFW** preference (default **off**): `GET /api/v1/me` ret
 items are hidden everywhere — your own lists, item lists, discovery, and public views (a NSFW public
 playlist returns 404). Anonymous viewers are always treated as off.
 
+## Export (data portability)
+
+Import has existed since the CSV importer; this is the way out.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/export?format=`                    | Everything you own |
+| `GET` | `/api/v1/export/playlists/{id}?format=`     | One playlist you own |
+
+`format` is one of:
+
+| Format | What it is |
+|--------|-----------|
+| `json` (default) | Full structured dump: playlists, items, folders and sources |
+| `csv`  | One row per link. The first two columns are `url` and `note`, which is exactly what the CSV importer reads, so an export feeds straight back in |
+| `html` | Netscape bookmark file — importable by every browser; playlists become folders |
+| `opml` | Subscription list of your **RSS** sources. Scraper and JSON-API sources are left out: OPML describes feeds, and they have no feed URL a reader could subscribe to |
+
+- Responses are served as an attachment with a dated filename.
+- **Source secrets are redacted** (`***`). An export is a file that gets emailed around, and a
+  scraper's auth header has no business travelling in one.
+- Unenriched links are included — they are your data whether or not we managed to fetch a title.
+
+```bash
+curl -OJ "http://localhost:5180/api/v1/export?format=csv" -H "Authorization: Bearer <token>"
+```
+
 ## Trash (undo a delete)
 
 Deleting a playlist or an item is a **soft delete**: the row is kept and can be restored for

@@ -9,7 +9,7 @@
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
-	import { ChevronDown, EyeOff, Globe, Lock, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, Download, EyeOff, Globe, Lock, Trash2 } from '@lucide/svelte';
 	import type { AttachedSource, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -63,6 +63,13 @@
 	let loadingMore = $state(false);
 	let visibility = $state(playlist.visibility);
 	let visOpen = $state(false);
+	let exportOpen = $state(false);
+
+	const PLAYLIST_EXPORTS = [
+		{ format: 'json', label: 'JSON' },
+		{ format: 'csv', label: 'CSV' },
+		{ format: 'html', label: 'Bookmarks' }
+	];
 	let playlistName = $state(playlist.name);
 	const currentVis = $derived(visConfig[visibility] ?? visConfig.Private);
 
@@ -241,6 +248,32 @@
 				/>
 			{/if}
 			{#if isOwner}
+				<Popover.Root bind:open={exportOpen}>
+					<Popover.Trigger
+						class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+						title="Export this playlist"
+						aria-label="Export this playlist"
+					>
+						<Download size={17} aria-hidden="true" />
+					</Popover.Trigger>
+					<Popover.Content
+						class="popover-surface z-30 overflow-hidden rounded-md border shadow-md"
+						sideOffset={4}
+						align="end"
+					>
+						{#each PLAYLIST_EXPORTS as fmt (fmt.format)}
+							<a
+								href={`/api/v1/export/playlists/${playlist.id}?format=${fmt.format}`}
+								download
+								onclick={() => (exportOpen = false)}
+								class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+							>
+								<Download size={14} aria-hidden="true" style="color: var(--color-muted)" />
+								{fmt.label}
+							</a>
+						{/each}
+					</Popover.Content>
+				</Popover.Root>
 				<button
 					type="button"
 					onclick={deletePlaylist}

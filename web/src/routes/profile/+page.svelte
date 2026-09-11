@@ -5,9 +5,19 @@
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Switch from '$lib/components/Switch.svelte';
+	import { Download } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	// Named by what the file is for, not by its extension — "OPML" means nothing until you know
+	// it is the thing your feed reader imports.
+	const EXPORTS = [
+		{ format: 'json', label: 'Everything (JSON)', hint: 'Playlists, links, folders and sources' },
+		{ format: 'csv', label: 'Links (CSV)', hint: 'One row per link — reads back into the importer' },
+		{ format: 'html', label: 'Bookmarks (HTML)', hint: 'Import into any browser' },
+		{ format: 'opml', label: 'Feeds (OPML)', hint: 'Your RSS sources, for a feed reader' }
+	];
 
 	let showNsfw = $state(data.user?.showNsfw ?? false);
 
@@ -84,6 +94,27 @@
 			</div>
 		</div>
 	{/if}
+
+	<div>
+		<h2 class="font-medium">Export</h2>
+		<p class="mt-1 text-sm" style="color: var(--color-muted)">
+			Download everything you have here. It is your data; take it wherever you like.
+		</p>
+		<div class="mt-3 flex flex-wrap gap-2">
+			{#each EXPORTS as fmt (fmt.format)}
+				<a
+					href={`/api/v1/export?format=${fmt.format}`}
+					download
+					class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+					style="border-color: var(--color-border)"
+					title={fmt.hint}
+				>
+					<Download size={15} aria-hidden="true" />
+					{fmt.label}
+				</a>
+			{/each}
+		</div>
+	</div>
 
 	<div>
 		<ApiKeysManager keys={data.apiKeys} />
