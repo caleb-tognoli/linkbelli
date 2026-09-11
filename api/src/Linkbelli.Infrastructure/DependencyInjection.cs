@@ -5,6 +5,7 @@ using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Identity;
 using Linkbelli.Application.Security;
+using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
 using Linkbelli.Infrastructure.Jobs;
 using Linkbelli.Infrastructure.Security;
@@ -70,6 +71,7 @@ public static class DependencyInjection
         services.AddHangfireServer();
         services.AddSingleton<ILinkEnrichmentQueue, HangfireLinkEnrichmentQueue>();
         services.AddSingleton<ISourceScheduler, HangfireSourceScheduler>();
+        services.AddSingleton<IBackgroundJobStats, HangfireJobStats>();
         services.AddHostedService<SourceScheduleSyncService>();
         services.AddHostedService<AdminRoleSeeder>();
         services.AddHostedService<MaintenanceScheduler>();

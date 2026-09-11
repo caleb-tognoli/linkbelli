@@ -23,6 +23,12 @@ public static class AdminEndpoints
             })
             .WithTags("Admin");
 
+        // Everything worth looking at in one place. All of it was already being recorded and
+        // none of it had a view: failing sources, unreadable links, the enrichment backlog.
+        group.MapGet("/overview", async (IAdminOverviewService svc, CancellationToken ct) =>
+            Results.Ok(await svc.GetAsync(ct)))
+            .WithName("GetAdminOverview");
+
         // User lookup (search by username/email) → resolves the id for quota management.
         group.MapGet("/users", async (IAdminService admin, string? q, int? limit, CancellationToken ct) =>
             Results.Ok(await admin.SearchUsersAsync(q, limit, ct)));

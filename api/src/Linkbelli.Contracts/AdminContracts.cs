@@ -1,3 +1,5 @@
+using Linkbelli.Core.Entities;
+
 namespace Linkbelli.Contracts;
 
 /// <summary>An admin view of a user (for lookup → quota management).</summary>
@@ -9,3 +11,42 @@ public record AdminHostSummary(Guid Id, string Hostname, bool Blocked, int LinkC
 
 /// <summary>Block or unblock a host by name (created if not yet seen).</summary>
 public record SetHostBlockedRequest(string Hostname, bool Blocked);
+
+/// <summary>Queue depth and outcomes from the background job runner.</summary>
+public record JobQueueStats(long Enqueued, long Processing, long Scheduled, long Failed, long Succeeded);
+
+/// <summary>A source that is failing, and whose owner may not have noticed.</summary>
+public record AdminFailingSource(
+    Guid Id, string Name, string OwnerUsername, int ConsecutiveFailures, SourceStatus Status,
+    DateTimeOffset? LastRunAt, string? LastError);
+
+/// <summary>A site, how much of the collection is on it, and how much of that is unreadable.</summary>
+public record AdminHostVolume(string Hostname, int LinkCount, int FailedCount);
+
+public record AdminLinkError(
+    Guid LinkId, string Url, EnrichmentStatus Status, string Error, int FailureCount,
+    DateTimeOffset? LastCheckedAt);
+
+/// <summary>
+/// What is happening across the whole instance. All of it was already recorded — failing sources,
+/// unreadable links, the enrichment backlog — and none of it had anywhere to be seen.
+/// </summary>
+public record AdminOverviewResponse(
+    int Users,
+    int Playlists,
+    int Links,
+    int Items,
+    /// <summary>Links waiting to be fetched — why a filling playlist seems to creep upward.</summary>
+    int PendingEnrichment,
+    int BrokenLinks,
+    int Sources,
+    int FailingSources,
+    int RunsRecently,
+    int FailedRunsRecently,
+    /// <summary>How many days "recently" covers.</summary>
+    int RecentDays,
+    /// <summary>Null when the job runner could not be reached, which is itself worth seeing.</summary>
+    JobQueueStats? Jobs,
+    IReadOnlyList<AdminFailingSource> TopFailingSources,
+    IReadOnlyList<AdminHostVolume> TopHosts,
+    IReadOnlyList<AdminLinkError> RecentErrors);

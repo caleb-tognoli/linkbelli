@@ -20,6 +20,9 @@ public static class MeEndpoints
             email = user.FindFirstValue(ClaimTypes.Email),
             authMethod = user.FindFirstValue("auth_method") ?? "bearer",
             scopes = user.FindAll("scope").Select(c => c.Value).ToArray(),
+            // Roles, so a client can offer the admin console to the people it will work for
+            // rather than showing everyone a link that 403s.
+            roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray(),
             showNsfw = await prefs.ShowNsfwAsync(user.GetUserId(), ct),
             archiveLinks = await prefs.ArchiveLinksAsync(user.GetUserId(), ct),
         }))

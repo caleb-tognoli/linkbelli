@@ -9,6 +9,8 @@ export interface User {
 	email: string | null;
 	authMethod: string;
 	scopes: string[];
+	/** Identity roles, so the client can offer the admin console only where it will work. */
+	roles?: string[];
 	showNsfw: boolean;
 	/** Whether to ask the Internet Archive for a public snapshot of pages this user saves. */
 	archiveLinks?: boolean;
@@ -580,4 +582,49 @@ export interface SharedPlaylist {
 	role: PlaylistRole;
 	itemCount: number;
 	sharedAt: string;
+}
+
+/** Queue depth and outcomes from the background job runner. */
+export interface JobQueueStats {
+	enqueued: number;
+	processing: number;
+	scheduled: number;
+	failed: number;
+	succeeded: number;
+}
+
+/** What is happening across the whole instance. */
+export interface AdminOverview {
+	users: number;
+	playlists: number;
+	links: number;
+	items: number;
+	/** Links waiting to be fetched — why a filling playlist seems to creep upward. */
+	pendingEnrichment: number;
+	brokenLinks: number;
+	sources: number;
+	failingSources: number;
+	runsRecently: number;
+	failedRunsRecently: number;
+	recentDays: number;
+	/** Null when the job runner could not be reached, which is itself worth seeing. */
+	jobs: JobQueueStats | null;
+	topFailingSources: {
+		id: string;
+		name: string;
+		ownerUsername: string;
+		consecutiveFailures: number;
+		status: SourceStatus;
+		lastRunAt: string | null;
+		lastError: string | null;
+	}[];
+	topHosts: { hostname: string; linkCount: number; failedCount: number }[];
+	recentErrors: {
+		linkId: string;
+		url: string;
+		status: EnrichmentStatus;
+		error: string;
+		failureCount: number;
+		lastCheckedAt: string | null;
+	}[];
 }

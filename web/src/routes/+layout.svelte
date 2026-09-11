@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
-	import { Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2 } from '@lucide/svelte';
+	import { Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import GlobalDialog from '$lib/components/GlobalDialog.svelte';
@@ -35,6 +35,8 @@
 	];
 
 	const onSettings = $derived(inSection(page.url.pathname, '/profile'));
+	const onAdmin = $derived(inSection(page.url.pathname, '/admin'));
+	const isAdmin = $derived(data.user?.roles?.includes('Admin') ?? false);
 	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
 	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
 	const isAuthPage = $derived(['/login', '/register'].includes(page.url.pathname));
@@ -86,6 +88,20 @@
 			<User size={20} aria-hidden="true" />
 			{#if showLabels}<span class="truncate" style="color: var(--color-muted)">{data.user?.username}</span>{/if}
 		</a>
+		{#if isAdmin}
+			<!-- Shown only where it will work: the API is still the authority on who may look. -->
+			<a
+				href="/admin"
+				class="rounded-md p-2.5 hover:bg-black/5 dark:hover:bg-white/10"
+				class:font-medium={onAdmin}
+				style={onAdmin ? 'background: var(--color-border)' : ''}
+				aria-current={onAdmin ? 'page' : undefined}
+				title="Instance overview"
+				aria-label="Instance overview"
+			>
+				<Gauge size={20} aria-hidden="true" />
+			</a>
+		{/if}
 		<form method="post" action="/logout" class={showLabels ? '' : 'flex justify-center'}>
 			<button
 				type="submit"

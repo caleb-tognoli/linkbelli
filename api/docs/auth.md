@@ -119,3 +119,20 @@ curl -X PUT http://localhost:5180/api/v1/me/preferences \
 Requests are rate limited with a token bucket, partitioned by API key (or client IP for
 anonymous/bearer requests). Exceeding the limit returns **HTTP 429** with a **`Retry-After`**
 header (seconds) — back off and retry after that delay.
+
+## Instance overview
+
+`GET /api/v1/admin/overview` — Admin role, interactive bearer scheme, as with every `/admin`
+route.
+
+Failing sources, unreadable links and the enrichment backlog were all being recorded and none of
+it had anywhere to be seen. The overview reports totals, the things worth acting on (enrichment
+backlog, broken links, failing sources, failed runs in the last 7 days), background-job queue
+depth, the ten worst-off sources with their owners and last errors, the ten busiest hosts, and
+the ten most recent fetch errors.
+
+`jobs` is **null** when the job runner could not be reached — which is itself a finding, and
+better than a console that 500s exactly when it is needed.
+
+`GET /api/v1/me` reports `roles`, so a client can offer this to the people it will work for
+rather than showing everyone a link that 403s.
