@@ -18,6 +18,12 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool ArchiveLinks { get; set; }
 
     /// <summary>
+    /// When this user last looked at their feed. Null means never — everything in it is new,
+    /// which is the right answer for someone who has just started following things.
+    /// </summary>
+    public DateTimeOffset? FeedSeenAt { get; set; }
+
+    /// <summary>
     /// When the account was created. Identity doesn't track this, and a public profile needs it;
     /// stamped at registration.
     /// </summary>

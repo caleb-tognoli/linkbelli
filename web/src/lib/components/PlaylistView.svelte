@@ -9,7 +9,7 @@
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
-	import { ChevronDown, Download, EyeOff, Globe, Heart, Lock, Star, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, Download, EyeOff, Globe, Heart, Lock, Rss, Star, Trash2 } from '@lucide/svelte';
 	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -48,6 +48,31 @@
 	let likeCount = $state(playlist.likeCount ?? 0);
 	let likedByMe = $state(playlist.likedByMe ?? false);
 	let liking = $state(false);
+
+	let followerCount = $state(playlist.followerCount ?? 0);
+	let followedByMe = $state(playlist.followedByMe ?? false);
+	let following = $state(false);
+
+	// Liking says "this is good"; following says "tell me when there is more". They are
+	// different questions, so they are different buttons.
+	async function toggleFollow() {
+		if (!isLoggedIn) return;
+
+		following = true;
+		try {
+			const res = followedByMe
+				? await api.del(`/playlists/${playlist.id}/follow`)
+				: await api.post(`/playlists/${playlist.id}/follow`);
+
+			if (res.ok) {
+				const state = (await res.json()) as { following: boolean; followerCount: number };
+				followedByMe = state.following;
+				followerCount = state.followerCount;
+			}
+		} finally {
+			following = false;
+		}
+	}
 
 	async function toggleLike() {
 		if (!isLoggedIn) return;
@@ -311,6 +336,21 @@
 				>
 					<Heart size={13} aria-hidden="true" fill={likedByMe ? 'currentColor' : 'none'} />
 					{likeCount}
+				</button>
+			{/if}
+			{#if !isOwner && isLoggedIn}
+				<button
+					type="button"
+					onclick={toggleFollow}
+					disabled={following}
+					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs disabled:opacity-60"
+					style="border-color: {followedByMe ? 'var(--color-accent)' : 'var(--color-border)'};
+					       color: {followedByMe ? 'var(--color-accent)' : 'var(--color-muted)'}"
+					aria-pressed={followedByMe}
+					title={followedByMe ? 'New links here reach your feed' : 'Get new links from this list in your feed'}
+				>
+					<Rss size={13} aria-hidden="true" />
+					{followedByMe ? 'Following' : 'Follow'}{followerCount ? ` · ${followerCount}` : ''}
 				</button>
 			{/if}
 			{#if isLoggedIn}

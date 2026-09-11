@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { Paged, PublicPlaylistSummary, PublicProfile } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const encoded = encodeURIComponent(params.username);
 
 	const [profileRes, playlistsRes] = await Promise.all([
@@ -18,5 +18,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		? ((await playlistsRes.json()) as Paged<PublicPlaylistSummary>)
 		: { items: [], nextCursor: null };
 
-	return { profile, playlists };
+	const { user } = await parent();
+
+	return { profile, playlists, isLoggedIn: !!user, isSelf: user?.username === params.username };
 };

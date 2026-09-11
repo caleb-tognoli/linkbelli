@@ -161,6 +161,7 @@ v1.MapTrashEndpoints();
 v1.MapExportEndpoints();
 v1.MapSearchEndpoints();
 v1.MapAutomationEndpoints();
+v1.MapFollowEndpoints();
 v1.MapDuplicateEndpoints();
 v1.MapSyncEndpoints();
 v1.MapPublicPlaylistEndpoints();

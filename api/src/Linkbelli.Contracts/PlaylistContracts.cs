@@ -44,7 +44,11 @@ public record PlaylistResponse(
     /// <summary>How many people have liked it. The lightest signal a public list gets.</summary>
     int LikeCount = 0,
     /// <summary>Whether the caller is one of them. False when anonymous.</summary>
-    bool LikedByMe = false);
+    bool LikedByMe = false,
+    /// <summary>How many people follow this playlist.</summary>
+    int FollowerCount = 0,
+    /// <summary>Whether the caller does. False when anonymous.</summary>
+    bool FollowedByMe = false);
 
 /// <summary>
 /// How one person looks at one playlist: sort, filters, and what the rows show. Saved per
@@ -75,7 +79,11 @@ public record PublicProfile(
     string Username,
     DateTimeOffset JoinedAt,
     int PublicPlaylistCount,
-    int PublicItemCount);
+    int PublicItemCount,
+    /// <summary>How many people follow everything this person publishes.</summary>
+    int FollowerCount = 0,
+    /// <summary>Whether the caller does. False when anonymous.</summary>
+    bool FollowedByMe = false);
 
 /// <summary>A tag and how many playlists carry it (within the queried scope).</summary>
 public record TagSummary(string Name, int PlaylistCount);

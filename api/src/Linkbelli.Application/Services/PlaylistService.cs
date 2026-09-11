@@ -248,7 +248,9 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
                 ScoredCount: null,
                 View: null,
                 db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-                db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == viewerId)))
+                db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == viewerId),
+                db.Follows.Count(f => f.PlaylistId == p.Id),
+                db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == viewerId)))
             .FirstOrDefaultAsync(ct);
 
         // Private/missing — and NSFW for viewers who haven't opted in — are all indistinguishable.
@@ -371,7 +373,10 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs, ITa
             .Select(p => p.Items.Count(i => i.Link!.EnrichedAt != null))
             .ToListAsync(ct);
 
-        return new PublicProfile(user.UserName!, user.CreatedAt, counts.Count, counts.Sum());
+        return new PublicProfile(
+            user.UserName!, user.CreatedAt, counts.Count, counts.Sum(),
+            await db.Follows.CountAsync(f => f.FollowedUserId == user.Id, ct),
+            await db.Follows.AnyAsync(f => f.FollowedUserId == user.Id && f.FollowerId == viewerId, ct));
     }
 
     public async Task<PagedResult<PublicPlaylistSummary>> ListUserPublicPlaylistsAsync(

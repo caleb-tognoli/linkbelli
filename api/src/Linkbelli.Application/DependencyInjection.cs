@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IAutomationRuleService, AutomationRuleService>();
         services.AddScoped<IAutomationRunner, AutomationRunner>();
         services.AddScoped<IItemShareService, ItemShareService>();
+        services.AddScoped<IFollowService, FollowService>();
         services.AddScoped<IArchiver, WaybackArchiver>();
         services.AddScoped<ILinkArchiveSweep, LinkArchiveSweep>();
         services.AddSingleton<LinkMetadataFetcher>();

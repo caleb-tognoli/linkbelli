@@ -43,6 +43,10 @@ export interface Playlist {
 	likeCount?: number;
 	/** Whether the caller is one of them. False when anonymous. */
 	likedByMe?: boolean;
+	/** How many people follow this playlist. */
+	followerCount?: number;
+	/** Whether the caller does. False when anonymous. */
+	followedByMe?: boolean;
 }
 
 /** How one person looks at one playlist. Saved per account, so it follows them between devices. */
@@ -391,6 +395,10 @@ export interface PublicProfile {
 	joinedAt: string;
 	publicPlaylistCount: number;
 	publicItemCount: number;
+	/** How many people follow everything this person publishes. */
+	followerCount?: number;
+	/** Whether the caller does. False when anonymous. */
+	followedByMe?: boolean;
 }
 
 export type DuplicateKind = 'SameLink' | 'SamePage';
@@ -512,4 +520,41 @@ export interface SharedItem {
 	nsfw: boolean;
 	kind: ContentKind;
 	wordCount: number | null;
+}
+
+/** One link that turned up in something the caller follows. */
+export interface FeedItem {
+	itemId: string;
+	/** The link behind it — what the reader view is addressed by. */
+	linkId: string;
+	playlistId: string;
+	playlistName: string;
+	playlistSlug: string;
+	ownerUsername: string;
+	url: string;
+	title: string | null;
+	host: string;
+	kind: ContentKind;
+	wordCount: number | null;
+	addedAt: string;
+}
+
+/** What is new in what the caller follows, measured against their own last look. */
+export interface Feed {
+	items: FeedItem[];
+	nextCursor: string | null;
+	newCount: number;
+	lastSeenAt: string | null;
+}
+
+export interface Following {
+	playlists: {
+		playlistId: string;
+		name: string;
+		slug: string;
+		ownerUsername: string;
+		itemCount: number;
+		followedAt: string;
+	}[];
+	users: { username: string; publicPlaylistCount: number; followedAt: string }[];
 }

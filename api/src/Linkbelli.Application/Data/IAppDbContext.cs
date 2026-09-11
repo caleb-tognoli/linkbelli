@@ -30,6 +30,7 @@ public interface IAppDbContext
     DbSet<SavedSearch> SavedSearches { get; }
     DbSet<AutomationRule> AutomationRules { get; }
     DbSet<PlaylistLike> PlaylistLikes { get; }
+    DbSet<Follow> Follows { get; }
     DbSet<SourceTemplate> SourceTemplates { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }

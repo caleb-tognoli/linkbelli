@@ -271,6 +271,32 @@ twenty minutes, in batches) using the same rules and nothing but the row — no 
 > playlist filling up after a source run says so, rather than its count creeping upward on its
 > own. Public reads omit `pendingCount`: a visitor can't act on it.
 
+## Following and the feed
+
+Saving a public playlist to a folder files a copy of it — it says where you put it, not that you
+want to hear about it again. Following is the next primitive up, and the feed is what it is for.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` / `DELETE` | `/api/v1/playlists/{id}/follow` | Follow a playlist |
+| `POST` / `DELETE` | `/api/v1/users/{username}/follow` | Follow everything a person publishes |
+| `GET`  | `/api/v1/me/following` | What you follow |
+| `GET`  | `/api/v1/feed` | New links from it, newest first (`?limit=`, `?cursor=`) |
+| `POST` | `/api/v1/feed/seen` | Mark it seen up to now |
+
+- **Following a person covers playlists they have not made yet** — the whole difference from
+  following each of their lists by hand.
+- **A private playlist never reaches a feed**, and cannot be followed. Following someone is not a
+  way into what they did not publish.
+- **You cannot follow your own work.** A feed of your own links is not a feed, and allowing it
+  would make the follower count wrong.
+- **`newCount` is measured against your own last look**, not a fixed window. Someone who has never
+  looked sees everything as new, which is right for a first visit.
+- **Marking seen is explicit**, not a side effect of reading: opening the page and losing it to a
+  reload should not quietly mark everything as read. Marking is not hiding — the items stay.
+
+`followerCount` and `followedByMe` appear on a public playlist and on a public profile.
+
 ## Discovery
 
 | Method | Path | Purpose |

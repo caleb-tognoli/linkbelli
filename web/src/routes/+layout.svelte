@@ -29,6 +29,7 @@
 		{ href: '/automations', label: 'Rules', Icon: Wand2, match: (p: string) => inSection(p, '/automations') },
 		{ href: '/search', label: 'Search', Icon: Search, match: (p: string) => inSection(p, '/search') },
 		{ href: '/queue', label: 'Up next', Icon: ListChecks, match: (p: string) => inSection(p, '/queue') },
+		{ href: '/feed', label: 'Feed', Icon: Rss, match: (p: string) => inSection(p, '/feed') },
 		{ href: '/discover', label: 'Discover', Icon: Compass, match: (p: string) => inSection(p, '/discover') },
 		{ href: '/import', label: 'Import', Icon: Upload, match: (p: string) => inSection(p, '/import') }
 	];

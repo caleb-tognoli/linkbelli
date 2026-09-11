@@ -27,6 +27,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
     public DbSet<PlaylistLike> PlaylistLikes => Set<PlaylistLike>();
+    public DbSet<Follow> Follows => Set<Follow>();
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
@@ -71,6 +72,17 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(l => l.UrlHash).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(l => l.HostId);
             e.HasOne(l => l.Host).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<Follow>(e =>
+        {
+            // One follow per target per person, for each kind of target.
+            e.HasIndex(f => new { f.FollowerId, f.PlaylistId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(f => new { f.FollowerId, f.FollowedUserId }).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(f => f.PlaylistId);
+            e.HasIndex(f => f.FollowedUserId);
+            e.HasOne(f => f.Playlist).WithMany().OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 
