@@ -40,6 +40,8 @@
 	const SCRAPER_LINK_FIELDS = ['linkSelector', 'linkAttribute'] as const;
 
 	const FIELDS: Record<SourceType, FieldDef[]> = {
+		// A webhook has nothing to configure: it is addressed by a token the server mints.
+		Webhook: [],
 		Rss: [{ key: 'feedUrl', label: 'Feed URL', required: true }],
 		Scraper: [
 			{ key: 'url', label: 'Page URL', required: true },
@@ -118,6 +120,27 @@
 	});
 
 	let filtersOpen = $state(hasFilter(source?.filter));
+
+	// Built here rather than server-side: the origin someone is looking at is the one that will
+	// actually reach this instance.
+	const webhookUrl = $derived(
+		source?.webhookToken && typeof location !== 'undefined'
+			? `${location.origin}/api/v1/hooks/${source.webhookToken}`
+			: null
+	);
+
+	let copied = $state(false);
+
+	async function copyWebhookUrl() {
+		if (!webhookUrl) return;
+		try {
+			await navigator.clipboard.writeText(webhookUrl);
+			copied = true;
+			setTimeout(() => (copied = false), 2000);
+		} catch {
+			// The URL is on screen either way.
+		}
+	}
 
 	let busy = $state(false);
 	let error = $state<string | null>(null);
@@ -369,8 +392,36 @@
 						<option value="Rss">RSS / Atom</option>
 						<option value="Scraper">Web scraper</option>
 						<option value="JsonApi">JSON API</option>
+						<option value="Webhook">Webhook (push)</option>
 					</select>
 				</label>
+
+				{#if type === 'Webhook'}
+					<!-- Nothing to fill in. What this type needs is the URL, going the other way. -->
+					<div class="rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
+						{#if webhookUrl}
+							<p>Push links here:</p>
+							<div class="mt-2 flex items-center gap-2">
+								<code class="min-w-0 flex-1 truncate rounded px-2 py-1 text-xs" style="background: var(--color-bg)">{webhookUrl}</code>
+								<button
+									type="button"
+									onclick={copyWebhookUrl}
+									class="shrink-0 rounded-md border px-2.5 py-1 text-xs"
+									style="border-color: var(--color-border)"
+								>{copied ? 'Copied' : 'Copy'}</button>
+							</div>
+							<p class="mt-2 text-xs" style="color: var(--color-muted)">
+								<code>POST</code> it <code>{'{ "links": [{ "url": "…", "title": "…" }] }'}</code>.
+								The URL is the whole credential — treat it like a password.
+							</p>
+						{:else}
+							<p style="color: var(--color-muted)">
+								Save this source and it will be given a URL to push links to — for n8n, a Zap,
+								a GitHub Action, or a one-line shell script.
+							</p>
+						{/if}
+					</div>
+				{/if}
 
 				{#each FIELDS[type].filter(f => !SCRAPER_LINK_FIELDS.includes(f.key as typeof SCRAPER_LINK_FIELDS[number])) as f (f.key)}
 					<label class="flex flex-col gap-1 text-sm">

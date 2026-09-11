@@ -244,6 +244,29 @@ SSRF-protected client as enrichment.
 record. Runs are the fastest-growing table in the schema, and the URLs are duplicated verbatim
 from the links themselves, which are still there.
 
+### Webhook sources
+
+Every other source type asks a schedule to go and look, so a link cannot arrive until the next
+poll — and anything without a feed cannot be a source at all.
+
+A webhook source waits instead. Create one with `"type": "Webhook"` and an empty config; the
+server mints its token and returns it as `webhookToken`, and the URL is:
+
+```bash
+curl -X POST http://localhost:5180/api/v1/hooks/<token>   -H "Content-Type: application/json"   -d '{ "links": [ { "url": "https://example.com/thing", "title": "Optional" } ] }'
+# -> { "received":1, "found":1, "added":1, "skipped":0, "status":"Succeeded", "error":null }
+```
+
+- **The URL is the whole credential** — no key, no token header. That is what makes it pasteable
+  into n8n, a Zap, a GitHub Action or a shell script. Treat it like a password.
+- **A push goes down the same road as a poll**: the same [filter](#filters), the same dedup, the
+  same run row, the same quota. A second ingestion path is how two kinds of source quietly start
+  behaving differently.
+- **Webhook sources are never scheduled.** A scheduled run of one would find nothing and spend a
+  slot of the owner's daily quota doing it.
+- Up to **100 links** per push; the per-run item quota still applies on top.
+- An unknown token answers exactly like a disabled one, because a webhook URL is a secret.
+
 ### Filters
 
 Everything a source finds lands unless a filter turns it away, which makes a broad feed an

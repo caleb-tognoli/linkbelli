@@ -81,6 +81,25 @@ public class SourceService(
             };
         }
 
+        // A webhook is addressed by its token and never polled, so both the token and the cron
+        // are ours to supply — asking someone to invent a secret, and a schedule for something
+        // that has none, is asking them to get two things wrong.
+        if (request.Type == SourceType.Webhook)
+        {
+            var config = new Dictionary<string, string>(request.Config);
+            if (!config.TryGetValue(WebhookSourceInterpreter.TokenKey, out var existing)
+                || string.IsNullOrWhiteSpace(existing))
+            {
+                config[WebhookSourceInterpreter.TokenKey] = IWebhookIngestService.NewToken();
+            }
+
+            request = request with
+            {
+                Config = config,
+                Schedule = string.IsNullOrWhiteSpace(request.Schedule) ? "0 0 * * *" : request.Schedule,
+            };
+        }
+
         var interpreter = ResolveInterpreter(request.Type);
         Validate(request.Name, request.Schedule, request.Config, interpreter);
         await EnsurePlaylistsOwnedAsync(ownerId, request.PlaylistIds, ct);
@@ -105,7 +124,13 @@ public class SourceService(
         }
 
         await db.SaveChangesAsync(ct);
-        scheduler.Schedule(source.Id, source.Schedule, source.TimeZone);
+
+        // Nothing to schedule: a webhook source waits to be pushed to, and a scheduled run of one
+        // would find nothing and spend a slot of the owner's daily quota doing it.
+        if (source.Type != SourceType.Webhook)
+        {
+            scheduler.Schedule(source.Id, source.Schedule, source.TimeZone);
+        }
 
         return ToResponse(source, (request.PlaylistIds ?? []).ToArray());
     }
@@ -203,7 +228,11 @@ public class SourceService(
 
         // The recurring job follows the status, not the cron. A stopped source keeps its schedule
         // so resuming restores the owner's cadence instead of guessing a default.
-        if (source.Status == SourceStatus.Active)
+        if (source.Type == SourceType.Webhook)
+        {
+            scheduler.Unschedule(source.Id);
+        }
+        else if (source.Status == SourceStatus.Active)
         {
             scheduler.Schedule(source.Id, source.Schedule, source.TimeZone);
         }
@@ -391,10 +420,17 @@ public class SourceService(
     private SourceResponse ToResponse(Source source, Guid[] playlistIds, SourceRunStatus? lastRunStatus = null)
     {
         var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
+
+        // Redacted in the config like any other secret, and returned in full here: the whole
+        // point of a webhook token is that its owner pastes it somewhere, repeatedly.
+        var token = source.Type == SourceType.Webhook
+            ? secrets.Decrypt(source.Type, stored).GetValueOrDefault(WebhookSourceInterpreter.TokenKey)
+            : null;
+
         return new(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
             source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
             lastRunStatus, source.Status, source.ConsecutiveFailures, source.TimeZone,
-            SourceFilters.Deserialize(source.Filter));
+            SourceFilters.Deserialize(source.Filter), token);
     }
 }

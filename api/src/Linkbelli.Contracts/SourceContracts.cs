@@ -45,7 +45,12 @@ public record SourceResponse(
     /// <summary>IANA zone the schedule is read in; null means UTC.</summary>
     string? TimeZone = null,
     /// <summary>What this source may bring in; null accepts everything.</summary>
-    SourceFilter? Filter = null);
+    SourceFilter? Filter = null,
+    /// <summary>
+    /// For a webhook source, the token its URL is built from. Only ever returned to the owner,
+    /// who has to paste it into whatever is pushing.
+    /// </summary>
+    string? WebhookToken = null);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
 public record SharedSourceSummary(
@@ -115,3 +120,12 @@ public record SourceHealthResponse(
     DateTimeOffset? LastRunAt,
     SourceRunStatus? LastRunStatus,
     string? LastError);
+
+/// <summary>One or more links pushed to a webhook source.</summary>
+public record WebhookPushRequest(IReadOnlyList<PushedLinkDto>? Links);
+
+public record PushedLinkDto(string Url, string? Title = null);
+
+/// <summary>What the push did, reported the same way a scheduled run is.</summary>
+public record WebhookPushResponse(
+    int Received, int Found, int Added, int Skipped, SourceRunStatus Status, string? Error);

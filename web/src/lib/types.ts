@@ -128,7 +128,7 @@ export interface PublicPlaylistSummary {
 	lastItemAt?: string | null;
 }
 
-export type SourceType = 'Rss' | 'Scraper' | 'JsonApi';
+export type SourceType = 'Rss' | 'Scraper' | 'JsonApi' | 'Webhook';
 export type SourceVisibility = 'Private' | 'Shared';
 export type SourceRunStatus = 'Running' | 'Succeeded' | 'Failed';
 export type SourceStatus = 'Active' | 'Paused' | 'Failing';
@@ -254,6 +254,8 @@ export interface Source {
 	timeZone: string | null;
 	/** What this source may bring in; null accepts everything it finds. */
 	filter: SourceFilter | null;
+	/** For a webhook source, the token its push URL is built from. Owner-only. */
+	webhookToken?: string | null;
 }
 
 /**

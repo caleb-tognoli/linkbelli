@@ -67,6 +67,16 @@ public static class SourceEndpoints
         })
             .RequireAuthorization(Scopes.Policy(Scopes.SourcesWrite));
 
+        // Where a push lands. Anonymous, because the token in the path is the whole credential —
+        // that is the point of a webhook URL: paste it into n8n and nothing else is needed.
+        app.MapPost("/hooks/{token}", async (
+            string token, WebhookPushRequest req, IWebhookIngestService svc, CancellationToken ct) =>
+            Results.Ok(await svc.PushAsync(token, req, ct)))
+            .AllowAnonymous()
+            .RequireRateLimiting("sensitive")
+            .WithTags("Sources")
+            .WithName("PushToWebhookSource");
+
         group.MapGet("/{id:guid}/runs", async (Guid id, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.ListRunsAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead));

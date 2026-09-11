@@ -5,6 +5,12 @@ public enum SourceType
     Rss = 0,
     Scraper = 1,
     JsonApi = 2,
+
+    /// <summary>
+    /// Pushed to rather than polled. Every other type asks a schedule to go and look; this one
+    /// waits, so links arrive when they happen instead of up to an hour later.
+    /// </summary>
+    Webhook = 3,
 }
 
 /// <summary>Whether a source's schedule is live.</summary>

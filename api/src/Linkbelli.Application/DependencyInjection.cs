@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IAutomationRuleService, AutomationRuleService>();
         services.AddScoped<IAutomationRunner, AutomationRunner>();
         services.AddScoped<IItemShareService, ItemShareService>();
+        services.AddScoped<IWebhookIngestService, WebhookIngestService>();
         services.AddScoped<IFollowService, FollowService>();
         services.AddScoped<IPlaylistAccess, PlaylistAccess>();
         services.AddScoped<IAdminOverviewService, AdminOverviewService>();
@@ -72,6 +73,8 @@ public static class DependencyInjection
         services.AddScoped<ISourceInterpreter, RssSourceInterpreter>();
         services.AddScoped<ISourceInterpreter, ScraperSourceInterpreter>();
         services.AddScoped<ISourceInterpreter, JsonApiSourceInterpreter>();
+        services.AddScoped<ISourceInterpreter, WebhookSourceInterpreter>();
+        services.AddScoped<PushedLinks>();
 
         // SSRF-protected outbound client: connects only to public IPs (validated per hop).
         services.AddHttpClient(EnrichmentHttpClient.Name, client =>
