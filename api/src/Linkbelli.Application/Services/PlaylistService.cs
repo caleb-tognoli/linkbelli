@@ -136,7 +136,11 @@ public class PlaylistService(IAppDbContext db, IUserPreferenceService prefs) : I
                 // The owner's own read reports whether they set the flag by hand, so the control
                 // can show its real state rather than guessing.
                 p.NsfwOverride == null ? NsfwSetting.Auto : p.NsfwOverride.Value ? NsfwSetting.Yes : NsfwSetting.No,
-                p.Items.Count(i => i.Link!.EnrichedAt == null)))
+                p.Items.Count(i => i.Link!.EnrichedAt == null),
+                // Averaged over the items that were actually rated — counting unrated ones as
+                // zero would drag the number down and say something false about the playlist.
+                p.Items.Where(i => i.Score != null).Average(i => (double?)i.Score),
+                p.Items.Count(i => i.Score != null)))
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");

@@ -20,6 +20,8 @@ All paths are under **`/api/v1`**. Reads require the `playlists:read` scope and 
 
 - **Ordering:** the list is sorted by *recent activity* — the later of the playlist's creation
   and its newest item — so playlists that just received links float to the top.
+- A playlist reports `averageScore` and `scoredCount`, averaged over the items that were
+  actually rated — counting unrated ones as zero would say something false about the playlist.
 - **`tags`** are free text; they're normalized (trimmed, lowercased, de-duplicated, max 25). On
   update, sending `tags` **replaces** the whole set. Filter your list with `?tag=` — repeat it
   (`?tag=a&tag=b`) to require **all** of them (AND).
@@ -187,6 +189,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `minScore` | Only items you scored at least this highly |
 | `finishedSince` | Only items you marked watched at or after this instant — "what did I get through this week" |
 | `broken` | `true` to list only links whose page is gone or can no longer be read — the link rot in your collection |
+| `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero |
 | `limit`, `cursor` | Paging; `limit` maxes out at 100 |
 
 - Results are ordered by relevance when `q` is given — a title hit, then a site-name hit, then

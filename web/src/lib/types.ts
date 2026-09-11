@@ -31,6 +31,10 @@ export interface Playlist {
 	nsfwSetting?: NsfwSetting | null;
 	/** Links added but not yet fetched, so not yet listed or counted. */
 	pendingCount?: number | null;
+	/** Mean of the scores given, or null when nothing here is rated. */
+	averageScore?: number | null;
+	/** How many items carry a score. */
+	scoredCount?: number | null;
 }
 
 export interface Paged<T> {

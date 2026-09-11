@@ -39,6 +39,7 @@
 			status: data.status,
 			finished: data.finished,
 			broken: data.broken,
+			sort: data.sort,
 			...changes
 		};
 		for (const [key, value] of Object.entries(next)) {
@@ -62,6 +63,7 @@
 			if (data.host) params.set('host', data.host);
 			if (data.status) params.set('status', data.status);
 			if (data.broken) params.set('broken', 'true');
+			if (data.sort) params.set('sort', data.sort);
 			if (data.finished) {
 				params.set(
 					'finishedSince',
@@ -126,6 +128,16 @@
 			       color: {data.finished ? 'var(--color-accent)' : 'inherit'}"
 			title="Items you marked watched in the last week"
 		>Finished this week</button>
+
+		<button
+			type="button"
+			onclick={() => navigate({ sort: data.sort === 'score' ? '' : 'score' })}
+			class="rounded-md border px-3 py-1.5"
+			class:font-medium={data.sort === 'score'}
+			style="border-color: {data.sort === 'score' ? 'var(--color-accent)' : 'var(--color-border)'};
+			       color: {data.sort === 'score' ? 'var(--color-accent)' : 'inherit'}"
+			title="Your highest-scored links, across every playlist"
+		>Best rated</button>
 
 		<button
 			type="button"

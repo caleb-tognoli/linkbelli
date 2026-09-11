@@ -33,5 +33,7 @@ public record SearchQuery(
     DateTimeOffset? FinishedSince,
     /// <summary>Only links whose page is gone or unreadable — the link rot in your collection.</summary>
     bool? Broken,
+    /// <summary>"score" for best-rated first; otherwise relevance, or newest when there is no term.</summary>
+    string? Sort,
     int? Limit,
     string? Cursor);

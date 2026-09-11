@@ -33,7 +33,11 @@ public record PlaylistResponse(
     /// so without this the item count of a freshly filled playlist just creeps upward on its own.
     /// Null on reads that don't report it (a visitor can't do anything about it).
     /// </summary>
-    int? PendingCount = null);
+    int? PendingCount = null,
+    /// <summary>Mean of the scores that were given, or null when nothing here is rated.</summary>
+    double? AverageScore = null,
+    /// <summary>How many items carry a score. Without it an average says nothing about its weight.</summary>
+    int? ScoredCount = null);
 
 /// <summary>A public playlist as surfaced by discovery; deep-links via owner username + slug.</summary>
 public record PublicPlaylistSummary(

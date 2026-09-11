@@ -9,7 +9,7 @@
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
-	import { ChevronDown, Download, EyeOff, Globe, Lock, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, Download, EyeOff, Globe, Lock, Star, Trash2 } from '@lucide/svelte';
 	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -346,6 +346,15 @@
 			{/if}
 		</div>
 	</header>
+
+	{#if isOwner && playlist.averageScore != null && playlist.scoredCount}
+		<p class="mt-2 flex items-center gap-1.5 text-sm" style="color: var(--color-muted)">
+			<Star size={14} aria-hidden="true" />
+			<span class="tabular-nums">{playlist.averageScore.toFixed(0)}</span>
+			average across {playlist.scoredCount} rated
+			{playlist.scoredCount === 1 ? 'link' : 'links'}
+		</p>
+	{/if}
 
 	{#if isOwner && playlist.pendingCount}
 		<p class="mt-2 text-sm" style="color: var(--color-muted)">

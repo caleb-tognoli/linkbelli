@@ -86,7 +86,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
 
         // Offset paging: the ordering is a computed relevance bucket with no stored column to
         // key on. A search is read a page or two deep, so the offset stays small in practice.
-        var rows = await Order(items, query.Q)
+        var rows = await Order(items, query.Q, query.Sort)
             .Skip(offset)
             .Take(take + 1)
             .Select(ToHit)
@@ -190,8 +190,17 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
     /// Relevance when there is a term to rank by — title, then site name, then everything else —
     /// and most recently added otherwise, which is what a bare browse wants.
     /// </summary>
-    private static IQueryable<PlaylistItem> Order(IQueryable<PlaylistItem> items, string? q)
+    private static IQueryable<PlaylistItem> Order(IQueryable<PlaylistItem> items, string? q, string? sort)
     {
+        if (string.Equals(sort, "score", StringComparison.OrdinalIgnoreCase))
+        {
+            // Unrated items sort last rather than as zero: "not rated" isn't "rated badly".
+            return items
+                .OrderBy(i => i.Score == null ? 1 : 0)
+                .ThenByDescending(i => i.Score)
+                .ThenByDescending(i => i.CreationTime);
+        }
+
         if (string.IsNullOrWhiteSpace(q))
         {
             return items.OrderByDescending(i => i.CreationTime).ThenByDescending(i => i.Id);
