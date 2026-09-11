@@ -72,7 +72,7 @@ public static class DependencyInjection
         services.AddSingleton<ISourceScheduler, HangfireSourceScheduler>();
         services.AddHostedService<SourceScheduleSyncService>();
         services.AddHostedService<AdminRoleSeeder>();
-        services.AddHostedService<TrashPurgeScheduler>();
+        services.AddHostedService<MaintenanceScheduler>();
 
         return services;
     }

@@ -176,8 +176,17 @@ curl http://localhost:5180/api/v1/sources/<id>/runs -H "Authorization: Bearer <t
 # -> [ { "status":"Succeeded", "itemsFound":37, "itemsAdded":35, "finishedAt":"...", ... } ]
 ```
 
-A run records `itemsFound` (discovered) vs `itemsAdded` (new after dedup), plus `status`
+A run records `foundCount` (discovered) vs `addedCount` (new after dedup), plus `status`
 (`Running`/`Succeeded`/`Failed`) and any `error`. Outbound fetches go through the same
 SSRF-protected client as enrichment.
+
+`itemsFound` and `itemsAdded` carry **up to 20** of the URLs for inspection — a sample, not a
+record. Runs are the fastest-growing table in the schema, and the URLs are duplicated verbatim
+from the links themselves, which are still there.
+
+**Retention:** successful runs are kept **30 days**, failures **90** (they are the ones you come
+back to diagnose), and the **20 most recent runs per source always survive** however old they
+are — a source that runs monthly should never be left with no history at all. A nightly job
+applies this.
 
 > Dev only: the Hangfire dashboard is at `/hangfire`.

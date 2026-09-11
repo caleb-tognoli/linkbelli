@@ -41,6 +41,7 @@ public static class DependencyInjection
         // --- Sources --- (ISourceScheduler / ISecretProtector are implemented in Infrastructure)
         services.AddScoped<ISourceService, SourceService>();
         services.AddScoped<ISourceRunner, SourceRunner>();
+        services.AddScoped<ISourceRunRetention, SourceRunRetention>();
         services.AddScoped<SourceConfigSecrets>();
         services.AddScoped<ISourceInterpreter, RssSourceInterpreter>();
         services.AddScoped<ISourceInterpreter, ScraperSourceInterpreter>();

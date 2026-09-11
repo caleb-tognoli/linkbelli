@@ -36,9 +36,14 @@ public record AttachedSourceSummary(
 /// <summary>Attach an existing source (your own, or any shared one) to a playlist you own.</summary>
 public record SubscribeSourceRequest(Guid SourceId);
 
+/// <summary>
+/// One execution. <c>FoundCount</c>/<c>AddedCount</c> are the real totals; <c>ItemsFound</c> and
+/// <c>ItemsAdded</c> are a capped sample of the URLs, kept for inspection rather than as a record.
+/// </summary>
 public record SourceRunResponse(
     Guid Id, DateTimeOffset StartedAt, DateTimeOffset? FinishedAt,
-    SourceRunStatus Status, string[] ItemsFound, string[] ItemsAdded, string? Error);
+    SourceRunStatus Status, string[] ItemsFound, string[] ItemsAdded, string? Error,
+    int FoundCount = 0, int AddedCount = 0);
 
 /// <summary>Dry-run a source config without saving, returning a few sample candidates.</summary>
 public record PreviewSourceRequest(SourceType Type, IReadOnlyDictionary<string, string> Config);

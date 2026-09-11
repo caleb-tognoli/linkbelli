@@ -202,7 +202,8 @@ public class SourceService(
             .OrderByDescending(r => r.CreationTime)
             .Take(50)
             .Select(r => new SourceRunResponse(
-                r.Id, r.CreationTime, r.FinishedAt, r.Status, r.ItemsFound, r.ItemsAdded, r.Error))
+                r.Id, r.CreationTime, r.FinishedAt, r.Status, r.ItemsFound, r.ItemsAdded, r.Error,
+                r.FoundCount, r.AddedCount))
             .ToListAsync(ct);
     }
 

@@ -172,8 +172,11 @@ export interface SourceRun {
 	startedAt: string;
 	finishedAt: string | null;
 	status: string;
+	/** Up to 20 of the URLs, kept for inspection — see foundCount for the real total. */
 	itemsFound: string[];
 	itemsAdded: string[];
+	foundCount: number;
+	addedCount: number;
 	error: string | null;
 }
 

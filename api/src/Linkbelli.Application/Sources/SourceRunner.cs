@@ -95,7 +95,8 @@ public sealed class SourceRunner(
                     }
                 }
             }
-            run.ItemsFound = foundUrls.ToArray();
+            run.FoundCount = foundUrls.Count;
+            run.ItemsFound = foundUrls.Take(SourceRun.SampleSize).ToArray();
 
             // ItemsAdded = URLs that were new to the application (first time seen globally).
             var seenIds = new HashSet<Guid>();
@@ -107,7 +108,8 @@ public sealed class SourceRunner(
                     addedUrls.Add(link.CanonicalUrl);
                 }
             }
-            run.ItemsAdded = addedUrls.ToArray();
+            run.AddedCount = addedUrls.Count;
+            run.ItemsAdded = addedUrls.Take(SourceRun.SampleSize).ToArray();
 
             // Membership and next-position are read for every attached playlist in two queries,
             // both narrowed to this run's candidates. Loading a playlist's entire LinkId set to

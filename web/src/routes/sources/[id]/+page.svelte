@@ -1,4 +1,4 @@
-﻿<script lang="ts">
+<script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
@@ -35,6 +35,11 @@
 	let itemsList = $derived(
 		itemsMode === 'added' ? (itemsRun?.itemsAdded ?? []) : (itemsRun?.itemsFound ?? [])
 	);
+	// Runs keep a capped sample rather than every URL, so the list can be shorter than the count.
+	let itemsTotal = $derived(
+		itemsMode === 'added' ? (itemsRun?.addedCount ?? 0) : (itemsRun?.foundCount ?? 0)
+	);
+	let itemsTruncated = $derived(itemsTotal > itemsList.length);
 
 	function showItems(run: SourceRun, mode: 'found' | 'added') {
 		itemsRun = run;
@@ -277,7 +282,7 @@
 								{/if}
 							</td>
 							<td class="py-1">
-								{#if run.itemsFound.length > 0}
+								{#if run.foundCount > 0}
 									<button
 										type="button"
 										onclick={() => showItems(run, 'found')}
@@ -286,14 +291,14 @@
 										title="Show items found"
 										aria-label="Show items found"
 									>
-										{run.itemsFound.length}
+										{run.foundCount}
 									</button>
 								{:else}
 									<button type="button" disabled class="rounded px-1.5 py-0.5 opacity-30 cursor-default">0</button>
 								{/if}
 							</td>
 							<td class="py-1">
-								{#if run.itemsAdded.length > 0}
+								{#if run.addedCount > 0}
 									<button
 										type="button"
 										onclick={() => showItems(run, 'added')}
@@ -302,7 +307,7 @@
 										title="Show items added"
 										aria-label="Show items added"
 									>
-										{run.itemsAdded.length}
+										{run.addedCount}
 									</button>
 								{:else}
 									<button type="button" disabled class="rounded px-1.5 py-0.5 opacity-30 cursor-default">0</button>
@@ -429,9 +434,16 @@
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<div class="flex items-start justify-between gap-4">
-				<Dialog.Title class="text-lg font-semibold">
-					{itemsMode === 'added' ? 'Added' : 'Found'} {itemsList.length} items
-				</Dialog.Title>
+				<div class="min-w-0">
+					<Dialog.Title class="text-lg font-semibold">
+						{itemsMode === 'added' ? 'Added' : 'Found'} {itemsTotal} {itemsTotal === 1 ? 'item' : 'items'}
+					</Dialog.Title>
+					{#if itemsTruncated}
+						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
+							Showing the first {itemsList.length}. Run history keeps a sample, not every address.
+						</p>
+					{/if}
+				</div>
 				<Dialog.Close class="shrink-0 inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Close" aria-label="Close">
 					<X size={17} aria-hidden="true" />
 				</Dialog.Close>
