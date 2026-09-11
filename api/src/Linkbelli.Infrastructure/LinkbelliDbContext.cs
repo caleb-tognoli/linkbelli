@@ -25,6 +25,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<PlaylistPreference> PlaylistPreferences => Set<PlaylistPreference>();
     public DbSet<PlaylistItemTag> PlaylistItemTags => Set<PlaylistItemTag>();
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
+    public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
 
@@ -127,6 +128,19 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(pt => pt.TagId); // tag → playlists (global search, counts)
             e.HasOne(pt => pt.Playlist).WithMany(p => p.Tags).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(pt => pt.Tag).WithMany(t => t.Playlists).OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<SourceTemplate>(e =>
+        {
+            // Built-ins are matched by key so seeding updates rather than duplicates them.
+            e.HasIndex(t => t.Key).IsUnique().ExcludeSoftDeleted();
+            e.Property(t => t.Key).HasMaxLength(64);
+            e.Property(t => t.Name).HasMaxLength(200);
+            e.Property(t => t.Description).HasMaxLength(500);
+            e.Property(t => t.SuggestedSchedule).HasMaxLength(100);
+            e.Property(t => t.BaseConfig).HasColumnType("jsonb");
+            e.Property(t => t.Fields).HasColumnType("jsonb");
             e.HasSoftDeleteFilter();
         });
 

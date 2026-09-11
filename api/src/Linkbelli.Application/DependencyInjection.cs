@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<ISourceService, SourceService>();
         services.AddScoped<ISourceRunner, SourceRunner>();
         services.AddScoped<ISourceRunRetention, SourceRunRetention>();
+        services.AddScoped<ISourceTemplateService, SourceTemplateService>();
         services.AddScoped<SourceConfigSecrets>();
         services.AddScoped<ISourceInterpreter, RssSourceInterpreter>();
         services.AddScoped<ISourceInterpreter, ScraperSourceInterpreter>();

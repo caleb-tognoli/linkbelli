@@ -10,7 +10,11 @@ public record CreateSourceRequest(
     Guid[]? PlaylistIds,
     SourceVisibility? Visibility,
     /// <summary>IANA zone the schedule is read in (e.g. "Europe/Rome"). Omit for UTC.</summary>
-    string? TimeZone = null);
+    string? TimeZone = null,
+    /// <summary>Build the config from this template instead of supplying one.</summary>
+    Guid? TemplateId = null,
+    /// <summary>Values for the template's fields. Ignored without a TemplateId.</summary>
+    IReadOnlyDictionary<string, string>? Variables = null);
 
 public record UpdateSourceRequest(
     string? Name,
@@ -59,3 +63,17 @@ public record PreviewSourceRequest(SourceType Type, IReadOnlyDictionary<string, 
 public record PreviewSourceResponse(int Count, IReadOnlyList<DiscoveredLinkDto> Links);
 
 public record DiscoveredLinkDto(string Url, string? Title);
+
+/// <summary>A ready-made source config, with the fields it still needs from the person.</summary>
+public record SourceTemplateResponse(
+    Guid Id,
+    string? Key,
+    string Name,
+    string Description,
+    SourceType Type,
+    string? SuggestedSchedule,
+    bool Builtin,
+    IReadOnlyList<SourceTemplateFieldResponse> Fields);
+
+public record SourceTemplateFieldResponse(
+    string Key, string Label, string? Placeholder, string? Help, bool Required);

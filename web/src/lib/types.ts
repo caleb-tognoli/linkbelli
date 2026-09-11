@@ -337,3 +337,24 @@ export interface SavedSearch {
 	sort: string | null;
 	creationTime: string;
 }
+
+/** One value a source template asks the person for. */
+export interface SourceTemplateField {
+	key: string;
+	label: string;
+	placeholder: string | null;
+	help: string | null;
+	required: boolean;
+}
+
+/** A ready-made source config, with the hard parts already filled in. */
+export interface SourceTemplate {
+	id: string;
+	key: string | null;
+	name: string;
+	description: string;
+	type: SourceType;
+	suggestedSchedule: string | null;
+	builtin: boolean;
+	fields: SourceTemplateField[];
+}

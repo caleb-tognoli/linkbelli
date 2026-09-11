@@ -44,6 +44,36 @@ All types discover up to 100 links per run (then capped again by your `maxItemsP
 > and returned redacted (`***`). On update, re-send `***` (or omit the key) to keep the existing
 > secret; send a new value to replace it.
 
+## Templates
+
+Working out a service's feed path, or its CSS selectors, is the steepest part of setting a source
+up — and it is identical work for everyone pointing at the same service. Templates do it once.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/sources/templates` | Browse the ready-made configs and the fields each still needs |
+
+Create from one by sending `templateId` and `variables` instead of a `config`:
+
+```bash
+curl -X POST http://localhost:5180/api/v1/sources   -H "Authorization: Bearer <token>" -H "Content-Type: application/json"   -d '{ "name": "dotnet/runtime releases",
+        "templateId": "<templateId>",
+        "variables": { "owner": "dotnet", "repo": "runtime" } }'
+```
+
+- The template's `suggestedSchedule` is used when you don't send one; an explicit `schedule`
+  still wins.
+- A value you haven't supplied is **named in the error**, by its label — rather than rendering a
+  URL with `{{repo}}` still in the middle of it and failing later as a mysterious fetch error.
+- The rendered config still goes through the interpreter's own validation, so a template cannot
+  talk the app into accepting a config it otherwise wouldn't.
+- Built-ins are **re-seeded on startup**, so a corrected feed path reaches everyone who used the
+  template rather than only people who create a source after the fix.
+
+Shipped today: YouTube channels and playlists, subreddits, Hacker News above a score, GitHub
+releases and commits, podcasts, Mastodon hashtags, and a plain feed for when you already have
+the address.
+
 ## Endpoints
 
 All paths are under **`/api/v1`**. Reads require the `sources:read` scope and writes the

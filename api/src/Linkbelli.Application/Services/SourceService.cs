@@ -13,6 +13,7 @@ public class SourceService(
     IEnumerable<ISourceInterpreter> interpreters,
     SourceConfigSecrets secrets,
     ISourceScheduler scheduler,
+    ISourceTemplateService templates,
     IUserQuotaService quotas) : ISourceService
 {
     private const int PreviewLimit = 10;
@@ -62,6 +63,24 @@ public class SourceService(
 
     public async Task<SourceResponse> CreateAsync(Guid ownerId, CreateSourceRequest request, CancellationToken ct = default)
     {
+        // A template supplies the config, so the person only ever fills in what is genuinely
+        // theirs. The rendered result still goes through the interpreter's own validation below:
+        // a template can't talk the app into accepting a config it otherwise wouldn't.
+        if (request.TemplateId is { } templateId)
+        {
+            var (type, config, suggested) = await templates.RenderAsync(
+                templateId, request.Variables ?? new Dictionary<string, string>(), ct);
+
+            request = request with
+            {
+                Type = type,
+                Config = config,
+                Schedule = string.IsNullOrWhiteSpace(request.Schedule)
+                    ? suggested ?? "0 * * * *"
+                    : request.Schedule,
+            };
+        }
+
         var interpreter = ResolveInterpreter(request.Type);
         Validate(request.Name, request.Schedule, request.Config, interpreter);
         await EnsurePlaylistsOwnedAsync(ownerId, request.PlaylistIds, ct);

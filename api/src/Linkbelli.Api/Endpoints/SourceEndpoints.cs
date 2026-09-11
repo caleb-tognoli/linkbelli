@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Linkbelli.Api.Auth;
 using Linkbelli.Api.Common;
 using Linkbelli.Application.Services;
+using Linkbelli.Application.Sources;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
 
@@ -18,6 +19,13 @@ public static class SourceEndpoints
         group.MapGet("/", async (ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.ListAsync(user.GetUserId(), ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead));
+
+        // Ready-made configs. Writing a feed path or a set of selectors is the steepest part of
+        // setting a source up, and it is the same work for everyone pointing at one service.
+        group.MapGet("/templates", async (ISourceTemplateService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListAsync(ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead))
+            .WithName("ListSourceTemplates");
 
         // Browse shared sources (any owner) so they can be subscribed to a playlist.
         group.MapGet("/shared", async (ISourceService svc, string? q, CancellationToken ct) =>

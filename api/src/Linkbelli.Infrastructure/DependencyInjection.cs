@@ -73,6 +73,7 @@ public static class DependencyInjection
         services.AddHostedService<SourceScheduleSyncService>();
         services.AddHostedService<AdminRoleSeeder>();
         services.AddHostedService<MaintenanceScheduler>();
+        services.AddHostedService<SourceTemplateSeeder>();
 
         return services;
     }
