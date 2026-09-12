@@ -140,10 +140,11 @@ public class RateLimitTests(PostgresApiFactory factory)
         var keyed = factory.CreateClient();
         keyed.DefaultRequestHeaders.Add("X-Api-Key", key!.Token);
 
-        // Hit the stricter "sensitive" policy (10/min) — deterministic and cheap. The URL is
-        // SSRF-blocked so each preview returns fast without real network I/O.
+        // Hit the stricter "sensitive" policy — deterministic and cheap. The URL is SSRF-blocked
+        // so each preview returns fast without real network I/O. The allowance is raised for this
+        // suite (see PostgresApiFactory), so this has to push past that rather than past 10.
         HttpResponseMessage? throttled = null;
-        for (var i = 0; i < 15; i++)
+        for (var i = 0; i < PostgresApiFactory.SensitivePerMinute + 10; i++)
         {
             var response = await keyed.PostAsJsonAsync("/api/v1/links/preview", new { url = "http://localhost/x" });
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
@@ -171,8 +172,10 @@ public class RateLimitTests(PostgresApiFactory factory)
         login.EnsureSuccessStatusCode();
         var first = (await login.Content.ReadFromJsonAsync<TokenDto>())!;
 
+        // Spent right up to the allowance this suite runs with, so the refresh below is the only
+        // thing that could possibly earn another request.
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", first.AccessToken);
-        for (var i = 0; i < 15; i++)
+        for (var i = 0; i < PostgresApiFactory.SensitivePerMinute + 10; i++)
         {
             await client.PostAsJsonAsync("/api/v1/links/preview", new { url = "http://localhost/x" });
         }

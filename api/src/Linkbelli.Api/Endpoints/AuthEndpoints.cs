@@ -1,3 +1,4 @@
+using Linkbelli.Application.Email;
 using Linkbelli.Application.Identity;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authentication.BearerToken;
@@ -96,5 +97,57 @@ public static class AuthEndpoints
             var principal = await signIn.CreateUserPrincipalAsync(user);
             return Results.SignIn(principal, authenticationScheme: IdentityConstants.BearerScheme);
         }).AllowAnonymous().WithName("Refresh");
+
+        // A forgotten password used to mean the account was gone; there was no way back at all.
+        group.MapPost("/forgot-password", async (
+            ForgotPasswordRequest req, IPasswordResetService resets, CancellationToken ct) =>
+        {
+            if (string.IsNullOrWhiteSpace(req.Login))
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["login"] = ["A username or email is required."],
+                });
+            }
+
+            if (!resets.CanSend)
+            {
+                // Said out loud rather than silently accepted: an instance with no mail
+                // configured cannot do this, and pretending otherwise leaves somebody waiting
+                // forever for a message nobody ever tried to send. Reveals nothing about any
+                // account — only that this deployment has no mail set up.
+                return Results.Problem(
+                    "This Linkbelli has no mail configured, so it cannot send a reset link.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            await resets.RequestAsync(req.Login, ct);
+
+            // The same answer whether or not that account exists. Anything else turns this
+            // endpoint into a way to find out who has one.
+            return Results.Accepted();
+        })
+            .AllowAnonymous()
+            .RequireRateLimiting("sensitive")
+            .WithName("ForgotPassword");
+
+        group.MapPost("/reset-password", async (
+            ResetPasswordRequest req, IPasswordResetService resets, CancellationToken ct) =>
+        {
+            var errors = new Dictionary<string, string[]>();
+            if (string.IsNullOrWhiteSpace(req.Email)) errors["email"] = ["Email is required."];
+            if (string.IsNullOrWhiteSpace(req.Token)) errors["token"] = ["Token is required."];
+            if (string.IsNullOrWhiteSpace(req.NewPassword)) errors["newPassword"] = ["A new password is required."];
+            if (errors.Count > 0) return Results.ValidationProblem(errors);
+
+            var (ok, failures) = await resets.ResetAsync(req.Email, req.Token, req.NewPassword, ct);
+
+            return ok
+                ? Results.NoContent()
+                : Results.ValidationProblem(new Dictionary<string, string[]> { ["password"] = failures });
+        })
+            .AllowAnonymous()
+            .RequireRateLimiting("sensitive")
+            .WithName("ResetPassword");
     }
 }

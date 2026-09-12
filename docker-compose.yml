@@ -21,6 +21,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       # Development here so the local full-stack run keeps Scalar and skips HTTPS redirection.
       ASPNETCORE_ENVIRONMENT: Development
@@ -34,11 +36,29 @@ services:
       # Where humans read a public playlist, so syndicated feeds link to the web app
       # rather than back at this API.
       PublicWebBaseUrl: http://localhost:5173
+      # Mail goes to the local catch-all. No credentials and no TLS because it is a container on
+      # this machine that speaks plaintext on purpose; in production these five become the
+      # provider's — Brevo's are smtp-relay.brevo.com:587 with TLS on.
+      Email__Host: mailpit
+      Email__Port: "1025"
+      Email__UseTls: "false"
+      Email__FromAddress: no-reply@linkbelli.local
+      Email__PublicUrl: http://localhost:5173
     ports:
       - "5180:8080"
     volumes:
       - dpkeys:/keys
       - thumbnails:/thumbnails
+
+  # Catches every message the API sends and shows them at http://localhost:8025. No account,
+  # no domain, no provider — and nothing can accidentally reach a real person from a dev box.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"   # web UI
+      - "1025:1025"   # SMTP
+    environment:
+      MP_MAX_MESSAGES: "500"
 
   web:
     build: ./web

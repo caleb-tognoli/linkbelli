@@ -97,12 +97,19 @@ builder.Services.AddRateLimiter(options =>
             AutoReplenishment = true,
         }));
 
-    // Reserved for outbound-fetch endpoints (e.g. /sources/preview) in later milestones.
+    // Outbound-fetch endpoints (/sources/preview) and the ones that send mail, where the cost
+    // of a request falls on somebody else — a provider's send quota, or a person's inbox.
+    //
+    // Configurable because every anonymous caller shares one partition (their IP), which is also
+    // what an integration suite looks like: a dozen tests exercising a mail flow from one host
+    // are indistinguishable from abuse. The shipped default stays low.
+    var sensitivePerMinute = builder.Configuration.GetValue<int?>("RateLimits:SensitivePerMinute") ?? 10;
+
     options.AddPolicy("sensitive", http =>
         RateLimitPartition.GetTokenBucketLimiter(ResolvePartitionKey(http), _ => new TokenBucketRateLimiterOptions
         {
-            TokenLimit = 10,
-            TokensPerPeriod = 10,
+            TokenLimit = sensitivePerMinute,
+            TokensPerPeriod = sensitivePerMinute,
             ReplenishmentPeriod = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             AutoReplenishment = true,

@@ -1,12 +1,17 @@
-﻿<svelte:head><title>Sign in - linkbelli</title></svelte:head>
+<svelte:head><title>Sign in - linkbelli</title></svelte:head>
 
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { LogIn } from '@lucide/svelte';
+	import { page } from '$app/state';
 	import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
 	let submitting = $state(false);
+
+	// Set by the reset flow, which deliberately does not sign anybody in — so this is the one
+	// place that can confirm the new password took.
+	const justReset = $derived(page.url.searchParams.get('reset') === '1');
 </script>
 
 <div
@@ -14,7 +19,13 @@
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	<h1 class="text-xl font-semibold">Sign in</h1>
-	<p class="mt-1 text-sm" style="color: var(--color-muted)">Welcome back to Linkbelli.</p>
+	{#if justReset}
+		<p class="mt-1 text-sm" style="color: var(--color-success)">
+			Your password is changed. Sign in with the new one.
+		</p>
+	{:else}
+		<p class="mt-1 text-sm" style="color: var(--color-muted)">Welcome back to Linkbelli.</p>
+	{/if}
 
 	<form
 		method="post"
@@ -68,5 +79,6 @@
 
 	<p class="mt-4 text-sm" style="color: var(--color-muted)">
 		No account? <a href="/register" class="underline">Create one</a>
+		· <a href="/forgot-password" class="underline">Forgotten your password?</a>
 	</p>
 </div>

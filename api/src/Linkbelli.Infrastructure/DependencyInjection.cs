@@ -3,10 +3,12 @@ using Npgsql;
 using Hangfire.PostgreSql;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
+using Linkbelli.Application.Email;
 using Linkbelli.Application.Identity;
 using Linkbelli.Application.Security;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
+using Linkbelli.Infrastructure.Email;
 using Linkbelli.Infrastructure.Jobs;
 using Linkbelli.Infrastructure.Security;
 using Microsoft.AspNetCore.Builder;
@@ -54,12 +56,23 @@ public static class DependencyInjection
 
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
 
+        // --- Mail ---
+        // Bound from configuration and nothing else, so which provider sends the mail is an
+        // operational decision: Brevo today, something else tomorrow, same code.
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.Section));
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
+
         services.AddIdentityApiEndpoints<ApplicationUser>()
             .AddRoles<IdentityRole<Guid>>() // enables RoleManager + role claims in the bearer principal
             .AddEntityFrameworkStores<LinkbelliDbContext>();
 
         // Usernames are unique in Identity; require unique emails too so login-by-email is unambiguous.
         services.Configure<IdentityOptions>(options => options.User.RequireUniqueEmail = true);
+
+        // Identity's default for these is a day, which is a long life for a link that grants an
+        // account. Set here so it matches what the reset mail tells people.
+        services.Configure<DataProtectionTokenProviderOptions>(options =>
+            options.TokenLifespan = TimeSpan.FromHours(PasswordResetService.ValidForHours));
 
         // --- Hangfire (durable background jobs, Postgres storage) ---
         services.AddHangfire(config => config

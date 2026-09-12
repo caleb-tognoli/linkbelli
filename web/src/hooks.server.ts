@@ -3,7 +3,7 @@ import { API_BASE } from '$lib/server/config';
 import { ACCESS_COOKIE, REFRESH_COOKIE, clearTokens, setTokens } from '$lib/server/auth';
 
 // Auth pages: redirect already-signed-in users away from these.
-const AUTH_PAGES = ['/login', '/register'];
+const AUTH_PAGES = ['/login', '/register', '/forgot-password', '/reset-password'];
 
 // Anonymous-viewable areas. The /api/v1 proxy is included so anonymous browsers can read public
 // endpoints; the API still enforces per-endpoint auth (protected calls get 401).
