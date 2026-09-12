@@ -114,6 +114,21 @@ builder.Services.AddRateLimiter(options =>
             QueueLimit = 0,
             AutoReplenishment = true,
         }));
+
+    // Thumbnails are their own thing, and were wrongly on "sensitive". A playlist page asks for
+    // one per row — dozens at once — so a ten-a-minute bucket meant the first ten loaded and
+    // every other row silently lost its picture. A cache hit is a file read; only a miss costs an
+    // outbound fetch, and that is bounded inside ThumbnailCache where the cost actually is.
+    options.AddPolicy("thumbnails", http =>
+        RateLimitPartition.GetTokenBucketLimiter(ResolvePartitionKey(http), _ => new TokenBucketRateLimiterOptions
+        {
+            // Sized for a long page plus scrolling through a grid, not for one screenful.
+            TokenLimit = 400,
+            TokensPerPeriod = 200,
+            ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+            QueueLimit = 0,
+            AutoReplenishment = true,
+        }));
 });
 
 // Metrics always; tracing only when somewhere was configured to send it.

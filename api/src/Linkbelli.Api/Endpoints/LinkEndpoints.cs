@@ -42,8 +42,9 @@ public static class LinkEndpoints
         // every site in a playlist the viewer's IP and what they were looking at, and broke
         // outright whenever a host refused hotlinking.
         //
-        // Anonymous, because thumbnails appear on public playlist pages, and rate-limited,
-        // because a miss means an outbound fetch.
+        // Anonymous, because thumbnails appear on public playlist pages. On its own rate limit
+        // rather than the strict one: a page asks for one of these per row, and a miss — the only
+        // case that costs an outbound fetch — is bounded inside the cache instead.
         app.MapGet("/thumbnails/{id:guid}", async (
             Guid id, IThumbnailCache cache, HttpContext http, CancellationToken ct) =>
         {
@@ -62,7 +63,7 @@ public static class LinkEndpoints
             return Results.File(thumbnail.Content, thumbnail.ContentType);
         })
             .AllowAnonymous()
-            .RequireRateLimiting("sensitive")
+            .RequireRateLimiting("thumbnails")
             .WithTags("Links")
             .WithName("GetThumbnail");
 

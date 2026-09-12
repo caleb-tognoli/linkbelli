@@ -44,6 +44,21 @@ public class ThumbnailCache(
         "image/jpeg", "image/png", "image/gif", "image/webp", "image/avif",
     };
 
+    /// <summary>
+    /// How many thumbnails this process will fetch from the open web at once.
+    /// </summary>
+    /// <remarks>
+    /// The first view of a long playlist is a miss on every row, and without a bound that is one
+    /// outbound request per row all at once — which exhausts connections here and looks like an
+    /// attack to the hosts on the other end. The limit belongs here rather than on the endpoint:
+    /// a cache hit costs a file read and should not be rationed, and only this path spends
+    /// somebody else's bandwidth.
+    ///
+    /// Static, because the cost being protected is this process's outbound connections, and a
+    /// per-request limiter would not see the others.
+    /// </remarks>
+    private static readonly SemaphoreSlim OutboundFetches = new(4, 4);
+
     public async Task<CachedThumbnail?> GetAsync(Guid linkId, CancellationToken ct = default)
     {
         var url = await db.Links
@@ -67,8 +82,17 @@ public class ThumbnailCache(
 
     private async Task<CachedThumbnail?> FetchAndStoreAsync(string url, string path, CancellationToken ct)
     {
+        await OutboundFetches.WaitAsync(ct);
+
         try
         {
+            // Re-checked after waiting: on the first view of a long playlist, several requests
+            // queue here for the same image, and the one that went first has since stored it.
+            if (TryReadFresh(path, out var justStored))
+            {
+                return justStored;
+            }
+
             // The same SSRF-protected client enrichment uses: a thumbnail URL is attacker-supplied
             // in exactly the way a page URL is.
             var client = httpClientFactory.CreateClient(EnrichmentHttpClient.Name);
@@ -112,6 +136,10 @@ public class ThumbnailCache(
             // should not be silent, or an image that never loads has nothing to explain it.
             logger.LogInformation("Could not fetch the thumbnail at {Url}: {Reason}", url, ex.Message);
             return null;
+        }
+        finally
+        {
+            OutboundFetches.Release();
         }
     }
 

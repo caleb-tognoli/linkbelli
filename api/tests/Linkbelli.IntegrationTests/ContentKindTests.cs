@@ -35,6 +35,25 @@ public class ContentKindTests(PostgresApiFactory factory)
         return client;
     }
 
+    /// <summary>
+    /// Marks every link that already exists as classified, so a sweep's batch holds only what a
+    /// test seeds next.
+    /// </summary>
+    /// <remarks>
+    /// The suite shares one database and the sweep is deliberately owner-agnostic — it exists to
+    /// catch up on everything saved before classification existed. That makes "did the sweep
+    /// reach my link" unanswerable unless the rest of the field is settled first.
+    /// </remarks>
+    private async Task SettleEveryOtherLinkAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
+        await db.Links
+            .Where(l => l.Kind == ContentKind.Unknown)
+            .ExecuteUpdateAsync(s => s.SetProperty(l => l.Kind, ContentKind.Article));
+    }
+
     private static async Task<Guid> NewPlaylistAsync(HttpClient client, string name)
     {
         var res = await client.PostAsJsonAsync("/api/v1/playlists", new { name });
@@ -138,6 +157,12 @@ public class ContentKindTests(PostgresApiFactory factory)
     {
         var client = await NewUserAsync();
         var playlist = await NewPlaylistAsync(client, "Old saves");
+
+        // Settled first, then seeded. The sweep takes the oldest 500 unclassified links belonging
+        // to anybody, so once the suite holds more than that this test's two — the newest in the
+        // database — are never in the batch, and it fails having tested nothing.
+        await SettleEveryOtherLinkAsync();
+
         await factory.SeedEnrichedItemsAsync(
             playlist, 2, url: n => n == 0 ? "https://www.youtube.com/watch?v=swept" : "https://github.com/swept/repo");
 
