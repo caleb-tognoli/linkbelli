@@ -1,0 +1,44 @@
+# Production posture, for checking a change before it goes anywhere real.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+#
+# The main compose file runs the API in Development on purpose — it keeps Scalar, skips HTTPS
+# redirection and leaves the Hangfire dashboard open, which is what you want while working. The
+# effect is that the production posture is exercised by nothing: not locally, not in CI, and not
+# by the integration suite, which also runs in Development. That is a bad set of things to find
+# out about on the day you deploy.
+#
+# What changes under this overlay, all of it only true in Production:
+#   - HSTS and HTTPS redirection are on.
+#   - Scalar and the OpenAPI document are gone.
+#   - The Hangfire dashboard needs credentials, and is closed entirely without them.
+#   - Missing required configuration stops startup instead of being discovered later.
+#   - Logs are JSON rather than the human-readable renderer.
+#
+# It still talks plain HTTP on localhost, so the app will redirect you to https://localhost:5180
+# and your browser will complain. That is the redirect working.
+
+services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+      # Required in Production, and startup now refuses without them rather than failing later.
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=linkbelli;Username=linkbelli;Password=linkbelli
+      DataProtection__KeyRingPath: /keys
+
+      # The dashboard is closed without these. Local-only values: the point is to exercise the
+      # code path that asks for credentials, not to keep a secret.
+      Hangfire__Dashboard__Username: linkbelli
+      Hangfire__Dashboard__Password: linkbelli
+
+      # Browser origins the API will accept cross-origin calls from. Empty means none, which is
+      # correct when everything reaches it through the BFF.
+      Cors__AllowedOrigins__0: http://localhost:5173
+
+  web:
+    environment:
+      NODE_ENV: production
+      # Still false: this overlay serves plain HTTP on localhost, and marking the auth cookies
+      # Secure would make the browser drop them and nothing would work.
+      COOKIE_SECURE: "false"

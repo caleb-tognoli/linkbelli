@@ -29,6 +29,9 @@ public sealed class AppMetrics : IDisposable
     private readonly Counter<long> _itemsDiscovered;
     private readonly Counter<long> _archiveAttempts;
     private readonly Histogram<double> _enrichmentDuration;
+    private readonly Counter<long> _mail;
+    private readonly Counter<long> _rateLimited;
+    private readonly Counter<long> _quotaRejections;
 
     public AppMetrics()
     {
@@ -56,7 +59,47 @@ public sealed class AppMetrics : IDisposable
             "linkbelli.archive.attempts",
             unit: "{attempt}",
             description: "Snapshots asked for, by whether one came back.");
+
+        _mail = _meter.CreateCounter<long>(
+            "linkbelli.mail.sent",
+            unit: "{message}",
+            description: "Messages handed to the provider, by kind and by whether it took them.");
+
+        _rateLimited = _meter.CreateCounter<long>(
+            "linkbelli.ratelimit.rejections",
+            unit: "{request}",
+            description: "Requests refused by the limiter, by which policy refused them.");
+
+        _quotaRejections = _meter.CreateCounter<long>(
+            "linkbelli.quota.rejections",
+            unit: "{request}",
+            description: "Requests refused for exceeding a per-user quota.");
     }
+
+    /// <summary>
+    /// One message. Mail is optional in this product, which is exactly why its failures need
+    /// counting: an instance where sending quietly stopped working looks identical to one where
+    /// nobody has subscribed to anything.
+    /// </summary>
+    public void Mail(string kind, bool sent) =>
+        _mail.Add(1,
+            new KeyValuePair<string, object?>("kind", kind),
+            new KeyValuePair<string, object?>("outcome", sent ? "sent" : "failed"));
+
+    /// <summary>
+    /// One request the limiter refused.
+    /// </summary>
+    /// <remarks>
+    /// Tagged by policy and not by partition: the partition is a user id or an address, which is
+    /// unbounded and is the caller's identity rather than a property of the system. The policy is
+    /// what you change when this number is wrong — which is how the thumbnail limit went unnoticed
+    /// until somebody looked at a page and saw the pictures missing.
+    /// </remarks>
+    public void RateLimited(string policy) =>
+        _rateLimited.Add(1, new KeyValuePair<string, object?>("policy", policy));
+
+    /// <summary>One request refused for exceeding a quota.</summary>
+    public void QuotaRejected() => _quotaRejections.Add(1);
 
     /// <summary>One page fetch. <paramref name="outcome"/> is "succeeded", "failed" or "broken".</summary>
     /// <remarks>

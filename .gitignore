@@ -413,3 +413,6 @@ FodyWeavers.xsd
 # credentials end up in a repository — .env.example is the one that belongs in git.
 .env
 .env.local
+
+# Coverage reports produced by 'dotnet test --collect'.
+coverage/

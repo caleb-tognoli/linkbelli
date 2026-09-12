@@ -40,7 +40,9 @@ const FORWARD_RESPONSE = [
 	'location',
 	// So a client can say when to try again instead of guessing.
 	'retry-after',
-	'content-language'
+	'content-language',
+	// So a bug report can name the exact request in the server's logs.
+	'x-request-id'
 ];
 
 /** Methods that carry no body, whatever the caller sent. */

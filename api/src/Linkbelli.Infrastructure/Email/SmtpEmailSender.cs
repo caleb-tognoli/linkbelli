@@ -1,6 +1,7 @@
 using Linkbelli.Application.Email;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Linkbelli.Application.Observability;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -17,6 +18,7 @@ namespace Linkbelli.Infrastructure.Email;
 /// </remarks>
 public sealed class SmtpEmailSender(
     IOptions<EmailOptions> options,
+    AppMetrics metrics,
     ILogger<SmtpEmailSender> logger) : IEmailSender
 {
     private readonly EmailOptions _options = options.Value;
@@ -74,6 +76,7 @@ public sealed class SmtpEmailSender(
             await client.DisconnectAsync(true, cancellationToken);
 
             logger.LogInformation("Sent \"{Subject}\".", message.Subject);
+            metrics.Mail(message.Kind, sent: true);
             return true;
         }
         catch (OperationCanceledException)
@@ -85,6 +88,7 @@ public sealed class SmtpEmailSender(
             // Never the recipient's address at Information or above: it is somebody's email, and
             // logs travel further than the data in them.
             logger.LogError(ex, "Could not send \"{Subject}\".", message.Subject);
+            metrics.Mail(message.Kind, sent: false);
             return false;
         }
     }

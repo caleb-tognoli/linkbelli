@@ -108,6 +108,26 @@ The API reads these via standard .NET configuration (env vars use `__` for nesti
 | `Email:PublicUrl` | Where links in mail point. **Never derived from the request** — a reset link built from an inbound Host header is a way to mail somebody a link to an attacker's site. |
 | `Email:InboxDomain` | Optional. The domain that receives mailed-in links, so the app can show somebody their inbox address. See `email-worker/README.md`. |
 
+### Optional configuration
+
+Everything here has a working default. They are listed because the defaults are decisions, and
+the first three are the ones you reach for when something is wrong.
+
+| Key | Default | Purpose |
+| --- | --- | --- |
+| `Registration:Mode` | `Open` | `Open`, `FirstUserOnly` (only while the instance has no accounts) or `Closed`. There is otherwise no way to stop anyone who can reach the address getting an account, an outbound fetcher and a public profile on your domain. |
+| `RateLimits:CredentialsPerMinute` | `20` | Sign-in and sign-up attempts per caller. Lockout already caps failures per account; this caps them per caller. |
+| `RateLimits:SensitivePerMinute` | `10` | Per caller, for the endpoints whose cost falls on somebody else — an outbound fetch, a provider's send quota, a person's inbox. |
+| `ForwardedHeaders:TrustedNetworks` | private ranges | CIDRs whose `X-Forwarded-For` is believed. The API always sits behind the web BFF, and without this every request appears to come from it — which makes the anonymous rate limit one bucket for the whole internet. |
+| `ForwardedHeaders:Limit` | `2` | How many proxy hops to trust: one for the BFF, one for a proxy in front of it. |
+| `Quota:DefaultMaxSources` | see `UserQuota` | Applied when a user's quota row is first created. |
+| `Quota:DefaultMaxRunsPerDay` | see `UserQuota` | As above. |
+| `Quota:DefaultMaxItemsPerRun` | as above | As above. |
+| `Telemetry:Metrics:Enabled` | `true` | Whether `/metrics` exists at all. |
+| `Telemetry:Metrics:AllowAnonymous` | `false` | Off means the scrape endpoint requires the Admin role. Metrics name every host this instance fetches and how much of everything there is, which is not a public fact about somebody's collection. Turn it on only when the port is reachable by a scraper and nobody else. |
+| `Telemetry:Otlp:Endpoint` | unset | Where to send traces. Unset means tracing is not collected at all — spans that go nowhere cost the same as spans that are read. |
+| `Telemetry:ServiceName` | `linkbelli-api` | The name traces and metrics are attributed to. |
+
 The web app reads `API_BASE_URL` (where the BFF reaches the API), `ORIGIN` (the app's public
 origin, used for form-action CSRF checks), and `COOKIE_SECURE` (`false` only for local HTTP).
 

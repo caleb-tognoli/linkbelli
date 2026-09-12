@@ -20,7 +20,7 @@ public static class EmailTemplates
     /// Inline styles and a table-free layout, because mail clients are not browsers: no external
     /// stylesheet is fetched, and anything cleverer than this renders differently in Outlook.
     /// </remarks>
-    private static EmailMessage Compose(string to, string subject, string heading, string[] paragraphs, (string Label, string Url)? button = null)
+    private static EmailMessage Compose(string kind, string to, string subject, string heading, string[] paragraphs, (string Label, string Url)? button = null)
     {
         var text = new StringBuilder();
         text.AppendLine(heading);
@@ -61,7 +61,7 @@ public static class EmailTemplates
         html.Append("""<p style="margin:1.5rem 0 0;font-size:13px;color:#666">— Linkbelli</p>""");
         html.Append("</div>");
 
-        return new EmailMessage(to, subject, text.ToString(), html.ToString());
+        return new EmailMessage(to, subject, text.ToString(), html.ToString(), kind);
     }
 
     /// <summary>
@@ -75,6 +75,7 @@ public static class EmailTemplates
 
     public static EmailMessage PasswordReset(string to, string resetUrl, int validForHours) =>
         Compose(
+            "password-reset",
             to,
             "Reset your Linkbelli password",
             "Reset your password",
@@ -94,6 +95,7 @@ public static class EmailTemplates
     /// </remarks>
     public static EmailMessage PasswordChanged(string to, string publicUrl) =>
         Compose(
+            "password-changed",
             to,
             "Your Linkbelli password was changed",
             "Your password was changed",
@@ -116,7 +118,7 @@ public static class EmailTemplates
             body.Add(line.Url is null ? $"• {line.Text}" : $"• {line.Text} — {line.Url}");
         }
 
-        return Compose(to, subject, heading, [.. body], ("Open Linkbelli", publicUrl.TrimEnd('/')));
+        return Compose("notification", to, subject, heading, [.. body], ("Open Linkbelli", publicUrl.TrimEnd('/')));
     }
 
     /// <summary>
@@ -177,6 +179,7 @@ public static class EmailTemplates
         }
 
         return Compose(
+            "digest",
             to,
             "Your week on Linkbelli",
             "Your week",

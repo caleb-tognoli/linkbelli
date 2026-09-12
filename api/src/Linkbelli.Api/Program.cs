@@ -9,6 +9,8 @@ using Linkbelli.Application.Common;
 using Linkbelli.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using Linkbelli.Application.Observability;
 using Scalar.AspNetCore;
 using System.Net;
 using System.Security.Claims;
@@ -19,6 +21,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Nothing needs to know what serves this, and saying so only helps somebody scanning.
 builder.WebHost.ConfigureKestrel(kestrel => kestrel.AddServerHeader = false);
+
+// Structured output anywhere real. The application already writes proper message templates
+// everywhere — "Source {SourceId} stopped after {Count} failures" — and the default console
+// renderer threw the properties away and printed a multi-line block that most collectors split
+// into separate events. The readable renderer stays for local work, where a person is the reader.
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole(json =>
+    {
+        json.IncludeScopes = true;
+        json.JsonWriterOptions = new System.Text.Json.JsonWriterOptions { Indented = false };
+    });
+}
 
 // Before anything is wired up, so a misconfigured deployment fails on the way up rather than
 // on the day something depends on the setting nobody set.
@@ -84,6 +100,12 @@ builder.Services.AddRateLimiter(options =>
     // Tell clients when to retry. Buckets replenish every minute, so advertise that.
     options.OnRejected = (context, _) =>
     {
+        // Counted by policy, so a limit that is refusing ordinary use shows up as a number rather
+        // than as somebody noticing the pictures are missing from a page.
+        context.HttpContext.RequestServices.GetRequiredService<AppMetrics>()
+            .RateLimited(context.HttpContext.GetEndpoint()?.Metadata
+                .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName ?? "global");
+
         if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
         {
             context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
@@ -200,6 +222,19 @@ if (builder.Configuration.GetValue<bool>("Database:MigrateAtStartup"))
 // should all see the caller rather than the proxy.
 app.UseForwardedHeaders();
 
+// An id on every response, so a bug report can name one request.
+//
+// The ids existed already — OpenTelemetry creates an Activity per request and the logs carry its
+// trace id — but none of them ever left the process, so "saving a link failed at 14:32" had
+// nothing to match against. Worse than usual here, because every request arrives through the web
+// BFF, so even the client address in the log is the proxy's.
+app.Use(async (context, next) =>
+{
+    var id = System.Diagnostics.Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
+    context.Response.Headers["X-Request-Id"] = id;
+    await next();
+});
+
 app.UseExceptionHandler();
 
 app.MapAppMetrics();
@@ -219,7 +254,17 @@ else
 {
     // Tokens/keys are bearer credentials — never serve them over cleartext in production.
     app.UseHsts();
-    app.UseHttpsRedirection();
+
+    // Only when this process actually terminates TLS. In every deployment of this shape it does
+    // not: something in front does, and forwards X-Forwarded-Proto, which UseForwardedHeaders
+    // above turns into the right scheme — so the redirect has nothing to do and, if the proxy
+    // forwards over http, would loop. Unconditionally it also logged "Failed to determine the
+    // https port for redirect" on every single startup, which is a warning nobody could act on.
+    if (builder.Configuration["ASPNETCORE_HTTPS_PORTS"] is { Length: > 0 }
+        || builder.Configuration["Kestrel:Endpoints:Https:Url"] is { Length: > 0 })
+    {
+        app.UseHttpsRedirection();
+    }
 }
 
 app.UseLinkbelliDashboard(); // Hangfire dashboard at /hangfire (dev only)

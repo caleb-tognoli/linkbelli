@@ -1,14 +1,22 @@
 using Linkbelli.Application.Common;
+using Linkbelli.Application.Observability;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Linkbelli.Api.Common;
 
 /// <summary>Maps Application-layer exceptions to ProblemDetails responses.</summary>
-public sealed class AppExceptionHandler : IExceptionHandler
+public sealed class AppExceptionHandler(AppMetrics metrics) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        if (exception is QuotaExceededException)
+        {
+            // Every quota refusal passes through here, which makes it the one place worth
+            // counting them: a quota set too low is otherwise invisible until somebody complains.
+            metrics.QuotaRejected();
+        }
+
         IResult? result = exception switch
         {
             NotFoundException => Results.Problem(exception.Message, statusCode: StatusCodes.Status404NotFound),

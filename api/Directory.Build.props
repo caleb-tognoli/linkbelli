@@ -38,6 +38,12 @@
       versions in Directory.Packages.props change; commit the result with the change.
     -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+    <!--
+      Stamped into the assembly, so /metrics and any trace attribute the real build rather than
+      "1.0.0.0". Overridden by CI from the tag when there is one.
+    -->
+    <VersionPrefix>0.1.0</VersionPrefix>
   </PropertyGroup>
 
 </Project>
