@@ -26,4 +26,6 @@ public record UsageResponse(
     /// <summary>Links whose page is gone or unreadable.</summary>
     int Broken,
     /// <summary>Playlists and items in the trash, still restorable.</summary>
-    int InTrash);
+    int InTrash,
+    /// <summary>Playlists that are not private — how much of this is visible to anyone else.</summary>
+    int Published = 0);

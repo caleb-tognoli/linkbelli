@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createPlaylist } from '$lib/api/playlists';
 import { listFolders } from '$lib/api/folders';
-import type { Folder, Paged, Playlist, SharedPlaylist, Visibility } from '$lib/types';
+import type { Folder, Paged, Playlist, SharedPlaylist, Usage, User, Visibility } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 const VISIBILITIES: Visibility[] = ['Private', 'Unlisted', 'Public'];
@@ -14,10 +14,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	qs.set('unfiled', 'true');
 
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
-	const [plRes, folders, sharedRes] = await Promise.all([
+	const [plRes, folders, sharedRes, usageRes, meRes] = await Promise.all([
 		locals.api(`/api/v1/playlists?${qs}`),
 		listFolders(locals.api).catch(() => [] as Folder[]),
-		locals.api('/api/v1/me/shared')
+		locals.api('/api/v1/me/shared'),
+		locals.api('/api/v1/me/usage'),
+		locals.api('/api/v1/me')
 	]);
 
 	const playlists = plRes.ok
@@ -30,7 +32,19 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	// you, is not one of yours.
 	const shared = sharedRes.ok ? ((await sharedRes.json()) as SharedPlaylist[]) : [];
 
-	return { playlists, rootFolders, shared, activeTags };
+	// What the getting-started checklist reads. Nothing is derived from a stored flag, so it
+	// cannot claim a step is done when it isn't — or the other way round.
+	const usage = usageRes.ok ? ((await usageRes.json()) as Usage) : null;
+	const me = meRes.ok ? ((await meRes.json()) as User) : null;
+
+	return {
+		playlists,
+		rootFolders,
+		shared,
+		activeTags,
+		usage,
+		onboardingDismissed: me?.onboardingDismissed ?? false
+	};
 };
 
 export const actions: Actions = {

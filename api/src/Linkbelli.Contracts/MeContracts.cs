@@ -6,7 +6,12 @@ namespace Linkbelli.Contracts;
 /// one setting can save it without stating a position on the others — and without a client that
 /// predates a setting silently turning it off for someone who asked for it.
 /// </summary>
-public record UpdatePreferencesRequest(bool? ShowNsfw = null, bool? ArchiveLinks = null, bool? BackupsEnabled = null);
+public record UpdatePreferencesRequest(
+    bool? ShowNsfw = null,
+    bool? ArchiveLinks = null,
+    bool? BackupsEnabled = null,
+    /// <summary>True puts the getting-started checklist away for good; false is not a way back.</summary>
+    bool? DismissOnboarding = null);
 
 /// <summary>One snapshot, as a listing shows it. The bytes are fetched separately.</summary>
 public record BackupResponse(

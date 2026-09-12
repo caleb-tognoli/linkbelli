@@ -16,4 +16,9 @@ public interface IUserPreferenceService
     Task<bool> BackupsEnabledAsync(Guid? userId, CancellationToken ct = default);
 
     Task SetBackupsEnabledAsync(Guid userId, bool backupsEnabled, CancellationToken ct = default);
+
+    /// <summary>Whether the getting-started checklist has been put away.</summary>
+    Task<bool> OnboardingDismissedAsync(Guid? userId, CancellationToken ct = default);
+
+    Task DismissOnboardingAsync(Guid userId, CancellationToken ct = default);
 }

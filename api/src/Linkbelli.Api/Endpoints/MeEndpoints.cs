@@ -26,6 +26,7 @@ public static class MeEndpoints
             showNsfw = await prefs.ShowNsfwAsync(user.GetUserId(), ct),
             archiveLinks = await prefs.ArchiveLinksAsync(user.GetUserId(), ct),
             backupsEnabled = await prefs.BackupsEnabledAsync(user.GetUserId(), ct),
+            onboardingDismissed = await prefs.OnboardingDismissedAsync(user.GetUserId(), ct),
         }))
         .RequireAuthorization(secured)
         .WithName("GetMe");
@@ -62,6 +63,13 @@ public static class MeEndpoints
             if (req.BackupsEnabled is { } backups)
             {
                 await prefs.SetBackupsEnabledAsync(user.GetUserId(), backups, ct);
+            }
+
+            // One-way: there is no request that brings the checklist back, because nobody has
+            // ever wanted that and a false here would otherwise silently undo a dismissal.
+            if (req.DismissOnboarding is true)
+            {
+                await prefs.DismissOnboardingAsync(user.GetUserId(), ct);
             }
 
             return Results.NoContent();

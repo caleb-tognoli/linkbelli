@@ -36,6 +36,7 @@ public class UsageService(IAppDbContext db) : IUsageService
                 Broken = items.Count(i => i.Link!.EnrichmentStatus == EnrichmentStatus.Broken
                     || i.Link.EnrichmentStatus == EnrichmentStatus.Failed),
                 Sites = items.Select(i => i.Link!.HostId).Distinct().Count(),
+                Published = g.Count(p => p.Visibility != PlaylistVisibility.Private),
             })
             .FirstOrDefaultAsync(ct);
 
@@ -62,6 +63,7 @@ public class UsageService(IAppDbContext db) : IUsageService
             counts?.Sites ?? 0,
             counts?.Watched ?? 0,
             counts?.Broken ?? 0,
-            trashedPlaylists + trashedItems);
+            trashedPlaylists + trashedItems,
+            counts?.Published ?? 0);
     }
 }

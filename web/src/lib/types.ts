@@ -16,6 +16,8 @@ export interface User {
 	archiveLinks?: boolean;
 	/** Whether the schedule keeps weekly snapshots of this user's library. */
 	backupsEnabled?: boolean;
+	/** Whether the getting-started checklist has been put away for good. */
+	onboardingDismissed?: boolean;
 }
 
 export type NsfwSetting = 'Auto' | 'Yes' | 'No';
@@ -485,6 +487,8 @@ export interface Usage {
 	watched: number;
 	broken: number;
 	inTrash: number;
+	/** Playlists that are not private — how much of this is visible to anyone else. */
+	published?: number;
 }
 
 /** One "when this arrives, do that" over your own collection. Conditions are all required. */

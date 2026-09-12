@@ -34,6 +34,16 @@ public class ApplicationUser : IdentityUser<Guid>
     public DateTimeOffset? LastBackupAt { get; set; }
 
     /// <summary>
+    /// When this user put the getting-started checklist away, or null while it still applies.
+    /// </summary>
+    /// <remarks>
+    /// Stored on the account rather than in the browser: dismissing something once should mean
+    /// once, not once per device. The checklist also hides itself when its steps are done, so
+    /// this is only for people who have decided they do not want the rest of them.
+    /// </remarks>
+    public DateTimeOffset? OnboardingDismissedAt { get; set; }
+
+    /// <summary>
     /// When this user last looked at their feed. Null means never — everything in it is new,
     /// which is the right answer for someone who has just started following things.
     /// </summary>

@@ -44,4 +44,22 @@ public class UserPreferenceService(IAppDbContext db) : IUserPreferenceService
         user.BackupsEnabled = backupsEnabled;
         await db.SaveChangesAsync(ct);
     }
+
+    public Task<bool> OnboardingDismissedAsync(Guid? userId, CancellationToken ct = default) =>
+        userId is null
+            ? Task.FromResult(true)
+            : db.Users.Where(u => u.Id == userId.Value)
+                .Select(u => u.OnboardingDismissedAt != null)
+                .FirstOrDefaultAsync(ct);
+
+    public async Task DismissOnboardingAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct)
+            ?? throw new NotFoundException("User not found.");
+
+        // Stamped rather than flagged: knowing when somebody decided they were done with it is
+        // worth more later than a bare true, and costs the same column.
+        user.OnboardingDismissedAt ??= DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+    }
 }

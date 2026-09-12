@@ -4,6 +4,7 @@
 	import FolderCard from '$lib/components/FolderCard.svelte';
 	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
 	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
+	import OnboardingChecklist from '$lib/components/OnboardingChecklist.svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
 	import { CopyCheck, Trash2 } from '@lucide/svelte';
 	import type { PageData, ActionData } from './$types';
@@ -42,6 +43,8 @@
 			<NewPlaylistDialog {form} />
 		</div>
 	</header>
+
+	<OnboardingChecklist usage={data.usage} dismissed={data.onboardingDismissed} />
 
 	{#if isEmpty}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
