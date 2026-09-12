@@ -54,11 +54,7 @@ public class PlaylistService(
             query = query.Where(p => !db.FolderPlaylists.Any(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id));
         }
 
-        var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
-        if (!showNsfw)
-        {
-            query = query.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
-        }
+        query = query.VisibleTo(await prefs.ShowNsfwAsync(ownerId, ct));
 
         // "Recently updated" = most recent of the playlist's own creation and its newest item.
         // (Items are always created after their playlist, so coalesce == greatest.)
@@ -439,11 +435,9 @@ public class PlaylistService(
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("Profile not found.");
 
-        var published = db.Playlists.Where(p => p.OwnerId == user.Id && p.Visibility == PlaylistVisibility.Public);
-        if (!await prefs.ShowNsfwAsync(viewerId, ct))
-        {
-            published = published.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
-        }
+        var published = db.Playlists
+            .Where(p => p.OwnerId == user.Id && p.Visibility == PlaylistVisibility.Public)
+            .VisibleTo(await prefs.ShowNsfwAsync(viewerId, ct));
 
         // Counted in the database rather than by fetching one row per public playlist — each of
         // those rows was itself a correlated COUNT, for two numbers on an anonymous page.
@@ -471,11 +465,9 @@ public class PlaylistService(
 
         // Public only: Unlisted is share-by-link, so it never appears in a listing, not even the
         // owner's own profile page.
-        var query = db.Playlists.Where(p => p.OwnerId == ownerId && p.Visibility == PlaylistVisibility.Public);
-        if (!await prefs.ShowNsfwAsync(viewerId, ct))
-        {
-            query = query.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
-        }
+        var query = db.Playlists
+            .Where(p => p.OwnerId == ownerId && p.Visibility == PlaylistVisibility.Public)
+            .VisibleTo(await prefs.ShowNsfwAsync(viewerId, ct));
 
         var rows = await (from p in query
                           join u in db.Users on p.OwnerId equals u.Id
@@ -517,10 +509,7 @@ public class PlaylistService(
 
         query = FilterByTags(query, tags);
 
-        if (!await prefs.ShowNsfwAsync(viewerId, ct))
-        {
-            query = query.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
-        }
+        query = query.VisibleTo(await prefs.ShowNsfwAsync(viewerId, ct));
 
         // Ordered first, projected second: the owner's name comes from a subquery rather than a
         // join so the ordering stays expressed over the playlist itself, which is the only form
@@ -618,11 +607,7 @@ public class PlaylistService(
         var candidates = db.Playlists.Where(p =>
             p.Visibility == PlaylistVisibility.Public && p.Id != subject.Id);
 
-        if (!await prefs.ShowNsfwAsync(viewerId, ct))
-        {
-            candidates = candidates.Where(p =>
-                !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
-        }
+        candidates = candidates.VisibleTo(await prefs.ShowNsfwAsync(viewerId, ct));
 
         return await (from p in candidates
                       join u in db.Users on p.OwnerId equals u.Id

@@ -238,9 +238,11 @@ public class PlaylistMemberTests(PostgresApiFactory factory)
         (await ShareAsync(owner, playlist, memberName, "Viewer")).EnsureSuccessStatusCode();
 
         var shared = await member.GetFromJsonAsync<List<SharedDto>>("/api/v1/me/shared");
-        Assert.Equal("Theirs", shared!.Single().Name);
-        Assert.Equal(ownerName, shared[0].OwnerUsername, ignoreCase: true);
-        Assert.Equal(2, shared[0].ItemCount);
+        Assert.NotNull(shared);
+        var only = Assert.Single(shared);
+        Assert.Equal("Theirs", only.Name);
+        Assert.Equal(ownerName, only.OwnerUsername, ignoreCase: true);
+        Assert.Equal(2, only.ItemCount);
 
         // Their own list is still their own: someone else's playlist does not appear in it.
         var own = await member.GetFromJsonAsync<PagedPlaylistsDto>("/api/v1/playlists");

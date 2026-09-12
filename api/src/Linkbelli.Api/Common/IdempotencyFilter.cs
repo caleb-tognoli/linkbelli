@@ -145,7 +145,16 @@ public sealed class IdempotencyFilter : IEndpointFilter
             await original.WriteAsync(Encoding.UTF8.GetBytes(body), http.RequestAborted);
         }
 
-        await StoreAsync(db, record, status, body, http);
+        if (IsWorthRetrying(status))
+        {
+            // Nothing was settled, so the key goes back rather than being bound to this answer.
+            // The same reasoning as the catch above, which already releases on a thrown request.
+            await ReleaseAsync(db, record);
+        }
+        else
+        {
+            await StoreAsync(db, record, status, body, http);
+        }
 
         // Already written. Returning the endpoint's result here would send the whole thing twice.
         return Results.Empty;
@@ -173,6 +182,24 @@ public sealed class IdempotencyFilter : IEndpointFilter
             // expires on its own.
         }
     }
+
+    /// <summary>
+    /// Whether this answer means "not now" rather than "no".
+    /// </summary>
+    /// <remarks>
+    /// The header exists so a client whose request timed out can send it again safely. Storing a
+    /// transient failure against the key defeated exactly that: the first attempt hit a quota, a
+    /// restart or a bad minute, and every retry for the next day was handed the same error back
+    /// without the endpoint ever running again. A well-behaved client — one that reuses the key,
+    /// which is the whole contract — could never succeed.
+    ///
+    /// 409 is deliberately not here. A conflict is a real answer about the state of the world,
+    /// and replaying it is correct.
+    /// </remarks>
+    private static bool IsWorthRetrying(int status) =>
+        status is StatusCodes.Status408RequestTimeout
+            or StatusCodes.Status429TooManyRequests
+            or >= StatusCodes.Status500InternalServerError;
 
     /// <summary>
     /// Records what the endpoint answered. A failure to record must not fail the request — the

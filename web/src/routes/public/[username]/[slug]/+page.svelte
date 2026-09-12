@@ -25,14 +25,26 @@
 	);
 	const feedUrl = $derived(`${canonical}/feed`);
 
-	// The owner's choice first; otherwise the first item that happens to have an image, which is
-	// a guess standing in for a decision.
+	/**
+	 * The picture this playlist unfurls with.
+	 *
+	 * The owner's chosen cover first; otherwise the first item that happens to have an image,
+	 * which is a guess standing in for a decision.
+	 *
+	 * Always through our own thumbnail endpoint. The fallback used to hand out the origin URL —
+	 * tracking parameters and all — which defeats the reason that endpoint exists: "rendering the
+	 * origin URL told every site in a playlist the viewer's IP and what they were looking at".
+	 * Unfurling happens in Slack, Discord and every other crawler that touches a shared link, so
+	 * it is the widest audience the page has.
+	 */
+	const coverLinkId = $derived(
+		data.playlist.coverLinkId ??
+			data.items.items.find((i) => i.metadata?.thumbnail ?? i.link.thumbnailUrl)?.link.id ??
+			null
+	);
+
 	const cardImage = $derived(
-		data.playlist.coverLinkId
-			? `${page.url.origin}/api/v1/thumbnails/${data.playlist.coverLinkId}`
-			: (data.items.items
-					.map((i) => i.metadata?.thumbnail ?? i.link.thumbnailUrl)
-					.find((src): src is string => !!src) ?? null)
+		coverLinkId ? `${page.url.origin}/api/v1/thumbnails/${coverLinkId}` : null
 	);
 </script>
 

@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Linkbelli.Application.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using static Linkbelli.IntegrationTests.ApiTestHelpers;
 
 namespace Linkbelli.IntegrationTests;
@@ -21,6 +24,78 @@ public class IdempotencyTests(PostgresApiFactory factory)
         var token = await client.RegisterAndLoginAsync(NewUsername());
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
+    }
+
+    /// <summary>
+    /// A key must not be bound to an answer that only meant "not now".
+    /// </summary>
+    /// <remarks>
+    /// The header exists so a client whose request timed out can send it again. Storing a
+    /// transient failure against the key defeated exactly that: the first attempt failed for a
+    /// reason that had nothing to do with the request, and every retry for the next day was
+    /// handed the same error without the endpoint running again. A client that reuses the key —
+    /// which is the whole contract — could never succeed.
+    ///
+    /// The digest preview is the reachable version of this: it answers 503 when mail will not
+    /// send, as a returned result rather than a thrown exception, so it goes through the storing
+    /// path. A limiter 429 never gets here — the limiter is middleware and rejects before any
+    /// endpoint filter runs — and a thrown ConflictException is already released by the catch.
+    /// </remarks>
+    [Fact]
+    public async Task A_temporary_failure_does_not_claim_the_key()
+    {
+        var client = await NewUserAsync();
+        var key = Guid.NewGuid().ToString();
+
+        Task<HttpResponseMessage> PreviewAsync()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/notifications/digest/preview");
+            request.Headers.Add("Idempotency-Key", key);
+            return client.SendAsync(request);
+        }
+
+        factory.Email.Fail = true;
+        try
+        {
+            var failed = await PreviewAsync();
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, failed.StatusCode);
+
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            Assert.Null(await db.IdempotencyRecords.FirstOrDefaultAsync(r => r.Key == key));
+        }
+        finally
+        {
+            factory.Email.Fail = false;
+        }
+
+        // The point of releasing it: once the reason is gone, the same key works.
+        var retried = await PreviewAsync();
+        Assert.Equal(HttpStatusCode.Accepted, retried.StatusCode);
+        Assert.False(retried.Headers.Contains("Idempotent-Replay"));
+    }
+
+    [Fact]
+    public async Task A_settled_answer_is_still_replayed()
+    {
+        var client = await NewUserAsync();
+        var key = Guid.NewGuid().ToString();
+
+        Task<HttpResponseMessage> PreviewAsync()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/notifications/digest/preview");
+            request.Headers.Add("Idempotency-Key", key);
+            return client.SendAsync(request);
+        }
+
+        var first = await PreviewAsync();
+        var second = await PreviewAsync();
+
+        // Releasing transient failures must not have turned the whole thing off: a request that
+        // actually did something is still answered from the record rather than done twice.
+        Assert.Equal(HttpStatusCode.Accepted, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, second.StatusCode);
+        Assert.Equal("true", second.Headers.GetValues("Idempotent-Replay").Single());
     }
 
     private static HttpRequestMessage NewPlaylistRequest(string name, string? key)
