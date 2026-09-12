@@ -6,6 +6,7 @@
 	import { X, Plus, Save, Lock, Globe, Trash2, Info, ChevronRight } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 	import type { Source, SourceFilter, SourceType, SourceVisibility } from '$lib/types';
+	import { isPreviewable, previewKey, type SourcePreview } from '$lib/sourcePreview';
 
 	type VisOption = { label: string; icon: typeof Lock };
 	const visConfig: Record<SourceVisibility, VisOption> = {
@@ -141,6 +142,59 @@
 			// The URL is on screen either way.
 		}
 	}
+
+	// A dry run of the config as it stands. Until now the only way to find out whether a selector
+	// matched anything was to save the source, wait for its first run, and read the history.
+	let preview = $state<SourcePreview | null>(null);
+	let previewing = $state(false);
+	let previewError = $state<string | null>(null);
+	let lastPreviewed = '';
+
+	async function runPreview(key: string, config: Record<string, string>) {
+		previewing = true;
+		previewError = null;
+		try {
+			const res = await api.post('/sources/preview', { type, config });
+
+			if (res.ok) {
+				preview = (await res.json()) as SourcePreview;
+				lastPreviewed = key;
+				return;
+			}
+
+			preview = null;
+			previewError =
+				res.status === 429
+					? 'Too many previews just now — try again in a moment.'
+					: ((await problem(res)) ?? 'Could not read that source.');
+			// Remembered even on failure, so a broken config is not retried on every keystroke.
+			lastPreviewed = key;
+		} catch {
+			preview = null;
+			previewError = 'Could not reach that source.';
+			lastPreviewed = key;
+		} finally {
+			previewing = false;
+		}
+	}
+
+	$effect(() => {
+		const config = buildConfig();
+		const key = previewKey(type, config);
+
+		if (!isPreviewable(type, config)) {
+			preview = null;
+			previewError = null;
+			return;
+		}
+
+		if (key === lastPreviewed) return;
+
+		// Generous, because this is a live outbound fetch on a rate-limited endpoint and the
+		// person is still typing.
+		const timer = setTimeout(() => runPreview(key, config), 1500);
+		return () => clearTimeout(timer);
+	});
 
 	let busy = $state(false);
 	let error = $state<string | null>(null);
@@ -526,6 +580,38 @@
 			{/if}
 		</div>
 	</fieldset>
+
+	{#if previewing || preview || previewError}
+		<div class="rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
+			<div class="flex items-center justify-between">
+				<span class="text-sm font-medium">What this finds now</span>
+				{#if previewing}
+					<span class="text-xs" style="color: var(--color-muted)">Checking…</span>
+				{:else if preview}
+					<span class="text-xs" style="color: var(--color-muted)">
+						{preview.count} {preview.count === 1 ? 'link' : 'links'}
+					</span>
+				{/if}
+			</div>
+
+			{#if previewError}
+				<p class="mt-2 text-sm" style="color: var(--color-danger)">{previewError}</p>
+			{:else if preview && preview.links.length === 0}
+				<!-- The failure that looks like success: the fetch worked and matched nothing. -->
+				<p class="mt-2 text-sm" style="color: var(--color-warning)">
+					Read it, and found nothing. The selector probably doesn't match.
+				</p>
+			{:else if preview}
+				<ul class="mt-2 flex flex-col gap-1 text-sm">
+					{#each preview.links as link (link.url)}
+						<li class="truncate" style="color: var(--color-muted)">
+							{link.title ?? link.url}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{/if}
 
 	<fieldset class="rounded-lg border p-4" style="border-color: var(--color-border)">
 		<legend class="px-1 text-xs" style="color: var(--color-muted)">

@@ -244,6 +244,19 @@ SSRF-protected client as enrichment.
 record. Runs are the fastest-growing table in the schema, and the URLs are duplicated verbatim
 from the links themselves, which are still there.
 
+### Previewing a config
+
+`POST /api/v1/sources/preview` dry-runs a config without saving: a live fetch, up to ten sample
+links, and no side effects. Rate-limited, like every other endpoint that reaches out.
+
+The web app calls it while a source is being written, 1.5 seconds after typing stops and only
+once the fields it cannot work without are filled in. Before this, the only way to find out
+whether a selector matched anything was to save the source, wait for its first scheduled run, and
+read the history.
+
+It reports "read it, and found nothing" as its own outcome rather than as an empty list, because
+that is the failure that looks like success — the fetch worked and the selector matched nothing.
+
 ### Webhook sources
 
 Every other source type asks a schedule to go and look, so a link cannot arrive until the next

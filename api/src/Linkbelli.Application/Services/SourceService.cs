@@ -324,11 +324,25 @@ public class SourceService(
         var fetch = await interpreter.FetchAsync(request.Config, state: null, ct);
         var links = fetch.Links
             .Take(PreviewLimit)
-            .Select(l => new DiscoveredLinkDto(l.Url, l.Title))
+            .Select(l => new DiscoveredLinkDto(l.Url, l.Title ?? TitleFromMetadata(l)))
             .ToList();
 
         return new PreviewSourceResponse(links.Count, links);
     }
+
+    /// <summary>
+    /// The title a feed already told us, for a preview to show instead of a bare URL.
+    /// </summary>
+    /// <remarks>
+    /// Interpreters leave <see cref="DiscoveredLink.Title"/> null and stash the feed's own title in
+    /// metadata, because ingestion prefers the title the enricher reads off the page itself. A
+    /// preview has no enrichment to wait for, so it shows what the feed said.
+    /// </remarks>
+    private static string? TitleFromMetadata(DiscoveredLink link) =>
+        link.Metadata is not null && link.Metadata.TryGetValue("title", out var title)
+        && !string.IsNullOrWhiteSpace(title)
+            ? title
+            : null;
 
     private ISourceInterpreter ResolveInterpreter(SourceType type) =>
         interpreters.FirstOrDefault(i => i.Type == type)
