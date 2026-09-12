@@ -50,7 +50,7 @@ export interface QueueStore {
  * so the one thing it must not do is throw on the way in.
  */
 export function readQueue(store: QueueStore): QueuedSave[] {
-	let raw: string | null = null;
+	let raw: string | null;
 	try {
 		raw = store.getItem(QUEUE_KEY);
 	} catch {

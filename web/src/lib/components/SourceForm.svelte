@@ -36,7 +36,6 @@
 	];
 
 	const META_FIELD_NAMES = ['title', 'thumbnail', 'author'] as const;
-	type MetaFieldName = (typeof META_FIELD_NAMES)[number];
 
 	const SCRAPER_LINK_FIELDS = ['linkSelector', 'linkAttribute'] as const;
 

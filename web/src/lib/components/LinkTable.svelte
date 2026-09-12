@@ -90,11 +90,11 @@
 	 * reading it. Tracked instead, so the same favicon placeholder a link without an image gets
 	 * is what appears — the layout holds still and nothing looks broken.
 	 */
-	let thumbnailFailed = $state(new SvelteSet<string>());
+	let thumbnailFailed = new SvelteSet<string>();
 
 	// Multi-select. Every action below already exists per item; the point is doing it to a
 	// selection without repeating yourself forty times.
-	let selected = $state(new SvelteSet<string>());
+	let selected = new SvelteSet<string>();
 	let bulkBusy = $state(false);
 	let moveOpen = $state(false);
 	let copyOpen = $state(false);
@@ -168,7 +168,7 @@
 	}
 
 	// Links being re-fetched right now, so the button can say so rather than looking inert.
-	let rechecking = $state(new SvelteSet<string>());
+	let rechecking = new SvelteSet<string>();
 
 	async function recheck(item: PlaylistItem) {
 		rechecking.add(item.link.id);
@@ -180,11 +180,10 @@
 		// so there is nothing truthful to show yet.
 	}
 
-	// DND state — syncs from items when they change externally
-	let dndItems = $state<PlaylistItem[]>([]);
-	$effect(() => {
-		dndItems = items;
-	});
+	// What the drag library reorders. A writable $derived: it follows `items`, and the reordering
+	// the library does during a drag stands until `items` changes again — which is the same
+	// intent the $state + $effect pair had, without the extra render pass.
+	let dndItems = $derived(items);
 
 	function setSort(mode: SortMode) {
 		sortMode = mode;

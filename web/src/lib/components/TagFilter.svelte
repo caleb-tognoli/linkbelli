@@ -42,10 +42,10 @@
 		navigate(active.filter((x) => x !== tag));
 	}
 
-	async function search() {
+	async function search(term: string) {
 		loading = true;
 		try {
-			const res = await api.get(`${suggestPath}?q=${encodeURIComponent(query.trim())}`);
+			const res = await api.get(`${suggestPath}?q=${encodeURIComponent(term.trim())}`);
 			// Server returns tags ordered by popularity; just drop already-active ones.
 			if (res.ok) results = ((await res.json()) as TagSummary[]).filter((t) => !active.includes(t.name));
 		} finally {
@@ -53,10 +53,12 @@
 		}
 	}
 
-	// Refresh suggestions when the popover opens or the query changes.
+	// Refresh suggestions when the popover opens or the query changes. The term is passed
+	// rather than read inside search(), so the dependency is something the code uses instead of
+	// a bare `query;` statement that reads like a mistake.
 	$effect(() => {
-		query;
-		if (open) search();
+		const term = query;
+		if (open) void search(term);
 	});
 </script>
 

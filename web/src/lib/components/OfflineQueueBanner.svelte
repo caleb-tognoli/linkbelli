@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { CloudOff, RefreshCw, X } from '@lucide/svelte';
-	import { isExhausted } from '$lib/offlineQueue';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
 
 	// Shown wherever the person is, because the thing it reports happened somewhere else — on a

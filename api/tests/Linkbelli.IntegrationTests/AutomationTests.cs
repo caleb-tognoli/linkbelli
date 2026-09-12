@@ -69,6 +69,17 @@ public class AutomationTests(PostgresApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
+            // Settle the field before declaring which row is due. The sweep takes the oldest
+            // BatchSize items awaiting automation belonging to anybody, and this suite shares one
+            // database — so once it is large enough, every other test's backlog crowds this
+            // test's row out of the batch and the assertion fails for a reason that has nothing
+            // to do with automation. The same shape as the backup, digest and classification
+            // tests, and the same reason.
+            await db.PlaylistItems
+                .Where(i => i.AutomationAppliedAt == null)
+                .ExecuteUpdateAsync(u => u.SetProperty(i => i.AutomationAppliedAt, DateTimeOffset.UtcNow));
+
             var item = await db.PlaylistItems.Include(i => i.Link).FirstAsync(i => i.Id == seeded[0]);
             item.Link!.Kind = kind;
             item.AutomationAppliedAt = null;

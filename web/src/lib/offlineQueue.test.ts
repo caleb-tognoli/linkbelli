@@ -6,7 +6,6 @@ import {
 	MAX_ATTEMPTS,
 	MAX_QUEUED,
 	outcomeFor,
-	QUEUE_KEY,
 	readQueue,
 	recordAttempt,
 	remove,

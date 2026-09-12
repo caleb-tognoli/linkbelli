@@ -45,7 +45,7 @@
 				<div class="mb-4 rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
 					<p class="mb-1.5 font-medium" style="color: var(--color-danger)">Failed rows</p>
 					<ul class="space-y-1" style="color: var(--color-muted)">
-						{#each form.result.errors as err}
+						{#each form.result.errors as err, index (index)}
 							<li class="truncate">{err}</li>
 						{/each}
 					</ul>
@@ -128,7 +128,7 @@
 								class="rounded-md border px-3 py-2 text-sm"
 								style="border-color: var(--color-border); background: var(--color-bg)"
 							>
-								{#each data.playlists as pl}
+								{#each data.playlists as pl (pl.id)}
 									<option value={pl.id}>{pl.name}</option>
 								{/each}
 							</select>

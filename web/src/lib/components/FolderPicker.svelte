@@ -19,8 +19,10 @@
 		rootLabel?: string;
 	} = $props();
 
-	let folderList = $state<Folder[]>([]);
-	$effect(() => { folderList = [...folders]; });
+	// A writable $derived: it follows the prop, and a local change (a folder added below) stands
+	// until the prop changes again. The $state + $effect pair said the same thing with an extra
+	// render pass, and could show one frame of the old list.
+	let folderList = $derived([...folders]);
 
 	let activeAdd = $state<{ parentId: string | null } | null>(null);
 	let newName = $state('');

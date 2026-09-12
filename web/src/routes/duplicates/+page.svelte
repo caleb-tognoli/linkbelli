@@ -102,7 +102,7 @@
 									disabled={busy !== null}
 									class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 									style="border-color: var(--color-border)"
-									title={`Keep this one and remove the others`}
+									title="Keep this one and remove the others"
 								>
 									<Trash2 size={14} aria-hidden="true" /> Keep this
 								</button>
