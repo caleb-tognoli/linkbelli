@@ -54,6 +54,20 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         Weighted("Description", 'C'),
         Weighted("Content", 'D'));
 
+    /// <summary>The name the host+path is mapped under. A shadow property, like the vector.</summary>
+    public const string HostPathProperty = "HostPath";
+
+    /// <summary>
+    /// The address with the scheme and query stripped and any trailing slash removed.
+    /// </summary>
+    /// <remarks>
+    /// Matches what DuplicateService used to compute with Uri.Host + AbsolutePath. It can be
+    /// this blunt because CanonicalUrl is already canonical — host lowercased, tracking
+    /// parameters gone, query sorted — so there is nothing left for a real parser to fix.
+    /// </remarks>
+    private const string HostPathSql =
+        @"rtrim(regexp_replace(regexp_replace(""CanonicalUrl"", '^https?://', ''), '\?.*$', ''), '/')";
+
     private static string Weighted(string column, char weight) =>
         $"setweight(to_tsvector('{PostgresFullTextSearch.Configuration}', coalesce(\"{column}\", '')), '{weight}')";
 
@@ -116,6 +130,16 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(PostgresFullTextSearch.VectorProperty)
                 .HasDatabaseName("IX_Links_SearchVector")
                 .HasMethod("GIN");
+
+            // The part of an address that names the page rather than how you reached it.
+            // Stored so the duplicates view can group on it: it used to pull every item the
+            // caller owns into memory, parse each URL with Uri, and group there — for a page
+            // that most of the time renders "Nothing saved twice".
+            e.Property<string>(HostPathProperty)
+                .HasComputedColumnSql(HostPathSql, stored: true)
+                .HasMaxLength(2048);
+
+            e.HasIndex(HostPathProperty).HasDatabaseName("IX_Links_HostPath");
 
             e.HasSoftDeleteFilter();
         });

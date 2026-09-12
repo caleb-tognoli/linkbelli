@@ -19,77 +19,105 @@ public interface IDuplicateService
 }
 
 /// <inheritdoc />
+/// <remarks>
+/// Both groupings happen in the database. They used to happen in memory, over every playlist item
+/// the caller owns — id, playlist name, the full canonical URL, title and timestamp for each —
+/// fetched on every visit to a page that usually renders "Nothing saved twice". The 200-group cap
+/// was applied afterwards, so it bounded the output and not the work.
+///
+/// The shape here is: find the keys that are duplicated, cap those, then fetch the rows for the
+/// ones that survived. So the amount pulled back is proportional to what is actually shown.
+/// </remarks>
 public class DuplicateService(IAppDbContext db, IUserPreferenceService prefs) : IDuplicateService
 {
+    /// <summary>Where the link's host+path is stored. A shadow property; see LinkbelliDbContext.</summary>
+    private const string HostPathProperty = "HostPath";
+
     public async Task<IReadOnlyList<DuplicateGroup>> FindAsync(Guid ownerId, CancellationToken ct = default)
     {
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
 
-        var query = db.PlaylistItems.Where(i => i.Playlist!.OwnerId == ownerId && i.Link!.EnrichedAt != null);
-        if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
+        var mine = db.PlaylistItems.Where(i => i.Playlist!.OwnerId == ownerId && i.Link!.EnrichedAt != null);
+        if (!showNsfw) mine = mine.Where(i => !i.Link!.Nsfw);
 
-        var saved = await query
-            .Select(i => new SavedCopy(
-                i.Id, i.PlaylistId, i.Playlist!.Name, i.LinkId,
-                i.Link!.CanonicalUrl, i.Link.Title, i.CreationTime))
+        // The identical link in more than one playlist. Within one playlist this cannot happen —
+        // a unique index stops it — so every group here spans lists.
+        var sameLinkIds = await mine
+            .GroupBy(i => i.LinkId)
+            .Where(g => g.Count() > 1)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .Take(IDuplicateService.MaxGroups)
             .ToListAsync(ct);
 
         var groups = new List<DuplicateGroup>();
 
-        // The identical link in more than one playlist. Within one playlist this can't happen —
-        // there is a unique index stopping it — so every group here spans lists.
-        foreach (var group in saved.GroupBy(s => s.LinkId).Where(g => g.Count() > 1))
+        if (sameLinkIds.Count > 0)
         {
-            groups.Add(new DuplicateGroup(
-                DuplicateKind.SameLink,
-                group.First().Url,
-                group.Select(ToCopy).OrderBy(c => c.AddedAt).ToList()));
+            foreach (var group in (await Copies(mine, i => sameLinkIds.Contains(i.LinkId), ct))
+                .GroupBy(c => c.LinkId))
+            {
+                groups.Add(new DuplicateGroup(
+                    DuplicateKind.SameLink,
+                    group.First().Url,
+                    [.. group.Select(ToCopy).OrderBy(c => c.AddedAt)]));
+            }
         }
 
-        // The same page under different addresses. Grouped on host + path, which is what stays
-        // the same when a link arrives with a query string nobody has taught us to strip.
-        var alreadyGrouped = groups.SelectMany(g => g.Copies).Select(c => c.ItemId).ToHashSet();
+        // The same page under different addresses, grouped on the stored host+path — what stays
+        // the same when a link arrives with a query string nobody has taught us to strip. Links
+        // already counted above are excluded, so a link in three playlists is one group and not
+        // also part of a second.
+        var remaining = mine.Where(i => !sameLinkIds.Contains(i.LinkId));
 
-        foreach (var group in saved
-            .Where(s => !alreadyGrouped.Contains(s.Id))
-            .GroupBy(s => HostAndPath(s.Url))
-            .Where(g => g.Key is not null && g.Select(s => s.LinkId).Distinct().Count() > 1))
-        {
-            groups.Add(new DuplicateGroup(
-                DuplicateKind.SamePage,
-                group.Key!,
-                group.Select(ToCopy).OrderBy(c => c.AddedAt).ToList()));
-        }
-
-        return groups
-            // Worst offenders first: the biggest pile-ups are the ones worth clearing.
-            .OrderByDescending(g => g.Copies.Count)
-            .ThenBy(g => g.Key)
+        var samePageKeys = await remaining
+            .GroupBy(i => EF.Property<string>(i.Link!, HostPathProperty))
+            .Where(g => g.Select(i => i.LinkId).Distinct().Count() > 1)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
             .Take(IDuplicateService.MaxGroups)
-            .ToList();
+            .ToListAsync(ct);
+
+        if (samePageKeys.Count > 0)
+        {
+            var copies = await Copies(
+                remaining, i => samePageKeys.Contains(EF.Property<string>(i.Link!, HostPathProperty)), ct);
+
+            foreach (var group in copies.GroupBy(c => c.HostPath))
+            {
+                groups.Add(new DuplicateGroup(
+                    DuplicateKind.SamePage,
+                    group.Key,
+                    [.. group.Select(ToCopy).OrderBy(c => c.AddedAt)]));
+            }
+        }
+
+        return
+        [
+            .. groups
+                // Worst offenders first: the biggest pile-ups are the ones worth clearing.
+                .OrderByDescending(g => g.Copies.Count)
+                .ThenBy(g => g.Key)
+                .Take(IDuplicateService.MaxGroups)
+        ];
     }
+
+    private static Task<List<SavedCopy>> Copies(
+        IQueryable<Linkbelli.Core.Entities.PlaylistItem> items,
+        System.Linq.Expressions.Expression<Func<Linkbelli.Core.Entities.PlaylistItem, bool>> matching,
+        CancellationToken ct) =>
+        items.Where(matching)
+            .Select(i => new SavedCopy(
+                i.Id, i.PlaylistId, i.Playlist!.Name, i.LinkId,
+                i.Link!.CanonicalUrl, i.Link.Title, i.CreationTime,
+                EF.Property<string>(i.Link!, HostPathProperty)))
+            .ToListAsync(ct);
 
     /// <summary>What the grouping needs from each saved row, projected in the database.</summary>
     private record SavedCopy(
         Guid Id, Guid PlaylistId, string PlaylistName, Guid LinkId,
-        string Url, string? Title, DateTimeOffset CreationTime);
+        string Url, string? Title, DateTimeOffset CreationTime, string HostPath);
 
     private static DuplicateCopy ToCopy(SavedCopy saved) =>
         new(saved.Id, saved.PlaylistId, saved.PlaylistName, saved.Url, saved.Title, saved.CreationTime);
-
-    /// <summary>
-    /// The part of an address that identifies the page rather than how you arrived at it. Null
-    /// when the URL won't parse, which keeps unparseable rows out of the grouping entirely.
-    /// </summary>
-    private static string? HostAndPath(string url)
-    {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var parsed))
-        {
-            return null;
-        }
-
-        // A trailing slash is not a different page.
-        var path = parsed.AbsolutePath.TrimEnd('/');
-        return $"{parsed.Host}{path}";
-    }
 }
