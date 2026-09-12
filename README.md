@@ -42,6 +42,9 @@ docker compose up --build
   domain, and nothing a dev box sends can reach a real person.
 - Postgres is published on host port **5433** (5432 is assumed taken by a native install).
 
+Nothing needs configuring to run locally. To point mail at a real provider, `cp .env.example .env`
+and edit — it is gitignored, and every key falls back to the local default when absent.
+
 ## Develop without Docker
 
 ```sh

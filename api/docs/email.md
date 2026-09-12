@@ -25,8 +25,17 @@ is the most common way an SMTP config fails to connect at all, so it is chosen f
 lands in spam — which for a password reset means the feature does not work, however correct the
 code is.
 
-Locally, `docker compose` runs **Mailpit**: every message is caught and readable at
-http://localhost:8025, with no account and no way to reach a real person.
+### Where to put it
+
+With Docker Compose, in a **`.env`** file at the repo root — `cp .env.example .env` and edit. It
+is gitignored, because `Email__Password` is a live credential and committing it is how a provider's
+credentials end up in a repository.
+
+Every key has a working local default, so a partial `.env` is fine and no `.env` at all still runs.
+Compose reads it automatically; there is nothing to pass on the command line.
+
+Locally, and with no configuration at all, `docker compose` runs **Mailpit**: every message is
+caught and readable at http://localhost:8025, with no account and no way to reach a real person.
 
 ## What gets sent
 

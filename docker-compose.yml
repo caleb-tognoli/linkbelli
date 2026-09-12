@@ -36,14 +36,22 @@ services:
       # Where humans read a public playlist, so syndicated feeds link to the web app
       # rather than back at this API.
       PublicWebBaseUrl: http://localhost:5173
-      # Mail goes to the local catch-all. No credentials and no TLS because it is a container on
-      # this machine that speaks plaintext on purpose; in production these five become the
-      # provider's — Brevo's are smtp-relay.brevo.com:587 with TLS on.
-      Email__Host: mailpit
-      Email__Port: "1025"
-      Email__UseTls: "false"
-      Email__FromAddress: no-reply@linkbelli.local
-      Email__PublicUrl: http://localhost:5173
+      # Mail. Every one of these reads from .env if it is set there, and otherwise falls back to
+      # the local catch-all — so `docker compose up` works with no .env at all, and pointing at a
+      # real provider means writing a file rather than editing this one. See .env.example.
+      #
+      # The defaults are Mailpit: no credentials and no TLS, because it is a container on this
+      # machine that speaks plaintext on purpose.
+      Email__Host: ${Email__Host:-mailpit}
+      Email__Port: ${Email__Port:-1025}
+      Email__UseTls: ${Email__UseTls:-false}
+      Email__Username: ${Email__Username:-}
+      Email__Password: ${Email__Password:-}
+      Email__FromAddress: ${Email__FromAddress:-no-reply@linkbelli.local}
+      Email__FromName: ${Email__FromName:-Linkbelli}
+      Email__PublicUrl: ${Email__PublicUrl:-http://localhost:5173}
+      # Only needed for email-in, and only so the app can show somebody their inbox address.
+      Email__InboxDomain: ${Email__InboxDomain:-}
     ports:
       - "5180:8080"
     volumes:

@@ -403,3 +403,8 @@ FodyWeavers.xsd
 # Claude Code local settings
 .claude/
 
+
+# Local configuration, including the SMTP key. Committing this is how a mail provider's
+# credentials end up in a repository — .env.example is the one that belongs in git.
+.env
+.env.local
