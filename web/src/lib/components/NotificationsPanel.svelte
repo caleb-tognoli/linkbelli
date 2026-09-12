@@ -54,6 +54,19 @@
 		}
 	}
 
+	let previewing = $state(false);
+	let previewNote = $state<string | null>(null);
+
+	async function sendPreview() {
+		previewing = true;
+		previewNote = null;
+		const res = await api.post('/notifications/digest/preview', {});
+		previewing = false;
+		previewNote = res.ok
+			? 'Sent — have a look in your inbox.'
+			: 'Could not send that. This Linkbelli may have no mail set up.';
+	}
+
 	async function set(key: keyof Prefs, value: boolean) {
 		if (!prefs) return;
 
@@ -91,6 +104,22 @@
 					<div class="min-w-0">
 						<p class="text-sm">{row.label}</p>
 						<p class="text-xs" style="color: var(--color-muted)">{row.hint}</p>
+						{#if row.key === 'weeklyDigest'}
+							<!-- Offered whether or not it is switched on: deciding whether to want a
+							     weekly email is much easier having seen one. -->
+							<button
+								type="button"
+								onclick={sendPreview}
+								disabled={previewing}
+								class="mt-1 text-xs underline underline-offset-2 disabled:opacity-60"
+								style="color: var(--color-accent)"
+							>
+								{previewing ? 'Sending…' : 'Send me one now'}
+							</button>
+							{#if previewNote}
+								<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{previewNote}</p>
+							{/if}
+						{/if}
 					</div>
 				</li>
 			{/each}

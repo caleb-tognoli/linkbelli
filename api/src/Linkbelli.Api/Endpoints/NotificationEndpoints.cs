@@ -35,6 +35,25 @@ public static class NotificationEndpoints
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
             .WithName("UpdateNotificationPreferences");
 
+        group.MapPost("/digest/preview", async (
+            ClaimsPrincipal user, IDigestSweep digests, CancellationToken ct) =>
+        {
+            // Forced, so it arrives even in a week when nothing happened and even if the weekly
+            // one is switched off — somebody deciding whether to subscribe should be able to see
+            // one rather than wait a week to find out what it looks like.
+            var sent = await digests.SendOneAsync(user.GetUserId(), force: true, ct);
+
+            return sent
+                ? Results.Accepted()
+                : Results.Problem(
+                    "Could not send that. This Linkbelli may have no mail configured.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+        })
+            .RequireAuthorization(secured)
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .RequireRateLimiting("sensitive")
+            .WithName("SendDigestPreview");
+
         // Anonymous, and deliberately. Somebody who does not want mail from us is in the worst
         // position to go and sign in: they may not remember the account at all. Asking them to
         // is how a product earns a spam complaint instead of an unsubscribe.

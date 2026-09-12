@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPreferences, NotificationPreferences>();
+        services.AddScoped<IDigestSweep, DigestSweep>();
         services.AddSingleton<IUnsubscribeTokens, UnsubscribeTokens>();
         services.AddScoped<IBackupService, BackupService>();
         services.AddScoped<IBackupSweep, BackupSweep>();

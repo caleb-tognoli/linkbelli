@@ -2,6 +2,7 @@ using Hangfire;
 using Linkbelli.Application.Archiving;
 using Linkbelli.Application.Automation;
 using Linkbelli.Application.Backups;
+using Linkbelli.Application.Email;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
@@ -27,6 +28,7 @@ public sealed class MaintenanceScheduler(
     public const string ArchiveJobId = "links:archive";
     public const string IdempotencyJobId = "idempotency:purge";
     public const string BackupJobId = "backups:sweep";
+    public const string DigestJobId = "digest:weekly";
 
     /// <summary>Nightly, off the hour so it doesn't pile onto every hourly source schedule.</summary>
     public const string Cron = "17 3 * * *";
@@ -64,6 +66,13 @@ public sealed class MaintenanceScheduler(
     /// </summary>
     public const string BackupCron = "36 * * * *";
 
+    /// <summary>
+    /// Hourly, fifty accounts at a time — and each account only weekly, so this rotates rather
+    /// than mailing a whole instance in one minute. Which is also what a free provider's daily
+    /// send cap requires. At nine minutes past, clear of the other hourly jobs.
+    /// </summary>
+    public const string DigestCron = "9 * * * *";
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         try
@@ -91,6 +100,9 @@ public sealed class MaintenanceScheduler(
 
             recurringJobs.AddOrUpdate<IBackupSweep>(
                 BackupJobId, svc => svc.SweepAsync(CancellationToken.None), BackupCron);
+
+            recurringJobs.AddOrUpdate<IDigestSweep>(
+                DigestJobId, svc => svc.SweepAsync(CancellationToken.None), DigestCron);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
