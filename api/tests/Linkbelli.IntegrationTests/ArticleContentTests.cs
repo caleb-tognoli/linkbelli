@@ -158,7 +158,15 @@ public class ArticleContentTests(PostgresApiFactory factory)
         var results = await client.GetFromJsonAsync<SearchPage>($"/api/v1/search?q={word}");
 
         // Without this the hit looks like a mistake: nothing on the row contains the word typed.
-        Assert.StartsWith(word, results!.Items[0].Snippet);
+        //
+        // Contains rather than StartsWith. The snippet used to be cut at the first literal
+        // occurrence, so it necessarily began with the word; ts_headline centres the window on
+        // the match and keeps the words on either side, which is the point of a snippet. What
+        // has to be true is that the reader can see why this row is here.
+        var snippet = results!.Items[0].Snippet;
+        Assert.NotNull(snippet);
+        Assert.Contains(word, snippet);
+        Assert.Contains("along the coast", snippet);
     }
 
     [Fact]

@@ -40,7 +40,7 @@ public interface ISearchService
 public record HostFacet(string Hostname, int ItemCount);
 
 /// <inheritdoc />
-public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISearchService
+public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFullTextSearch text) : ISearchService
 {
     private const int MaxLimit = 100;
 
@@ -281,16 +281,10 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             return rows;
         }
 
-        var snippets = (await db.Links
-            .AsNoTracking()
-            .Where(l => unexplained.Contains(l.Id) && l.Content != null && l.Content.ToLower().Contains(needle))
-            .Select(l => new
-            {
-                l.Id,
-                Text = l.Content!.Substring(l.Content.ToLower().IndexOf(needle), SnippetLength),
-            })
-            .ToListAsync(ct))
-            .ToDictionary(row => row.Id, row => row.Text);
+        // Asked of the search implementation rather than by hunting the literal words in the
+        // text: matching is stemmed, so a hit for "railways" may be an article that only ever
+        // says "railway" — and cutting a window at the first literal occurrence cannot find one.
+        var snippets = await text.SnippetsAsync(unexplained, q, SnippetLength, ct);
 
         return [.. rows.Select(hit =>
             snippets.TryGetValue(hit.Link.Id, out var snippet) ? hit with { Snippet = snippet } : hit)];
@@ -300,27 +294,22 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
     private static bool Explains(string? value, string needle) =>
         value is not null && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
-    private static IQueryable<PlaylistItem> ApplyText(IQueryable<PlaylistItem> items, string? q)
+    private IQueryable<PlaylistItem> ApplyText(IQueryable<PlaylistItem> items, string? q)
     {
         if (string.IsNullOrWhiteSpace(q)) return items;
 
+        // A pasted address is an exact question, and the dedup hash already answers it off an
+        // index. Kept ahead of the text search, which would stem a URL into nonsense.
         if (UrlCanonicalizer.TryCanonicalize(q, out var canonical))
         {
             var hash = canonical.Hash;
             return items.Where(i => i.Link!.UrlHash == hash);
         }
 
-        var needle = q.ToLower();
-        return items.Where(i =>
-            (i.Link!.Title != null && i.Link.Title.ToLower().Contains(needle))
-            || (i.Link!.Description != null && i.Link.Description.ToLower().Contains(needle))
-            || (i.Link!.SiteName != null && i.Link.SiteName.ToLower().Contains(needle))
-            || (i.Note != null && i.Note.ToLower().Contains(needle))
-            // The article itself, so "that piece about the Dutch railways" finds it even when
-            // neither of those words is in the title.
-            || (i.Link!.Content != null && i.Link.Content.ToLower().Contains(needle))
-            || i.Link!.CanonicalUrl.ToLower().Contains(needle)
-            || i.Link!.Host!.Hostname.ToLower().Contains(needle));
+        // The article itself is in here too, so "that piece about the Dutch railways" finds
+        // it even when neither word is in the title — the difference is that it is now a GIN
+        // index lookup rather than a substring scan over every stored article.
+        return text.Match(items, q);
     }
 
     private static IQueryable<PlaylistItem> ApplyHost(IQueryable<PlaylistItem> items, string? host)
@@ -380,7 +369,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
     /// Relevance when there is a term to rank by — title, then site name, then everything else —
     /// and most recently added otherwise, which is what a bare browse wants.
     /// </summary>
-    private static IQueryable<PlaylistItem> Order(IQueryable<PlaylistItem> items, string? q, string? sort)
+    private IQueryable<PlaylistItem> Order(IQueryable<PlaylistItem> items, string? q, string? sort)
     {
         if (string.Equals(sort, "queue", StringComparison.OrdinalIgnoreCase))
         {
@@ -408,12 +397,10 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs) : ISe
             return items.OrderByDescending(i => i.CreationTime).ThenByDescending(i => i.Id);
         }
 
-        var needle = q.ToLower();
-        return items
-            .OrderBy(i => i.Link!.Title != null && i.Link.Title.ToLower().Contains(needle) ? 0
-                : i.Link!.SiteName != null && i.Link.SiteName.ToLower().Contains(needle) ? 1
-                : 2)
-            .ThenByDescending(i => i.CreationTime)
-            .ThenByDescending(i => i.Id);
+        // Relevance from the same weighted vector the match used, rather than three more
+        // substring scans in the ORDER BY approximating "title beats site name beats body".
+        // The weighting says that properly, and cover density also accounts for how close the
+        // matched words sit to each other.
+        return text.OrderByRelevance(items, q);
     }
 }

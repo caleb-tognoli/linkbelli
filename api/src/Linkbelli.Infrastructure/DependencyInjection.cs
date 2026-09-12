@@ -10,6 +10,7 @@ using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
 using Linkbelli.Infrastructure.Email;
 using Linkbelli.Infrastructure.Jobs;
+using Linkbelli.Infrastructure.Search;
 using Linkbelli.Infrastructure.Security;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -55,6 +56,7 @@ public static class DependencyInjection
         }
 
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
+        services.AddScoped<IFullTextSearch, PostgresFullTextSearch>();
 
         // --- Mail ---
         // Bound from configuration and nothing else, so which provider sends the mail is an

@@ -4,8 +4,10 @@ using Linkbelli.Application.Identity;
 using Linkbelli.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Linkbelli.Infrastructure.Search;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace Linkbelli.Infrastructure;
 
@@ -37,6 +39,23 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
     public DbSet<Backup> Backups => Set<Backup>();
+
+    /// <summary>
+    /// The weighted vector every search matches against.
+    /// </summary>
+    /// <remarks>
+    /// Every part is IMMUTABLE, which a generated column requires — hence the text search
+    /// configuration named as a literal rather than left to default_text_search_config,
+    /// which is a session setting and so is not.
+    /// </remarks>
+    private static readonly string SearchVectorSql = string.Join(" || ",
+        Weighted("Title", 'A'),
+        Weighted("SiteName", 'B'),
+        Weighted("Description", 'C'),
+        Weighted("Content", 'D'));
+
+    private static string Weighted(string column, char weight) =>
+        $"setweight(to_tsvector('{PostgresFullTextSearch.Configuration}', coalesce(\"{column}\", '')), '{weight}')";
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,6 +97,26 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasIndex(l => l.UrlHash).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(l => l.HostId);
             e.HasOne(l => l.Host).WithMany().OnDelete(DeleteBehavior.Restrict);
+
+            // Search used LOWER(col) LIKE '%needle%' across seven columns, one of them up
+            // to 60 000 characters of article text — no index could help, and every
+            // candidate row had to be detoasted to answer it. Measured at 45ms over 38
+            // links, on a Links table already 18MB for those 38 rows.
+            //
+            // Generated and stored, so the database maintains it on write and it cannot
+            // drift from the row the way a trigger or an application-side update
+            // eventually does. Weighted A-D so a title match outranks a mention in the
+            // body, which is what the hand-rolled relevance buckets were reaching for.
+            //
+            // A shadow property: no entity carries it, because nothing outside the search
+            // implementation has a use for it and Core does not depend on Npgsql.
+            e.Property<NpgsqlTsVector>(PostgresFullTextSearch.VectorProperty)
+                .HasComputedColumnSql(SearchVectorSql, stored: true);
+
+            e.HasIndex(PostgresFullTextSearch.VectorProperty)
+                .HasDatabaseName("IX_Links_SearchVector")
+                .HasMethod("GIN");
+
             e.HasSoftDeleteFilter();
         });
 
