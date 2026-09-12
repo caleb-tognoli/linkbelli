@@ -7,12 +7,17 @@ using Linkbelli.Application;
 using Linkbelli.Application.Auth;
 using Linkbelli.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
+using System.Net;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Nothing needs to know what serves this, and saying so only helps somebody scanning.
+builder.WebHost.ConfigureKestrel(kestrel => kestrel.AddServerHeader = false);
 
 // Composition root: Infrastructure (persistence + Identity) and Application (use cases).
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -131,6 +136,34 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 
+// The API always sits behind something — the web BFF in every deployment, and usually a reverse
+// proxy in front of that. Without this every request appears to come from the proxy's address,
+// which is what made the anonymous rate-limit partition one bucket for the whole internet.
+//
+// Networks are configured rather than left at the default, which trusts nothing, and rather than
+// KnownNetworks.Clear() + KnownProxies.Clear(), which trusts anybody who sends the header — the
+// two ways to get this wrong. "ForwardedHeaders:TrustedNetworks" takes CIDRs; the default covers
+// the private ranges a container network actually uses.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // One hop for the BFF, one for a proxy in front of it.
+    options.ForwardLimit = builder.Configuration.GetValue<int?>("ForwardedHeaders:Limit") ?? 2;
+    options.KnownProxies.Clear();
+    options.KnownIPNetworks.Clear();
+
+    var trusted = builder.Configuration.GetSection("ForwardedHeaders:TrustedNetworks").Get<string[]>()
+        ?? ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8", "::1/128"];
+
+    foreach (var cidr in trusted)
+    {
+        if (System.Net.IPNetwork.TryParse(cidr, out var network))
+        {
+            options.KnownIPNetworks.Add(network);
+        }
+    }
+});
+
 // Metrics always; tracing only when somewhere was configured to send it.
 builder.Services.AddAppTelemetry(builder.Configuration);
 
@@ -140,6 +173,10 @@ if (builder.Configuration.GetValue<bool>("Database:MigrateAtStartup"))
 {
     await app.MigrateDatabaseAsync();
 }
+
+// Before everything: the rate limiter, the logs and any endpoint that reads a client address
+// should all see the caller rather than the proxy.
+app.UseForwardedHeaders();
 
 app.UseExceptionHandler();
 
