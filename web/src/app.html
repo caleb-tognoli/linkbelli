@@ -3,7 +3,13 @@
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-		<!-- Installable, which is also what lets the system share sheet hand a link to /save. -->
+		<!-- For anything that will not take an SVG, which on a home screen is most things. -->
+		<link rel="icon" type="image/png" sizes="192x192" href="%sveltekit.assets%/icon-192.png" />
+		<!-- iOS ignores the manifest entirely and reads this. -->
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+		<!-- Installable, which is also what lets the system share sheet hand a link to /save.
+		     Android will not offer to install without a raster icon of at least 192px, so the
+		     manifest listing only an SVG meant the share target could never be reached. -->
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<meta name="theme-color" content="#2563eb" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />

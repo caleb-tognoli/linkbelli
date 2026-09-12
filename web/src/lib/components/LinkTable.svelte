@@ -82,6 +82,16 @@
 	const hasAnyScore = $derived(items.some((i) => i.score !== null));
 	const showScoreCol = $derived(!readonly && (hasAnyScore || forceShowScore || sortMode === 'score-asc' || sortMode === 'score-desc'));
 
+	/**
+	 * Links whose thumbnail would not load.
+	 *
+	 * The image used to delete itself on error, which made "no picture was ever found" and "the
+	 * server refused to serve the picture" look identical, and reflowed the row while you were
+	 * reading it. Tracked instead, so the same favicon placeholder a link without an image gets
+	 * is what appears — the layout holds still and nothing looks broken.
+	 */
+	let thumbnailFailed = $state(new SvelteSet<string>());
+
 	// Multi-select. Every action below already exists per item; the point is doing it to a
 	// selection without repeating yourself forty times.
 	let selected = $state(new SvelteSet<string>());
@@ -478,7 +488,9 @@
 		<td class="py-2 pr-3">
 			<div class="flex items-center gap-4">
 				{#if showThumbnails}
-					{@const thumb = item.metadata?.thumbnail ?? item.link.thumbnailUrl}
+					{@const thumb =
+						(item.metadata?.thumbnail ?? item.link.thumbnailUrl) &&
+						!thumbnailFailed.has(item.link.id)}
 					{#if thumb}
 						<!-- Served through our own host rather than hotlinked: rendering the origin
 						     URL told every site in this playlist the viewer's IP and what they were
@@ -489,7 +501,7 @@
 							class="shrink-0 rounded object-cover"
 							style="height: 5em; width: auto"
 							loading="lazy"
-							onerror={(e) => e.currentTarget.remove()}
+							onerror={() => thumbnailFailed.add(item.link.id)}
 						/>
 					{:else if item.link.favicon}
 						<!-- No page image: the site's own icon keeps the row's left edge aligned
@@ -1103,7 +1115,9 @@
 		     picture, which is the thing being chosen between. -->
 		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each displayItems as item (item.id)}
-				{@const thumb = item.metadata?.thumbnail ?? item.link.thumbnailUrl}
+				{@const thumb =
+					(item.metadata?.thumbnail ?? item.link.thumbnailUrl) &&
+					!thumbnailFailed.has(item.link.id)}
 				<!-- The grid has no reorder zone, so the card itself can be the drag source —
 				     nothing else is competing for the gesture here. -->
 				<li
@@ -1120,7 +1134,7 @@
 								alt=""
 								class="aspect-video w-full object-cover"
 								loading="lazy"
-								onerror={(e) => e.currentTarget.remove()}
+								onerror={() => thumbnailFailed.add(item.link.id)}
 							/>
 						{:else}
 							<span
