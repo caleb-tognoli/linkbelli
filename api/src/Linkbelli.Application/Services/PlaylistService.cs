@@ -501,10 +501,6 @@ public class PlaylistService(
     }
 
     public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
-        string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default) =>
-        await DiscoverPublicAsync(q, tags, sort: null, limit, cursor, viewerId, ct);
-
-    public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
         string? q, string[]? tags, string? sort, int? limit, string? cursor, Guid? viewerId,
         CancellationToken ct = default)
     {

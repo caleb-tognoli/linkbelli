@@ -52,6 +52,11 @@ public class LinkEnricher(
             if (YouTubeHosts.Contains(link.Host.Hostname))
             {
                 await EnrichViaYouTubeOEmbedAsync(link, client, cancellationToken);
+                // Recorded here too. Returning straight out meant no YouTube link ever reached
+                // the counter, so the success rate and the latency histogram were measuring
+                // everything except one of the largest shares of a link collection — and said
+                // nothing about the omission.
+                Record(link, started);
                 return;
             }
 
@@ -144,7 +149,6 @@ public class LinkEnricher(
     private void Record(Link link, long started, string? outcome = null) =>
         metrics.Enrichment(
             outcome ?? link.EnrichmentStatus.ToString().ToLowerInvariant(),
-            link.Host?.Hostname ?? "unknown",
             Stopwatch.GetElapsedTime(started).TotalMilliseconds);
 
     private async Task EnrichViaYouTubeOEmbedAsync(Link link, HttpClient client, CancellationToken ct)

@@ -5,6 +5,7 @@ using Linkbelli.Api.Observability;
 using Linkbelli.Api.OpenApi;
 using Linkbelli.Application;
 using Linkbelli.Application.Auth;
+using Linkbelli.Application.Common;
 using Linkbelli.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -18,6 +19,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Nothing needs to know what serves this, and saying so only helps somebody scanning.
 builder.WebHost.ConfigureKestrel(kestrel => kestrel.AddServerHeader = false);
+
+// Before anything is wired up, so a misconfigured deployment fails on the way up rather than
+// on the day something depends on the setting nobody set.
+StartupConfiguration.ValidateOrThrow(builder.Configuration, builder.Environment);
 
 // Composition root: Infrastructure (persistence + Identity) and Application (use cases).
 builder.Services.AddInfrastructure(builder.Configuration);

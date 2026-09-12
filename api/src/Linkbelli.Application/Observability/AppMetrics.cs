@@ -59,13 +59,19 @@ public sealed class AppMetrics : IDisposable
     }
 
     /// <summary>One page fetch. <paramref name="outcome"/> is "succeeded", "failed" or "broken".</summary>
-    public void Enrichment(string outcome, string host, double milliseconds)
+    /// <remarks>
+    /// The host is deliberately not a dimension on either instrument. It was on the counter, with
+    /// a comment explaining why it could not be on the histogram — the same reasoning applies to
+    /// both: this is an application for collecting links from everywhere, so the host set grows
+    /// without bound and every distinct site became a permanent time series.
+    ///
+    /// Which site is failing is a real question, and it is answered from the Links table, where
+    /// EnrichmentStatus and EnrichmentError are already stored per link and already surfaced on
+    /// the admin overview. That answer stays correct without retaining a series per hostname.
+    /// </remarks>
+    public void Enrichment(string outcome, double milliseconds)
     {
-        // The host is on the counter but not on the histogram: a per-host latency series for a
-        // collection spanning thousands of sites is a cardinality problem, not a measurement.
-        _enrichment.Add(1, new KeyValuePair<string, object?>("outcome", outcome),
-            new KeyValuePair<string, object?>("host", host));
-
+        _enrichment.Add(1, new KeyValuePair<string, object?>("outcome", outcome));
         _enrichmentDuration.Record(milliseconds, new KeyValuePair<string, object?>("outcome", outcome));
     }
 

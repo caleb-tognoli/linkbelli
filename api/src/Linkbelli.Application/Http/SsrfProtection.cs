@@ -76,6 +76,31 @@ public static class SsrfProtection
         address.TryWriteBytes(b, out _);
         if (IsAllZero(b)) return false;                                  // ::
         if ((b[0] & 0xFE) == 0xFC) return false;                         // fc00::/7 unique-local
+
+        // 2002::/16 — 6to4 carries an IPv4 address in the next four bytes, so 2002:7f00:1:: is
+        // loopback written in IPv6. The v4 checks never see it because it is not v4-mapped.
+        if (b[0] == 0x20 && b[1] == 0x02)
+        {
+            return IsPublicV4(new IPAddress(b.Slice(2, 4).ToArray()));
+        }
+
+        // 64:ff9b::/96 — NAT64 does the same thing for a translation gateway.
+        if (b[0] == 0x00 && b[1] == 0x64 && b[2] == 0xFF && b[3] == 0x9B)
+        {
+            return IsPublicV4(new IPAddress(b.Slice(12, 4).ToArray()));
+        }
+
+        // ::a.b.c.d — the deprecated IPv4-compatible form. IsIPv4MappedToIPv6 is false for it
+        // (that wants the ::ffff: prefix), so ::127.0.0.1 would otherwise pass as public.
+        if (IsAllZero(b[..12]))
+        {
+            return IsPublicV4(new IPAddress(b.Slice(12, 4).ToArray()));
+        }
+
+        // 100::/64 discard-only, and 2001:db8::/32 documentation.
+        if (b[0] == 0x01 && b[1] == 0x00 && IsAllZero(b.Slice(2, 6))) return false;
+        if (b[0] == 0x20 && b[1] == 0x01 && b[2] == 0x0D && b[3] == 0xB8) return false;
+
         return true;
     }
 

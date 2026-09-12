@@ -30,9 +30,6 @@ public interface IPlaylistService
     Task<PagedResult<PublicPlaylistSummary>> ListUserPublicPlaylistsAsync(
         string username, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default);
 
-    /// <summary>Discovery of public playlists, filtered by name/tag and the viewer's NSFW preference.</summary>
-    Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(string? q, string[]? tags, int? limit, string? cursor, Guid? viewerId, CancellationToken ct = default);
-
     /// <summary>Tags used across the caller's own playlists, with counts (autocomplete/management).</summary>
     Task<IReadOnlyList<TagSummary>> ListOwnTagsAsync(Guid ownerId, string? q, CancellationToken ct = default);
 
@@ -63,8 +60,8 @@ public interface IPlaylistService
     Task<PlaylistLikeResponse> UnlikeAsync(Guid userId, Guid playlistId, CancellationToken ct = default);
 
     /// <summary>
-    /// Browses public playlists in a given order: "active", "liked", "largest", or newest when
-    /// nothing is asked for.
+    /// Discovery of public playlists, filtered by name and tag and the viewer's NSFW preference,
+    /// in a given order: "active", "liked", "largest", or newest when nothing is asked for.
     /// </summary>
     Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
         string? q, string[]? tags, string? sort, int? limit, string? cursor, Guid? viewerId,
