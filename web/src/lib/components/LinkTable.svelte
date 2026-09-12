@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { Popover } from 'bits-ui';
-	import { dndzone } from 'svelte-dnd-action';
+	import { dragHandle, dragHandleZone } from 'svelte-dnd-action';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
+	import PlaylistDropTray from './PlaylistDropTray.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import KindBadge from './KindBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
 	import { isPlainKey, moveFocus } from '$lib/keyboard';
+	import { describeDrag, dragSet, encodePayload, ITEMS_MIME } from '$lib/dragItems';
 	import {
 		SORT_LABELS,
 		canReorder,
@@ -110,6 +112,18 @@
 		} finally {
 			bulkBusy = false;
 		}
+	}
+
+	/**
+	 * The keyboard's way to the same place a drag would have gone.
+	 *
+	 * Selecting just this row first, so the picker's Move acts on it alone rather than on whatever
+	 * happened to be checked already.
+	 */
+	function moveOne(item: PlaylistItem) {
+		selected.clear();
+		selected.add(item.id);
+		moveOpen = true;
 	}
 
 	async function bulkDelete() {
@@ -252,6 +266,27 @@
 	const FLIP = 150;
 	const useDnd = $derived(canReorder(sortMode, readonly));
 
+	/**
+	 * Starts a drag towards another playlist.
+	 *
+	 * Reordering is the handle's job now, so dragging the row means taking it out of here. The two
+	 * used to be the same gesture, which made the handle decorative and left no way to express
+	 * the more useful of the two.
+	 */
+	function onRowDragStart(e: DragEvent, item: PlaylistItem) {
+		if (readonly || !playlistId || !e.dataTransfer) return;
+
+		const itemIds = dragSet(item.id, selected);
+		const label = describeDrag(itemIds.length, item.metadata?.title ?? item.link.title);
+
+		e.dataTransfer.setData(
+			ITEMS_MIME,
+			encodePayload({ fromPlaylistId: playlistId, itemIds, label })
+		);
+		// Both offered, so the browser's own cursor agrees with the modifier the person is holding.
+		e.dataTransfer.effectAllowed = 'copyMove';
+	}
+
 	function onConsider(e: CustomEvent<{ items: PlaylistItem[] }>) {
 		dndItems = e.detail.items;
 	}
@@ -349,13 +384,38 @@
 					aria-label={`Select ${item.link.title ?? item.link.url}`}
 				/>
 			</td>
-			<td
-				class="select-none pr-1"
-				class:cursor-grab={draggable}
-				style="color: var(--color-muted)"
-				title={draggable ? 'Drag to reorder' : undefined}
-			>
-				{#if draggable}<span role="img" aria-label="Drag to reorder">⋮⋮</span>{/if}
+			<!-- Two grips, because they are two different things and sharing one gesture between
+			     them would make both ambiguous. The left reorders within this playlist; the right
+			     takes the row out of it. Each is labelled, and each does only its own job. -->
+			<td class="select-none whitespace-nowrap pr-1" style="color: var(--color-muted)">
+				{#if draggable}
+					<span
+						use:dragHandle
+						class="cursor-grab align-middle"
+						title="Drag to reorder"
+						aria-label={`Reorder ${item.link.title ?? item.link.url}`}
+					>
+						<GripVertical size={14} aria-hidden="true" />
+					</span>
+				{/if}
+				{#if playlistId}
+					<!-- draggable is set on this element rather than the row: svelte-dnd-action
+					     overwrites the row's own attribute to keep reordering to its handle.
+					     A button rather than a span, because a control that can only be dragged
+					     cannot be used from a keyboard at all — pressing it opens the same
+					     picker the drag would have dropped onto. -->
+					<button
+						type="button"
+						draggable="true"
+						ondragstart={(e) => onRowDragStart(e, item)}
+						onclick={() => moveOne(item)}
+						class="cursor-grab align-middle"
+						title="Drag to another playlist, or press to choose one"
+						aria-label={`Move ${item.link.title ?? item.link.url} to another playlist`}
+					>
+						<FolderInput size={13} aria-hidden="true" />
+					</button>
+				{/if}
 			</td>
 		{/if}
 		<td class="py-2 pr-3">
@@ -985,8 +1045,12 @@
 		<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each displayItems as item (item.id)}
 				{@const thumb = item.metadata?.thumbnail ?? item.link.thumbnailUrl}
+				<!-- The grid has no reorder zone, so the card itself can be the drag source —
+				     nothing else is competing for the gesture here. -->
 				<li
 					class="flex flex-col overflow-hidden rounded-lg border"
+					draggable={!readonly && playlistId ? 'true' : 'false'}
+					ondragstart={(e) => onRowDragStart(e, item)}
 					data-item-focused={focusedItem?.id === item.id}
 					style="border-color: {focusedItem?.id === item.id ? 'var(--color-accent)' : 'var(--color-border)'}; background: var(--color-surface); {item.status === 'Watched' ? 'opacity: 0.5' : ''}"
 				>
@@ -1025,8 +1089,21 @@
 
 						<p class="mt-auto flex items-center gap-2 pt-1 text-xs" style="color: var(--color-muted)">
 							<span class="truncate">{item.link.host}</span>
+							{#if !readonly && playlistId}
+								<!-- Visible and pressable, so the drag is discoverable and the card
+								     is still usable without a pointer. -->
+								<button
+									type="button"
+									onclick={() => moveOne(item)}
+									class="ml-auto shrink-0"
+									title="Drag the card to another playlist, or press to choose one"
+									aria-label={`Move ${item.link.title ?? item.link.url} to another playlist`}
+								>
+									<FolderInput size={13} aria-hidden="true" />
+								</button>
+							{/if}
 							{#if item.score !== null}
-								<span class="ml-auto shrink-0 tabular-nums">{item.score}</span>
+								<span class="shrink-0 tabular-nums" class:ml-auto={readonly || !playlistId}>{item.score}</span>
 							{/if}
 						</p>
 
@@ -1103,7 +1180,7 @@
 				</thead>
 				{#if useDnd}
 					<tbody
-						use:dndzone={{ items: dndItems, flipDurationMs: FLIP, dropTargetStyle: {} }}
+						use:dragHandleZone={{ items: dndItems, flipDurationMs: FLIP, dropTargetStyle: {} }}
 						onconsider={onConsider}
 						onfinalize={onFinalize}
 					>
@@ -1126,6 +1203,18 @@
 		<kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>o</kbd> to open{#if !readonly}, <kbd>e</kbd> to mark
 			watched, <kbd>x</kbd> to select{/if}. <kbd>/</kbd> to jump anywhere.
 	</p>
+{/if}
+
+{#if !readonly && playlistId}
+	<!-- Appears only while one of our drags is in flight, so it costs nothing the rest of the
+	     time and is nonetheless in a predictable place when it matters. -->
+	<PlaylistDropTray
+		{playlistId}
+		ondropped={async () => {
+			selected.clear();
+			await onmove?.();
+		}}
+	/>
 {/if}
 
 {#if !readonly && playlistId}

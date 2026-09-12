@@ -158,6 +158,20 @@ Returns `{ "affected": n, "skipped": n }`.
   re-marking look like progress.
 - A target playlist you don't own returns **404**.
 
+### Dragging items between playlists
+
+`Move` and `Copy` are what the web app's drag gesture sends. Dragging an item's move grip (or, in
+grid view, the card itself) opens a tray of the caller's other playlists; dropping on one sends
+this request with a single `targetPlaylistId`. Dragging a row that is part of the current
+selection carries the whole selection, so a drag never silently moves one of forty checked rows.
+
+Holding **Ctrl** (or Option on a Mac) during the drop switches `Move` to `Copy`. The grip is also
+a button: pressing it opens the same picker, because a control that can only be dragged cannot be
+reached from a keyboard.
+
+Reordering *within* a playlist is a different gesture and a different endpoint — the `⋮⋮` handle
+and `POST /items/{id}/move`. The two used to share one gesture, which left the handle decorative.
+
 ### Thumbnails
 
 `GET /api/v1/thumbnails/{linkId}` serves a link's image from this server, fetched once and cached
