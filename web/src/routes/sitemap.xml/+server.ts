@@ -27,6 +27,12 @@ export const GET: RequestHandler = async ({ locals, url, setHeaders }) => {
 
 		const body = (await res.json()) as { items: PublicPlaylistSummary[]; nextCursor: string | null };
 		for (const playlist of body.items) {
+			// Accounts made before usernames were validated can hold anything, including an email
+			// address — people typed one in because the sign-in field accepts either. Their
+			// playlists still work and are still reachable; what stops here is handing the name
+			// to crawlers. See UsernamePolicy on the API side, which is the same rule.
+			if (!isPublishableUsername(playlist.ownerUsername)) continue;
+
 			entries.push(
 				urlEntry(
 					`${url.origin}/public/${encodeURIComponent(playlist.ownerUsername)}/${encodeURIComponent(playlist.slug)}`,
@@ -57,6 +63,15 @@ ${entries.join('\n')}
 		{ headers: { 'content-type': 'application/xml; charset=utf-8' } }
 	);
 };
+
+/**
+ * Mirrors the API's UsernamePolicy: letters, digits, hyphen and underscore, 3–30 characters.
+ * Duplicated rather than fetched because it guards a crawler-facing file and should not depend
+ * on a round trip to decide whether to leak somebody's address.
+ */
+function isPublishableUsername(username: string): boolean {
+	return /^[A-Za-z0-9][A-Za-z0-9_-]{1,28}[A-Za-z0-9]$/.test(username);
+}
 
 function urlEntry(loc: string, lastmod: string | undefined, changefreq: string): string {
 	const modified = lastmod ? `\n    <lastmod>${lastmod.slice(0, 10)}</lastmod>` : '';

@@ -1,3 +1,4 @@
+using Linkbelli.Application.Auth;
 using Linkbelli.Application.Email;
 using Linkbelli.Application.Identity;
 using Linkbelli.Contracts;
@@ -23,10 +24,23 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/auth").WithTags("Auth");
 
-        group.MapPost("/register", async (RegisterRequest req, UserManager<ApplicationUser> users) =>
+        group.MapPost("/register", async (
+            RegisterRequest req,
+            UserManager<ApplicationUser> users,
+            IRegistrationPolicy registration,
+            CancellationToken ct) =>
         {
+            // Said plainly rather than as a 404: somebody who cannot get an account should be
+            // told that, not left wondering whether they typed the address wrong.
+            if (!await registration.IsOpenAsync(ct))
+            {
+                return Results.Problem(
+                    "This Linkbelli is not accepting new accounts.",
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
+
             var errors = new Dictionary<string, string[]>();
-            if (string.IsNullOrWhiteSpace(req.Username)) errors["username"] = ["Username is required."];
+            if (UsernamePolicy.Validate(req.Username) is { } problem) errors["username"] = [problem];
             if (string.IsNullOrWhiteSpace(req.Email)) errors["email"] = ["Email is required."];
             if (string.IsNullOrWhiteSpace(req.Password)) errors["password"] = ["Password is required."];
             if (errors.Count > 0) return Results.ValidationProblem(errors);
@@ -46,7 +60,14 @@ public static class AuthEndpoints
             }
 
             return Results.Ok();
-        }).AllowAnonymous().WithName("Register");
+        })
+            .AllowAnonymous()
+            // Creating an account is cheap for the caller and not for the instance: it is an
+            // outbound fetcher, a share of the source-run quota, and mail sent from this domain.
+            // On the credentials bucket rather than the stricter "sensitive" one, which is sized
+            // for endpoints that spend somebody else's bandwidth on every call.
+            .RequireRateLimiting("credentials")
+            .WithName("Register");
 
         group.MapPost("/login", async (
             LoginRequest req,
@@ -76,7 +97,12 @@ public static class AuthEndpoints
 
             var principal = await signIn.CreateUserPrincipalAsync(user);
             return Results.SignIn(principal, authenticationScheme: IdentityConstants.BearerScheme);
-        }).AllowAnonymous().WithName("Login");
+        })
+            .AllowAnonymous()
+            // Lockout already caps attempts per account. This caps them per caller, which is what
+            // stops one address working through a list of accounts.
+            .RequireRateLimiting("credentials")
+            .WithName("Login");
 
         group.MapPost("/refresh", async (
             RefreshRequest req,

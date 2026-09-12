@@ -120,6 +120,23 @@ builder.Services.AddRateLimiter(options =>
             AutoReplenishment = true,
         }));
 
+    // Signing in and signing up. Lockout already caps failures per account; this caps attempts
+    // per caller, which is the half that stops one address working through a list of accounts —
+    // and stops one address creating nine hundred of them a minute, which the global bucket
+    // alone allowed. Generous enough that a person mistyping a password, or a household signing
+    // up together, never meets it.
+    var credentialsPerMinute = builder.Configuration.GetValue<int?>("RateLimits:CredentialsPerMinute") ?? 20;
+
+    options.AddPolicy("credentials", http =>
+        RateLimitPartition.GetTokenBucketLimiter(ResolvePartitionKey(http), _ => new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = credentialsPerMinute,
+            TokensPerPeriod = credentialsPerMinute,
+            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true,
+        }));
+
     // Thumbnails are their own thing, and were wrongly on "sensitive". A playlist page asks for
     // one per row — dozens at once — so a ten-a-minute bucket meant the first ten loaded and
     // every other row silently lost its picture. A cache hit is a file read; only a miss costs an

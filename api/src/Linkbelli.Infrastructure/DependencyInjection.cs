@@ -69,6 +69,13 @@ public static class DependencyInjection
         // Usernames are unique in Identity; require unique emails too so login-by-email is unambiguous.
         services.Configure<IdentityOptions>(options => options.User.RequireUniqueEmail = true);
 
+        // Note on where usernames are validated. The rule lives in UsernamePolicy and is applied
+        // at registration, deliberately *not* through IdentityOptions.AllowedUserNameCharacters.
+        // Identity validates the whole user on every update, so setting it there would mean an
+        // account created before the rule — anyone who typed their email address into the sign-up
+        // box, which is what the rule exists to stop — could no longer reset their password, and
+        // would fail on a field they never touched. LegacyUsernameTests pins that behaviour.
+
         // Identity's default for these is a day, which is a long life for a link that grants an
         // account. Set here so it matches what the reset mail tells people.
         services.Configure<DataProtectionTokenProviderOptions>(options =>

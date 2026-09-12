@@ -61,6 +61,20 @@ public sealed class ETagFilter : IEndpointFilter
         var etag = $"W/\"{Convert.ToHexStringLower(SHA256.HashData(body))[..32]}\"";
         http.Response.Headers.ETag = etag;
 
+        // A validator on a response with no cacheability directives is an invitation: RFC 9111
+        // lets a shared cache store it heuristically and hand it to the next caller. Endpoints
+        // that set their own Cache-Control (thumbnails, which are deliberately public) keep it.
+        if (!http.Response.Headers.ContainsKey(HeaderNames.CacheControl))
+        {
+            http.Response.Headers.CacheControl = http.User.Identity?.IsAuthenticated == true
+                ? "private, no-cache"
+                : "no-cache";
+        }
+
+        // Whichever credential was used changes the answer, so anything caching this has to key
+        // on it rather than on the URL alone.
+        http.Response.Headers.Vary = "Authorization, X-Api-Key, Cookie";
+
         if (Matches(http.Request.Headers[HeaderNames.IfNoneMatch], etag))
         {
             // A 304 carries no body, and must not claim one.

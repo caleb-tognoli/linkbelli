@@ -42,6 +42,16 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
     /// </summary>
     public const int SensitivePerMinute = 120;
 
+    /// <summary>
+    /// The "credentials" allowance this suite runs with.
+    /// </summary>
+    /// <remarks>
+    /// Every test registers a user and signs in, and they all share one anonymous partition, so
+    /// the shipped twenty a minute would fail the suite rather than test anything. Raised for the
+    /// same reason as the one above, and by enough that adding tests does not quietly re-break it.
+    /// </remarks>
+    public const int CredentialsPerMinute = 5000;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -61,6 +71,7 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
         // shipped limit of 10/min would make a dozen mail tests fight each other rather than test
         // anything. Raised, not removed — RateLimitTests still proves the limiter applies.
         builder.UseSetting("RateLimits:SensitivePerMinute", SensitivePerMinute.ToString());
+        builder.UseSetting("RateLimits:CredentialsPerMinute", CredentialsPerMinute.ToString());
 
         builder.ConfigureServices(services =>
         {

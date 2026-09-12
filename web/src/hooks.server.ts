@@ -100,5 +100,23 @@ export const handle: Handle = async ({ event, resolve }) => {
 		startsWithSegment(pathname, '/embed') ? 'frame-ancestors *' : "frame-ancestors 'none'"
 	);
 
+	// This was the only security header the app sent. The rest are cheap and the app renders a
+	// lot of text it did not write — page titles, descriptions, notes, and the full body of
+	// scraped articles.
+	//
+	// No script-src yet: that needs SvelteKit's own csp config to nonce the hydration script,
+	// which is a separate change. These are the ones that cost nothing to be right about.
+	response.headers.set('x-content-type-options', 'nosniff');
+	// Referrers go to whatever a saved link points at. A playlist id in a path is not something
+	// to hand to every site somebody opens from here.
+	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+	response.headers.set('permissions-policy', 'geolocation=(), microphone=(), camera=(), payment=()');
+
+	// Only where the browser reached us over TLS — announcing it over plain http is both ignored
+	// and, on a local run, a good way to lock yourself out of your own machine's http origin.
+	if (event.url.protocol === 'https:') {
+		response.headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+	}
+
 	return response;
 };
