@@ -48,6 +48,18 @@ public static class AutomationEndpoints
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
             .WithName("UpdateAutomationRule");
 
+        // Rules only ever saw what arrived after they were written. You write a rule because you
+        // noticed a pattern in the library you already have, so this runs it over that.
+        group.MapPost("/{id:guid}/run", async (
+            Guid id, RunAutomationRuleRequest? req, ClaimsPrincipal user,
+            IAutomationRunner runner, CancellationToken ct) =>
+        {
+            var acted = await runner.ApplyRuleAsync(user.GetUserId(), id, req?.PlaylistId, ct);
+            return Results.Ok(new { acted });
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("RunAutomationRule");
+
         group.MapDelete("/{id:guid}", async (
             Guid id, ClaimsPrincipal user, IAutomationRuleService svc, CancellationToken ct) =>
         {

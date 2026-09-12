@@ -4,7 +4,7 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import { describeRule } from '$lib/automation';
-	import { Plus, Trash2, Wand2, X } from '@lucide/svelte';
+	import { History, Plus, Trash2, Wand2, X } from '@lucide/svelte';
 	import type { AutomationPreview, AutomationRule, ContentKind } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -43,6 +43,9 @@
 	let editing = $state<string | null>(null);
 	let open = $state(false);
 	let busy = $state(false);
+
+	/** What just happened, for actions whose result is a number rather than a visible change. */
+	let message = $state<string | null>(null);
 	let error = $state<string | null>(null);
 	let preview = $state<AutomationPreview | null>(null);
 
@@ -172,6 +175,46 @@
 		if (res.ok) await invalidateAll();
 	}
 
+	/** The rule currently being run over the backlog, so its button can say so. */
+	let running = $state<string | null>(null);
+
+	/**
+	 * Runs a rule over the links already in the library.
+	 *
+	 * Confirmed first, and not because it is slow. A rule's actions include moving and trashing,
+	 * and this is the one place they happen to things somebody has already filed by hand — so
+	 * the number it is about to touch is worth seeing before it does.
+	 */
+	async function runOverExisting(rule: AutomationRule) {
+		if (
+			!(await confirmDialog(
+				`Run "${rule.name}" over the links you already have? It applies the same actions ` +
+					`it would to something arriving now, to everything it matches.`,
+				{ confirmLabel: 'Run it' }
+			))
+		) {
+			return;
+		}
+
+		running = rule.id;
+		try {
+			const res = await api.post(`/automations/${rule.id}/run`, {});
+			if (!res.ok) {
+				message = 'Could not run that rule.';
+				return;
+			}
+
+			const { acted } = (await res.json()) as { acted: number };
+			message =
+				acted === 0
+					? `"${rule.name}" matched nothing already here.`
+					: `"${rule.name}" acted on ${acted} ${acted === 1 ? 'link' : 'links'}.`;
+			await invalidateAll();
+		} finally {
+			running = null;
+		}
+	}
+
 	async function remove(rule: AutomationRule) {
 		if (!(await confirmDialog(`Delete "${rule.name}"? Items it has already filed stay where they are.`, {
 			danger: true,
@@ -195,8 +238,9 @@
 		<div>
 			<h1 class="text-2xl font-semibold">Rules</h1>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				What should happen to a link when it arrives. Rules run in order, top first, and only
-				ever see what arrives after you write them.
+				What should happen to a link when it arrives. Rules run in order, top first, on
+				everything that arrives from now on — and you can run one over the links you already
+				have.
 			</p>
 		</div>
 		<button
@@ -209,6 +253,22 @@
 			New rule
 		</button>
 	</header>
+
+	{#if message}
+		<p
+			class="mt-4 rounded-md border px-3 py-2 text-sm"
+			style="border-color: var(--color-border); background: var(--color-surface)"
+			role="status"
+		>
+			{message}
+			<button
+				type="button"
+				onclick={() => (message = null)}
+				class="ml-2 underline underline-offset-2"
+				style="color: var(--color-muted)">Dismiss</button
+			>
+		</p>
+	{/if}
 
 	{#if data.rules.length === 0}
 		<p class="mt-8 rounded-lg border px-4 py-8 text-center text-sm"
@@ -240,6 +300,17 @@
 							</p>
 						</button>
 						<div class="flex shrink-0 items-center gap-2">
+							<button
+								type="button"
+								onclick={() => runOverExisting(rule)}
+								disabled={running === rule.id}
+								class="rounded p-1.5 hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+								style="color: var(--color-muted)"
+								title="Run this over the links you already have"
+								aria-label={`Run ${rule.name} over existing links`}
+							>
+								<History size={15} aria-hidden="true" />
+							</button>
 							<Switch checked={rule.enabled} onchange={(value) => toggle(rule, value)} label={`Enable ${rule.name}`} />
 							<button
 								type="button"

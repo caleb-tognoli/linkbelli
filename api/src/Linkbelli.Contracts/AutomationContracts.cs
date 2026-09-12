@@ -73,4 +73,12 @@ public record UpdateAutomationRuleRequest(
 /// <summary>What a rule would do, tried against what is already saved rather than what arrives next.</summary>
 public record AutomationPreviewResponse(int Matches, IReadOnlyList<AutomationPreviewItem> Sample);
 
+/// <summary>Running a saved rule over what is already here.</summary>
+/// <param name="PlaylistId">
+/// Narrows it to one playlist. Null means everything the rule's own scope allows — which for a
+/// rule with actions like Trash is a large thing to ask for, so the UI should make the choice
+/// explicit rather than defaulting to it.
+/// </param>
+public record RunAutomationRuleRequest(Guid? PlaylistId = null);
+
 public record AutomationPreviewItem(Guid ItemId, string PlaylistName, string Url, string? Title);

@@ -1,3 +1,4 @@
+using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Services;
 using Linkbelli.Core.Automation;
@@ -21,6 +22,13 @@ public interface IAutomationRunner
     /// be judged before there is one.
     /// </summary>
     Task<int> ApplyAsync(IReadOnlyList<Guid> itemIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs one saved rule over links already in the library, optionally narrowed to a playlist.
+    /// Returns how many items it acted on.
+    /// </summary>
+    Task<int> ApplyRuleAsync(
+        Guid ownerId, Guid ruleId, Guid? playlistId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Picks up everything still waiting and applies the rules to it. This is what makes the
@@ -49,6 +57,91 @@ public sealed class AutomationRunner(
 
         return itemIds.Count == 0 ? 0 : await ApplyAsync(itemIds, cancellationToken);
     }
+
+    /// <summary>
+    /// Runs one saved rule over links that are already here.
+    /// </summary>
+    /// <remarks>
+    /// Rules only ever saw what arrived after they were written, which the Rules page said out
+    /// loud — and which is backwards, because you write a rule about a pattern you noticed in the
+    /// library you already have.
+    ///
+    /// Deliberately not implemented by clearing AutomationAppliedAt and letting the sweep pick
+    /// the items up: that would run <em>every</em> rule over them again, and a rule with
+    /// CopyToPlaylistId would copy a second time. This applies exactly the rule that was asked
+    /// for, and leaves the stamp alone.
+    /// </remarks>
+    public async Task<int> ApplyRuleAsync(
+        Guid ownerId, Guid ruleId, Guid? playlistId, CancellationToken cancellationToken = default)
+    {
+        var rule = await db.AutomationRules
+            .FirstOrDefaultAsync(r => r.Id == ruleId && r.OwnerId == ownerId, cancellationToken)
+            ?? throw new NotFoundException("Rule not found.");
+
+        var scope = db.PlaylistItems
+            .Include(i => i.Link).ThenInclude(l => l!.Host)
+            .Include(i => i.Playlist)
+            .Include(i => i.Tags)
+            .Where(i => i.Playlist!.OwnerId == ownerId && i.Link!.EnrichedAt != null);
+
+        // The rule's own scope still applies; asking for a playlist narrows it further.
+        if (rule.PlaylistId is { } ruleScope)
+        {
+            scope = scope.Where(i => i.PlaylistId == ruleScope);
+        }
+
+        if (playlistId is { } asked)
+        {
+            scope = scope.Where(i => i.PlaylistId == asked);
+        }
+
+        var items = await scope.Take(BacklogLimit).ToListAsync(cancellationToken);
+        if (items.Count == 0)
+        {
+            return 0;
+        }
+
+        var compiled = new CompiledRule(rule);
+        var now = DateTimeOffset.UtcNow;
+        var acted = 0;
+
+        foreach (var item in items)
+        {
+            var candidate = new RuleCandidate(
+                item.PlaylistId,
+                item.Link!.CanonicalUrl,
+                item.Link.Host?.Hostname ?? string.Empty,
+                item.Metadata?.GetValueOrDefault("title") ?? item.Link.Title,
+                item.Link.Kind);
+
+            if (!compiled.Matches(candidate))
+            {
+                continue;
+            }
+
+            await ActAsync(item, rule, cancellationToken);
+            rule.MatchCount++;
+            rule.LastMatchedAt = now;
+            acted++;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Rule {RuleId} run over {Count} existing items; acted on {Acted}.", ruleId, items.Count, acted);
+
+        return acted;
+    }
+
+    /// <summary>
+    /// How much of an existing library one run will look at.
+    /// </summary>
+    /// <remarks>
+    /// A ceiling rather than a page: this is a deliberate, occasional action, and the actions a
+    /// rule can take include trashing and moving. Doing ten thousand of those in one request
+    /// without the person seeing any of it is not something to offer.
+    /// </remarks>
+    public const int BacklogLimit = 2_000;
 
     public async Task<int> ApplyAsync(IReadOnlyList<Guid> itemIds, CancellationToken cancellationToken = default)
     {
