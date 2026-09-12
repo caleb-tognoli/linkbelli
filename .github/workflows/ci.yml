@@ -125,6 +125,25 @@ jobs:
       - name: Unit tests
         run: npm test
 
+  # A source file that .gitignore swallows is invisible: it builds locally, because Docker reads
+  # the filesystem, and only fails somewhere that builds from a clean checkout. The stock
+  # VisualStudio template this repo started from has a dozen unanchored directory patterns
+  # (Backup*/, [Ll]og/, artifacts/, publish/ …) that match plausible source folder names, so this
+  # checks the outcome rather than trying to enumerate them.
+  no-ignored-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No source file is gitignored
+        run: |
+          leaked=$(git ls-files --others --ignored --exclude-standard             -- api/src api/tests web/src mcp/src email-worker/src extension/src             | grep -vE '(^|/)(bin|obj|node_modules|\.svelte-kit)/|\.user$' || true)
+          if [ -n "$leaked" ]; then
+            echo "These files are ignored by .gitignore and would never reach a build:"
+            echo "$leaked"
+            exit 1
+          fi
+
   email-worker:
     runs-on: ubuntu-latest
     defaults:

@@ -257,8 +257,13 @@ Generated_Code/
 # Backup & report files from converting an old project file
 # to a newer Visual Studio version. Backup files are not needed,
 # because we have git ;-)
+#
+# Root-anchored, unlike the stock template's "Backup*/". Unanchored, it matched
+# api/src/Linkbelli.Application/Backups/ and silently kept two source files out of the
+# repository — a local build passed because Docker reads the filesystem, and only a build from a
+# clean clone failed. Visual Studio writes these next to the solution, so anchoring loses nothing.
 _UpgradeReport_Files/
-Backup*/
+/Backup*/
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
