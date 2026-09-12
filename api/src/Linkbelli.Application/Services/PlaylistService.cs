@@ -445,12 +445,13 @@ public class PlaylistService(
             published = published.Where(p => !(p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw)));
         }
 
-        var counts = await published
-            .Select(p => p.Items.Count(i => i.Link!.EnrichedAt != null))
-            .ToListAsync(ct);
+        // Counted in the database rather than by fetching one row per public playlist — each of
+        // those rows was itself a correlated COUNT, for two numbers on an anonymous page.
+        var playlistCount = await published.CountAsync(ct);
+        var linkCount = await published.SumAsync(p => p.Items.Count(i => i.Link!.EnrichedAt != null), ct);
 
         return new PublicProfile(
-            user.UserName!, user.CreatedAt, counts.Count, counts.Sum(),
+            user.UserName!, user.CreatedAt, playlistCount, linkCount,
             await db.Follows.CountAsync(f => f.FollowedUserId == user.Id, ct),
             await db.Follows.AnyAsync(f => f.FollowedUserId == user.Id && f.FollowerId == viewerId, ct));
     }
@@ -719,13 +720,30 @@ public class PlaylistService(
             await db.SaveChangesAsync(ct);
         }
 
-        // Count distinct URLs ever discovered by this source across all runs.
-        var runArrays = await db.SourceRuns
-            .Where(r => r.SourceId == sourceId)
-            .Select(r => r.ItemsAdded)
-            .ToListAsync(ct);
-        return runArrays.SelectMany(a => a).Distinct().Count();
+        return await BackfillableLinkIds(sourceId).CountAsync(ct);
     }
+
+    /// <summary>
+    /// Every link this source has ever put somewhere, as ids.
+    /// </summary>
+    /// <remarks>
+    /// Read from the items the source created, which is the durable record of what it produced.
+    /// This used to read SourceRun.ItemsAdded and describe it as "all distinct URLs ever
+    /// discovered", which it is not, three times over: it holds at most SampleSize URLs per run,
+    /// it holds only the ones that were new to the whole application at the time — so anything
+    /// another account had already saved was missing — and SourceRunRetention prunes old runs, so
+    /// the answer shrank over time. A source that had been running a month honestly reported a
+    /// handful of links it could restore out of thousands.
+    ///
+    /// Deliberately not scoped to one playlist: the point of a backfill is to recover what the
+    /// source found, wherever it happened to land.
+    /// </remarks>
+    private IQueryable<Guid> BackfillableLinkIds(Guid sourceId) =>
+        db.PlaylistItems
+            .IgnoreQueryFilters()
+            .Where(i => i.SourceId == sourceId)
+            .Select(i => i.LinkId)
+            .Distinct();
 
     public async Task<int> BackfillFromSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default)
     {
@@ -736,27 +754,13 @@ public class PlaylistService(
         if (source is null || (source.OwnerId != ownerId && source.Visibility != SourceVisibility.Shared))
             throw new NotFoundException("Source not found.");
 
-        // Collect all distinct URLs ever discovered by this source.
-        var runArrays = await db.SourceRuns
-            .Where(r => r.SourceId == sourceId)
-            .Select(r => r.ItemsAdded)
+        // What is missing here, asked as one question rather than by pulling both sets back and
+        // subtracting them in memory. The old shape also matched links by CanonicalUrl, which has
+        // no index — a sequential scan over the widest table in the schema.
+        var toAdd = await BackfillableLinkIds(sourceId)
+            .Where(id => !db.PlaylistItems.Any(i => i.PlaylistId == playlistId && i.LinkId == id))
             .ToListAsync(ct);
-        var urls = runArrays.SelectMany(a => a).Distinct().ToList();
-        if (urls.Count == 0) return 0;
 
-        // Find corresponding Link ids (they must exist — links are created during runs).
-        var sourceLinks = await db.Links
-            .Where(l => urls.Contains(l.CanonicalUrl))
-            .Select(l => l.Id)
-            .ToListAsync(ct);
-        if (sourceLinks.Count == 0) return 0;
-
-        var existing = await db.PlaylistItems
-            .Where(i => i.PlaylistId == playlistId)
-            .Select(i => i.LinkId)
-            .ToHashSetAsync(ct);
-
-        var toAdd = sourceLinks.Where(id => !existing.Contains(id)).ToList();
         if (toAdd.Count == 0) return 0;
 
         var maxPos = await db.PlaylistItems.Where(i => i.PlaylistId == playlistId)

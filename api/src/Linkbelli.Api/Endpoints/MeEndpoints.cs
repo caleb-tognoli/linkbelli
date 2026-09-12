@@ -15,24 +15,31 @@ public static class MeEndpoints
     {
         var secured = new AuthorizeAttribute { AuthenticationSchemes = AuthSchemes.BearerOrApiKey };
 
-        app.MapGet("/me", async (ClaimsPrincipal user, IUserPreferenceService prefs, IOptions<EmailOptions> email, CancellationToken ct) => Results.Ok(new
+        app.MapGet("/me", async (ClaimsPrincipal user, IUserPreferenceService prefs, IOptions<EmailOptions> email, CancellationToken ct) =>
         {
-            userId = user.FindFirstValue(ClaimTypes.NameIdentifier),
-            username = user.FindFirstValue(ClaimTypes.Name),
-            email = user.FindFirstValue(ClaimTypes.Email),
-            authMethod = user.FindFirstValue("auth_method") ?? "bearer",
-            scopes = user.FindAll("scope").Select(c => c.Value).ToArray(),
-            // Roles, so a client can offer the admin console to the people it will work for
-            // rather than showing everyone a link that 403s.
-            roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray(),
-            showNsfw = await prefs.ShowNsfwAsync(user.GetUserId(), ct),
-            archiveLinks = await prefs.ArchiveLinksAsync(user.GetUserId(), ct),
-            backupsEnabled = await prefs.BackupsEnabledAsync(user.GetUserId(), ct),
-            onboardingDismissed = await prefs.OnboardingDismissedAsync(user.GetUserId(), ct),
-            // So the sources page can show an inbox address, or say nothing when this deployment
-            // has no inbound domain rather than offering one that goes nowhere.
-            inboxDomain = email.Value.InboxDomain,
-        }))
+            // One read. This was four queries against the same row, on the request the web app's
+            // layout makes for every server-rendered navigation.
+            var preferences = await prefs.GetAsync(user.GetUserId(), ct);
+
+            return Results.Ok(new
+            {
+                userId = user.FindFirstValue(ClaimTypes.NameIdentifier),
+                username = user.FindFirstValue(ClaimTypes.Name),
+                email = user.FindFirstValue(ClaimTypes.Email),
+                authMethod = user.FindFirstValue("auth_method") ?? "bearer",
+                scopes = user.FindAll("scope").Select(c => c.Value).ToArray(),
+                // Roles, so a client can offer the admin console to the people it will work for
+                // rather than showing everyone a link that 403s.
+                roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray(),
+                preferences.ShowNsfw,
+                preferences.ArchiveLinks,
+                preferences.BackupsEnabled,
+                preferences.OnboardingDismissed,
+                // So the sources page can show an inbox address, or say nothing when this
+                // deployment has no inbound domain rather than offering one that goes nowhere.
+                inboxDomain = email.Value.InboxDomain,
+            });
+        })
         .RequireAuthorization(secured)
         .WithName("GetMe");
 
