@@ -31,4 +31,17 @@ public class UserPreferenceService(IAppDbContext db) : IUserPreferenceService
         user.ArchiveLinks = archiveLinks;
         await db.SaveChangesAsync(ct);
     }
+
+    public Task<bool> BackupsEnabledAsync(Guid? userId, CancellationToken ct = default) =>
+        userId is null
+            ? Task.FromResult(false)
+            : db.Users.Where(u => u.Id == userId.Value).Select(u => u.BackupsEnabled).FirstOrDefaultAsync(ct);
+
+    public async Task SetBackupsEnabledAsync(Guid userId, bool backupsEnabled, CancellationToken ct = default)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct)
+            ?? throw new NotFoundException("User not found.");
+        user.BackupsEnabled = backupsEnabled;
+        await db.SaveChangesAsync(ct);
+    }
 }

@@ -11,4 +11,9 @@ public interface IUserPreferenceService
     Task<bool> ArchiveLinksAsync(Guid? userId, CancellationToken ct = default);
 
     Task SetArchiveLinksAsync(Guid userId, bool archiveLinks, CancellationToken ct = default);
+
+    /// <summary>Whether the schedule keeps snapshots of this user's library.</summary>
+    Task<bool> BackupsEnabledAsync(Guid? userId, CancellationToken ct = default);
+
+    Task SetBackupsEnabledAsync(Guid userId, bool backupsEnabled, CancellationToken ct = default);
 }

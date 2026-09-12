@@ -11,6 +11,7 @@ using Linkbelli.Application.Sources;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Linkbelli.Application.Feeds;
+using Linkbelli.Application.Backups;
 using Linkbelli.Application.Export;
 
 namespace Linkbelli.Application;
@@ -35,6 +36,8 @@ public static class DependencyInjection
         services.AddScoped<ITrashService, TrashService>();
         services.AddScoped<IPlaylistFeedService, PlaylistFeedService>();
         services.AddScoped<IExportService, ExportService>();
+        services.AddScoped<IBackupService, BackupService>();
+        services.AddScoped<IBackupSweep, BackupSweep>();
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<IBulkItemService, BulkItemService>();
         services.AddScoped<IDuplicateService, DuplicateService>();

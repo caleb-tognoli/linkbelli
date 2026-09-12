@@ -43,6 +43,7 @@ public interface IAppDbContext
     DbSet<SourceTemplate> SourceTemplates { get; }
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }
+    DbSet<Backup> Backups { get; }
 
     /// <summary>Begins a database transaction, pinning a single connection for the duration.</summary>
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

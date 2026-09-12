@@ -18,6 +18,22 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool ArchiveLinks { get; set; }
 
     /// <summary>
+    /// Whether to keep periodic snapshots of this user's library.
+    /// </summary>
+    /// <remarks>
+    /// On by default, unlike <see cref="ArchiveLinks"/>: a snapshot never leaves this server, so
+    /// there is no third party to consent to. The cost is storage, and an unchanged library is
+    /// not stored twice — a dormant account keeps exactly one copy.
+    /// </remarks>
+    public bool BackupsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// When the schedule last considered this user, whether or not it made a snapshot. Kept apart
+    /// from the newest snapshot's own date, which says when the library last changed.
+    /// </summary>
+    public DateTimeOffset? LastBackupAt { get; set; }
+
+    /// <summary>
     /// When this user last looked at their feed. Null means never — everything in it is new,
     /// which is the right answer for someone who has just started following things.
     /// </summary>

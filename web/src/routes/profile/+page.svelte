@@ -1,8 +1,9 @@
-﻿<svelte:head><title>Profile - linkbelli</title></svelte:head>
+<svelte:head><title>Profile - linkbelli</title></svelte:head>
 
 <script lang="ts">
 	import { api } from '$lib/api/client';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
+	import BackupsPanel from '$lib/components/BackupsPanel.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import { Bookmark, Download } from '@lucide/svelte';
@@ -213,6 +214,8 @@
 			{/each}
 		</div>
 	</div>
+
+	<BackupsPanel enabled={data.user?.backupsEnabled ?? true} />
 
 	<div>
 		<ApiKeysManager keys={data.apiKeys} />

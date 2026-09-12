@@ -203,6 +203,7 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
+    public DbSet<Backup> Backups => Set<Backup>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         => throw new NotSupportedException("Transactions are not needed in these unit tests.");

@@ -35,6 +35,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<SourceTemplate> SourceTemplates => Set<SourceTemplate>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
+    public DbSet<Backup> Backups => Set<Backup>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -88,6 +89,13 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             // is what makes two simultaneous retries resolve to one execution.
             e.HasIndex(r => new { r.UserId, r.Key }).IsUnique();
             e.HasIndex(r => r.CreationTime);
+        });
+
+        modelBuilder.Entity<Backup>(e =>
+        {
+            e.Property(b => b.ContentHash).HasMaxLength(64);
+            // Newest first, per owner — every read of this table is "what does this person have".
+            e.HasIndex(b => new { b.OwnerId, b.CreationTime });
         });
 
         modelBuilder.Entity<ContentReport>(e =>

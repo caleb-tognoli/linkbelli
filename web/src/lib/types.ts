@@ -14,6 +14,8 @@ export interface User {
 	showNsfw: boolean;
 	/** Whether to ask the Internet Archive for a public snapshot of pages this user saves. */
 	archiveLinks?: boolean;
+	/** Whether the schedule keeps weekly snapshots of this user's library. */
+	backupsEnabled?: boolean;
 }
 
 export type NsfwSetting = 'Auto' | 'Yes' | 'No';

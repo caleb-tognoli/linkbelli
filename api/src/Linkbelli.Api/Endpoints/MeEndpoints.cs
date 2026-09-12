@@ -25,6 +25,7 @@ public static class MeEndpoints
             roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray(),
             showNsfw = await prefs.ShowNsfwAsync(user.GetUserId(), ct),
             archiveLinks = await prefs.ArchiveLinksAsync(user.GetUserId(), ct),
+            backupsEnabled = await prefs.BackupsEnabledAsync(user.GetUserId(), ct),
         }))
         .RequireAuthorization(secured)
         .WithName("GetMe");
@@ -48,10 +49,19 @@ public static class MeEndpoints
 
         app.MapPut("/me/preferences", async (UpdatePreferencesRequest req, ClaimsPrincipal user, IUserPreferenceService prefs, CancellationToken ct) =>
         {
-            await prefs.SetShowNsfwAsync(user.GetUserId(), req.ShowNsfw, ct);
+            if (req.ShowNsfw is { } nsfw)
+            {
+                await prefs.SetShowNsfwAsync(user.GetUserId(), nsfw, ct);
+            }
+
             if (req.ArchiveLinks is { } archive)
             {
                 await prefs.SetArchiveLinksAsync(user.GetUserId(), archive, ct);
+            }
+
+            if (req.BackupsEnabled is { } backups)
+            {
+                await prefs.SetBackupsEnabledAsync(user.GetUserId(), backups, ct);
             }
 
             return Results.NoContent();
