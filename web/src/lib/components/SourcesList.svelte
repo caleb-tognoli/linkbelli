@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
-	import { ChevronDown, Globe, Lock, Play, Search } from '@lucide/svelte';
+	import { ChevronDown, Globe, Lock, Play, Plus, Search } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import type { Source } from '$lib/types';
 
@@ -93,6 +93,22 @@
 {#if sources.length === 0}
 	<div class="rounded-lg border border-dashed p-8 text-center" style="border-color: var(--color-border)">
 		<p class="font-medium">No sources yet.</p>
+		<p class="mx-auto mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
+			A source watches something — a feed, a subreddit, a channel, a page — and drops what it
+			finds straight into a playlist, on a schedule you set. It is the difference between a
+			list you fill and one that fills itself.
+		</p>
+		<a
+			href="/sources/new"
+			class="mt-4 inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium"
+			style="background: var(--color-accent); color: var(--color-accent-contrast)"
+		>
+			<Plus size={16} aria-hidden="true" />
+			Add a source
+		</a>
+		<p class="mt-3 text-xs" style="color: var(--color-muted)">
+			There are ready-made ones for YouTube, Reddit, Hacker News, GitHub and podcasts.
+		</p>
 	</div>
 {:else}
 	<div class="relative">

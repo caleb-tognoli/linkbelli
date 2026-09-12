@@ -6,7 +6,7 @@ import type { PageServerLoad } from './$types';
 const VALID_SORTS = new Set(['position', 'date-asc', 'date-desc', 'shuffle']);
 const VALID_STATUSES = new Set(['All', 'Unwatched', 'Watched']);
 
-export const load: PageServerLoad = async ({ locals, params, parent, cookies }) => {
+export const load: PageServerLoad = async ({ locals, params, parent, cookies, url }) => {
 	const { user } = await parent();
 	const base = `/api/v1/public/playlists/${encodeURIComponent(params.username)}/${encodeURIComponent(params.slug)}`;
 
@@ -16,7 +16,11 @@ export const load: PageServerLoad = async ({ locals, params, parent, cookies }) 
 	if (!playlistRes.ok) throw error(playlistRes.status, 'Failed to load playlist');
 	const playlist = (await playlistRes.json()) as Playlist;
 
-	if (user && user.username === params.username) {
+	// Opening your own public address normally means you followed a link to your own playlist
+	// and want to edit it, so the redirect is right by default. But it also meant there was no
+	// way to see what you had published — which is the obvious thing to want immediately after
+	// publishing, and the only way to check how the share card looks.
+	if (user && user.username === params.username && url.searchParams.get('preview') !== '1') {
 		redirect(302, `/playlists/${playlist.id}`);
 	}
 

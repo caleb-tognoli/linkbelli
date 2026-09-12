@@ -12,7 +12,8 @@
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
-	import { ChevronDown, Download, EyeOff, Globe, Heart, Lock, Rss, Star, Trash2 } from '@lucide/svelte';
+	import { page } from '$app/state';
+	import { ChevronDown, Download, Eye, EyeOff, Globe, Heart, Lock, Rss, Star, Trash2 } from '@lucide/svelte';
 	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, PlaylistRole, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -49,6 +50,22 @@
 		backLabel?: string;
 		initialPrefs?: PlaylistPrefs;
 	} = $props();
+
+	/**
+	 * Where this playlist can be seen by somebody who is not its owner, once it is published.
+	 *
+	 * Null while it is private, because there is nothing to look at. The `preview` flag is what
+	 * stops the public route bouncing the owner back here — opening your own public address
+	 * normally means you want to edit, and that default is right; this is the exception.
+	 */
+	const publicPreviewHref = $derived.by(() => {
+		if (!isOwner || visibility === 'Private') return null;
+
+		const username = page.data.user?.username;
+		return username
+			? `/public/${encodeURIComponent(username)}/${encodeURIComponent(playlist.slug)}?preview=1`
+			: null;
+	});
 
 	// Adding and editing are deliberately different permissions: "help me collect things" should
 	// not also mean "delete things".
@@ -275,13 +292,19 @@
 		← {resolvedBackLabel}
 	</a>
 
-	<header class="mt-3 flex items-start justify-between gap-3">
-		<div class="min-w-0">
+	<header class="mt-3 flex flex-wrap items-start justify-between gap-3">
+		<div class="min-w-0 flex-1 basis-full sm:basis-auto">
 			{#if isOwner}
+				<!-- The owner sees this page more than anybody and had no h1 at all: the outline
+				     began at "Sources" and the name announced as "edit text". The heading carries
+				     the text and the input carries the editing, rather than one element failing
+				     to be both — a heading that contains only a field has no accessible name. -->
+				<h1 class="sr-only">{playlistName}</h1>
 				<input
 					type="text"
 					value={playlistName}
-					class="w-full bg-transparent text-2xl font-semibold outline-none focus-visible:!outline-none"
+					aria-label="Playlist name"
+					class="-mx-1 w-full rounded-sm border border-transparent bg-transparent px-1 py-0.5 text-2xl font-semibold outline-none hover:border-[var(--color-border)] focus-visible:border-[var(--color-accent)] focus-visible:!outline-none"
 					style="min-width: 0"
 					onblur={(e) => saveName(e.currentTarget)}
 					onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = playlistName; e.currentTarget.blur(); } }}
@@ -298,7 +321,7 @@
 				<p class="mt-1" style="color: var(--color-muted)">{playlist.description}</p>
 			{/if}
 		</div>
-		<div class="flex shrink-0 items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
 			{#if isOwner}
 				<Popover.Root bind:open={visOpen}>
 					<Popover.Trigger
@@ -328,6 +351,20 @@
 						{/each}
 					</Popover.Content>
 				</Popover.Root>
+				{#if publicPreviewHref}
+					<!-- The obvious thing to want straight after publishing, and previously
+					     impossible: your own public address redirected you back to this editor. -->
+					<a
+						href={publicPreviewHref}
+						class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]"
+						style="border-color: var(--color-border)"
+						title="See this the way a visitor does"
+					>
+						<Eye size={15} aria-hidden="true" />
+						<span class="hidden sm:inline">View as a visitor</span>
+						<span class="sr-only sm:hidden">View as a visitor</span>
+					</a>
+				{/if}
 			{/if}
 			{#if !isOwner}
 				<!-- The lightest thing a visitor can say about someone else's list, and the only
