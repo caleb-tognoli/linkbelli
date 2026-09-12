@@ -14,8 +14,9 @@ namespace Linkbelli.IntegrationTests;
 /// </summary>
 public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _db = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    // The image goes to the constructor rather than to WithImage: the parameterless form is
+    // deprecated, and passing it here is what lets the builder know which defaults apply.
+    private readonly PostgreSqlContainer _db = new PostgreSqlBuilder("postgres:17-alpine")
         // Postgres defaults to 100 connections, which this suite outgrew: several test classes
         // boot their own WebApplicationFactory per test — each with its own connection pool and
         // its own Hangfire server — and the failure that follows is "53300: sorry, too many

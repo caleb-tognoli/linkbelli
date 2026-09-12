@@ -29,11 +29,15 @@ jobs:
         run: dotnet test tests/Linkbelli.Tests/Linkbelli.Tests.csproj --no-build -c Release
 
       # Fail the build on known-vulnerable (incl. transitive) NuGet dependencies.
+      # The severity is the third column of a "   > Package  Version  Severity  Advisory" line,
+      # not the first thing after the ">" — the earlier pattern anchored on the wrong column and
+      # so matched nothing, which meant this gate passed while two high-severity advisories were
+      # live in the tree.
       - name: Vulnerable dependency scan
         run: |
           dotnet restore
           dotnet list package --vulnerable --include-transitive 2>&1 | tee vuln.log
-          ! grep -q -E '>\s*(Low|Moderate|High|Critical)' vuln.log
+          ! grep -q -E '^[[:space:]]*>.*(Low|Moderate|High|Critical)' vuln.log
 
   integration-test:
     runs-on: ubuntu-latest
