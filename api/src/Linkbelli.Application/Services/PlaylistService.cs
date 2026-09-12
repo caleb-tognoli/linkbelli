@@ -130,7 +130,7 @@ public class PlaylistService(
             db.PlaylistTags.Add(new PlaylistTag { PlaylistId = playlist.Id, TagId = t.Id });
         }
 
-        await db.SaveChangesAsync(ct);
+        await SaveWithUniqueSlugAsync(playlist, ownerId, ct);
 
         return playlist.ToResponse(0, resolvedTags.Select(t => t.Name), nsfw: false);
     }
@@ -832,7 +832,57 @@ public class PlaylistService(
             .ToListAsync(ct);
     }
 
-    /// <summary>Get-or-create tags by normalized name (race-safe, like Host/Link).</summary>
+    /// <summary>How many times a slug collision is re-rolled before giving up.</summary>
+    private const int SlugAttempts = 6;
+
+    /// <summary>
+    /// Saves a new playlist, settling a slug collision rather than failing on it.
+    /// </summary>
+    /// <remarks>
+    /// Choosing the slug was a check-then-act: two requests naming a playlist the same thing both
+    /// found the slug free, and the loser came back a 500. Which is not exotic — it is what
+    /// double-clicking Create does, and what the offline queue does when it replays.
+    ///
+    /// The first retry re-scans, because that still produces the tidy "name-2" people expect. A
+    /// second collision means several writers are re-scanning in lockstep and all picking the
+    /// same next number, so from there it stops asking and takes a random discriminator: under
+    /// contention the answer has to stop being a function of what everyone else can also see.
+    /// </remarks>
+    private async Task SaveWithUniqueSlugAsync(Playlist playlist, Guid ownerId, CancellationToken ct)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+            catch (UniqueConstraintException ex) when (ex.Involves("Slug") && attempt < SlugAttempts)
+            {
+                playlist.Slug = attempt == 1
+                    ? await GenerateUniqueSlugAsync(ownerId, playlist.Name, ct)
+                    : $"{Slugify(playlist.Name)}-{RandomDiscriminator()}";
+            }
+        }
+    }
+
+    /// <summary>
+    /// A short suffix that two simultaneous writers will not agree on.
+    /// </summary>
+    /// <remarks>
+    /// Four base-36 characters: short enough to still read as a slug, and 1.7 million values, so
+    /// a second collision on top of the first is not something anyone will meet.
+    /// </remarks>
+    private static string RandomDiscriminator() =>
+        Random.Shared.Next(36 * 36 * 36, 36 * 36 * 36 * 36).ToString("x").PadLeft(4, '0')[..4];
+
+    /// <summary>
+    /// The first free "name", "name-2", "name-3"… for this owner.
+    /// </summary>
+    /// <remarks>
+    /// Advisory rather than authoritative: the unique index is what actually guarantees this, and
+    /// <see cref="SaveWithUniqueSlugAsync"/> is what copes when two callers read the same answer.
+    /// </remarks>
     private async Task<string> GenerateUniqueSlugAsync(Guid ownerId, string name, CancellationToken ct)
     {
         var baseSlug = Slugify(name);

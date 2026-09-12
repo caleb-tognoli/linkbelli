@@ -5,6 +5,7 @@ using Linkbelli.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Linkbelli.Infrastructure;
 
@@ -340,6 +341,10 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         {
             throw new ConflictException("The resource was modified concurrently. Reload and try again.");
         }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex, out var constraint))
+        {
+            throw new UniqueConstraintException(constraint, ex);
+        }
     }
 
     public override int SaveChanges()
@@ -353,6 +358,30 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         {
             throw new ConflictException("The resource was modified concurrently. Reload and try again.");
         }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex, out var constraint))
+        {
+            throw new UniqueConstraintException(constraint, ex);
+        }
+    }
+
+    /// <summary>
+    /// Recognises "somebody already has that value" and names the index that said so.
+    /// </summary>
+    /// <remarks>
+    /// The only place in the application that reads a Postgres error code. Everything above gets
+    /// <see cref="UniqueConstraintException"/> and a constraint name, so nothing else has to know
+    /// which database is underneath.
+    /// </remarks>
+    private static bool IsUniqueViolation(DbUpdateException ex, out string? constraintName)
+    {
+        if (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } pg)
+        {
+            constraintName = pg.ConstraintName;
+            return true;
+        }
+
+        constraintName = null;
+        return false;
     }
 
     /// <summary>
