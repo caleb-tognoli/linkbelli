@@ -35,7 +35,9 @@ public sealed class SmtpEmailSender(
 
     public async Task<bool> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
-        if (!IsConfigured)
+        // Captured once, and non-null past this point: IsConfigured is exactly the check that the
+        // host is set, which the compiler cannot see through a property.
+        if (_options.Host is not { Length: > 0 } host || !IsConfigured)
         {
             // Not a warning: an instance with no mail configured is a valid way to run this, and
             // logging an error per attempt would bury the ones that matter.
@@ -57,12 +59,15 @@ public sealed class SmtpEmailSender(
                     ? SecureSocketOptions.SslOnConnect
                     : SecureSocketOptions.StartTls;
 
-            await client.ConnectAsync(_options.Host, _options.Port, security, cancellationToken);
+            await client.ConnectAsync(host, _options.Port, security, cancellationToken);
 
             // A local catch-all mailbox accepts anything and has no accounts to log in to.
             if (!string.IsNullOrWhiteSpace(_options.Username))
             {
-                await client.AuthenticateAsync(_options.Username, _options.Password, cancellationToken);
+                // An empty password with a username set is a misconfiguration, but the server is
+                // the right thing to hear that from — it answers with which half is wrong.
+                await client.AuthenticateAsync(
+                    _options.Username, _options.Password ?? string.Empty, cancellationToken);
             }
 
             await client.SendAsync(mime, cancellationToken);
