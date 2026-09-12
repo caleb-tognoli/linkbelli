@@ -2,7 +2,8 @@
 
 <script lang="ts">
 	import { api } from '$lib/api/client';
-	import { Check, ExternalLink } from '@lucide/svelte';
+	import { Check, Clock, ExternalLink } from '@lucide/svelte';
+	import { offlineSaves } from '$lib/offlineSaves.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -12,6 +13,7 @@
 	let playlistId = $state(data.playlists[0]?.id ?? '');
 	let busy = $state(false);
 	let saved = $state(false);
+	let queued = $state(false);
 	let error = $state<string | null>(null);
 
 	async function save() {
@@ -19,10 +21,22 @@
 
 		busy = true;
 		error = null;
-		const res = await api.post(`/playlists/${playlistId}/items`, {
-			url: url.trim(),
-			note: note.trim() || null
-		});
+
+		let res: Response;
+		try {
+			res = await api.post(`/playlists/${playlistId}/items`, {
+				url: url.trim(),
+				note: note.trim() || null
+			});
+		} catch {
+			// The request never left. This is the case the queue exists for: the share sheet has
+			// already closed behind the person, and losing the link here loses it for good.
+			busy = false;
+			queued = keep();
+			if (!queued) error = 'No connection, and nowhere to keep this until there is one.';
+			return;
+		}
+
 		busy = false;
 
 		if (res.ok) {
@@ -32,9 +46,29 @@
 			saved = true;
 		} else if (res.status === 400) {
 			error = 'That does not look like a web address.';
+		} else if (res.status >= 500) {
+			// The server is having a bad minute, which is as good a reason to wait as no signal.
+			queued = keep();
+			if (!queued) error = 'Could not save that. Try again.';
 		} else {
 			error = 'Could not save that. Try again.';
 		}
+	}
+
+	function keep(): boolean {
+		return offlineSaves.add({
+			playlistId,
+			playlistName: savedPlaylist?.name ?? 'a playlist',
+			url: url.trim(),
+			note: note.trim() || null
+		});
+	}
+
+	function another() {
+		saved = false;
+		queued = false;
+		url = '';
+		note = '';
 	}
 
 	const savedPlaylist = $derived(data.playlists.find((p) => p.id === playlistId));
@@ -50,6 +84,22 @@
 				Make one
 			</a>
 		</div>
+	{:else if queued}
+		<!-- Not dressed up as a success and not reported as a failure: the link is kept, and the
+		     honest thing is to say which of those it is. -->
+		<div class="mt-6 rounded-lg border p-6 text-center" style="border-color: var(--color-border); background: var(--color-surface)">
+			<Clock size={28} aria-hidden="true" class="mx-auto" style="color: var(--color-warning)" />
+			<p class="mt-2 font-medium">Waiting for a connection.</p>
+			<p class="mt-1 text-sm" style="color: var(--color-muted)">
+				It is kept on this device and goes to {savedPlaylist?.name} as soon as you are back
+				online. You can close this.
+			</p>
+			<div class="mt-4 flex justify-center gap-3 text-sm">
+				<button type="button" onclick={another} class="underline underline-offset-2" style="color: var(--color-accent)">
+					Save another
+				</button>
+			</div>
+		</div>
 	{:else if saved}
 		<div class="mt-6 rounded-lg border p-6 text-center" style="border-color: var(--color-border); background: var(--color-surface)">
 			<Check size={28} aria-hidden="true" class="mx-auto" style="color: var(--color-accent)" />
@@ -60,7 +110,7 @@
 				</a>
 				<button
 					type="button"
-					onclick={() => { saved = false; url = ''; note = ''; }}
+					onclick={another}
 					class="underline underline-offset-2"
 					style="color: var(--color-muted)"
 				>Save another</button>

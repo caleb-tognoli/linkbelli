@@ -3,10 +3,14 @@
 	import { Dialog } from 'bits-ui';
 	import { Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge } from '@lucide/svelte';
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import GlobalDialog from '$lib/components/GlobalDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import FolderTree from '$lib/components/FolderTree.svelte';
+	import OfflineQueueBanner from '$lib/components/OfflineQueueBanner.svelte';
+	import { watchConnection } from '$lib/offlineSaves.svelte';
+	import { registerServiceWorker } from '$lib/serviceWorker';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -40,6 +44,16 @@
 	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
 	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
 	const isAuthPage = $derived(['/login', '/register'].includes(page.url.pathname));
+
+	// onMount, not $effect: this is one-time setup, and as an effect it looped — flushing the
+	// queue reads and writes the same state the effect was tracking, so each flush re-ran it.
+	onMount(() => {
+		registerServiceWorker();
+
+		// A link queued on the share sheet has to be sent the moment a connection returns,
+		// whatever the person happens to be looking at by then.
+		return watchConnection();
+	});
 
 	// Mobile nav drawer (below md the sidebar is hidden). Close it after navigating.
 	let drawerOpen = $state(false);
@@ -167,6 +181,7 @@
 		</aside>
 
 		<main class="flex-1 p-4 md:p-8">
+			<OfflineQueueBanner />
 			{@render children()}
 		</main>
 	</div>
