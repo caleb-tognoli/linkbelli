@@ -82,7 +82,7 @@
 	<div>
 		<h2 class="font-medium">Content</h2>
 		<label class="mt-3 flex items-center gap-2 text-sm">
-			<Switch checked={showNsfw} onchange={setNsfw} />
+			<Switch checked={showNsfw} onchange={setNsfw} label="Show adult content" />
 			Show NSFW
 		</label>
 	</div>
@@ -90,7 +90,7 @@
 	<div>
 		<h2 class="font-medium">Archiving</h2>
 		<label class="mt-3 flex items-center gap-2 text-sm">
-			<Switch checked={archiveLinks} onchange={setArchive} />
+			<Switch checked={archiveLinks} onchange={setArchive} label="Archive links to the Wayback Machine" />
 			Keep a public snapshot of pages I save
 		</label>
 		<!-- Off by default, and the reason is worth saying out loud rather than burying: this

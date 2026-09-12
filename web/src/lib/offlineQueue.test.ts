@@ -191,6 +191,23 @@ describe('outcomeFor', () => {
 		expect(outcomeFor(500)).toBe('offline');
 		expect(outcomeFor(503)).toBe('offline');
 	});
+
+	// These are 4xx and were therefore treated as refusals, so three flushes threw the save away.
+	// They are the two the queue is most likely to meet: flushing a backlog is what provokes the
+	// rate limiter, and a lapsed cookie is the normal state of a phone that has been in a pocket.
+	it('waits out being told to slow down', () => {
+		expect(outcomeFor(429)).toBe('offline');
+		expect(outcomeFor(408)).toBe('offline');
+	});
+
+	it('waits out a lapsed session rather than discarding the link', () => {
+		expect(outcomeFor(401)).toBe('offline');
+	});
+
+	it('still refuses what the server will never take', () => {
+		expect(outcomeFor(403)).toBe('refused');
+		expect(outcomeFor(422)).toBe('refused');
+	});
 });
 
 describe('describeQueue', () => {

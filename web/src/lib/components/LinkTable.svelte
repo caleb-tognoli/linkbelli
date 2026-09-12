@@ -108,10 +108,32 @@
 			if (res.ok) {
 				selected.clear();
 				await onmove?.();
+			} else {
+				// Forty items not moving looks exactly like forty items moving and the page not
+				// refreshing. Any of these can fail for real: a 409 from the concurrency token, a
+				// 429, a 403 once a share role is revoked mid-session.
+				warn(failureMessage(res.status, 'Could not do that to the selection.'));
 			}
+		} catch {
+			warn('Could not reach the server.');
 		} finally {
 			bulkBusy = false;
 		}
+	}
+
+	/**
+	 * What to tell somebody about a write that did not happen.
+	 *
+	 * The statuses worth naming are the ones with a different next step: reload for a conflict,
+	 * wait for a rate limit, sign in again for a lapsed session. Everything else gets the
+	 * caller's own sentence, because a number is not an explanation.
+	 */
+	function failureMessage(status: number, fallback: string): string {
+		if (status === 409) return 'Somebody changed that first. Reload and try again.';
+		if (status === 429) return 'Too many changes at once. Try again in a moment.';
+		if (status === 401) return 'You have been signed out. Sign in and try again.';
+		if (status === 403) return 'You do not have access to do that any more.';
+		return fallback;
 	}
 
 	/**
@@ -226,13 +248,30 @@
 	let draftTags = $state('');
 	let actionFlyoutId = $state<string | null>(null);
 	/** What the last "copy share link" did, so the row can say so rather than silently succeeding. */
-	let shareToast = $state<string | null>(null);
+	/**
+	 * One line of feedback about the last thing that happened.
+	 *
+	 * Was `shareToast` and only ever said "Share link copied". Every other write on this table
+	 * discarded its own failures, so a refused delete, a rejected rating and a bulk move that
+	 * moved nothing all looked identical to success. Errors are announced assertively, because a
+	 * polite one goes unread by exactly the person who most needs it.
+	 */
+	let toast = $state<{ text: string; error: boolean } | null>(null);
+
+	function say(text: string) {
+		toast = { text, error: false };
+	}
+
+	function warn(text: string) {
+		toast = { text, error: true };
+	}
 
 	async function setCover(item: PlaylistItem) {
 		actionFlyoutId = null;
 
 		const res = await api.patch(`/playlists/${playlistId}`, { coverLinkId: item.link.id });
-		shareToast = res.ok ? 'Cover set.' : 'Could not set the cover.';
+		if (res.ok) say('Cover set.');
+		else warn(failureMessage(res.status, 'Could not set the cover.'));
 	}
 
 	async function copyShareLink(item: PlaylistItem) {
@@ -242,7 +281,7 @@
 		// already sent keeps working.
 		const res = await api.post(`/items/${item.id}/share`);
 		if (!res.ok) {
-			shareToast = 'Could not create a share link.';
+			warn('Could not create a share link.');
 			return;
 		}
 
@@ -252,11 +291,11 @@
 
 		try {
 			await navigator.clipboard.writeText(url);
-			shareToast = 'Share link copied.';
+			say('Share link copied.');
 		} catch {
 			// Clipboard access is denied often enough (insecure origins, permissions) that the
 			// link itself has to be recoverable from the message.
-			shareToast = url;
+			say(url);
 		}
 	}
 
@@ -313,6 +352,9 @@
 		if (res.ok) {
 			const saved = (await res.json()) as PlaylistItem;
 			items = items.map((i) => (i.id === item.id ? { ...i, note, tags: saved.tags ?? [] } : i));
+		} else {
+			// Said out loud, because the editor closes on blur and the note is gone with it.
+			warn(failureMessage(res.status, 'Could not save that note.'));
 		}
 	}
 
@@ -321,8 +363,16 @@
 		const score = rawValue === '' ? null : Math.max(0, Math.min(100, parseInt(rawValue, 10)));
 		if (score !== null && isNaN(score)) return undefined;
 		if (score === item.score) return item.score;
+
 		const res = await api.put(`/items/${item.id}/score`, { score });
-		if (res.ok) items = items.map((i) => (i.id === item.id ? { ...i, score } : i));
+		if (!res.ok) {
+			// The caller snaps the input to what this returns, so returning the requested value
+			// after a failed write left a rating on screen that the server had never heard of.
+			warn(failureMessage(res.status, 'Could not save that rating.'));
+			return item.score;
+		}
+
+		items = items.map((i) => (i.id === item.id ? { ...i, score } : i));
 		return score;
 	}
 
@@ -331,13 +381,20 @@
 		if (res.ok || res.status === 204) {
 			items = items.filter((i) => i.id !== item.id);
 			if (total !== null) total = Math.max(0, total - 1);
+		} else {
+			warn(failureMessage(res.status, 'Could not remove that link.'));
 		}
 	}
 
 	async function toggleWatched(item: PlaylistItem) {
 		const newStatus = item.status === 'Watched' ? 'Added' : 'Watched';
 		const res = await api.patch(`/items/${item.id}`, { status: newStatus });
-		if (!res.ok) return;
+		if (!res.ok) {
+			// Returning quietly left the checkbox snapping back with no reason given, which reads
+			// as the app being broken rather than as the write being refused.
+			warn(failureMessage(res.status, 'Could not mark that.'));
+			return;
+		}
 		const updated = items.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i));
 		// If the active status filter now excludes this item, drop it from the visible list.
 		if (statusFilter === 'Watched') {
@@ -917,16 +974,18 @@
 	</div>
 {/if}
 
-{#if shareToast}
+{#if toast}
 	<p
 		class="mb-2 rounded-md border px-3 py-2 text-sm"
-		style="border-color: var(--color-border); background: var(--color-surface)"
-		role="status"
+		style="border-color: {toast.error ? 'var(--color-danger)' : 'var(--color-border)'};
+		       background: var(--color-surface);
+		       color: {toast.error ? 'var(--color-danger)' : 'inherit'}"
+		role={toast.error ? 'alert' : 'status'}
 	>
-		{shareToast}
+		{toast.text}
 		<button
 			type="button"
-			onclick={() => (shareToast = null)}
+			onclick={() => (toast = null)}
 			class="ml-2 underline underline-offset-2"
 			style="color: var(--color-muted)"
 		>Dismiss</button>

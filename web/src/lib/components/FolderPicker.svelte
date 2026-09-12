@@ -71,9 +71,11 @@
 {#snippet addForm(parentId: string | null, depth: number)}
 	{#if activeAdd && activeAdd.parentId === parentId}
 		<div class="flex items-center gap-1 py-0.5" style="padding-left: {depth * 1.25 + 0.25}rem">
+			<!-- svelte-ignore a11y_autofocus -- the field only appears because Add was pressed -->
 			<input
 				bind:value={newName}
 				placeholder="Folder name…"
+				aria-label="New folder name"
 				disabled={creating}
 				class="flex-1 rounded border px-2 py-0.5 text-sm"
 				style="border-color: var(--color-border); background: var(--color-bg)"

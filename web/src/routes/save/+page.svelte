@@ -4,6 +4,7 @@
 	import { api } from '$lib/api/client';
 	import { Check, Clock, ExternalLink } from '@lucide/svelte';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
+	import { outcomeFor } from '$lib/offlineQueue';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -46,8 +47,11 @@
 			saved = true;
 		} else if (res.status === 400) {
 			error = 'That does not look like a web address.';
-		} else if (res.status >= 500) {
-			// The server is having a bad minute, which is as good a reason to wait as no signal.
+		} else if (outcomeFor(res.status) === 'offline') {
+			// The same judgement the queue makes when it flushes: a server having a bad minute,
+			// a rate limit, or a lapsed session are all "not yet" rather than "no". This page is
+			// where the share sheet lands, so a dead end here loses the link — the sheet has
+			// already closed behind the person and there is nothing to press again.
 			queued = keep();
 			if (!queued) error = 'Could not save that. Try again.';
 		} else {

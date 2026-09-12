@@ -240,7 +240,7 @@
 							</p>
 						</button>
 						<div class="flex shrink-0 items-center gap-2">
-							<Switch checked={rule.enabled} onchange={(value) => toggle(rule, value)} />
+							<Switch checked={rule.enabled} onchange={(value) => toggle(rule, value)} label={`Enable ${rule.name}`} />
 							<button
 								type="button"
 								onclick={() => remove(rule)}

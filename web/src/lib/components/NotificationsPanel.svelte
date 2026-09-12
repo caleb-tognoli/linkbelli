@@ -99,7 +99,7 @@
 			{#each ROWS as row (row.key)}
 				<li class="flex items-start gap-3">
 					<div class="mt-0.5 shrink-0">
-						<Switch checked={prefs[row.key]} onchange={(v) => set(row.key, v)} />
+						<Switch checked={prefs[row.key]} onchange={(v) => set(row.key, v)} label={row.label} />
 					</div>
 					<div class="min-w-0">
 						<p class="text-sm">{row.label}</p>

@@ -98,7 +98,7 @@
 	</p>
 
 	<label class="mt-3 flex items-center gap-2 text-sm">
-		<Switch checked={enabled} onchange={setEnabled} />
+		<Switch checked={enabled} onchange={setEnabled} label="Take weekly backups" />
 		Keep weekly backups
 	</label>
 

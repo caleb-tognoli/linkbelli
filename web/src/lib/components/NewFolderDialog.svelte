@@ -58,7 +58,7 @@
 			<form class="mt-4 flex flex-col gap-3" onsubmit={create}>
 				<label class="flex flex-col gap-1 text-sm">
 					<span>Name</span>
-					<!-- svelte-ignore a11y_autofocus -->
+					<!-- svelte-ignore a11y_autofocus -- a dialog whose only field is this one -->
 					<input bind:value={name} required autofocus class={fieldClass} style={fieldStyle} />
 				</label>
 

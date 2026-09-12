@@ -152,11 +152,28 @@ export function isExhausted(save: QueuedSave): boolean {
  */
 export type FlushOutcome = 'sent' | 'refused' | 'offline';
 
+/**
+ * Statuses that are a 4xx but are not a refusal.
+ *
+ * The distinction the queue turns on is "will this ever succeed", not "is this a client error".
+ * These three all mean try again later, and treating them as refusals is how a save that was
+ * only ever early got counted three times and thrown away:
+ *
+ * - 408, the request timed out.
+ * - 429, the rate limiter — which is exactly what flushing a backlog of twenty provokes, so the
+ *   queue was reliably worst at the one moment it existed for.
+ * - 401, the access cookie lapsed. Routine on a phone that has not opened the app in an hour,
+ *   and the share sheet has already closed behind the person by the time it happens.
+ */
+const RETRYABLE = new Set([401, 408, 429]);
+
 /** What a response status means for a queued save. */
 export function outcomeFor(status: number): FlushOutcome {
 	// Already in the playlist. The person's intent is satisfied, which is what the queue is for.
 	if (status === 409) return 'sent';
 	if (status >= 200 && status < 300) return 'sent';
+
+	if (RETRYABLE.has(status)) return 'offline';
 
 	// The server read it and said no. Retrying an address it will never accept is not patience.
 	if (status >= 400 && status < 500) return 'refused';

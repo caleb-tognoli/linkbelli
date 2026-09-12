@@ -133,7 +133,7 @@
 						</label>
 
 						<label class="flex items-center gap-2 text-sm">
-							<Switch checked={fullAccess} onchange={(v) => (fullAccess = v)} />
+							<Switch checked={fullAccess} onchange={(v) => (fullAccess = v)} label="Full access" />
 							Full Access
 						</label>
 
@@ -144,6 +144,7 @@
 										<Switch
 											checked={selectedScopes.has(scope)}
 											onchange={(v) => toggleScope(scope, v)}
+											label={scope}
 										/>
 										<code>{scope}</code>
 									</label>
