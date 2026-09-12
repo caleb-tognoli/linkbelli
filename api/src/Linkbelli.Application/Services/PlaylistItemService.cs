@@ -19,7 +19,16 @@ public class PlaylistItemService(
     IAutomationRunner automation,
     IPlaylistAccess access) : IPlaylistItemService
 {
-    private static readonly Expression<Func<PlaylistItem, PlaylistItemResponse>> ToResponse = i =>
+    /// <summary>
+    /// One item as the API returns it.
+    /// </summary>
+    /// <remarks>
+    /// An instance field rather than a static one because the adder's name comes from a
+    /// correlated subquery: PlaylistItem lives in Core, which does not know ApplicationUser
+    /// exists, so there is no navigation to follow. Same shape PlaylistService uses for an
+    /// owner's username.
+    /// </remarks>
+    private Expression<Func<PlaylistItem, PlaylistItemResponse>> ToResponse => i =>
         new PlaylistItemResponse(
             i.Id, i.Position, i.Note, i.Status,
             new LinkResponse(
@@ -33,7 +42,11 @@ public class PlaylistItemService(
             i.Score,
             i.StatusChangedAt,
             i.Tags.Select(t => t.Tag!.Name).ToArray(),
-            i.ShareToken);
+            i.ShareToken,
+            // The name rather than the id: this is rendered next to a row, and a client should
+            // not have to resolve a guid to draw it. Whether it is worth showing — it is not, on
+            // a playlist only one person touches — is the caller's decision, not this one's.
+            db.Users.Where(u => u.Id == i.AddedByUserId).Select(u => u.UserName).FirstOrDefault());
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)
@@ -78,6 +91,7 @@ public class PlaylistItemService(
             Position = maxPos + PlaylistOrdering.Gap,
             Note = request.Note?.Trim(),
             Status = PlaylistItemStatus.Added,
+            AddedByUserId = ownerId,
         };
         db.PlaylistItems.Add(item);
         await db.SaveChangesAsync(ct);
@@ -302,7 +316,7 @@ public class PlaylistItemService(
         return query;
     }
 
-    private static async Task<PagedResult<PlaylistItemResponse>> PageAsync(
+    private async Task<PagedResult<PlaylistItemResponse>> PageAsync(
         IQueryable<PlaylistItem> query, int take, string? cursor, string? sort, string? q, IAppDbContext db, CancellationToken ct)
     {
         // The total is counted once, on the first page, then carried inside the cursor. Counting on

@@ -229,6 +229,8 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
         {
             e.HasIndex(i => new { i.PlaylistId, i.LinkId }).IsUnique().ExcludeSoftDeleted();
             e.HasIndex(i => new { i.PlaylistId, i.Position });
+            // "What did I add to this shared list" — the question the column exists for.
+            e.HasIndex(i => new { i.PlaylistId, i.AddedByUserId });
             e.Property(i => i.ShareToken).HasMaxLength(64);
             // The lookup a share link makes, and the uniqueness a token needs. Partial: almost
             // nothing is shared, and an index over every item would be mostly nulls.

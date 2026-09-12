@@ -177,6 +177,7 @@ public class ImportService(
                 Position = maxPos,
                 Note = row.Note?.Trim(),
                 Status = PlaylistItemStatus.Added,
+                AddedByUserId = ownerId,
             });
             existingItemLinkIds.Add(link.Id);
             imported++;

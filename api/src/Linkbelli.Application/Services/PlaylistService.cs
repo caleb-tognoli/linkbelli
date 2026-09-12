@@ -84,6 +84,8 @@ public class PlaylistService(
                 AverageScore: null,
                 ScoredCount: null,
                 View: null,
+                // Left at zero on the listing, deliberately: two correlated counts per row, on a
+                // page that shows neither. GetAsync fills them in for the playlist actually open.
                 LikeCount: 0,
                 LikedByMe: false,
                 FollowerCount: 0,
@@ -160,10 +162,13 @@ public class PlaylistService(
                     .Select(pp => new PlaylistViewPreferences(
                         pp.Sort, pp.Source, pp.Status, pp.ShowUrls, pp.ShowThumbnails, pp.ViewMode))
                     .FirstOrDefault(),
-                LikeCount: 0,
-                LikedByMe: false,
-                FollowerCount: 0,
-                FollowedByMe: false,
+                // Counted for the owner too. These were hardcoded to zero on the owner's own
+                // reads, so the one person with a reason to care whether anybody liked or
+                // followed their playlist was the one person who could not find out.
+                db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == ownerId),
+                db.Follows.Count(f => f.PlaylistId == p.Id),
+                db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == ownerId),
                 // What the caller may do here, so the page can show the controls that will
                 // actually work rather than ones that 404 when pressed.
                 p.OwnerId == ownerId,

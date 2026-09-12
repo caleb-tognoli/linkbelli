@@ -84,6 +84,7 @@ public sealed class PasteService(
                     LinkId = link.Id,
                     Position = nextPosition,
                     Status = PlaylistItemStatus.Added,
+                    AddedByUserId = ownerId,
                 };
 
                 db.PlaylistItems.Add(item);

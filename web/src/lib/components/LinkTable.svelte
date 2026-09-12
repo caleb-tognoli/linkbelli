@@ -41,6 +41,7 @@
 		statusFilter = 'All',
 		onstatusfilter,
 		isSearching = false,
+		shared = false,
 		total = $bindable(null)
 	}: {
 		items: PlaylistItem[];
@@ -55,8 +56,26 @@
 		statusFilter?: StatusFilter;
 		onstatusfilter?: (status: StatusFilter) => Promise<void>;
 		isSearching?: boolean;
+		/** Whether this playlist has other people in it, which decides if "added by" is worth showing. */
+		shared?: boolean;
 		total?: number | null;
 	} = $props();
+
+	/**
+	 * Whether to say who added each link.
+	 *
+	 * Attribution answers "who put this here", which is only ever a question on a playlist more
+	 * than one person adds to. On a list somebody keeps alone, "added by you" on every row is
+	 * noise. The rows carry the name regardless — the API has no view on whether it is
+	 * interesting — so the decision is made here.
+	 *
+	 * Two ways to be sure: this playlist was shared with the viewer, or the rows themselves name
+	 * more than one person. The second covers an owner, who otherwise has no way to know whether
+	 * anybody else has contributed without asking the server a separate question.
+	 */
+	const showWhoAdded = $derived(
+		shared || new Set(items.map((i) => i.addedBy).filter(Boolean)).size > 1
+	);
 
 	let sortMode = $state<SortMode>(serverSortToMode(initialPrefs?.sort, readonly));
 	let showThumbnails = $state(initialPrefs?.showThumbnails ?? true);
@@ -545,6 +564,13 @@
 					{/if}
 					{#if item.metadata?.author}
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.metadata.author}</p>
+					{/if}
+					{#if showWhoAdded && item.addedBy}
+						<!-- Only on a playlist more than one person adds to. On a list somebody keeps
+						     alone, "added by you" on every row is noise saying nothing. -->
+						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
+							added by {item.addedBy}
+						</p>
 					{/if}
 					{#if item.note && readonly}
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.note}</p>

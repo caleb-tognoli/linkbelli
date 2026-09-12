@@ -17,6 +17,21 @@ public class PlaylistItem : BaseEntity<Guid>
     public string? Note { get; set; }
     /// <summary>Null when added manually; otherwise the source that discovered it.</summary>
     public Guid? SourceId { get; set; }
+
+    /// <summary>
+    /// Who put this here.
+    /// </summary>
+    /// <remarks>
+    /// A playlist can be shared with editors and contributors, and nothing recorded which of them
+    /// added what — so on a list three people contribute to, "who saved this?" had no answer, and
+    /// neither did "show me only mine". SourceId already answered the machine version of the same
+    /// question, which is what made the absence of this one look like an oversight.
+    ///
+    /// Nullable, and null for everything that existed before this was tracked: inventing an
+    /// answer would be worse than admitting there isn't one. Also null for items a source
+    /// created, where SourceId is the honest answer instead.
+    /// </remarks>
+    public Guid? AddedByUserId { get; set; }
     public PlaylistItemStatus Status { get; set; } = PlaylistItemStatus.Added;
 
     /// <summary>

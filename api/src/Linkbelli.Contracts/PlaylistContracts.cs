@@ -123,7 +123,12 @@ public record PlaylistItemResponse(
     /// <summary>Tags on the link itself, as opposed to on the playlist holding it.</summary>
     string[]? Tags = null,
     /// <summary>The token this item is shared under, or null when it isn't shared.</summary>
-    string? ShareToken = null);
+    string? ShareToken = null,
+    /// <summary>
+    /// Who added this, when a person did. Null for items a source created — SourceId is the
+    /// honest answer there — and for everything saved before this was recorded.
+    /// </summary>
+    string? AddedBy = null);
 
 // --- Links ---
 public record CreateLinkRequest(string Url);

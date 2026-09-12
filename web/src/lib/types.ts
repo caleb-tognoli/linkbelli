@@ -207,6 +207,11 @@ export interface PlaylistItem {
 	tags?: string[];
 	/** The token this item is shared under, or null when it isn't shared. */
 	shareToken?: string | null;
+	/**
+	 * Who added this, when a person did. Null for items a source created, and for anything saved
+	 * before this was recorded.
+	 */
+	addedBy?: string | null;
 }
 
 export interface LinkPreview {

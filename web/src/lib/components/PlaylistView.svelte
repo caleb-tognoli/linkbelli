@@ -365,6 +365,29 @@
 						<span class="sr-only sm:hidden">View as a visitor</span>
 					</a>
 				{/if}
+				{#if visibility !== 'Private' && (likeCount > 0 || followerCount > 0)}
+					<!-- Read-only, and only once somebody has actually done it: a published
+					     playlist showing "0 likes" says something discouraging and untrue about a
+					     list nobody has found yet. The owner could not see either number before —
+					     the API returned zero on their own reads — so the one person with a
+					     reason to care was the one person who could not find out. -->
+					<p class="inline-flex items-center gap-3 text-xs" style="color: var(--color-muted)">
+						{#if likeCount > 0}
+							<span class="inline-flex items-center gap-1">
+								<Heart size={13} aria-hidden="true" />
+								{likeCount}
+								<span class="sr-only">{likeCount === 1 ? 'like' : 'likes'}</span>
+							</span>
+						{/if}
+						{#if followerCount > 0}
+							<span class="inline-flex items-center gap-1">
+								<Rss size={13} aria-hidden="true" />
+								{followerCount}
+								<span class="sr-only">{followerCount === 1 ? 'follower' : 'followers'}</span>
+							</span>
+						{/if}
+					</p>
+				{/if}
 			{/if}
 			{#if !isOwner}
 				<!-- The lightest thing a visitor can say about someone else's list, and the only
@@ -551,6 +574,7 @@
 			{statusFilter}
 			onstatusfilter={applyStatusFilter}
 			isSearching={query.trim().length > 0}
+			shared={role !== undefined}
 			bind:total
 		/>
 		{#if nextCursor}

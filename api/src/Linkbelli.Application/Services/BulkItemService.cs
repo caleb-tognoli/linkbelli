@@ -172,6 +172,9 @@ public class BulkItemService(IAppDbContext db) : IBulkItemService
                     Score = item.Score,
                     SourceId = item.SourceId,
                     Metadata = item.Metadata is null ? null : new Dictionary<string, string>(item.Metadata),
+                    // The person doing the copying, not whoever added the row it came from:
+                    // putting a link in this playlist is this person's act.
+                    AddedByUserId = ownerId,
                 });
             }
 
