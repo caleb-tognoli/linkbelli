@@ -4,6 +4,7 @@
 	import { api } from '$lib/api/client';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import BackupsPanel from '$lib/components/BackupsPanel.svelte';
+	import NotificationsPanel from '$lib/components/NotificationsPanel.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import { Bookmark, Download } from '@lucide/svelte';
@@ -214,6 +215,8 @@
 			{/each}
 		</div>
 	</div>
+
+	<NotificationsPanel />
 
 	<BackupsPanel enabled={data.user?.backupsEnabled ?? true} />
 

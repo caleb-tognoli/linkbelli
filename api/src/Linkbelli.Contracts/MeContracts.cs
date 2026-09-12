@@ -21,3 +21,23 @@ public record BackupResponse(
     int PlaylistCount,
     int ItemCount,
     bool Automatic);
+
+/// <summary>What Linkbelli will email this account about.</summary>
+public record NotificationPreferencesResponse(
+    bool OnShare,
+    bool OnFollow,
+    bool OnSourceStopped,
+    bool WeeklyDigest);
+
+/// <summary>
+/// Changes some of them. Every field is optional and an omitted one is left alone, so a screen
+/// that owns one switch can save it without deciding about the rest.
+/// </summary>
+public record UpdateNotificationsRequest(
+    bool? OnShare = null,
+    bool? OnFollow = null,
+    bool? OnSourceStopped = null,
+    bool? WeeklyDigest = null);
+
+/// <summary>The token out of an unsubscribe link. It names both the account and the kind.</summary>
+public record UnsubscribeRequest(string Token);

@@ -84,6 +84,7 @@ public static class DependencyInjection
         services.AddHangfireServer();
         services.AddSingleton<ILinkEnrichmentQueue, HangfireLinkEnrichmentQueue>();
         services.AddSingleton<ISourceScheduler, HangfireSourceScheduler>();
+        services.AddSingleton<INotificationQueue, HangfireNotificationQueue>();
         services.AddSingleton<IBackgroundJobStats, HangfireJobStats>();
         services.AddHostedService<SourceScheduleSyncService>();
         services.AddHostedService<AdminRoleSeeder>();

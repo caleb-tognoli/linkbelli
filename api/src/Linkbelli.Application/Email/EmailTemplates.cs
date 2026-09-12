@@ -119,6 +119,26 @@ public static class EmailTemplates
         return Compose(to, subject, heading, [.. body], ("Open Linkbelli", publicUrl.TrimEnd('/')));
     }
 
+    /// <summary>
+    /// Adds the line that lets somebody stop receiving this kind of message.
+    /// </summary>
+    /// <remarks>
+    /// Appended rather than built in, because the two messages that must never carry one are the
+    /// password reset and the password-changed notice. Those are not marketing, and an
+    /// unsubscribe link on them would be a way to stop somebody hearing that their account was
+    /// taken.
+    /// </remarks>
+    public static EmailMessage WithUnsubscribe(EmailMessage message, string unsubscribeUrl, NotificationKind kind)
+    {
+        var sentence = $"You are getting this because Linkbelli tells you {kind.Describe()}.";
+
+        var text = $"{message.TextBody}\n\n{sentence}\nStop these: {unsubscribeUrl}\n";
+
+        var footer = $"<p style=\"margin:1rem 0 0;font-size:12px;color:#888\">{Escape(sentence)} <a href=\"{Escape(unsubscribeUrl)}\" style=\"color:#888\">Stop these</a>.</p>";
+
+        return message with { TextBody = text, HtmlBody = message.HtmlBody + footer };
+    }
+
     /// <summary>What a week produced, for somebody who asked to hear about it.</summary>
     public static EmailMessage Digest(
         string to,

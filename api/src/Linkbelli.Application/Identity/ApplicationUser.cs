@@ -43,6 +43,44 @@ public class ApplicationUser : IdentityUser<Guid>
     /// </remarks>
     public DateTimeOffset? OnboardingDismissedAt { get; set; }
 
+    /// <summary>Whether to say when somebody shares a playlist with this user.</summary>
+    /// <remarks>
+    /// On by default, and the one hardest to argue with: a playlist shared with you is invisible
+    /// until you happen to look in the right place, so without this it may as well not have been
+    /// shared at all.
+    /// </remarks>
+    public bool NotifyOnShare { get; set; } = true;
+
+    /// <summary>Whether to say when somebody follows one of this user's playlists.</summary>
+    /// <remarks>
+    /// Off by default, unlike a share. A follow is somebody else's activity rather than something
+    /// done to this user's things, and it can happen repeatedly — which makes it the kind of mail
+    /// people should choose rather than discover.
+    /// </remarks>
+    public bool NotifyOnFollow { get; set; }
+
+    /// <summary>
+    /// Whether to say when one of this user's sources gives up after repeated failures.
+    /// </summary>
+    /// <remarks>
+    /// On by default. A source that has stopped is a playlist that has quietly stopped filling,
+    /// and nothing else on the way through the app announces it.
+    /// </remarks>
+    public bool NotifySourceStopped { get; set; } = true;
+
+    /// <summary>Whether to send the weekly summary.</summary>
+    /// <remarks>
+    /// Off by default, and this is the one worth being strict about: a recurring email nobody
+    /// asked for is the single most reliable way to make somebody resent an app. The others here
+    /// are rare and caused by a real event; this one arrives every week regardless.
+    /// </remarks>
+    public bool NotifyWeeklyDigest { get; set; }
+
+    /// <summary>
+    /// When the weekly summary was last sent, so a restart or a missed run does not send two.
+    /// </summary>
+    public DateTimeOffset? DigestSentAt { get; set; }
+
     /// <summary>
     /// When this user last looked at their feed. Null means never — everything in it is new,
     /// which is the right answer for someone who has just started following things.

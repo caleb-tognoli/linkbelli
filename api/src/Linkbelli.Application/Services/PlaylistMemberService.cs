@@ -1,5 +1,6 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Email;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,8 @@ public interface IPlaylistMemberService
 }
 
 /// <inheritdoc />
-public sealed class PlaylistMemberService(IAppDbContext db, IPlaylistAccess access) : IPlaylistMemberService
+public sealed class PlaylistMemberService(
+    IAppDbContext db, IPlaylistAccess access, INotificationQueue notifications) : IPlaylistMemberService
 {
     /// <summary>
     /// People one playlist can be shared with. A ceiling rather than a policy: past this it is a
@@ -70,6 +72,7 @@ public sealed class PlaylistMemberService(IAppDbContext db, IPlaylistAccess acce
         var member = await db.PlaylistMembers
             .FirstOrDefaultAsync(m => m.PlaylistId == playlistId && m.UserId == userId, ct);
 
+        var isNew = false;
         if (member is null)
         {
             if (await db.PlaylistMembers.CountAsync(m => m.PlaylistId == playlistId, ct) >= MaxMembers)
@@ -85,10 +88,18 @@ public sealed class PlaylistMemberService(IAppDbContext db, IPlaylistAccess acce
                 InvitedBy = ownerId,
             };
             db.PlaylistMembers.Add(member);
+            isNew = true;
         }
 
         member.Role = role;
         await db.SaveChangesAsync(ct);
+
+        // Only on the first share, and only after the row is saved: changing somebody's role is
+        // not news, and a notification about a share that failed to commit is a lie.
+        if (isNew)
+        {
+            notifications.QueueShare(userId, playlistId, ownerId);
+        }
 
         return new PlaylistMemberResponse(resolvedName, member.Role, member.CreationTime);
     }

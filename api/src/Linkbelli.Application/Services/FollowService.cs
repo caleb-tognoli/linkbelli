@@ -1,5 +1,6 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Email;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +36,7 @@ public interface IFollowService
 }
 
 /// <inheritdoc />
-public sealed class FollowService(IAppDbContext db) : IFollowService
+public sealed class FollowService(IAppDbContext db, INotificationQueue notifications) : IFollowService
 {
     private const int MaxLimit = 100;
 
@@ -58,6 +59,10 @@ public sealed class FollowService(IAppDbContext db) : IFollowService
         {
             db.Follows.Add(new Follow { FollowerId = userId, PlaylistId = playlistId });
             await db.SaveChangesAsync(ct);
+
+            // Inside the branch, so following, unfollowing and following again does not mail
+            // somebody three times about the same person.
+            notifications.QueueFollow(owner, playlistId, userId);
         }
 
         return new FollowStateResponse(true, await FollowerCountAsync(playlistId, null, ct));

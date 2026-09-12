@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Email;
 using Linkbelli.Application.Observability;
 using Linkbelli.Application.Services;
 using Linkbelli.Core.Entities;
@@ -20,6 +21,7 @@ public sealed class SourceRunner(
     IUserQuotaService quotas,
     ISourceScheduler scheduler,
     AppMetrics metrics,
+    INotificationQueue notifications,
     ILogger<SourceRunner> logger) : ISourceRunner
 {
     /// <summary>
@@ -237,6 +239,11 @@ public sealed class SourceRunner(
                 logger.LogWarning(
                     "Source {SourceId} stopped after {Count} consecutive failures.",
                     sourceId, source.ConsecutiveFailures);
+
+                // The one moment worth an email about a source: it has given up, so a playlist
+                // has quietly stopped filling and nothing else in the app announces that.
+                // Inside the status check, so a source that keeps failing only says so once.
+                notifications.QueueSourceStopped(source.OwnerId, sourceId);
             }
         }
         finally
