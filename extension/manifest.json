@@ -3,8 +3,11 @@
   "name": "Linkbelli",
   "version": "1.0.0",
   "description": "Save the page you are on to a Linkbelli playlist.",
-  "permissions": ["activeTab", "storage", "contextMenus", "scripting"],
-  "host_permissions": ["http://localhost:5180/*", "https://*/*"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus"
+  ],
   "background": {
     "service_worker": "src/background.js",
     "type": "module"
@@ -23,5 +26,9 @@
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
-  }
+  },
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
 }

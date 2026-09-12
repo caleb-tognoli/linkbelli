@@ -35,7 +35,27 @@ describe('settings', () => {
 	});
 
 	it('fills in empties rather than returning undefined', async () => {
-		expect(await loadSettings()).toEqual({ serverUrl: '', apiKey: '', lastPlaylistId: '' });
+		expect(await loadSettings()).toEqual({
+			serverUrl: '',
+			apiKey: '',
+			lastPlaylistId: '',
+			// Off until it is asked for: it sends the server every address you open.
+			checkVisited: false
+		});
+	});
+
+	it('only turns on the visited badge when it was actually asked for', async () => {
+		stubChrome({ checkVisited: true });
+
+		expect((await loadSettings()).checkVisited).toBe(true);
+	});
+
+	it('treats anything other than true as off', async () => {
+		// A stored string, or a leftover from an older shape, must not count as consent to send
+		// the server every address this browser opens.
+		stubChrome({ checkVisited: 'true' });
+
+		expect((await loadSettings()).checkVisited).toBe(false);
 	});
 });
 

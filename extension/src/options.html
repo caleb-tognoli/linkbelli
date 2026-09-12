@@ -28,6 +28,18 @@
 			</p>
 			<ul class="muted" id="scopes"></ul>
 
+			<hr style="border: none; border-top: 1px solid var(--border); margin: 1rem 0" />
+
+			<label style="display: flex; gap: 0.5rem; align-items: flex-start">
+				<input id="check-visited" type="checkbox" style="width: auto; margin-top: 0.2rem" />
+				<span>Show a tick when a page is already saved</span>
+			</label>
+			<p class="muted">
+				This asks your Linkbelli whether each page you open is already in your library, so
+				it needs to send it the address of every page you visit. Your server's logs would
+				then hold a record of your browsing. Off unless you want it.
+			</p>
+
 			<button id="save" class="primary" type="button">Save</button>
 			<p id="message" role="status" hidden></p>
 		</main>

@@ -42,7 +42,20 @@ lives. `chrome.*` is stubbed, so they run without a browser.
 
 ## Cross-origin requests
 
-`host_permissions` in the manifest is what lets the extension call your server directly; it does
-not need an entry in the API's `Cors:AllowedOrigins`. The manifest ships with `http://localhost:5180`
-for local development plus `https://*/*` — narrow that second one to your own host before you
-hand the extension to anyone else.
+Access to your server is what lets the extension call it directly; it does not need an entry in
+the API's `Cors:AllowedOrigins`.
+
+The manifest asks for **no** sites up front. It used to ship `https://*/*`, which is
+read-and-modify on every website you visit — a hard thing to justify at the install prompt for a
+bookmarking tool, and far more than it needs. Instead the address you enter on the options page is
+requested at that moment, through `optional_host_permissions`, so the extension ends up with
+access to exactly one host: yours.
+
+Saving the current page needs nothing extra: `activeTab` covers the tab you are looking at, for
+as long as you are acting on it.
+
+## The "already saved" tick
+
+Off by default, and worth understanding before turning it on. It asks your server about every page
+you open, so your server's request log becomes a record of your browsing. When it is on, answers
+are cached per address for the session and incognito tabs are skipped entirely.

@@ -5,7 +5,7 @@
  * scoped key can be revoked on its own without signing the person out of the web app.
  */
 
-const SETTINGS_KEYS = ['serverUrl', 'apiKey', 'lastPlaylistId'];
+const SETTINGS_KEYS = ['serverUrl', 'apiKey', 'lastPlaylistId', 'checkVisited'];
 
 /** Scopes the extension actually needs, shown on the options page so the key can be narrow. */
 export const REQUIRED_SCOPES = ['playlists:read', 'playlists:write', 'links:write'];
@@ -15,7 +15,10 @@ export async function loadSettings() {
 	return {
 		serverUrl: (stored.serverUrl ?? '').replace(/\/+$/, ''),
 		apiKey: stored.apiKey ?? '',
-		lastPlaylistId: stored.lastPlaylistId ?? ''
+		lastPlaylistId: stored.lastPlaylistId ?? '',
+		// Off by default. It asks the server about every page you open, so it is opt-in rather
+		// than something you discover you have been doing.
+		checkVisited: stored.checkVisited === true
 	};
 }
 

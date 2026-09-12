@@ -33,22 +33,64 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 	}
 });
 
-/** Marks whether the current tab is already saved, so the icon answers before it is clicked. */
+/**
+ * Marks whether the current tab is already saved, so the icon answers before it is clicked.
+ *
+ * Off unless it is asked for, and this is why: it runs on every completed navigation in every
+ * tab, and each one is a request to the server carrying the full address. Left on, the server's
+ * request log becomes a complete history of everything the person browsed — for a checkmark.
+ *
+ * When it is on: answers are cached per canonical address for the session, so revisiting a page
+ * or moving between tabs costs nothing, and a busy hour does not walk into the rate limiter.
+ */
+const badgeCache = new Map();
+
+/** A ceiling on the cache, so a long session cannot grow it without bound. */
+const BADGE_CACHE_MAX = 500;
+
+/** The address without the parts that identify a visit rather than a page. */
+function badgeKey(url) {
+	try {
+		const parsed = new URL(url);
+		return parsed.origin + parsed.pathname;
+	} catch {
+		return url;
+	}
+}
+
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	if (changeInfo.status !== 'complete' || !tab.url?.startsWith('http')) return;
 
+	// Incognito is somebody saying they do not want this recorded anywhere.
+	if (tab.incognito) return;
+
 	const settings = await loadSettings();
-	if (!isConfigured(settings)) return;
+	if (!isConfigured(settings) || !settings.checkVisited) return;
+
+	const key = badgeKey(tab.url);
+	if (badgeCache.has(key)) {
+		await setBadge(tabId, badgeCache.get(key));
+		return;
+	}
 
 	try {
 		const existing = await findExisting(settings, tab.url);
-		await chrome.action.setBadgeText({ tabId, text: existing.length > 0 ? '✓' : '' });
-		await chrome.action.setBadgeBackgroundColor({ tabId, color: '#2563eb' });
+		const saved = existing.length > 0;
+
+		if (badgeCache.size >= BADGE_CACHE_MAX) badgeCache.clear();
+		badgeCache.set(key, saved);
+
+		await setBadge(tabId, saved);
 	} catch {
 		// A badge is a nicety; never let it surface as an error.
-		await chrome.action.setBadgeText({ tabId, text: '' });
+		await setBadge(tabId, false);
 	}
 });
+
+async function setBadge(tabId, saved) {
+	await chrome.action.setBadgeText({ tabId, text: saved ? '✓' : '' });
+	if (saved) await chrome.action.setBadgeBackgroundColor({ tabId, color: '#2563eb' });
+}
 
 const BADGES = { ok: '✓', dup: '=', err: '!' };
 
