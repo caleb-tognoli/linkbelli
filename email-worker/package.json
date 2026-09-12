@@ -2,6 +2,7 @@
   "name": "linkbelli-email-worker",
   "version": "1.0.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "description": "Cloudflare Email Worker that turns an emailed link into a Linkbelli save.",
   "scripts": {

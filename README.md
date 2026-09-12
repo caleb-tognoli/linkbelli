@@ -111,5 +111,24 @@ The API reads these via standard .NET configuration (env vars use `__` for nesti
 The web app reads `API_BASE_URL` (where the BFF reaches the API), `ORIGIN` (the app's public
 origin, used for form-action CSRF checks), and `COOKIE_SECURE` (`false` only for local HTTP).
 
-> Horizontal scaling additionally requires the Data Protection key ring to be shared *and*
-> encrypted at rest (`ProtectKeysWith*`), so every replica validates tokens minted by the others.
+## Running more than one instance
+
+**Linkbelli assumes a single API instance.** Two things are deliberately in-process and would
+each be wrong per replica rather than per deployment:
+
+- **Rate limiting.** The limiter's buckets live in memory, so N replicas means N times the
+  configured allowance. Put the limit at your reverse proxy if you need one that holds.
+- **The per-host fetch throttle.** `HostThrottle` spaces out requests to the same origin so
+  parallel enrichment jobs don't dogpile a site. Per replica, that politeness is divided by N,
+  which is the 429 wave it exists to prevent.
+
+Migrations are safe either way: they run behind a Postgres advisory lock, so instances starting
+together take turns instead of racing.
+
+If you do run several anyway, the Data Protection key ring must also be shared *and* encrypted at
+rest (`ProtectKeysWith*`), so every replica validates tokens minted by the others.
+
+## Licence
+
+[AGPL-3.0-only](LICENSE). You may run, modify and redistribute this; if you offer a modified
+version to other people over a network, that version's source has to be available to them too.

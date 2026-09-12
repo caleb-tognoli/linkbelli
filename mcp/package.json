@@ -2,6 +2,7 @@
   "name": "linkbelli-mcp",
   "version": "1.0.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "description": "Model Context Protocol server for a Linkbelli library.",
   "bin": { "linkbelli-mcp": "src/server.js" },

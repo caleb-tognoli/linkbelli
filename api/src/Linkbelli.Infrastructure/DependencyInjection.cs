@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Linkbelli.Infrastructure;
 
@@ -118,11 +119,57 @@ public static class DependencyInjection
         app.UseHangfireDashboard("/hangfire", new DashboardOptions { Authorization = [authFilter] });
     }
 
+    /// <summary>
+    /// A lock id for the migration advisory lock. Arbitrary, but it has to be the same number in
+    /// every instance, so it is written down here rather than derived from anything.
+    /// </summary>
+    private const long MigrationLockId = 6_675_481_073_241_001;
+
     /// <summary>Applies pending EF migrations (opt-in via config "Database:MigrateAtStartup").</summary>
+    /// <remarks>
+    /// Behind a Postgres advisory lock, because every instance runs this on boot. Two of them
+    /// starting together — which is exactly what a rolling restart or a scale-up does — both saw
+    /// the same pending list and both tried to apply it, and the loser failed on an object that
+    /// already existed. Whoever gets the lock migrates; the others wait and then find nothing to
+    /// do.
+    ///
+    /// The connection is opened explicitly so the lock and the migration share one session: a
+    /// session-level advisory lock taken on a connection that is then returned to the pool
+    /// protects nothing.
+    /// </remarks>
     public static async Task MigrateDatabaseAsync(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
-        await db.Database.MigrateAsync();
+
+        var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Linkbelli.Migrations");
+
+        await db.Database.OpenConnectionAsync();
+        try
+        {
+            // Tried first so the wait can be explained. Blocking on pg_advisory_lock outright
+            // works, but it looks from the outside like a container that has hung with no logs —
+            // which is exactly what somebody watching a rolling restart does not need.
+            // Aliased "Value": SqlQuery<T> wraps this in a subquery and reads a column by that
+            // name, so without the alias it fails with 42703 — on every startup, not just a
+            // contended one.
+            var acquired = await db.Database
+                .SqlQuery<bool>($"SELECT pg_try_advisory_lock({MigrationLockId}) AS \"Value\"")
+                .SingleAsync();
+
+            if (!acquired)
+            {
+                logger.LogInformation(
+                    "Another instance is applying migrations. Waiting for it to finish.");
+                await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_lock({MigrationLockId})");
+            }
+
+            await db.Database.MigrateAsync();
+        }
+        finally
+        {
+            await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_unlock({MigrationLockId})");
+            await db.Database.CloseConnectionAsync();
+        }
     }
 }
