@@ -53,6 +53,8 @@ export interface Playlist {
 	isOwner?: boolean;
 	/** What a non-owner may do here. Null when they own it. */
 	role?: PlaylistRole | null;
+	/** The link whose image stands for this playlist; null falls back to the first one with an image. */
+	coverLinkId?: string | null;
 }
 
 /** How one person looks at one playlist. Saved per account, so it follows them between devices. */
@@ -126,6 +128,8 @@ export interface PublicPlaylistSummary {
 	likeCount?: number;
 	/** When the newest link was added — what "recently active" is measured on. */
 	lastItemAt?: string | null;
+	/** The link whose image stands for this playlist. */
+	coverLinkId?: string | null;
 }
 
 export type SourceType = 'Rss' | 'Scraper' | 'JsonApi' | 'Webhook';

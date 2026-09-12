@@ -23,6 +23,17 @@ public class Playlist : BaseEntity<Guid>
     /// </summary>
     public bool? NsfwOverride { get; set; }
 
+    /// <summary>
+    /// The link whose image stands for this playlist, chosen by its owner.
+    /// </summary>
+    /// <remarks>
+    /// One of its own items rather than an upload: the picture is already here, already proxied,
+    /// and already the right thing — a playlist about a subject is best represented by something
+    /// in it. Null falls back to whatever the first item with an image happens to be, which is a
+    /// guess rather than a decision.
+    /// </remarks>
+    public Guid? CoverLinkId { get; set; }
+
     public List<PlaylistItem> Items { get; set; } = [];
     public List<PlaylistSource> Sources { get; set; } = [];
     public List<PlaylistTag> Tags { get; set; } = [];

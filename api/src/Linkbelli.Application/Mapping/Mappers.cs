@@ -21,7 +21,18 @@ public static class Mappers
             true => NsfwSetting.Yes,
             false => NsfwSetting.No,
             null => NsfwSetting.Auto,
-        });
+        },
+        PendingCount: null,
+        AverageScore: null,
+        ScoredCount: null,
+        View: null,
+        LikeCount: 0,
+        LikedByMe: false,
+        FollowerCount: 0,
+        FollowedByMe: false,
+        IsOwner: true,
+        Role: null,
+        CoverLinkId: playlist.CoverLinkId);
 
     public static ApiKeyResponse ToResponse(this ApiKey key) => new(
         key.Id, key.Name, key.Prefix, key.Scopes, key.CreationTime, key.LastUsedAt, key.ExpiresAt);

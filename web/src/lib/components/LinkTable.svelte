@@ -214,6 +214,13 @@
 	/** What the last "copy share link" did, so the row can say so rather than silently succeeding. */
 	let shareToast = $state<string | null>(null);
 
+	async function setCover(item: PlaylistItem) {
+		actionFlyoutId = null;
+
+		const res = await api.patch(`/playlists/${playlistId}`, { coverLinkId: item.link.id });
+		shareToast = res.ok ? 'Cover set.' : 'Could not set the cover.';
+	}
+
 	async function copyShareLink(item: PlaylistItem) {
 		actionFlyoutId = null;
 
@@ -533,6 +540,20 @@
 							>
 								<Share2 size={16} aria-hidden="true" />
 							</button>
+							{#if !readonly && playlistId && item.link.thumbnailUrl}
+								<!-- Only offered for a link that has an image: the cover is one of the
+								     playlist's own pictures, not a placeholder. -->
+								<button
+									type="button"
+									onclick={() => setCover(item)}
+									class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+									style="color: var(--color-muted)"
+									title="Use as the playlist cover"
+									aria-label="Use as the playlist cover"
+								>
+									<Image size={16} aria-hidden="true" />
+								</button>
+							{/if}
 							{#if !readonly}
 								<!-- A link someone else can open, carrying the note with it. Sharing one
 								     link otherwise meant making the whole playlist public. -->

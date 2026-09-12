@@ -25,11 +25,14 @@
 	);
 	const feedUrl = $derived(`${canonical}/feed`);
 
-	// The first item that has an image stands in as the card art.
+	// The owner's choice first; otherwise the first item that happens to have an image, which is
+	// a guess standing in for a decision.
 	const cardImage = $derived(
-		data.items.items
-			.map((i) => i.metadata?.thumbnail ?? i.link.thumbnailUrl)
-			.find((src): src is string => !!src) ?? null
+		data.playlist.coverLinkId
+			? `${page.url.origin}/api/v1/thumbnails/${data.playlist.coverLinkId}`
+			: (data.items.items
+					.map((i) => i.metadata?.thumbnail ?? i.link.thumbnailUrl)
+					.find((src): src is string => !!src) ?? null)
 	);
 </script>
 

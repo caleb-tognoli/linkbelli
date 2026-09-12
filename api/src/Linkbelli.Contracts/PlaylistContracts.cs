@@ -18,7 +18,12 @@ public enum NsfwSetting
 public record UpdatePlaylistRequest(
     string? Name, string? Description, PlaylistVisibility? Visibility, string[]? Tags,
     /// <summary>Override the automatic adult-content reading. Omit to leave it as it is.</summary>
-    NsfwSetting? Nsfw = null);
+    NsfwSetting? Nsfw = null,
+    /// <summary>
+    /// A link of this playlist's own to stand for it. Omit to leave it; send <c>Guid.Empty</c>
+    /// to clear it, since null already means "don't touch".
+    /// </summary>
+    Guid? CoverLinkId = null);
 
 public record PlaylistResponse(
     Guid Id, string Name, string Slug, string? Description,
@@ -52,7 +57,12 @@ public record PlaylistResponse(
     /// <summary>Whether the caller owns it. False when it was merely shared with them.</summary>
     bool IsOwner = true,
     /// <summary>What a non-owner may do here. Null when they own it, or are only a visitor.</summary>
-    PlaylistRole? Role = null);
+    PlaylistRole? Role = null,
+    /// <summary>
+    /// The link whose image stands for this playlist. Null means "whatever the first item with
+    /// one happens to be", which is a guess rather than a decision.
+    /// </summary>
+    Guid? CoverLinkId = null);
 
 /// <summary>
 /// How one person looks at one playlist: sort, filters, and what the rows show. Saved per

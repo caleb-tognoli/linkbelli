@@ -84,7 +84,17 @@ public class PlaylistService(
             .Select(x => new PlaylistResponse(
                 x.Playlist.Id, x.Playlist.Name, x.Playlist.Slug, x.Playlist.Description,
                 x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags, x.Nsfw,
-                x.FolderId, x.FolderName, null, x.PendingCount))
+                x.FolderId, x.FolderName, null, x.PendingCount,
+                AverageScore: null,
+                ScoredCount: null,
+                View: null,
+                LikeCount: 0,
+                LikedByMe: false,
+                FollowerCount: 0,
+                FollowedByMe: false,
+                IsOwner: true,
+                Role: null,
+                CoverLinkId: x.Playlist.CoverLinkId))
             .ToListAsync(ct);
 
         string? next = null;
@@ -164,7 +174,8 @@ public class PlaylistService(
                 db.PlaylistMembers
                     .Where(m => m.PlaylistId == p.Id && m.UserId == ownerId)
                     .Select(m => (PlaylistRole?)m.Role)
-                    .FirstOrDefault()))
+                    .FirstOrDefault(),
+                p.CoverLinkId))
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");
@@ -232,6 +243,31 @@ public class PlaylistService(
             playlist.LastModified = DateTimeOffset.UtcNow;
         }
 
+        if (request.CoverLinkId is { } cover)
+        {
+            // Guid.Empty clears it: null already means "leave it alone" everywhere else on this
+            // request, so there has to be some way to say "no cover".
+            if (cover == Guid.Empty)
+            {
+                playlist.CoverLinkId = null;
+            }
+            else
+            {
+                // One of its own items, not any link that happens to exist — a cover is chosen
+                // from what is in the playlist, and this is also what stops it pointing at
+                // somebody else's picture.
+                var inPlaylist = await db.PlaylistItems.AnyAsync(
+                    i => i.PlaylistId == id && i.LinkId == cover, ct);
+
+                if (!inPlaylist)
+                {
+                    throw new ValidationException("coverLinkId", "That link isn't in this playlist.");
+                }
+
+                playlist.CoverLinkId = cover;
+            }
+        }
+
         await db.SaveChangesAsync(ct);
 
         var count = await db.PlaylistItems.CountAsync(i => i.PlaylistId == id && i.Link!.EnrichedAt != null, ct);
@@ -287,7 +323,10 @@ public class PlaylistService(
                 db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
                 db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == viewerId),
                 db.Follows.Count(f => f.PlaylistId == p.Id),
-                db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == viewerId)))
+                db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == viewerId),
+                IsOwner: false,
+                Role: null,
+                p.CoverLinkId))
             .FirstOrDefaultAsync(ct);
 
         // Private/missing — and NSFW for viewers who haven't opted in — are all indistinguishable.

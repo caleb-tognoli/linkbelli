@@ -11,6 +11,18 @@
 	class="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:border-[var(--color-accent)]"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
+	{#if playlist.coverLinkId}
+		<!-- Served through the same proxy every other thumbnail uses, so a cover leaks no more
+		     than the rows already do. -->
+		<img
+			src={`/api/v1/thumbnails/${playlist.coverLinkId}`}
+			alt=""
+			class="-mx-4 -mt-4 mb-1 h-28 w-[calc(100%+2rem)] rounded-t-lg object-cover"
+			loading="lazy"
+			onerror={(e) => e.currentTarget.remove()}
+		/>
+	{/if}
+
 	<div class="flex items-start justify-between gap-2">
 		<span class="font-medium">{playlist.name}</span>
 		{#if playlist.nsfw}<span class="shrink-0"><NsfwBadge /></span>{/if}

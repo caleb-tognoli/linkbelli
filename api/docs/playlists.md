@@ -355,6 +355,22 @@ newest first, which shows the default rather than an empty page.
 
 Every row carries `likeCount` and `lastItemAt`.
 
+## Cover art
+
+A playlist looked like every other playlist: a name and a count.
+
+`PATCH /api/v1/playlists/{id}` takes `coverLinkId` — **a link that is already in that playlist**.
+Send `00000000-0000-0000-0000-000000000000` to clear it; omitting the field leaves it alone, so
+renaming a playlist is not a statement about its cover.
+
+- **One of its own items, not an upload.** The picture is already here and already proxied, and a
+  playlist about a subject is best represented by something in it. Requiring the link to be in the
+  playlist is also what stops a cover pointing at somebody else's picture.
+- **Null is a guess, not an absence.** With no cover chosen, the public page falls back to the
+  first item that happens to have an image — which is exactly the difference this replaces.
+- Covers are served through the same thumbnail proxy as every other image, so one leaks no more
+  than the rows already do.
+
 ## Pasting a block of links
 
 Adding links one at a time, or exporting a file to import it, were the only two ways in. What
