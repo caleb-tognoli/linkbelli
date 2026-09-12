@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Linkbelli.Api.Auth;
+using Linkbelli.Application.Email;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 
 namespace Linkbelli.Api.Endpoints;
 
@@ -13,7 +15,7 @@ public static class MeEndpoints
     {
         var secured = new AuthorizeAttribute { AuthenticationSchemes = AuthSchemes.BearerOrApiKey };
 
-        app.MapGet("/me", async (ClaimsPrincipal user, IUserPreferenceService prefs, CancellationToken ct) => Results.Ok(new
+        app.MapGet("/me", async (ClaimsPrincipal user, IUserPreferenceService prefs, IOptions<EmailOptions> email, CancellationToken ct) => Results.Ok(new
         {
             userId = user.FindFirstValue(ClaimTypes.NameIdentifier),
             username = user.FindFirstValue(ClaimTypes.Name),
@@ -27,6 +29,9 @@ public static class MeEndpoints
             archiveLinks = await prefs.ArchiveLinksAsync(user.GetUserId(), ct),
             backupsEnabled = await prefs.BackupsEnabledAsync(user.GetUserId(), ct),
             onboardingDismissed = await prefs.OnboardingDismissedAsync(user.GetUserId(), ct),
+            // So the sources page can show an inbox address, or say nothing when this deployment
+            // has no inbound domain rather than offering one that goes nowhere.
+            inboxDomain = email.Value.InboxDomain,
         }))
         .RequireAuthorization(secured)
         .WithName("GetMe");

@@ -16,6 +16,11 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
 {
     private readonly PostgreSqlContainer _db = new PostgreSqlBuilder()
         .WithImage("postgres:17-alpine")
+        // Postgres defaults to 100 connections, which this suite outgrew: several test classes
+        // boot their own WebApplicationFactory per test — each with its own connection pool and
+        // its own Hangfire server — and the failure that follows is "53300: sorry, too many
+        // clients already" on whichever test happens to run when the last one is taken.
+        .WithCommand("-c", "max_connections=500")
         .Build();
 
     public async Task InitializeAsync() => await _db.StartAsync();
@@ -39,7 +44,11 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        builder.UseSetting("ConnectionStrings:Default", _db.GetConnectionString());
+        // A small pool per app, for the same reason: an app booted for one test does not need
+        // Npgsql's default hundred, and several of them at once is what exhausts the server.
+        builder.UseSetting(
+            "ConnectionStrings:Default",
+            $"{_db.GetConnectionString()};Maximum Pool Size=12;Connection Idle Lifetime=10");
         builder.UseSetting("Database:MigrateAtStartup", "true");
 
         // A host, so the app believes mail is configured and the features that check are on.

@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPreferences, NotificationPreferences>();
         services.AddScoped<IDigestSweep, DigestSweep>();
+        services.AddScoped<IEmailIngestService, EmailIngestService>();
         services.AddSingleton<IUnsubscribeTokens, UnsubscribeTokens>();
         services.AddScoped<IBackupService, BackupService>();
         services.AddScoped<IBackupSweep, BackupSweep>();

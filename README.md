@@ -14,11 +14,14 @@ web/   SvelteKit 2 / Svelte 5 (adapter-node). BFF proxies /api/v1; tokens live i
 extension/  Manifest V3 browser extension — saves the current tab into a playlist (no build step)
 mcp/   Model Context Protocol server — lets an AI assistant search the library and read the
        article text saved with each link (see mcp/README.md)
+email-worker/  Cloudflare Email Worker — save a link by emailing it (see email-worker/README.md)
 ```
 
-Three ways to save a link without opening the app: the browser extension, a bookmarklet (on the
-profile page — drag it to the bookmarks bar), and the system share sheet once the web app is
-installed to a phone's home screen. All three land on `/save`, which pre-fills the address.
+Four ways to save a link without opening the app: the browser extension, a bookmarklet (on the
+profile page — drag it to the bookmarks bar), the system share sheet once the web app is installed
+to a phone's home screen, and emailing it. The first three land on `/save`, which pre-fills the
+address; email goes to a webhook source via the Cloudflare worker in `email-worker/`. A save made
+with no connection is queued and sent when one returns (see `web/docs/offline.md`).
 
 - Auth is dual-scheme: Identity bearer tokens (for the web BFF) and `X-Api-Key` keys.
 - The web app never exposes tokens to browser JS — they're held in httpOnly cookies and
@@ -35,6 +38,8 @@ docker compose up --build
 - Web app: http://localhost:5173
 - API + Scalar docs (Development): http://localhost:5180/scalar
 - Hangfire dashboard: http://localhost:5180/hangfire (open in Development)
+- **Mailpit** catches every message the API sends: http://localhost:8025. No provider account, no
+  domain, and nothing a dev box sends can reach a real person.
 - Postgres is published on host port **5433** (5432 is assumed taken by a native install).
 
 ## Develop without Docker
@@ -69,6 +74,9 @@ npm test        # Vitest unit suite (chrome.* is stubbed; no browser needed)
 
 cd mcp
 npm test        # Vitest unit suite (the protocol surface, over an in-memory transport)
+
+cd email-worker
+npm test        # Vitest unit suite (the MIME parsing, without Cloudflare's runtime)
 ```
 
 CI (`.github/workflows/ci.yml`) runs the unit suite, a vulnerable-dependency scan, the
@@ -91,6 +99,11 @@ The API reads these via standard .NET configuration (env vars use `__` for nesti
 | `Thumbnails:CachePath` | Directory for cached link thumbnails, which are served from this host rather than hotlinked from the sites they came from. Without it the cache lands in the system temp directory and is refetched whenever that is cleared. |
 | `PublicWebBaseUrl` | The web app's public origin. Used to build the links inside syndicated playlist feeds; without it the API falls back to its own address, which behind a proxy is an internal hostname. |
 | `Database:MigrateAtStartup` | `true` to apply EF migrations on boot. |
+| `Email:Host` / `Email:Port` / `Email:Username` / `Email:Password` | SMTP, for password resets, notifications and the weekly digest. **Empty means mail is off**, and the features that need it say so rather than promising a message nobody will send. Plain SMTP on purpose: the provider is a config change, not a code change. Brevo is `smtp-relay.brevo.com:587`. |
+| `Email:FromAddress` / `Email:FromName` | Who mail comes from. The address must be one the provider has verified for the domain, or it will be filed as spam. |
+| `Email:UseTls` | On everywhere real. Off only for a local catch-all mailbox that speaks plaintext on purpose. |
+| `Email:PublicUrl` | Where links in mail point. **Never derived from the request** — a reset link built from an inbound Host header is a way to mail somebody a link to an attacker's site. |
+| `Email:InboxDomain` | Optional. The domain that receives mailed-in links, so the app can show somebody their inbox address. See `email-worker/README.md`. |
 
 The web app reads `API_BASE_URL` (where the BFF reaches the API), `ORIGIN` (the app's public
 origin, used for form-action CSRF checks), and `COOKIE_SECURE` (`false` only for local HTTP).

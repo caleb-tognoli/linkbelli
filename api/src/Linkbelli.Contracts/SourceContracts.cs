@@ -129,3 +129,17 @@ public record PushedLinkDto(string Url, string? Title = null);
 /// <summary>What the push did, reported the same way a scheduled run is.</summary>
 public record WebhookPushResponse(
     int Received, int Found, int Added, int Skipped, SourceRunStatus Status, string? Error);
+
+/// <summary>
+/// The parts of an email that matter, as forwarded by whatever received it.
+/// </summary>
+/// <remarks>
+/// Not the raw message. Parsing MIME is a job for something that already receives mail — a
+/// Cloudflare Email Worker, in the setup this ships with — and doing it here would mean this API
+/// had to be an SMTP server too.
+/// </remarks>
+public record EmailIngestRequest(
+    string From,
+    string? Subject = null,
+    string? Text = null,
+    string? Html = null);

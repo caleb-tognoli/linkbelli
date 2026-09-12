@@ -77,6 +77,16 @@ public static class SourceEndpoints
             .WithTags("Sources")
             .WithName("PushToWebhookSource");
 
+        // The same source as /hooks/{token}, reached by email instead of by POST. One source,
+        // two doors — a second kind of source would be two things that must behave identically.
+        app.MapPost("/inbox/{token}", async (
+            string token, EmailIngestRequest req, IEmailIngestService svc, CancellationToken ct) =>
+            Results.Ok(await svc.IngestAsync(token, req, ct)))
+            .AllowAnonymous()
+            .RequireRateLimiting("sensitive")
+            .WithTags("Sources")
+            .WithName("EmailToWebhookSource");
+
         group.MapGet("/{id:guid}/runs", async (Guid id, ClaimsPrincipal user, ISourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.ListRunsAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.SourcesRead));

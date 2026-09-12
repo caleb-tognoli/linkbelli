@@ -77,8 +77,22 @@ public class ArchiveTests(PostgresApiFactory factory)
     /// <summary>Seeds a link the way a successful enrichment leaves one.</summary>
     private async Task<Guid> SeedLinkAsync(Guid playlistId)
     {
-        var seeded = await factory.SeedEnrichedItemsAsync(
-            playlistId, 1, url: _ => $"https://archive.example/{Guid.NewGuid():N}");
+        var (linkId, _) = await SeedLinkWithUrlAsync(playlistId);
+        return linkId;
+    }
+
+    /// <summary>
+    /// The seeded link and the address it was given.
+    /// </summary>
+    /// <remarks>
+    /// The address matters because the sweep picks up a batch of links belonging to anybody who
+    /// has opted in, and <see cref="StubArchiver.Asked" /> is shared across the whole class. A
+    /// test that counts the total is really asserting about every other test's links too.
+    /// </remarks>
+    private async Task<(Guid LinkId, string Url)> SeedLinkWithUrlAsync(Guid playlistId)
+    {
+        var url = $"https://archive.example/{Guid.NewGuid():N}";
+        var seeded = await factory.SeedEnrichedItemsAsync(playlistId, 1, url: _ => url);
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
@@ -86,7 +100,7 @@ public class ArchiveTests(PostgresApiFactory factory)
         item.Link!.EnrichmentStatus = EnrichmentStatus.Succeeded;
         await db.SaveChangesAsync();
 
-        return item.LinkId;
+        return (item.LinkId, item.Link.CanonicalUrl);
     }
 
     private static async Task SweepAsync(WebApplicationFactory<Program> app)
@@ -156,13 +170,14 @@ public class ArchiveTests(PostgresApiFactory factory)
         var client = await SignedInAsync(app);
         await OptInAsync(client);
         var playlist = await NewPlaylistAsync(client, "Once");
-        await SeedLinkAsync(playlist);
+        var (_, url) = await SeedLinkWithUrlAsync(playlist);
 
         await SweepAsync(app);
-        var askedOnce = StubArchiver.Asked.Count;
         await SweepAsync(app);
 
-        Assert.Equal(askedOnce, StubArchiver.Asked.Count);
+        // Counted for this link alone. The total would also count every other test's links, which
+        // the same sweep picks up — and which is what made this flake as the suite grew.
+        Assert.Equal(1, StubArchiver.Asked.Count(asked => asked == url));
     }
 
     [Fact]

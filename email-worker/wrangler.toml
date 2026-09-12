@@ -1,0 +1,18 @@
+# The free inbound half of email-in.
+#
+# Cloudflare Email Routing receives mail for a domain you own and runs this worker on each
+# message. The worker pulls the parts Linkbelli needs out of the MIME and posts them to
+# /inbox/{token}. Email Routing and the Workers free plan both cost nothing.
+name = "linkbelli-email-in"
+main = "src/worker.js"
+compatibility_date = "2026-01-01"
+
+# One secret, set with `wrangler secret put` — never here, because this file is committed.
+#   wrangler secret put LINKBELLI_API_URL     # e.g. https://linkbelli.example
+#
+# There is no mapping table to keep: the address is the credential. A webhook source's token is
+# the local part, so <token>@in.example.com reaches that source — and Linkbelli can show somebody
+# their own inbox address without this worker having to agree with it about anything.
+
+[observability]
+enabled = true

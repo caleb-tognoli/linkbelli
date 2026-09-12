@@ -58,6 +58,16 @@ public class EmailOptions
     /// </remarks>
     public string PublicUrl { get; set; } = "http://localhost:5173";
 
+    /// <summary>
+    /// The domain that receives mailed-in links, e.g. <c>in.example.com</c>.
+    /// </summary>
+    /// <remarks>
+    /// Only for showing somebody their own inbox address: a webhook source's token is the local
+    /// part, so the address is the token and this. Empty means the feature is not set up here,
+    /// and the app says nothing about it rather than offering an address that goes nowhere.
+    /// </remarks>
+    public string? InboxDomain { get; set; }
+
     /// <summary>Whether there is enough here to try sending at all.</summary>
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Host);
 }
