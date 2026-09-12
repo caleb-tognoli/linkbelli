@@ -1,0 +1,21 @@
+{
+  "name": "linkbelli-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Model Context Protocol server for a Linkbelli library.",
+  "bin": { "linkbelli-mcp": "src/server.js" },
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "vitest run"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.0"
+  }
+}

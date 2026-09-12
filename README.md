@@ -12,6 +12,8 @@ api/   ASP.NET Core Minimal APIs  ─ Layered: Contracts → Core → Applicatio
        EF Core 10 + Npgsql (PostgreSQL 17), Hangfire (Postgres storage) for scheduled source runs
 web/   SvelteKit 2 / Svelte 5 (adapter-node). BFF proxies /api/v1; tokens live in httpOnly cookies
 extension/  Manifest V3 browser extension — saves the current tab into a playlist (no build step)
+mcp/   Model Context Protocol server — lets an AI assistant search the library and read the
+       article text saved with each link (see mcp/README.md)
 ```
 
 Three ways to save a link without opening the app: the browser extension, a bookmarklet (on the
@@ -64,6 +66,9 @@ npm test        # Vitest unit suite
 
 cd extension
 npm test        # Vitest unit suite (chrome.* is stubbed; no browser needed)
+
+cd mcp
+npm test        # Vitest unit suite (the protocol surface, over an in-memory transport)
 ```
 
 CI (`.github/workflows/ci.yml`) runs the unit suite, a vulnerable-dependency scan, the
