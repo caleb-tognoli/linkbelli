@@ -70,6 +70,16 @@ public class Source : BaseEntity<Guid>
     /// <see cref="Schedule"/>, and it does not block an explicit "run now".
     /// </summary>
     public SourceStatus Status { get; set; } = SourceStatus.Active;
+
+    /// <summary>
+    /// Whether to stop pointing out that this source finds nothing.
+    /// </summary>
+    /// <remarks>
+    /// Some sources are meant to be quiet — a feed that posts twice a year, a webhook that fires
+    /// when something happens. Saying so once is help; saying so every week is noise, and noise
+    /// is how somebody learns to ignore the one that is actually broken.
+    /// </remarks>
+    public bool MuteQuietAlerts { get; set; }
     /// <summary>Interpreter persistence between runs: ETag, Last-Modified, cursor… (jsonb).</summary>
     public string? State { get; set; }
 

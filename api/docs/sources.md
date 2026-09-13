@@ -341,6 +341,23 @@ Finished runs only — a run still in flight has no outcome to count. Two detail
 `successRate` and both averages are `null` rather than `0` when there is nothing to compute from
 — a source nobody has run yet is not failing, and a red `0%` would say it is.
 
+### Quiet sources
+
+`emptyRuns` said this was happening; nothing volunteered it. A source now reports `quiet: true`
+when it is **Active, unmuted, has run in the last seven days, and added nothing across all of
+them**. The sources list badges it, the source page explains it, and the weekly digest names it —
+the same definition in all three, because two that drift are worse than one.
+
+It can be turned off per source with `PATCH /sources/{id}` and `{ "muteQuietAlerts": true }`. Some
+sources are meant to be quiet: a feed that posts twice a year, a webhook that fires when something
+happens. Saying so once is help; saying so every week is how somebody learns to ignore the source
+that is actually broken.
+
+Never having run does not count. A source that has not run is new, paused or scheduled monthly,
+and none of those is the thing being looked for. Neither does a source that is paused or that the
+system stopped — both already say so, loudly, and badging them again would be two complaints
+about one problem.
+
 **Retention:** successful runs are kept **30 days**, failures **90** (they are the ones you come
 back to diagnose), and the **20 most recent runs per source always survive** however old they
 are — a source that runs monthly should never be left with no history at all. A nightly job

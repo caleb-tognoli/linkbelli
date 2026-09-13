@@ -22,6 +22,19 @@ public class SourceService(
     {
         // Fetch sources with their latest run status. Sort: never-run first, then failures
         // (most-recent first), then successes (most-recent first).
+        // The ones running cleanly and bringing back nothing. A scraper whose selector stopped
+        // matching succeeds every time and adds nothing, so no status reveals it — and this page
+        // is where it has to show, because mail is optional on this product by design.
+        //
+        // Its own small query rather than a repeat of the predicate inline: this is the same
+        // definition the weekly digest uses, and two copies that drift are worse than one.
+        var since = DateTimeOffset.UtcNow.AddDays(-QuietSource.WindowDays);
+        var quietIds = await db.Sources
+            .Where(s => s.OwnerId == ownerId)
+            .Where(QuietSource.Since(since, db.SourceRuns))
+            .Select(s => s.Id)
+            .ToListAsync(ct);
+
         var sourcesWithStatus = await db.Sources
             .AsNoTracking()
             .Where(s => s.OwnerId == ownerId)
@@ -32,7 +45,7 @@ public class SourceService(
                     .Where(r => r.SourceId == s.Id)
                     .OrderByDescending(r => r.CreationTime)
                     .Select(r => (SourceRunStatus?)r.Status)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
             })
             .OrderBy(x => x.Source.LastRunAt == null ? 0 : (x.LastRunStatus == SourceRunStatus.Failed ? 1 : 2))
             .ThenByDescending(x => x.Source.LastRunAt)
@@ -51,7 +64,8 @@ public class SourceService(
             .Select(x => ToResponse(
                 x.Source,
                 playlistIdsBySource.TryGetValue(x.Source.Id, out var ids) ? ids : [],
-                x.LastRunStatus))
+                x.LastRunStatus,
+                quietIds.Contains(x.Source.Id)))
             .ToList();
     }
 
@@ -172,6 +186,11 @@ public class SourceService(
         if (request.TimeZone is not null)
         {
             source.TimeZone = NormalizeTimeZone(request.TimeZone);
+        }
+
+        if (request.MuteQuietAlerts is { } mute)
+        {
+            source.MuteQuietAlerts = mute;
         }
 
         // An omitted filter leaves the stored one alone; an empty object clears it, which is the
@@ -431,7 +450,8 @@ public class SourceService(
             .ToListAsync(ct);
     }
 
-    private SourceResponse ToResponse(Source source, Guid[] playlistIds, SourceRunStatus? lastRunStatus = null)
+    private SourceResponse ToResponse(
+        Source source, Guid[] playlistIds, SourceRunStatus? lastRunStatus = null, bool quiet = false)
     {
         var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(source.Config) ?? new();
 
@@ -445,6 +465,6 @@ public class SourceService(
             source.Id, source.Name, source.Type, secrets.Redact(source.Type, stored),
             source.Schedule, source.Visibility, source.LastRunAt, source.CreationTime, playlistIds,
             lastRunStatus, source.Status, source.ConsecutiveFailures, source.TimeZone,
-            SourceFilters.Deserialize(source.Filter), token);
+            SourceFilters.Deserialize(source.Filter), token, quiet, source.MuteQuietAlerts);
     }
 }

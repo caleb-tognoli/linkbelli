@@ -30,6 +30,14 @@ public record UpdateSourceRequest(
     /// <summary>IANA zone the schedule is read in. Omit to leave it as it is.</summary>
     string? TimeZone = null,
     /// <summary>
+    /// Stop pointing out that this one finds nothing. Omit to leave it as it is.
+    /// </summary>
+    /// <remarks>
+    /// For the sources that are meant to be quiet. Saying so once is help; saying so every week
+    /// is noise, and noise is how somebody learns to ignore the one that is actually broken.
+    /// </remarks>
+    bool? MuteQuietAlerts = null,
+    /// <summary>
     /// What this source may bring in. Omit to leave it as it is; send an empty object to clear
     /// it, since null already means "don't touch".
     /// </summary>
@@ -50,7 +58,19 @@ public record SourceResponse(
     /// For a webhook source, the token its URL is built from. Only ever returned to the owner,
     /// who has to paste it into whatever is pushing.
     /// </summary>
-    string? WebhookToken = null);
+    string? WebhookToken = null,
+    /// <summary>
+    /// True when this has been running cleanly and bringing back nothing.
+    /// </summary>
+    /// <remarks>
+    /// The loud failure — a source that errors until it stops itself — was always reported. This
+    /// is the quiet one: a scraper whose selector stopped matching after a site redesign, or a
+    /// feed that now returns an empty document, succeeds every time and adds nothing, and the
+    /// playlist simply stops filling. You find out weeks later.
+    /// </remarks>
+    bool Quiet = false,
+    /// <summary>Whether the owner has said this one is meant to be quiet.</summary>
+    bool MuteQuietAlerts = false);
 
 /// <summary>A shared source as surfaced for subscription; no config (may contain secrets).</summary>
 public record SharedSourceSummary(

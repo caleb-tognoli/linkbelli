@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
-	import { ChevronDown, Globe, Lock, Play, Plus, Search } from '@lucide/svelte';
+	import { AlertTriangle, ChevronDown, Globe, Lock, Play, Plus, Search } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import type { Source } from '$lib/types';
 
@@ -144,7 +144,9 @@
 						? `stopped after ${src.consecutiveFailures} failures · last run ${lastRun(src.lastRunAt)}`
 						: stopped(src)
 							? `paused · last run ${lastRun(src.lastRunAt)}`
-							: `last run ${lastRun(src.lastRunAt)}`}
+							: src.quiet
+								? `running, but found nothing this week · last run ${lastRun(src.lastRunAt)}`
+								: `last run ${lastRun(src.lastRunAt)}`}
 				>
 					{#snippet leading()}
 						<span
@@ -154,6 +156,19 @@
 						></span>
 					{/snippet}
 					{#snippet actions()}
+						{#if src.quiet}
+							<!-- The failure nobody reports. A scraper whose selector stopped matching
+							     succeeds every single time, so the only symptom is a playlist that
+							     stopped filling — which you notice weeks later, if at all. -->
+							<a
+								href={`/sources/${src.id}`}
+								style="color: var(--color-warning)"
+								title="Running cleanly and finding nothing — worth a look"
+								aria-label="{src.name} is running but finding nothing"
+							>
+								<AlertTriangle size={15} aria-hidden="true" />
+							</a>
+						{/if}
 						<span title={src.visibility} aria-label={src.visibility} style="color: var(--color-muted)">
 							{#if src.visibility === 'Private'}
 								<Lock size={15} aria-hidden="true" />

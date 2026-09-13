@@ -1,4 +1,5 @@
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Sources;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -158,10 +159,11 @@ public sealed class DigestSweep(
         // at is the whole value of mentioning it — and a source finding nothing for a week is
         // usually a source that has broken without failing.
         var quiet = await db.Sources
-            .Where(s => s.OwnerId == userId
-                && s.Status == SourceStatus.Active
-                && db.SourceRuns.Any(r => r.SourceId == s.Id && r.CreationTime >= since)
-                && !db.SourceRuns.Any(r => r.SourceId == s.Id && r.CreationTime >= since && r.AddedCount > 0))
+            .Where(s => s.OwnerId == userId)
+            // The same definition the sources page badges, because two definitions that drift
+            // are worse than one that is slightly wrong — and this one can be muted, for the
+            // sources that are meant to be quiet.
+            .Where(QuietSource.Since(since, db.SourceRuns))
             .OrderBy(s => s.Name)
             .Select(s => s.Name)
             .Take(Highlights)

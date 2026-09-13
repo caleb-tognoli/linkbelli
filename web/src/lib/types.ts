@@ -325,6 +325,16 @@ export interface Source {
 	filter: SourceFilter | null;
 	/** For a webhook source, the token its push URL is built from. Owner-only. */
 	webhookToken?: string | null;
+	/**
+	 * True when this has been running cleanly and bringing back nothing.
+	 *
+	 * The loud failure — a source that errors until it stops itself — was always reported. This
+	 * is the quiet one: a scraper whose selector stopped matching after a site redesign succeeds
+	 * every time and adds nothing, and the playlist simply stops filling.
+	 */
+	quiet?: boolean;
+	/** Whether the owner has said this one is meant to be quiet. */
+	muteQuietAlerts?: boolean;
 }
 
 /**

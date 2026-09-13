@@ -134,6 +134,23 @@
 		return () => clearTimeout(t);
 	});
 
+	let mutingQuiet = $state(false);
+
+	/**
+	 * Says this source is meant to find nothing, or takes that back.
+	 *
+	 * A feed that posts twice a year is not broken, and being told about it every week is how
+	 * somebody learns to ignore the source that actually is.
+	 */
+	async function toggleQuietAlerts() {
+		mutingQuiet = true;
+		const res = await api.patch(`/sources/${data.source.id}`, {
+			muteQuietAlerts: !data.source.muteQuietAlerts
+		});
+		mutingQuiet = false;
+		if (res.ok) await invalidateAll();
+	}
+
 	async function linkPlaylist(playlistId: string) {
 		const res = await api.patch(`/sources/${data.source.id}`, { playlistIds: [...data.source.playlistIds, playlistId] });
 		if (res.ok) {
@@ -195,6 +212,37 @@
 
 	{#if data.health}
 		<SourceHealthCard health={data.health} />
+	{/if}
+
+	{#if data.source.quiet || data.source.muteQuietAlerts}
+		<!-- A source that runs cleanly and brings back nothing has no failing status to show, so
+		     the only symptom is a playlist that stopped filling — noticed weeks later, if at all.
+		     Some sources are meant to be quiet, which is what the button is for: saying so once
+		     is help, saying so every week is how somebody learns to ignore the real one. -->
+		<div
+			class="mt-4 flex flex-wrap items-start justify-between gap-3 rounded-lg border px-4 py-3"
+			style="border-color: {data.source.quiet ? 'var(--color-warning)' : 'var(--color-border)'}"
+		>
+			<div class="min-w-0">
+				<p class="text-sm font-medium">
+					{data.source.quiet ? 'Running, and finding nothing' : 'Not told about quiet weeks'}
+				</p>
+				<p class="mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
+					{data.source.quiet
+						? 'Every run this week succeeded and added nothing. Usually that means a selector or a feed address that stopped matching after the site changed — worth opening the settings above and running a preview.'
+						: 'This one will not be mentioned in the weekly summary or badged here, however long it goes without finding anything.'}
+				</p>
+			</div>
+			<button
+				type="button"
+				onclick={toggleQuietAlerts}
+				disabled={mutingQuiet}
+				class="shrink-0 rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+				style="border-color: var(--color-border)"
+			>
+				{data.source.muteQuietAlerts ? 'Tell me again' : 'It is meant to be quiet'}
+			</button>
+		</div>
 	{/if}
 
 	<div class="mt-8 rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
