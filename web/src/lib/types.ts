@@ -689,6 +689,22 @@ export interface JobQueueStats {
 }
 
 /** What is happening across the whole instance. */
+/** An account as the admin console lists it. */
+export interface AdminUser {
+	id: string;
+	username: string | null;
+	email: string | null;
+	playlistCount: number;
+	sourceCount: number;
+	showNsfw: boolean;
+	/** Whether this account has the admin role. */
+	isAdmin?: boolean;
+	/** When an administrator suspended it, or null while it is in good standing. */
+	suspendedAt?: string | null;
+	/** When its owner asked for it to go, or null while they have not. */
+	deletionRequestedAt?: string | null;
+}
+
 export interface AdminOverview {
 	users: number;
 	playlists: number;

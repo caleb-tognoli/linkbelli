@@ -1,5 +1,6 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Identity;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,13 @@ public class AdminService(IAppDbContext db) : IAdminService
                 u.Id, u.UserName, u.Email,
                 db.Playlists.Count(p => p.OwnerId == u.Id),
                 db.Sources.Count(s => s.OwnerId == u.Id),
-                u.ShowNsfw))
+                u.ShowNsfw,
+                // The state an admin needs before deciding anything about an account: who can
+                // already do this, who has been stopped, and who is on their way out.
+                db.UserRoles.Any(r => r.UserId == u.Id
+                    && db.Roles.Any(role => role.Id == r.RoleId && role.Name == AdminUserService.AdminRole)),
+                u.SuspendedAt,
+                u.DeletionRequestedAt))
             .ToListAsync(ct);
     }
 

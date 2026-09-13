@@ -14,6 +14,41 @@
 
 	let { data }: { data: PageData } = $props();
 
+	/** Matches AccountDeletionService.GraceDays. */
+	const GRACE_DAYS = 30;
+
+	let password = $state('');
+	let leaving = $state(false);
+	let leaveError = $state<string | null>(null);
+	let leavingAt = $state<string | null>(null);
+
+	/**
+	 * Asks for the account to go.
+	 *
+	 * Confirmed by password rather than by a dialog: a session left open on a shared machine
+	 * should not be enough to end somebody's account, and "type DELETE to confirm" is a ritual
+	 * that proves you can type.
+	 */
+	async function leave(event: SubmitEvent) {
+		event.preventDefault();
+		leaving = true;
+		leaveError = null;
+
+		const res = await api.del('/me', { password });
+		leaving = false;
+		password = '';
+
+		if (res.ok) {
+			leavingAt = ((await res.json()) as { deletesAt: string }).deletesAt;
+		} else if (res.status === 400) {
+			leaveError = 'That password is not right.';
+		} else if (res.status === 429) {
+			leaveError = 'Too many attempts. Wait a minute and try again.';
+		} else {
+			leaveError = 'Could not do that. Try again.';
+		}
+	}
+
 	// Named by what the file is for, not by its extension — "OPML" means nothing until you know
 	// it is the thing your feed reader imports.
 	const EXPORTS = [
@@ -226,5 +261,59 @@
 
 	<div>
 		<ApiKeysManager keys={data.apiKeys} />
+	</div>
+
+	<!-- The counterpart of the four export formats above. Data portability was taken seriously
+	     here and its opposite was missing entirely: there was no way out at all. -->
+	<div class="border-t pt-8" style="border-color: var(--color-border)">
+		<h2 class="font-medium" style="color: var(--color-danger)">Close this account</h2>
+
+		{#if leavingAt}
+			<p class="mt-1 max-w-prose text-sm">
+				Scheduled for {new Date(leavingAt).toLocaleDateString(undefined, {
+					day: 'numeric',
+					month: 'long',
+					year: 'numeric'
+				})}. Everything you published is already hidden and your sources have stopped.
+			</p>
+			<p class="mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
+				Sign in again before then and it is called off — nothing is lost, and what you had
+				published goes back up exactly as it was.
+			</p>
+		{:else}
+			<p class="mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
+				Your playlists, links, sources, folders, keys and backups all go, after
+				{GRACE_DAYS} days. Take an export first — once it runs there is nothing to come back to.
+			</p>
+			<p class="mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
+				Links you saved that other people also saved stay, because they are the same rows;
+				so does any copy somebody took of a playlist you published, which is theirs now.
+			</p>
+
+			<form class="mt-3 flex flex-wrap items-end gap-2" onsubmit={leave}>
+				<label class="flex flex-col gap-1 text-sm">
+					Confirm with your password
+					<input
+						type="password"
+						bind:value={password}
+						autocomplete="current-password"
+						class="rounded-md border px-3 py-2"
+						style="border-color: var(--color-border); background: var(--color-bg)"
+					/>
+				</label>
+				<button
+					type="submit"
+					disabled={leaving || !password}
+					class="rounded-md border px-3 py-2 text-sm font-medium disabled:opacity-60"
+					style="border-color: var(--color-danger); color: var(--color-danger)"
+				>
+					{leaving ? 'Closing…' : 'Close my account'}
+				</button>
+			</form>
+
+			{#if leaveError}
+				<p class="mt-2 text-sm" style="color: var(--color-danger)" role="alert">{leaveError}</p>
+			{/if}
+		{/if}
 	</div>
 </section>

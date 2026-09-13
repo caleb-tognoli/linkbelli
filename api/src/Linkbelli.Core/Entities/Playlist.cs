@@ -47,6 +47,22 @@ public class Playlist : BaseEntity<Guid>
     /// </remarks>
     public Guid? ForkedFromPlaylistId { get; set; }
 
+    /// <summary>
+    /// What this was published as before its owner's account was hidden. Null the rest of the
+    /// time, which is almost always.
+    /// </summary>
+    /// <remarks>
+    /// Exists for exactly one flow. When an account is suspended or asked to be deleted, every
+    /// playlist it owns is set Private — which is the one change that takes effect everywhere at
+    /// once: discovery, the sitemap, the profile page, the feeds and every tag facet all filter
+    /// on visibility already, so there is no read path left to forget.
+    ///
+    /// The alternative was a query filter correlating every playlist read against the users
+    /// table, or a condition added to twenty-two call sites where missing one is a privacy leak.
+    /// This column is the price of neither.
+    /// </remarks>
+    public PlaylistVisibility? VisibilityBeforeHiding { get; set; }
+
     public List<PlaylistItem> Items { get; set; } = [];
     public List<PlaylistSource> Sources { get; set; } = [];
     public List<PlaylistTag> Tags { get; set; } = [];

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Linkbelli.Api.Auth;
 using Linkbelli.Application.Email;
+using Linkbelli.Application.Identity;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -45,6 +46,32 @@ public static class MeEndpoints
         })
         .RequireAuthorization(secured)
         .WithName("GetMe");
+
+        // The counterpart of the four export formats above. Somebody who wanted to leave had no
+        // route at all: their account, their public profile and their sitemap entries stayed up
+        // forever, and the operator could not remove them either.
+        app.MapDelete("/me", async (
+            ClaimsPrincipal user,
+            // Explicit: minimal APIs refuse to infer a body on DELETE, and this one carries the
+            // password that makes the action deliberate.
+            [Microsoft.AspNetCore.Mvc.FromBody] DeleteAccountRequest request,
+            IAccountDeletionService deletion,
+            CancellationToken ct) =>
+        {
+            if (string.IsNullOrEmpty(request.Password))
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["password"] = ["Confirm with your password."],
+                });
+            }
+
+            var at = await deletion.RequestAsync(user.GetUserId(), request.Password, ct);
+            return Results.Ok(new AccountDeletionScheduled(at));
+        })
+        .RequireAuthorization(secured)
+        .RequireRateLimiting("sensitive")
+        .WithName("DeleteMyAccount");
 
         app.MapGet("/me/quota", async (ClaimsPrincipal user, IUserQuotaService quotas, CancellationToken ct) =>
             Results.Ok(await quotas.GetStatusAsync(user.GetUserId(), ct)))

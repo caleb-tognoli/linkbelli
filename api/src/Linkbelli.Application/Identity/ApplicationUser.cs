@@ -9,6 +9,32 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool ShowNsfw { get; set; }
 
     /// <summary>
+    /// When this account was asked to be deleted, or null while it is not.
+    /// </summary>
+    /// <remarks>
+    /// Data portability was taken seriously here and its counterpart was missing entirely: export
+    /// in four formats, and no way out. Somebody who wanted to leave had none — their account,
+    /// their public profile and their sitemap entries stayed up forever, and the operator could
+    /// not remove them either.
+    ///
+    /// A request rather than an act, with a grace period, because this is the one button in the
+    /// product that cannot be undone by an apology. Signing in during the window cancels it, on
+    /// the reasoning that somebody coming back is somebody who changed their mind.
+    /// </remarks>
+    public DateTimeOffset? DeletionRequestedAt { get; set; }
+
+    /// <summary>
+    /// Suspended by an administrator: the data stays, sign-in is refused, public content is
+    /// hidden. Null while the account is in good standing.
+    /// </summary>
+    /// <remarks>
+    /// Kept apart from <see cref="DeletionRequestedAt"/> because the two mean opposite things
+    /// about whose decision it was, and an admin needs to be able to tell "I turned this off"
+    /// from "they left" — exactly as SourceStatus keeps Paused apart from Failing.
+    /// </remarks>
+    public DateTimeOffset? SuspendedAt { get; set; }
+
+    /// <summary>
     /// Whether to ask the Internet Archive to keep a copy of the pages this user saves.
     /// </summary>
     /// <remarks>

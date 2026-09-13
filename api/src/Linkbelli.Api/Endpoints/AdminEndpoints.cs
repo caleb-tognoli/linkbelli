@@ -3,6 +3,7 @@ using Linkbelli.Api.Auth;
 using Linkbelli.Application.Auth;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
+using Linkbelli.Application.Identity;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
@@ -39,6 +40,34 @@ public static class AdminEndpoints
         group.MapGet("/users", async (IAdminService admin, string? q, int? limit, CancellationToken ct) =>
             Results.Ok(await admin.SearchUsersAsync(q, limit, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.AdminRead));
+
+        // An admin could see every user and do nothing about them: no suspend, no delete, no
+        // promote or demote. Granting admin meant editing configuration and restarting, so an
+        // instance with two admins could not add a third without a deploy.
+        group.MapPut("/users/{userId:guid}/suspended", async (
+            Guid userId, SetSuspendedRequest req, ClaimsPrincipal user,
+            IAdminUserService admin, CancellationToken ct) =>
+        {
+            if (req.Suspended)
+            {
+                await admin.SuspendAsync(user.GetUserId(), userId, ct);
+            }
+            else
+            {
+                await admin.ReinstateAsync(user.GetUserId(), userId, ct);
+            }
+
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminWrite))
+            .WithName("SetUserSuspended");
+
+        group.MapPut("/users/{userId:guid}/admin", async (
+            Guid userId, SetAdminRequest req, ClaimsPrincipal user,
+            IAdminUserService admin, CancellationToken ct) =>
+            Results.Ok(new { admin = await admin.SetAdminAsync(user.GetUserId(), userId, req.Admin, ct) }))
+            .RequireAuthorization(Scopes.Policy(Scopes.AdminWrite))
+            .WithName("SetUserAdmin");
 
         group.MapGet("/users/{userId:guid}/quota", async (Guid userId, IUserQuotaService quotas, CancellationToken ct) =>
             Results.Ok(await quotas.GetStatusAsync(userId, ct)))

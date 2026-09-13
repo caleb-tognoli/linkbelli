@@ -2,6 +2,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { AlertCircle, ExternalLink } from '@lucide/svelte';
+	import { page } from '$app/state';
+	import AdminUsersPanel from '$lib/components/AdminUsersPanel.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -209,6 +211,8 @@
 			{/each}
 		</ul>
 	{/if}
+
+	<AdminUsersPanel me={page.data.user?.username ?? null} />
 
 	<h2 class="mt-8 font-medium">Recent actions</h2>
 	{#if data.audit.length === 0}

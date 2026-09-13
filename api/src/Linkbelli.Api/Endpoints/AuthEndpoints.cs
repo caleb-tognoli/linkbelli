@@ -78,7 +78,9 @@ public static class AuthEndpoints
         group.MapPost("/login", async (
             LoginRequest req,
             UserManager<ApplicationUser> users,
-            SignInManager<ApplicationUser> signIn) =>
+            SignInManager<ApplicationUser> signIn,
+            IAccountDeletionService deletion,
+            CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(req.Login) || string.IsNullOrWhiteSpace(req.Password))
             {
@@ -99,6 +101,24 @@ public static class AuthEndpoints
             {
                 var reason = result.IsLockedOut ? "Account is locked out." : "Invalid credentials.";
                 return Results.Problem(reason, statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            // Checked after the password, so this cannot be used to find out which accounts an
+            // administrator has suspended.
+            if (user.SuspendedAt is not null)
+            {
+                return Results.Problem(
+                    "This account has been suspended. Get in touch with whoever runs this Linkbelli.",
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            // Coming back is changing your mind. Making somebody find a separate "actually, no"
+            // button after signing in successfully would be a worse version of the same answer —
+            // and doing nothing would delete the account of somebody who is plainly still using
+            // it. They are told, on the page they land on.
+            if (user.DeletionRequestedAt is not null)
+            {
+                await deletion.CancelAsync(user.Id, ct);
             }
 
             var principal = await signIn.CreateUserPrincipalAsync(user);

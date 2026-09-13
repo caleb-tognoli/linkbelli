@@ -21,3 +21,12 @@ public record ConfirmEmailRequest(string Email, string Token);
 
 /// <summary>Asks for another confirmation link.</summary>
 public record ResendConfirmationRequest(string Email);
+
+/// <summary>
+/// Asks for the account to go. Password-confirmed: a session left open on a shared machine
+/// should not be enough to end somebody's account.
+/// </summary>
+public record DeleteAccountRequest(string Password);
+
+/// <summary>When the account will actually be removed, and what happens in between.</summary>
+public record AccountDeletionScheduled(DateTimeOffset DeletesAt);

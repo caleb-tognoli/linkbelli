@@ -6,6 +6,7 @@ using Linkbelli.Application.Automation;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Observability;
 using Linkbelli.Application.Http;
+using Linkbelli.Application.Identity;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
 using Microsoft.Extensions.Configuration;
@@ -40,6 +41,8 @@ public static class DependencyInjection
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<IPasswordResetService, PasswordResetService>();
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
+        services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IRegistrationPolicy, RegistrationPolicy>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPreferences, NotificationPreferences>();

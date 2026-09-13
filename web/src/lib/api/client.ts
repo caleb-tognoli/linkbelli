@@ -14,7 +14,8 @@ export const api = {
 	post: (path: string, body?: unknown) => send('POST', path, body),
 	patch: (path: string, body?: unknown) => send('PATCH', path, body),
 	put: (path: string, body?: unknown) => send('PUT', path, body),
-	del: (path: string) => send('DELETE', path)
+	// A body, because closing an account is confirmed by password and the method is still DELETE.
+	del: (path: string, body?: unknown) => send('DELETE', path, body)
 };
 
 /** Parse JSON or throw a readable error. */

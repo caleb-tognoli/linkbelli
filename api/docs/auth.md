@@ -77,6 +77,32 @@ what the address's real owner wanted.
 
 `/me` reports `emailConfirmed`, so a screen that promises mail can say why none is arriving.
 
+### Closing an account
+
+`DELETE /api/v1/me` with `{ "password": "…" }` schedules it. Password-confirmed, because a
+session left open on a shared machine should not be enough to end somebody's account.
+
+It is a request with a **30-day grace period**, not an act. Immediately: every session ends, every
+source is paused, and every playlist the account publishes is set private — which is the one
+change that takes effect everywhere at once, since discovery, the profile page, the sitemap, the
+feeds and every tag facet already filter on visibility.
+
+**Signing in again calls it off**, and puts back exactly what was published before — not
+everything, and not nothing. Somebody who comes back has changed their mind, and making them hunt
+for a separate "actually, no" button after signing in successfully would be a worse version of the
+same answer.
+
+After the grace period a nightly job removes the account and everything it owns: playlists, items,
+folders, sources, runs, keys, rules, saved searches, backups, quotas, memberships, likes, follows
+and reports. Four things deliberately survive, and it is worth saying which:
+
+| Survives | Why |
+| --- | --- |
+| `Link` and `Host` rows | Global and deduplicated — the row for a page this account saved is the same row everybody else saved it under. Deleting one would reach into other people's libraries |
+| Forks of its playlists | A fork is an independent copy with its own item rows. Somebody who kept a copy keeps it; that was the point of taking one. All it loses is the pointer back |
+| Audit entries | The record of what happened on this instance, administrators included. A record its subject can erase is not one |
+| The username, until the purge | Freeing it sooner would let somebody take a name still attached to a live profile. It is released when the account actually goes |
+
 ## 2. API key (programmatic)
 
 API keys are created while logged in with a bearer token, and are then used on their own.
@@ -139,6 +165,27 @@ curl -X PUT http://localhost:5180/api/v1/me/preferences \
 Requests are rate limited with a token bucket, partitioned by API key (or client IP for
 anonymous/bearer requests). Exceeding the limit returns **HTTP 429** with a **`Retry-After`**
 header (seconds) — back off and retry after that delay.
+
+### Accounts
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `PUT` | `/api/v1/admin/users/{id}/suspended` | `{ "suspended": true }` blocks sign-in and takes their public content down, keeping everything. `false` lifts it and puts back exactly what was published |
+| `PUT` | `/api/v1/admin/users/{id}/admin` | `{ "admin": true }` grants the role, `false` removes it |
+
+Suspension and deletion are kept apart on purpose: they mean opposite things about whose decision
+it was, and an admin needs to tell "I turned this off" from "they left" — the same reason a source
+keeps `Paused` apart from `Failing`. Deleting an account is its owner's decision, made from their
+own settings; an admin suspends.
+
+**You cannot remove your own administrator access.** Locking yourself out of your own instance
+takes a deploy to undo, and somebody meaning to demote a colleague and clicking their own row is
+not a far-fetched afternoon. Ask another admin.
+
+`Admin:Usernames` in configuration stays as the bootstrap path — a fresh instance with nobody in
+the database still needs a way in — but adding a third admin no longer needs a deploy.
+
+Every one of these is written to the audit trail with `asAdmin`.
 
 ## Instance overview
 

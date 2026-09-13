@@ -4,6 +4,7 @@ using Linkbelli.Application.Automation;
 using Linkbelli.Application.Backups;
 using Linkbelli.Application.Email;
 using Linkbelli.Application.Enrichment;
+using Linkbelli.Application.Identity;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
 using Microsoft.Extensions.Hosting;
@@ -29,6 +30,8 @@ public sealed class MaintenanceScheduler(
     public const string IdempotencyJobId = "idempotency:purge";
     public const string BackupJobId = "backups:sweep";
     public const string DigestJobId = "digest:weekly";
+
+    public const string AccountPurgeJobId = "accounts:purge";
 
     /// <summary>Nightly, off the hour so it doesn't pile onto every hourly source schedule.</summary>
     public const string Cron = "17 3 * * *";
@@ -73,6 +76,13 @@ public sealed class MaintenanceScheduler(
     /// </summary>
     public const string DigestCron = "9 * * * *";
 
+    /// <summary>
+    /// Daily, in the small hours. The grace period is thirty days, so a few hours either way
+    /// changes nothing — and this is the one sweep that destroys data rather than tidying it,
+    /// which is a reason to run it when nobody is mid-sentence rather than every hour.
+    /// </summary>
+    public const string AccountPurgeCron = "23 3 * * *";
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         try
@@ -103,6 +113,9 @@ public sealed class MaintenanceScheduler(
 
             recurringJobs.AddOrUpdate<IDigestSweep>(
                 DigestJobId, svc => svc.SweepAsync(CancellationToken.None), DigestCron);
+
+            recurringJobs.AddOrUpdate<IAccountDeletionService>(
+                AccountPurgeJobId, svc => svc.PurgeExpiredAsync(CancellationToken.None), AccountPurgeCron);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

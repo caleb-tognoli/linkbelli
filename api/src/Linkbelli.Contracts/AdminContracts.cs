@@ -4,7 +4,19 @@ namespace Linkbelli.Contracts;
 
 /// <summary>An admin view of a user (for lookup → quota management).</summary>
 public record AdminUserSummary(
-    Guid Id, string? Username, string? Email, int PlaylistCount, int SourceCount, bool ShowNsfw);
+    Guid Id, string? Username, string? Email, int PlaylistCount, int SourceCount, bool ShowNsfw,
+    /// <summary>Whether this account has the admin role.</summary>
+    bool IsAdmin = false,
+    /// <summary>When an administrator suspended it, or null while it is in good standing.</summary>
+    DateTimeOffset? SuspendedAt = null,
+    /// <summary>When its owner asked for it to go, or null while they have not.</summary>
+    DateTimeOffset? DeletionRequestedAt = null);
+
+/// <summary>Suspend an account or lift a suspension.</summary>
+public record SetSuspendedRequest(bool Suspended);
+
+/// <summary>Grant or take away the admin role.</summary>
+public record SetAdminRequest(bool Admin);
 
 /// <summary>An admin view of a host (moderation blocklist).</summary>
 public record AdminHostSummary(Guid Id, string Hostname, bool Blocked, int LinkCount);
