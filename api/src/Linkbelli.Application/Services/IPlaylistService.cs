@@ -36,6 +36,10 @@ public interface IPlaylistService
     /// <summary>Tags used across public playlists, with counts (global discovery tag cloud).</summary>
     Task<IReadOnlyList<TagSummary>> ListPublicTagsAsync(string? q, CancellationToken ct = default);
 
+    /// <summary>Every public playlist's address and date, for a sitemap.</summary>
+    Task<PagedResult<SitemapEntry>> ListForSitemapAsync(
+        int? limit, string? cursor, CancellationToken ct = default);
+
     /// <summary>Attach a source (the caller's own, or any shared one) to a playlist the caller owns. Returns the total number of items ever discovered by the source (for backfill prompt).</summary>
     Task<int> SubscribeSourceAsync(Guid ownerId, Guid playlistId, Guid sourceId, CancellationToken ct = default);
 

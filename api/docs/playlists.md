@@ -371,6 +371,7 @@ want to hear about it again. Following is the next primitive up, and the feed is
 |--------|------|---------|
 | `GET` | `/api/v1/public/playlists` | Browse public playlists (`?q=`, `?tag=`, `?sort=`) |
 | `GET` | `/api/v1/public/playlists/{username}/{slug}/similar` | Lists like this one (`?limit=`, default 6) |
+| `GET` | `/api/v1/public/sitemap` | Every public playlist's owner, slug and last-modified date, for a sitemap (`?limit=`, up to 5 000, `?cursor=`). Deliberately lean: no counts, no tags, no like totals — a crawler wants an address and a date, and the discovery listing carries five correlated subqueries per row to answer neither |
 | `GET` | `/api/v1/public/tags/trending` | Tags that have seen activity lately (`?days=`, default 30) |
 
 `sort` takes `active`, `liked` or `largest`; anything else — including a typo — falls back to

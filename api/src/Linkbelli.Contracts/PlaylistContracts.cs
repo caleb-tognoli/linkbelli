@@ -99,6 +99,16 @@ public record PublicProfile(
     /// <summary>Whether the caller does. False when anonymous.</summary>
     bool FollowedByMe = false);
 
+/// <summary>
+/// One public playlist, as a sitemap needs it and no more.
+/// </summary>
+/// <remarks>
+/// Deliberately not <see cref="PublicPlaylistSummary"/>. That carries an item count, a tag array,
+/// an NSFW check and a like count — four correlated subqueries per row, on rows nobody is going
+/// to look at. A crawler wants an address and a date.
+/// </remarks>
+public record SitemapEntry(string OwnerUsername, string Slug, DateTimeOffset LastModified);
+
 /// <summary>A tag and how many playlists carry it (within the queried scope).</summary>
 public record TagSummary(string Name, int PlaylistCount);
 

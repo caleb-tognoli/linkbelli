@@ -584,6 +584,45 @@ public class PlaylistService(
         return rows.ToPage(take);
     }
 
+    /// <summary>
+    /// How many sitemap rows one request will hand over.
+    /// </summary>
+    /// <remarks>
+    /// Far above the hundred every other listing allows, because a row here is three short fields
+    /// with no subqueries behind it. The point of the endpoint is that a crawler fetch costs one
+    /// round trip instead of fifty.
+    /// </remarks>
+    public const int SitemapPageSize = 5_000;
+
+    public async Task<PagedResult<SitemapEntry>> ListForSitemapAsync(
+        int? limit, string? cursor, CancellationToken ct = default)
+    {
+        var take = Paging.Take(limit, max: SitemapPageSize, fallback: SitemapPageSize);
+        var after = Cursor.DecodeTimeKey(cursor);
+
+        // Public only. Unlisted is share-by-link and deliberately unfindable, so handing it to a
+        // crawler would undo the only thing the setting does.
+        var rows = await db.Playlists
+            .Where(p => p.Visibility == PlaylistVisibility.Public)
+            .Where(p => after == null
+                || p.CreationTime < after.Value.At
+                || (p.CreationTime == after.Value.At && p.Id.CompareTo(after.Value.Id) < 0))
+            .OrderByDescending(p => p.CreationTime).ThenByDescending(p => p.Id)
+            .Take(take + 1)
+            .Select(p => new KeyedRow<SitemapEntry>(
+                p.CreationTime,
+                p.Id,
+                new SitemapEntry(
+                    db.Users.Where(u => u.Id == p.OwnerId).Select(u => u.UserName!).FirstOrDefault()!,
+                    p.Slug,
+                    // The newest thing in the list, or the list itself when it is empty: what
+                    // <lastmod> is supposed to mean, and the only field here worth a subquery.
+                    p.Items.Max(i => (DateTimeOffset?)i.CreationTime) ?? p.CreationTime)))
+            .ToListAsync(ct);
+
+        return rows.ToPage(take);
+    }
+
     /// <summary>One public playlist as a listing shows it. Shared by both paging paths.</summary>
     private Expression<Func<Playlist, PublicPlaylistSummary>> Summarize() =>
         p => new PublicPlaylistSummary(

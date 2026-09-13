@@ -24,6 +24,15 @@ public static class PublicPlaylistEndpoints
             Results.Ok(await svc.DiscoverPublicAsync(q, tag, sort, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
 
+        // What the sitemap is built from. Its own endpoint because rendering it from the
+        // discovery listing meant fifty serial round trips per crawler fetch, each running a
+        // deeper offset query carrying five correlated subqueries per row — none of which a
+        // crawler reads. This is one query of three columns, five thousand rows at a time.
+        group.MapGet("/sitemap", async (IPlaylistService svc, int? limit, string? cursor, CancellationToken ct) =>
+            Results.Ok(await svc.ListForSitemapAsync(limit, cursor, ct)))
+            .AllowAnonymous()
+            .WithName("ListForSitemap");
+
         // Lists like this one. Discovery otherwise ends at whatever you happened to open — there
         // was no way from a playlist you liked to the next one.
         group.MapGet("/playlists/{username}/{slug}/similar", async (
