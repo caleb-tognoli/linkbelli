@@ -112,7 +112,10 @@ public sealed class AutomationRunner(
                 item.Link!.CanonicalUrl,
                 item.Link.Host?.Hostname ?? string.Empty,
                 item.Metadata?.GetValueOrDefault("title") ?? item.Link.Title,
-                item.Link.Kind);
+                item.Link.Kind,
+                item.Link.WordCount,
+                item.Link.EnrichmentStatus == EnrichmentStatus.Broken,
+                item.SourceId);
 
             if (!compiled.Matches(candidate))
             {
@@ -212,7 +215,10 @@ public sealed class AutomationRunner(
             item.Link!.CanonicalUrl,
             item.Link.Host?.Hostname ?? string.Empty,
             item.Metadata?.GetValueOrDefault("title") ?? item.Link.Title,
-            item.Link.Kind);
+            item.Link.Kind,
+            item.Link.WordCount,
+            item.Link.EnrichmentStatus == EnrichmentStatus.Broken,
+            item.SourceId);
 
         var acted = false;
 
@@ -259,6 +265,21 @@ public sealed class AutomationRunner(
         {
             item.Status = PlaylistItemStatus.Watched;
             item.StatusChangedAt = DateTimeOffset.UtcNow;
+        }
+
+        if (rule.SetScore is { } score)
+        {
+            // The queue sorts on score, so this is how a rule says "this source is worth my
+            // time" without anybody rating a single item by hand.
+            item.Score = Math.Clamp(score, 0, 100);
+        }
+
+        if (rule.Archive && item.Link is not null)
+        {
+            // Asked for, not done here: archiving is an outbound request to somebody else's
+            // server, and the sweep that already exists is where the rate limiting and the
+            // retry budget live.
+            item.Link.ArchiveRequested = true;
         }
 
         if (rule.CopyToPlaylistId is { } copyTo)

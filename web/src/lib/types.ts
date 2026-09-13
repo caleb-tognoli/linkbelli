@@ -586,11 +586,23 @@ export interface AutomationRule {
 	titlePattern: string | null;
 	urlPattern: string | null;
 	kind: ContentKind | null;
+	/** Only what reads in this many minutes or fewer; null matches any length. */
+	maxMinutes: number | null;
+	/** Only what takes at least this many minutes; null matches any length. */
+	minMinutes: number | null;
+	/** True for only broken links, false for only working ones, null for either. */
+	broken: boolean | null;
+	/** Only what this source brought in; null matches any origin. */
+	sourceId: string | null;
 	addTags: string[];
 	moveToPlaylistId: string | null;
 	copyToPlaylistId: string | null;
 	markWatched: boolean;
 	trash: boolean;
+	/** Score it on arrival; null leaves the score alone. */
+	setScore: number | null;
+	/** Ask the Internet Archive for a public snapshot of the page. */
+	archive: boolean;
 	/** Stop after this one matches, so a specific rule can shield an item from a broad one. */
 	stopOnMatch: boolean;
 	/** How many items it has acted on — what makes a rule that never fires visible. */

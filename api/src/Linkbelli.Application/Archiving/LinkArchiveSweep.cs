@@ -33,11 +33,13 @@ public sealed class LinkArchiveSweep(
                 && l.EnrichedAt != null
                 && l.EnrichmentStatus == EnrichmentStatus.Succeeded
                 && l.ArchiveAttempts < Link.MaxArchiveAttempts
-                // Someone who saved it asked for it to be archived. Links are shared globally, so
-                // one person opting in must not archive another person's reading — but a link
-                // they both saved was going to be archived either way.
-                && db.PlaylistItems.Any(i => i.LinkId == l.Id
-                    && db.Users.Any(u => u.Id == i.Playlist!.OwnerId && u.ArchiveLinks)))
+                // Someone who saved it asked for it to be archived — through their account-wide
+                // setting, or through a rule that asked for this one in particular. Links are
+                // shared globally, so one person opting in must not archive another person's
+                // reading; but a link they both saved was going to be archived either way.
+                && (l.ArchiveRequested
+                    || db.PlaylistItems.Any(i => i.LinkId == l.Id
+                        && db.Users.Any(u => u.Id == i.Playlist!.OwnerId && u.ArchiveLinks))))
             .OrderBy(l => l.ArchiveAttempts)
             .ThenBy(l => l.CreationTime)
             .Take(BatchSize)

@@ -503,10 +503,16 @@ that", over your own collection.
   "titlePattern": "rust|zig",    // regex, case-insensitive
   "urlPattern": "/blog/",
   "kind": "Article",
+  "minMinutes": 20,              // takes at least this long to read
+  "maxMinutes": null,            // and at most this long
+  "broken": null,                // true for only broken links, false for only working ones
+  "sourceId": null,              // only what this source brought in
   // Then:
   "addTags": ["rust"],
   "moveToPlaylistId": "…",       // or copyToPlaylistId — not both
   "markWatched": false,
+  "setScore": 40,                // the queue sorts on this
+  "archive": false,              // ask the Internet Archive for a public snapshot
   "trash": false,
   "stopOnMatch": true
 }
@@ -528,6 +534,15 @@ Things worth knowing:
   syntax allows so a pattern can't hang the worker.
 - **`trash` is recoverable.** It soft-deletes, like every other delete here — a rule that deleted
   permanently would be one bad pattern away from losing a collection.
+- **A length condition only matches something with an article behind it.** "Under five minutes" is
+  a claim about a piece of writing; a video is not a short read, it is not a read at all. The
+  boundary agrees with the "5 min" printed on the row, because a filter that disagrees with the
+  label beside it is worse than no filter.
+- **`kind`, the length conditions and `broken` are only known after enrichment.** The sweep waits
+  for that, so an unenriched item is deferred rather than quietly failing to match.
+- **`archive` asks, it does not fetch.** The snapshot is requested from the sweep that already
+  handles the rate limiting and the retry budget — and asking means telling the Internet Archive
+  the address, which is why it is per rule rather than only the account-wide setting.
 - **A rule can only file into your own playlists.** Checked when saved *and* when it runs, since a
   playlist can be deleted or handed over in between.
 - Each rule reports `matchCount` and `lastMatchedAt`. A rule that has never fired is almost always

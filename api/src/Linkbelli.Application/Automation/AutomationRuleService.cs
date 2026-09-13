@@ -2,6 +2,7 @@ using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Automation;
+using Linkbelli.Core.Content;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Tags;
 using Microsoft.EntityFrameworkCore;
@@ -74,11 +75,17 @@ public sealed class AutomationRuleService(IAppDbContext db) : IAutomationRuleSer
             TitlePattern = request.TitlePattern?.Trim(),
             UrlPattern = request.UrlPattern?.Trim(),
             Kind = request.Kind,
+            MaxMinutes = request.MaxMinutes,
+            MinMinutes = request.MinMinutes,
+            Broken = request.Broken,
+            SourceId = request.SourceId,
             AddTags = TagNormalizer.Normalize(request.AddTags ?? []).ToArray(),
             MoveToPlaylistId = request.MoveToPlaylistId,
             CopyToPlaylistId = request.CopyToPlaylistId,
             MarkWatched = request.MarkWatched,
             Trash = request.Trash,
+            SetScore = request.SetScore,
+            Archive = request.Archive,
             StopOnMatch = request.StopOnMatch,
         };
 
@@ -104,8 +111,14 @@ public sealed class AutomationRuleService(IAppDbContext db) : IAutomationRuleSer
         if (request.Enabled is { } enabled) rule.Enabled = enabled;
         if (request.Position is { } position) rule.Position = position;
         if (request.Kind is { } kind) rule.Kind = kind;
+        if (request.MaxMinutes is { } most) rule.MaxMinutes = most;
+        if (request.MinMinutes is { } least) rule.MinMinutes = least;
+        if (request.Broken is { } broken) rule.Broken = broken;
+        if (request.SourceId is { } source) rule.SourceId = source;
         if (request.MarkWatched is { } watched) rule.MarkWatched = watched;
         if (request.Trash is { } trash) rule.Trash = trash;
+        if (request.SetScore is { } score) rule.SetScore = score;
+        if (request.Archive is { } archive) rule.Archive = archive;
         if (request.StopOnMatch is { } stop) rule.StopOnMatch = stop;
         if (request.AddTags is not null) rule.AddTags = TagNormalizer.Normalize(request.AddTags).ToArray();
         if (request.Host is not null) rule.Host = Normalize(request.Host);
@@ -127,6 +140,11 @@ public sealed class AutomationRuleService(IAppDbContext db) : IAutomationRuleSer
                 case "titlepattern": rule.TitlePattern = null; break;
                 case "urlpattern": rule.UrlPattern = null; break;
                 case "kind": rule.Kind = null; break;
+                case "maxminutes": rule.MaxMinutes = null; break;
+                case "minminutes": rule.MinMinutes = null; break;
+                case "broken": rule.Broken = null; break;
+                case "sourceid": rule.SourceId = null; break;
+                case "setscore": rule.SetScore = null; break;
                 case "addtags": rule.AddTags = []; break;
             }
         }
@@ -156,6 +174,10 @@ public sealed class AutomationRuleService(IAppDbContext db) : IAutomationRuleSer
             TitlePattern = Pattern(request.TitlePattern, "titlePattern"),
             UrlPattern = Pattern(request.UrlPattern, "urlPattern"),
             Kind = request.Kind,
+            MaxMinutes = request.MaxMinutes,
+            MinMinutes = request.MinMinutes,
+            Broken = request.Broken,
+            SourceId = request.SourceId,
         });
 
         // The cheap conditions narrow in the database; the patterns are applied here, because
@@ -169,6 +191,29 @@ public sealed class AutomationRuleService(IAppDbContext db) : IAutomationRuleSer
         if (request.PlaylistId is { } playlistId) query = query.Where(i => i.PlaylistId == playlistId);
         if (Normalize(request.Host) is { } host) query = query.Where(i => i.Link!.Host!.Hostname == host);
         if (request.Kind is { } kind) query = query.Where(i => i.Link!.Kind == kind);
+        if (request.SourceId is { } source) query = query.Where(i => i.SourceId == source);
+        if (request.Broken is { } broken)
+        {
+            query = broken
+                ? query.Where(i => i.Link!.EnrichmentStatus == EnrichmentStatus.Broken)
+                : query.Where(i => i.Link!.EnrichmentStatus != EnrichmentStatus.Broken);
+        }
+
+        // Length narrows here too rather than only in the matcher: a preview over five hundred
+        // rows is the one place where pulling back what cannot match costs something visible.
+        if (request.MaxMinutes is { } most)
+        {
+            var words = ReadingTime.WordsWithin(most);
+            query = query.Where(i => i.Link!.WordCount != null && i.Link.WordCount <= words);
+        }
+
+        if (request.MinMinutes is { } least)
+        {
+            // One minute means "at least a minute", so the floor is what a one-minute read
+            // rounds up from rather than a whole minute of words.
+            var words = ReadingTime.WordsWithin(least - 1);
+            query = query.Where(i => i.Link!.WordCount != null && i.Link.WordCount > words);
+        }
 
         var candidates = await query
             .OrderByDescending(i => i.CreationTime)
@@ -181,7 +226,10 @@ public sealed class AutomationRuleService(IAppDbContext db) : IAutomationRuleSer
                 i.Link!.CanonicalUrl,
                 i.Link.Host?.Hostname ?? string.Empty,
                 i.Metadata?.GetValueOrDefault("title") ?? i.Link.Title,
-                i.Link.Kind)))
+                i.Link.Kind,
+                i.Link.WordCount,
+                i.Link.EnrichmentStatus == EnrichmentStatus.Broken,
+                i.SourceId)))
             .ToList();
 
         return new AutomationPreviewResponse(
@@ -258,6 +306,7 @@ public sealed class AutomationRuleService(IAppDbContext db) : IAutomationRuleSer
 
     private static AutomationRuleResponse ToResponse(AutomationRule r) => new(
         r.Id, r.Name, r.Enabled, r.Position, r.PlaylistId, r.Host, r.TitlePattern, r.UrlPattern,
-        r.Kind, r.AddTags, r.MoveToPlaylistId, r.CopyToPlaylistId, r.MarkWatched, r.Trash,
-        r.StopOnMatch, r.MatchCount, r.LastMatchedAt, r.CreationTime);
+        r.Kind, r.MaxMinutes, r.MinMinutes, r.Broken, r.SourceId,
+        r.AddTags, r.MoveToPlaylistId, r.CopyToPlaylistId, r.MarkWatched, r.Trash,
+        r.SetScore, r.Archive, r.StopOnMatch, r.MatchCount, r.LastMatchedAt, r.CreationTime);
 }

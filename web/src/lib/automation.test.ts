@@ -19,10 +19,16 @@ function rule(overrides: Partial<AutomationRule> = {}): AutomationRule {
 		titlePattern: null,
 		urlPattern: null,
 		kind: null,
+		maxMinutes: null,
+		minMinutes: null,
+		broken: null,
+		sourceId: null,
 		addTags: [],
 		moveToPlaylistId: null,
 		copyToPlaylistId: null,
 		markWatched: false,
+		setScore: null,
+		archive: false,
 		trash: false,
 		stopOnMatch: false,
 		matchCount: 0,
@@ -81,5 +87,30 @@ describe('describeRule', () => {
 	it('gets the article right in front of a vowel', () => {
 		expect(describeRule(rule({ kind: 'Article' }), name)).toContain('it is an article');
 		expect(describeRule(rule({ kind: 'Video' }), name)).toContain('it is a video');
+	});
+
+	/** The conditions and actions a rule gained, said in the same register as the rest. */
+	it('says a length range as one clause, not two', () => {
+		expect(describeRule(rule({ minMinutes: 20 }), name)).toContain('it takes over 20 minutes');
+		expect(describeRule(rule({ maxMinutes: 5 }), name)).toContain('it reads in under 5 minutes');
+		expect(describeRule(rule({ minMinutes: 5, maxMinutes: 10 }), name)).toContain(
+			'it reads in 5 to 10 minutes'
+		);
+	});
+
+	it('says which way round a broken condition points', () => {
+		expect(describeRule(rule({ broken: true }), name)).toContain('its page has gone');
+		expect(describeRule(rule({ broken: false }), name)).toContain('its page is still there');
+		expect(describeRule(rule({ broken: null }), name)).not.toContain('page');
+	});
+
+	it('says the new actions', () => {
+		expect(describeRule(rule({ setScore: 80 }), name)).toContain('score it 80');
+		expect(describeRule(rule({ archive: true }), name)).toContain('keep a public snapshot');
+	});
+
+	/** Zero is a real score, and the falsy check that would drop it is the obvious mistake. */
+	it('keeps a score of zero', () => {
+		expect(describeRule(rule({ setScore: 0 }), name)).toContain('score it 0');
 	});
 });

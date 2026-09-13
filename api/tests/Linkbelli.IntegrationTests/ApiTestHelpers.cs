@@ -161,6 +161,24 @@ public static class ItemSeeder
     }
 
     /// <summary>
+    /// Gives a seeded item's link a word count, so a length condition has something to compare.
+    /// </summary>
+    /// <remarks>
+    /// A real one comes from the article extractor, which needs a page to extract from. What is
+    /// being tested is what the app concludes from the number, not how it arrived at it.
+    /// </remarks>
+    public static async Task SetWordCountAsync(this PostgresApiFactory factory, Guid itemId, int words)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+
+        var linkId = await db.PlaylistItems.Where(i => i.Id == itemId).Select(i => i.LinkId).FirstAsync();
+        await db.Links
+            .Where(l => l.Id == linkId)
+            .ExecuteUpdateAsync(u => u.SetProperty(l => l.WordCount, words));
+    }
+
+    /// <summary>
     /// Marks a test account's address as confirmed.
     /// </summary>
     /// <remarks>

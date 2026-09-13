@@ -30,11 +30,16 @@
 			titlePattern: '',
 			urlPattern: '',
 			kind: '' as ContentKind | '',
+			minMinutes: '',
+			maxMinutes: '',
+			broken: '' as '' | 'yes' | 'no',
 			addTags: '',
 			destination: '' as '' | 'move' | 'copy',
 			destinationId: '',
 			markWatched: false,
 			trash: false,
+			setScore: '',
+			archive: false,
 			stopOnMatch: false
 		};
 	}
@@ -53,6 +58,15 @@
 		data.playlists.find((playlist) => playlist.id === id)?.name ?? 'a playlist'
 	);
 
+	/** A number, or null for an empty box. Empty means "no condition", never zero. */
+	function whole(value: string): number | null {
+		const trimmed = value.trim();
+		if (!trimmed) return null;
+
+		const parsed = Number(trimmed);
+		return Number.isFinite(parsed) ? Math.round(parsed) : null;
+	}
+
 	function body() {
 		return {
 			name: draft.name,
@@ -61,6 +75,11 @@
 			titlePattern: draft.titlePattern.trim() || null,
 			urlPattern: draft.urlPattern.trim() || null,
 			kind: draft.kind || null,
+			// Empty is "no condition", which is not the same as zero — hence the parse rather
+			// than a Number() that turns '' into 0 and files everything as instant reading.
+			minMinutes: whole(draft.minMinutes),
+			maxMinutes: whole(draft.maxMinutes),
+			broken: draft.broken === '' ? null : draft.broken === 'yes',
 			addTags: draft.addTags
 				.split(',')
 				.map((tag) => tag.trim())
@@ -69,6 +88,8 @@
 			copyToPlaylistId: draft.destination === 'copy' ? draft.destinationId || null : null,
 			markWatched: draft.markWatched,
 			trash: draft.trash,
+			setScore: whole(draft.setScore),
+			archive: draft.archive,
 			stopOnMatch: draft.stopOnMatch
 		};
 	}
@@ -89,11 +110,16 @@
 			titlePattern: rule.titlePattern ?? '',
 			urlPattern: rule.urlPattern ?? '',
 			kind: rule.kind ?? '',
+			minMinutes: rule.minMinutes?.toString() ?? '',
+			maxMinutes: rule.maxMinutes?.toString() ?? '',
+			broken: rule.broken === null || rule.broken === undefined ? '' : rule.broken ? 'yes' : 'no',
 			addTags: rule.addTags.join(', '),
 			destination: rule.moveToPlaylistId ? 'move' : rule.copyToPlaylistId ? 'copy' : '',
 			destinationId: rule.moveToPlaylistId ?? rule.copyToPlaylistId ?? '',
 			markWatched: rule.markWatched,
 			trash: rule.trash,
+			setScore: rule.setScore?.toString() ?? '',
+			archive: rule.archive ?? false,
 			stopOnMatch: rule.stopOnMatch
 		};
 		editing = rule.id;
@@ -149,6 +175,10 @@
 		if (!draft.titlePattern.trim()) cleared.push('titlePattern');
 		if (!draft.urlPattern.trim()) cleared.push('urlPattern');
 		if (!draft.kind) cleared.push('kind');
+		if (!draft.minMinutes.trim()) cleared.push('minMinutes');
+		if (!draft.maxMinutes.trim()) cleared.push('maxMinutes');
+		if (!draft.broken) cleared.push('broken');
+		if (!draft.setScore.trim()) cleared.push('setScore');
 		if (!draft.addTags.trim()) cleared.push('addTags');
 		if (draft.destination !== 'move') cleared.push('moveToPlaylistId');
 		if (draft.destination !== 'copy') cleared.push('copyToPlaylistId');
@@ -384,10 +414,43 @@
 						<span>Address matches</span>
 						<input bind:value={draft.urlPattern} spellcheck="false" placeholder="/blog/" class="{fieldClass} font-mono" style={fieldStyle} />
 					</label>
+					<label class="flex flex-col gap-1 text-sm">
+						<!-- Search could ask this from the day it shipped, off the same stored
+						     word count; rules could not. -->
+						<span>Takes at least (minutes)</span>
+						<input
+							bind:value={draft.minMinutes}
+							type="number"
+							min="1"
+							placeholder="20"
+							class={fieldClass}
+							style={fieldStyle}
+						/>
+					</label>
+					<label class="flex flex-col gap-1 text-sm">
+						<span>And at most (minutes)</span>
+						<input
+							bind:value={draft.maxMinutes}
+							type="number"
+							min="1"
+							placeholder="5"
+							class={fieldClass}
+							style={fieldStyle}
+						/>
+					</label>
+					<label class="flex flex-col gap-1 text-sm sm:col-span-2">
+						<span>The page</span>
+						<select bind:value={draft.broken} class={fieldClass} style={fieldStyle}>
+							<option value="">Working or not, either way</option>
+							<option value="yes">Has gone, or cannot be read</option>
+							<option value="no">Is still there</option>
+						</select>
+					</label>
 				</div>
 				<p class="mt-2 text-xs" style="color: var(--color-muted)">
 					Patterns are regular expressions and ignore case. Leave a box empty to skip that condition
-					— a rule with none matches everything that arrives.
+					— a rule with none matches everything that arrives. A length condition only ever matches
+					something with an article behind it: a video is not a short read.
 				</p>
 			</fieldset>
 
@@ -422,10 +485,31 @@
 					</div>
 				</div>
 
+				<div class="mt-3 grid gap-3 sm:grid-cols-2">
+					<label class="flex flex-col gap-1 text-sm">
+						<!-- The queue sorts on score, so this is how a rule says "this source is
+						     worth my time" without rating every item by hand. -->
+						<span>Score it</span>
+						<input
+							bind:value={draft.setScore}
+							type="number"
+							min="0"
+							max="100"
+							placeholder="Leave it unrated"
+							class={fieldClass}
+							style={fieldStyle}
+						/>
+					</label>
+				</div>
+
 				<div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
 					<label class="flex items-center gap-2">
 						<input type="checkbox" bind:checked={draft.markWatched} />
 						Mark it watched
+					</label>
+					<label class="flex items-center gap-2">
+						<input type="checkbox" bind:checked={draft.archive} />
+						Keep a public snapshot
 					</label>
 					<label class="flex items-center gap-2">
 						<input type="checkbox" bind:checked={draft.trash} />
@@ -439,6 +523,7 @@
 				<p class="mt-2 text-xs" style="color: var(--color-muted)">
 					"Stop here" keeps the rules below from seeing the item — which is how a specific rule
 					shields something from a broad one underneath it. Trashed items are recoverable.
+					A snapshot is asked of the Internet Archive, which means telling them the address.
 				</p>
 			</fieldset>
 

@@ -44,6 +44,21 @@ public class Link : BaseEntity<Guid>
 
     /// <summary>The hash of <see cref="ResolvedUrl"/>, so it can be compared to another link's.</summary>
     public string? ResolvedUrlHash { get; set; }
+
+    /// <summary>
+    /// Somebody's automation rule asked for a snapshot of this, whatever their account-wide
+    /// setting says.
+    /// </summary>
+    /// <remarks>
+    /// Per rule is the useful grain: wanting a permanent copy of everything from one site and of
+    /// nothing else is a normal thing to want, and the account-wide switch cannot express it.
+    ///
+    /// On the link rather than on the item, because the sweep works through links and a link is
+    /// archived once however many people saved it. The same reasoning the sweep already carries
+    /// for the account-wide setting applies here: a link two people saved was going to be
+    /// archived either way if either of them asked.
+    /// </remarks>
+    public bool ArchiveRequested { get; set; }
     /// <summary>Derived from CanonicalUrl by the canonicalizer; recomputable.</summary>
     public Guid HostId { get; set; }
     public string? Title { get; set; }

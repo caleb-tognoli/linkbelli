@@ -19,12 +19,24 @@ public record AutomationRuleResponse(
     string? TitlePattern,
     string? UrlPattern,
     ContentKind? Kind,
+    /// <summary>Only what reads in this many minutes or fewer; null matches any length.</summary>
+    int? MaxMinutes,
+    /// <summary>Only what takes at least this many minutes; null matches any length.</summary>
+    int? MinMinutes,
+    /// <summary>True for only broken links, false for only working ones, null for either.</summary>
+    bool? Broken,
+    /// <summary>Only what this source brought in; null matches any origin.</summary>
+    Guid? SourceId,
     // --- Then ---
     string[] AddTags,
     Guid? MoveToPlaylistId,
     Guid? CopyToPlaylistId,
     bool MarkWatched,
     bool Trash,
+    /// <summary>Score it on arrival; null leaves the score alone.</summary>
+    int? SetScore,
+    /// <summary>Ask the Internet Archive for a public snapshot of the page.</summary>
+    bool Archive,
     /// <summary>Stop after this rule matches, so a specific rule can shield an item from a broad one.</summary>
     bool StopOnMatch,
     /// <summary>How many items it has acted on — what makes a rule that never fires visible.</summary>
@@ -39,11 +51,17 @@ public record CreateAutomationRuleRequest(
     string? TitlePattern = null,
     string? UrlPattern = null,
     ContentKind? Kind = null,
+    int? MaxMinutes = null,
+    int? MinMinutes = null,
+    bool? Broken = null,
+    Guid? SourceId = null,
     string[]? AddTags = null,
     Guid? MoveToPlaylistId = null,
     Guid? CopyToPlaylistId = null,
     bool MarkWatched = false,
     bool Trash = false,
+    int? SetScore = null,
+    bool Archive = false,
     bool StopOnMatch = false,
     bool Enabled = true,
     int? Position = null);
@@ -58,11 +76,17 @@ public record UpdateAutomationRuleRequest(
     string? TitlePattern = null,
     string? UrlPattern = null,
     ContentKind? Kind = null,
+    int? MaxMinutes = null,
+    int? MinMinutes = null,
+    bool? Broken = null,
+    Guid? SourceId = null,
     string[]? AddTags = null,
     Guid? MoveToPlaylistId = null,
     Guid? CopyToPlaylistId = null,
     bool? MarkWatched = null,
     bool? Trash = null,
+    int? SetScore = null,
+    bool? Archive = null,
     bool? StopOnMatch = null,
     /// <summary>
     /// Clears the conditions or destinations named here. Needed because null already means

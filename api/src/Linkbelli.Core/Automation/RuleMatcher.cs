@@ -14,7 +14,13 @@ public record RuleCandidate(
     string Url,
     string Host,
     string? Title,
-    ContentKind Kind);
+    ContentKind Kind,
+    /// <summary>Words in the article behind it, or null when there is no article.</summary>
+    int? WordCount = null,
+    /// <summary>Whether the page is gone or unreadable.</summary>
+    bool Broken = false,
+    /// <summary>The source that brought it in, or null when a person added it.</summary>
+    Guid? SourceId = null);
 
 /// <summary>
 /// One rule with its patterns compiled. Built once per pass, because a rule is tested against
@@ -94,6 +100,37 @@ public sealed class CompiledRule
         if (Rule.Kind is { } kind && kind != candidate.Kind)
         {
             return false;
+        }
+
+        if (Rule.SourceId is { } sourceId && sourceId != candidate.SourceId)
+        {
+            return false;
+        }
+
+        if (Rule.Broken is { } broken && broken != candidate.Broken)
+        {
+            return false;
+        }
+
+        if (Rule.MaxMinutes is not null || Rule.MinMinutes is not null)
+        {
+            // A length condition on something with no article behind it does not match. "Under
+            // five minutes" is a claim about a piece of writing, and a video or a repository is
+            // not a short one — it is not one at all.
+            if (ReadingTime.Minutes(candidate.WordCount) is not { } minutes)
+            {
+                return false;
+            }
+
+            if (Rule.MaxMinutes is { } most && minutes > most)
+            {
+                return false;
+            }
+
+            if (Rule.MinMinutes is { } least && minutes < least)
+            {
+                return false;
+            }
         }
 
         if (_title is not null && !IsMatch(_title, candidate.Title))

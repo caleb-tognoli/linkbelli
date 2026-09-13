@@ -140,7 +140,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
             // Articles only, and only ones long enough to have been read at all: "under five
             // minutes" is a question about reading, and a link with no article behind it has no
             // length to compare. Rounded the same way the reading time on the row is.
-            var words = minutes * WordsPerMinute + WordsPerMinute / 2;
+            var words = ReadingTime.WordsWithin(minutes);
             items = items.Where(i => i.Link!.WordCount != null && i.Link.WordCount <= words);
         }
 
@@ -275,13 +275,6 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
     /// The same predicate the in-playlist search uses, so both are served by the trigram indexes
     /// added in AddSearchIndexes. A pasted URL short-circuits to the indexed dedup hash.
     /// </summary>
-    /// <summary>
-    /// The reading speed the web app shows times at. Kept in step with it deliberately: a filter
-    /// for "under five minutes" that disagrees with the "6 min" on the row is worse than no
-    /// filter at all.
-    /// </summary>
-    private const int WordsPerMinute = 220;
-
     /// <summary>
     /// Narrows to one kind of thing. An unrecognised name matches nothing rather than everything,
     /// so a typo returns an empty list instead of quietly ignoring the filter.
