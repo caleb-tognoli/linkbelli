@@ -3,14 +3,17 @@ import { API_BASE } from '$lib/server/config';
 import { ACCESS_COOKIE, REFRESH_COOKIE, clearTokens, setTokens } from '$lib/server/auth';
 
 // Auth pages: redirect already-signed-in users away from these.
-const AUTH_PAGES = [
-	'/login',
-	'/register',
-	'/forgot-password',
-	'/reset-password',
-	// Reached from an email, by somebody who may not be signed in and should not have to be.
-	'/unsubscribe'
-];
+const AUTH_PAGES = ['/login', '/register', '/forgot-password', '/reset-password'];
+
+/**
+ * Landing pages for a link in an email.
+ *
+ * Reachable without a session, and — the part that was wrong — not redirected away when there is
+ * one. `/unsubscribe` sat in AUTH_PAGES, so somebody signed in who clicked "stop these" in their
+ * own digest was bounced to the home page and stayed subscribed. The link works or it does not;
+ * whether the person happens to have a session open is not the link's business.
+ */
+const MAIL_LANDINGS = ['/unsubscribe', '/confirm-email'];
 
 // Anonymous-viewable areas. The /api/v1 proxy is included so anonymous browsers can read public
 // endpoints; the API still enforces per-endpoint auth (protected calls get 401).
@@ -76,6 +79,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		pathname === '/' ||
 		CRAWLER_FILES.includes(pathname) ||
 		isAuthPage ||
+		MAIL_LANDINGS.includes(pathname) ||
 		ANON_PREFIXES.some((p) => startsWithSegment(pathname, p));
 
 	if (!event.locals.authenticated && !anonAllowed) {

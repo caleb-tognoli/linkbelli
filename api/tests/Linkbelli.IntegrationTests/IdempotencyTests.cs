@@ -21,8 +21,14 @@ public class IdempotencyTests(PostgresApiFactory factory)
     private async Task<HttpClient> NewUserAsync()
     {
         var client = factory.CreateClient();
-        var token = await client.RegisterAndLoginAsync(NewUsername());
+        var username = NewUsername();
+        var token = await client.RegisterAndLoginAsync(username);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // The endpoint these exercise happens to be the digest preview, which will not send to
+        // an address nobody has proved they own.
+        await factory.ConfirmEmailAsync(username);
+
         return client;
     }
 

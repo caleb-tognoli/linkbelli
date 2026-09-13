@@ -38,7 +38,8 @@ public class UserPreferenceService(IAppDbContext db) : IUserPreferenceService
         var row = await db.Users
             .Where(u => u.Id == id)
             .Select(u => new UserPreferences(
-                u.ShowNsfw, u.ArchiveLinks, u.BackupsEnabled, u.OnboardingDismissedAt != null))
+                u.ShowNsfw, u.ArchiveLinks, u.BackupsEnabled, u.OnboardingDismissedAt != null,
+                u.EmailConfirmed))
             .FirstOrDefaultAsync(ct);
 
         // A missing user answers the same as an anonymous one rather than throwing: these are

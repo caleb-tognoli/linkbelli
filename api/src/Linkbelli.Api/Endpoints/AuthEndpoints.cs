@@ -28,6 +28,7 @@ public static class AuthEndpoints
             RegisterRequest req,
             UserManager<ApplicationUser> users,
             IRegistrationPolicy registration,
+            IEmailVerificationService verification,
             CancellationToken ct) =>
         {
             // Said plainly rather than as a 404: somebody who cannot get an account should be
@@ -58,6 +59,11 @@ public static class AuthEndpoints
                     .GroupBy(e => e.Code)
                     .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray()));
             }
+
+            // Best effort, and deliberately not awaited into the result. An account whose
+            // confirmation mail failed still works; it simply never receives anything until the
+            // address is confirmed, which is the state the address's real owner would want.
+            await verification.SendAsync(user, ct);
 
             return Results.Ok();
         })
@@ -175,5 +181,57 @@ public static class AuthEndpoints
             .AllowAnonymous()
             .RequireRateLimiting("sensitive")
             .WithName("ResetPassword");
+
+        // Anybody could sign up with anybody's address, and every outbound feature then mailed
+        // it — so the instance became a small spam cannon aimed at a stranger, and because
+        // addresses are unique, the squatter denied the real owner an account.
+        group.MapPost("/confirm-email", async (
+            ConfirmEmailRequest req, IEmailVerificationService verification, CancellationToken ct) =>
+        {
+            var errors = new Dictionary<string, string[]>();
+            if (string.IsNullOrWhiteSpace(req.Email)) errors["email"] = ["Email is required."];
+            if (string.IsNullOrWhiteSpace(req.Token)) errors["token"] = ["Token is required."];
+            if (errors.Count > 0) return Results.ValidationProblem(errors);
+
+            var (ok, error) = await verification.ConfirmAsync(req.Email, req.Token, ct);
+
+            return ok
+                ? Results.NoContent()
+                : Results.ValidationProblem(new Dictionary<string, string[]> { ["token"] = [error] });
+        })
+            .AllowAnonymous()
+            .RequireRateLimiting("sensitive")
+            .WithName("ConfirmEmail");
+
+        group.MapPost("/resend-confirmation", async (
+            ResendConfirmationRequest req, IEmailVerificationService verification, CancellationToken ct) =>
+        {
+            if (string.IsNullOrWhiteSpace(req.Email))
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["email"] = ["An email address is required."],
+                });
+            }
+
+            if (!verification.CanSend)
+            {
+                // Said out loud, as with a reset: an instance with no mail configured cannot do
+                // this, and accepting silently leaves somebody waiting for a message nobody ever
+                // tried to send. Reveals nothing about any account.
+                return Results.Problem(
+                    "This Linkbelli has no mail configured, so it cannot send a confirmation link.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            await verification.ResendAsync(req.Email, ct);
+
+            // The same answer whether or not that address has an account, and whether or not it
+            // is already confirmed.
+            return Results.Accepted();
+        })
+            .AllowAnonymous()
+            .RequireRateLimiting("sensitive")
+            .WithName("ResendConfirmation");
     }
 }

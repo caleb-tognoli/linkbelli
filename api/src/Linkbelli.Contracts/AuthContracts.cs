@@ -15,3 +15,9 @@ public record ForgotPasswordRequest(string Login);
 
 /// <summary>Finishes one. The token is whatever came in the link, unchanged.</summary>
 public record ResetPasswordRequest(string Email, string Token, string NewPassword);
+
+/// <summary>Finishes proving an address belongs to whoever signed up with it.</summary>
+public record ConfirmEmailRequest(string Email, string Token);
+
+/// <summary>Asks for another confirmation link.</summary>
+public record ResendConfirmationRequest(string Email);

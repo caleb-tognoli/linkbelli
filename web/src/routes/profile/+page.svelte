@@ -220,7 +220,7 @@
 		</div>
 	</div>
 
-	<NotificationsPanel />
+	<NotificationsPanel email={data.user?.email} confirmed={data.user?.emailConfirmed ?? true} />
 
 	<BackupsPanel enabled={data.user?.backupsEnabled ?? true} />
 

@@ -18,6 +18,13 @@ export interface User {
 	backupsEnabled?: boolean;
 	/** Whether the getting-started checklist has been put away for good. */
 	onboardingDismissed?: boolean;
+	/**
+	 * Whether this address has been proved to belong to them.
+	 *
+	 * Nothing is mailed to an address nobody has confirmed, so a screen that promises mail has to
+	 * be able to say why none is arriving.
+	 */
+	emailConfirmed?: boolean;
 }
 
 export type NsfwSetting = 'Auto' | 'Yes' | 'No';

@@ -38,8 +38,35 @@
 		}
 	];
 
+	let {
+		email = null,
+		confirmed = true
+	}: {
+		/** The address all of this would go to. Shown only when it cannot be written to. */
+		email?: string | null;
+		/**
+		 * Whether that address has been confirmed.
+		 *
+		 * Defaults to true so a caller that does not know says nothing, rather than accusing
+		 * somebody of not having confirmed an address they confirmed years ago.
+		 */
+		confirmed?: boolean;
+	} = $props();
+
 	let prefs = $state<Prefs | null>(null);
 	let error = $state<string | null>(null);
+
+	let resending = $state(false);
+	let resent = $state(false);
+
+	async function resendConfirmation() {
+		if (!email) return;
+
+		resending = true;
+		const res = await api.post('/auth/resend-confirmation', { email });
+		resending = false;
+		resent = res.ok;
+	}
 
 	$effect(() => {
 		void load();
@@ -89,6 +116,30 @@
 		Nothing here is marketing, and every message carries a link that turns that kind off. The
 		two about your own things are on; the two that repeat are not, unless you say so.
 	</p>
+
+	{#if !confirmed}
+		<!-- Everything below is switched on and does nothing. Said here rather than left to be
+		     discovered, because "my notifications are broken" is the obvious conclusion. -->
+		<div class="mt-3 rounded-md border p-3 text-sm" style="border-color: var(--color-warning)">
+			<p>
+				Nothing is sent to {email ?? 'your address'} until you confirm it. Look for the message
+				from when you signed up, or ask for another.
+			</p>
+			{#if resent}
+				<p class="mt-2" style="color: var(--color-muted)">Another one is on its way.</p>
+			{:else}
+				<button
+					type="button"
+					onclick={resendConfirmation}
+					disabled={resending || !email}
+					class="mt-2 rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60"
+					style="border-color: var(--color-border)"
+				>
+					{resending ? 'Sending…' : 'Send another link'}
+				</button>
+			{/if}
+		</div>
+	{/if}
 
 	{#if error}
 		<p class="mt-3 text-sm" style="color: var(--color-danger)">{error}</p>

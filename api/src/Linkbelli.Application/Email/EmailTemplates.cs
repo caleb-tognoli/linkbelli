@@ -73,6 +73,28 @@ public static class EmailTemplates
     /// </remarks>
     private static string Escape(string value) => WebUtility.HtmlEncode(value);
 
+    /// <summary>
+    /// Sent once, to prove the address belongs to whoever typed it.
+    /// </summary>
+    /// <remarks>
+    /// Anybody could register with anybody's address, and every outbound feature — the digest,
+    /// notifications — then mailed it. Two things went wrong at once: the instance became a small
+    /// spam cannon aimed at a stranger, and because addresses are unique, the squatter denied the
+    /// real owner an account.
+    /// </remarks>
+    public static EmailMessage ConfirmEmail(string to, string confirmUrl, int validForHours) =>
+        Compose(
+            "confirm-email",
+            to,
+            "Confirm your Linkbelli address",
+            "Confirm your address",
+            [
+                "Somebody signed up to Linkbelli with this address. If that was you, confirm it with the link below.",
+                $"It works once, and stops working after {validForHours} {(validForHours == 1 ? "hour" : "hours")}.",
+                "If it wasn't you, ignore this. Nothing will be sent to you again, and the address stays free for you to use.",
+            ],
+            ("Confirm this address", confirmUrl));
+
     public static EmailMessage PasswordReset(string to, string resetUrl, int validForHours) =>
         Compose(
             "password-reset",

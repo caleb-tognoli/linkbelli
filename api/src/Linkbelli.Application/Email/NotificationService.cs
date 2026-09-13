@@ -156,6 +156,7 @@ public sealed class NotificationService(
             .Select(u => new
             {
                 u.Email,
+                u.EmailConfirmed,
                 Wants = kind == NotificationKind.Share ? u.NotifyOnShare
                     : kind == NotificationKind.Follow ? u.NotifyOnFollow
                     : kind == NotificationKind.SourceStopped ? u.NotifySourceStopped
@@ -164,6 +165,11 @@ public sealed class NotificationService(
             .FirstOrDefaultAsync(ct);
 
         if (user is null || string.IsNullOrWhiteSpace(user.Email)) return null;
+
+        // Nothing goes to an address nobody has proved they own. Anyone could sign up as anyone,
+        // and this is how a stranger started receiving mail from an instance they had never
+        // heard of — with the instance's sending reputation paying for it.
+        if (!user.EmailConfirmed) return null;
 
         return user.Wants ? user.Email : null;
     }

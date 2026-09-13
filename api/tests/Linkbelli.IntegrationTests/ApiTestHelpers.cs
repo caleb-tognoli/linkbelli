@@ -134,6 +134,26 @@ public static class ItemSeeder
     }
 
     /// <summary>
+    /// Marks a test account's address as confirmed.
+    /// </summary>
+    /// <remarks>
+    /// Nothing is mailed to an address nobody has proved they own, so a test that asserts on an
+    /// outbound message has to say that the address was confirmed. Stamped directly rather than
+    /// by walking the confirmation link: the link is covered by its own tests, and every other
+    /// mail test would otherwise carry a copy of that flow for no gain.
+    /// </remarks>
+    public static async Task ConfirmEmailAsync(this PostgresApiFactory factory, string username)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+
+        var normalized = username.ToUpperInvariant();
+        await db.Users
+            .Where(u => u.NormalizedUserName == normalized)
+            .ExecuteUpdateAsync(u => u.SetProperty(x => x.EmailConfirmed, true));
+    }
+
+    /// <summary>
     /// Records that a saved link's fetch ended up somewhere else.
     /// </summary>
     /// <remarks>

@@ -58,7 +58,9 @@ public sealed class DigestSweep(
         var cutoff = DateTimeOffset.UtcNow.AddDays(-WindowDays);
 
         var due = await db.Users
-            .Where(u => u.NotifyWeeklyDigest && (u.DigestSentAt == null || u.DigestSentAt < cutoff))
+            .Where(u => u.NotifyWeeklyDigest
+                && u.EmailConfirmed
+                && (u.DigestSentAt == null || u.DigestSentAt < cutoff))
             // Never-sent first, then longest-waiting. Ordered on the null-ness rather than the
             // column, because Postgres sorts NULLs last and would put the accounts that have
             // never had one behind every account that already has.
@@ -103,10 +105,16 @@ public sealed class DigestSweep(
     {
         var user = await db.Users
             .Where(u => u.Id == userId)
-            .Select(u => new { u.Email, u.NotifyWeeklyDigest })
+            .Select(u => new { u.Email, u.EmailConfirmed, u.NotifyWeeklyDigest })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (user?.Email is null) return false;
+
+        // Not to an address nobody has proved they own — not even when forced. "Send me one now"
+        // is a button on a settings page, and the person pressing it is not necessarily the
+        // person who owns the address it would go to.
+        if (!user.EmailConfirmed) return false;
+
         if (!force && !user.NotifyWeeklyDigest) return false;
 
         var since = DateTimeOffset.UtcNow.AddDays(-WindowDays);

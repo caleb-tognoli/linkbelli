@@ -27,6 +27,10 @@ public class NotificationTests(PostgresApiFactory factory)
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await client.RegisterAndLoginAsync(username));
 
+        // Nothing is mailed to an address nobody has proved they own, and these tests are all
+        // about what arrives.
+        await factory.ConfirmEmailAsync(username);
+
         return (client, username, $"{username}@example.com");
     }
 

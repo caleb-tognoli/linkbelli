@@ -5,11 +5,16 @@ namespace Linkbelli.Application.Services;
 /// <param name="ArchiveLinks">Whether they asked for public snapshots of the pages they save.</param>
 /// <param name="BackupsEnabled">Whether the schedule keeps snapshots of their library.</param>
 /// <param name="OnboardingDismissed">Whether the getting-started checklist has been put away.</param>
+/// <param name="EmailConfirmed">
+/// Whether the address has been proved to belong to them. Not a preference, but read on the same
+/// row at the same moment by the screen that has to say why no mail is arriving.
+/// </param>
 public record UserPreferences(
     bool ShowNsfw,
     bool ArchiveLinks,
     bool BackupsEnabled,
-    bool OnboardingDismissed);
+    bool OnboardingDismissed,
+    bool EmailConfirmed = false);
 
 public interface IUserPreferenceService
 {

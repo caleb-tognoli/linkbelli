@@ -24,6 +24,10 @@ public class DigestTests(PostgresApiFactory factory)
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await client.RegisterAndLoginAsync(username));
 
+        // Nothing is mailed to an address nobody has proved they own, and these tests are all
+        // about what arrives.
+        await factory.ConfirmEmailAsync(username);
+
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var id = await db.Users.Where(u => u.UserName == username).Select(u => u.Id).FirstAsync();

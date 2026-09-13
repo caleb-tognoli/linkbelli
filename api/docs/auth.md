@@ -56,6 +56,26 @@ curl -X POST http://localhost:5180/api/v1/auth/refresh \
 | `POST` | `/api/v1/auth/register` | `username, email, password` | Create an account |
 | `POST` | `/api/v1/auth/login`    | `login` (username or email), `password` | Get access + refresh tokens |
 | `POST` | `/api/v1/auth/refresh`  | `refreshToken` | Exchange a refresh token for new tokens |
+| `POST` | `/api/v1/auth/forgot-password` | `login` | Send a reset link. Always `202`, whether or not that account exists |
+| `POST` | `/api/v1/auth/reset-password` | `email, token, newPassword` | Finish a reset. Ends every existing session |
+| `POST` | `/api/v1/auth/confirm-email` | `email, token` | Prove the address belongs to you |
+| `POST` | `/api/v1/auth/resend-confirmation` | `email` | Another confirmation link. Always `202` |
+
+### Confirming an address
+
+Registration sends a confirmation link, and **nothing else is ever mailed to an address nobody has
+confirmed** — no digest, no notifications, not even a "send me one now" from the settings page.
+
+Anyone could otherwise sign up with anyone's address. Two things went wrong at once: the instance
+became a small spam cannon aimed at a stranger, with the instance's sending reputation paying for
+it; and because addresses are unique, squatting one denied its real owner an account.
+
+**Signing in is not gated on it.** An instance with no mail configured cannot confirm anything,
+and locking those people out of their own accounts to close a mail problem would be the worse
+trade. An unconfirmed account works normally and is simply never written to — which is exactly
+what the address's real owner wanted.
+
+`/me` reports `emailConfirmed`, so a screen that promises mail can say why none is arriving.
 
 ## 2. API key (programmatic)
 

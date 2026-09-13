@@ -35,6 +35,9 @@ public static class MeEndpoints
                 preferences.ArchiveLinks,
                 preferences.BackupsEnabled,
                 preferences.OnboardingDismissed,
+                // So a screen that promises mail can say why none is arriving, rather than
+                // leaving somebody to conclude the feature is broken.
+                preferences.EmailConfirmed,
                 // So the sources page can show an inbox address, or say nothing when this
                 // deployment has no inbound domain rather than offering one that goes nowhere.
                 inboxDomain = email.Value.InboxDomain,

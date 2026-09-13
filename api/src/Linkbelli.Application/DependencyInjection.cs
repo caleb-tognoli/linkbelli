@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IPlaylistFeedService, PlaylistFeedService>();
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<IPasswordResetService, PasswordResetService>();
+        services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<IRegistrationPolicy, RegistrationPolicy>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPreferences, NotificationPreferences>();
