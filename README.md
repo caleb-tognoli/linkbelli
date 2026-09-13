@@ -27,6 +27,9 @@ with no connection is queued and sent when one returns (see `web/docs/offline.md
 - The web app never exposes tokens to browser JS — they're held in httpOnly cookies and
   proxied through `/api/v1`, with an Origin check on unsafe methods as CSRF defense.
 
+[`docs/architecture.md`](docs/architecture.md) goes a level deeper: the layering rules, the data
+model and its conventions, the request pipeline in order, and the enrichment states.
+
 ## Run the full stack locally
 
 Requires Docker. From the repo root:
@@ -148,6 +151,13 @@ together take turns instead of racing.
 
 If you do run several anyway, the Data Protection key ring must also be shared *and* encrypted at
 rest (`ProtectKeysWith*`), so every replica validates tokens minted by the others.
+
+## Contributing
+
+[CONTRIBUTING.md](CONTRIBUTING.md) has the conventions a change is expected to follow — they are
+visible in the tree but worth reading before writing any. Security problems go to the address in
+[SECURITY.md](SECURITY.md) rather than into an issue. Notable changes are listed in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Licence
 
