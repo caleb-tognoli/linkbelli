@@ -164,4 +164,54 @@ public class ETagTests(PostgresApiFactory factory)
         res.EnsureSuccessStatusCode();
         Assert.Null(res.Headers.ETag);
     }
+
+    /// <summary>
+    /// A download is fetched once and saved, not polled — so it is not buffered to be hashed.
+    /// </summary>
+    /// <remarks>
+    /// Every one of these used to be copied into memory in full, hashed, and copied again, to
+    /// produce a header no client will ever send back. A JSON export is the awkward one: it is
+    /// still JSON, so the content type alone does not settle it — the attachment does.
+    /// </remarks>
+    [Theory]
+    [InlineData("/api/v1/export?format=json")]
+    [InlineData("/api/v1/export?format=csv")]
+    [InlineData("/api/v1/export?format=html")]
+    [InlineData("/api/v1/export?format=opml")]
+    public async Task A_download_is_not_tagged(string path)
+    {
+        var client = await NewUserAsync();
+        await NewPlaylistAsync(client, $"Exported {Guid.NewGuid():N}");
+
+        var res = await GetAsync(client, path);
+        res.EnsureSuccessStatusCode();
+
+        Assert.Null(res.Headers.ETag);
+        // Still served, in full: not tagging it must not mean not sending it.
+        Assert.NotEmpty(await res.Content.ReadAsByteArrayAsync());
+    }
+
+    /// <summary>
+    /// A syndication feed has its own caching story and its own content type, and is read by
+    /// things that fetch it whole.
+    /// </summary>
+    [Fact]
+    public async Task A_feed_is_not_tagged()
+    {
+        var client = await NewUserAsync();
+        var name = $"Syndicated {Guid.NewGuid():N}";
+        var res = await client.PostAsJsonAsync("/api/v1/playlists", new { name, visibility = "Public" });
+        res.EnsureSuccessStatusCode();
+        var playlist = (await res.Content.ReadFromJsonAsync<PlaylistDto>())!;
+
+        var me = await client.GetFromJsonAsync<UsernameDto>("/api/v1/me");
+
+        var feed = await GetAsync(
+            factory.CreateClient(), $"/api/v1/public/playlists/{me!.Username}/{playlist.Slug}/feed.rss");
+        feed.EnsureSuccessStatusCode();
+
+        Assert.Null(feed.Headers.ETag);
+    }
+
+    private record UsernameDto(string Username);
 }

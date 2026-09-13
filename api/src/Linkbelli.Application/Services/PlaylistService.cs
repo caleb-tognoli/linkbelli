@@ -543,7 +543,7 @@ public class PlaylistService(
                 more = Cursor.Encode((offset + take).ToString());
             }
 
-            return new PagedResult<PublicPlaylistSummary>(ranked, more);
+            return new PagedResult<PublicPlaylistSummary>([.. ranked.Select(r => r.Row)], more);
         }
 
         var after = Cursor.DecodeTimeKey(cursor);
@@ -623,16 +623,38 @@ public class PlaylistService(
         return rows.ToPage(take);
     }
 
-    /// <summary>One public playlist as a listing shows it. Shared by both paging paths.</summary>
-    private Expression<Func<Playlist, PublicPlaylistSummary>> Summarize() =>
-        p => new PublicPlaylistSummary(
-            db.Users.Where(u => u.Id == p.OwnerId).Select(u => u.UserName!).FirstOrDefault()!,
-            p.Slug, p.Name, p.Description,
-            p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-            p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-            p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
-            db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-            p.Items.Max(i => (DateTimeOffset?)i.CreationTime));
+    /// <summary>
+    /// One public playlist as a listing shows it, with its id and date still attached.
+    /// </summary>
+    /// <remarks>
+    /// The summary identifies a playlist by owner and slug, which is right for a public URL and
+    /// useless for matching a row back to something computed about it. Both callers need that —
+    /// one to build a cursor, the other to re-apply a similarity score — so the key rides along
+    /// and is dropped at the boundary.
+    /// </remarks>
+    private Expression<Func<Playlist, KeyedRow<PublicPlaylistSummary>>> Summarize() =>
+        p => new KeyedRow<PublicPlaylistSummary>(
+            p.CreationTime,
+            p.Id,
+            new PublicPlaylistSummary(
+                db.Users.Where(u => u.Id == p.OwnerId).Select(u => u.UserName!).FirstOrDefault()!,
+                p.Slug, p.Name, p.Description,
+                p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+                db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                p.Items.Max(i => (DateTimeOffset?)i.CreationTime)));
+
+    /// <summary>
+    /// How much of a playlist's link set is compared when looking for similar ones.
+    /// </summary>
+    /// <remarks>
+    /// Every id used to go into the comparison, as one array parameter evaluated against every
+    /// item of every public playlist. What a list is about is answered just as well by its recent
+    /// few hundred links, and the cap is what stops one enormous playlist making this expensive
+    /// for everybody who opens it.
+    /// </remarks>
+    public const int SimilarityLinkSample = 500;
 
     /// <summary>
     /// The two discovery orderings that rank by a count rather than by a date.
@@ -681,7 +703,14 @@ public class PlaylistService(
             {
                 p.Id,
                 Tags = p.Tags.Select(pt => pt.TagId).ToList(),
-                Links = p.Items.Select(i => i.LinkId).ToList(),
+                // Newest first and capped. The whole set went into the comparison before, so a
+                // five-thousand-link playlist sent five thousand ids as one array parameter; what
+                // a list is about is answered just as well by its recent half, and the cap is what
+                // stops one enormous playlist making this expensive for everybody who opens it.
+                Links = p.Items.OrderByDescending(i => i.CreationTime)
+                    .Select(i => i.LinkId)
+                    .Take(SimilarityLinkSample)
+                    .ToList(),
             })
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("Playlist not found.");
@@ -697,23 +726,66 @@ public class PlaylistService(
             p.Visibility == PlaylistVisibility.Public && p.Id != subject.Id);
 
         candidates = candidates.VisibleTo(await prefs.ShowNsfwAsync(viewerId, ct));
+        var visible = candidates.Select(p => p.Id);
 
-        return await (from p in candidates
-                      join u in db.Users on p.OwnerId equals u.Id
-                      let sharedTags = p.Tags.Count(pt => subject.Tags.Contains(pt.TagId))
-                      let sharedLinks = p.Items.Count(i => subject.Links.Contains(i.LinkId))
-                      where sharedTags > 0 || sharedLinks > 0
-                      orderby sharedLinks * SharedLinkWeight + sharedTags descending,
-                              p.CreationTime descending
-                      select new PublicPlaylistSummary(
-                          u.UserName!, p.Slug, p.Name, p.Description,
-                          p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                          p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                          p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
-                          db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-                          p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
-            .Take(take)
+        // Asked from the join tables rather than from the playlists.
+        //
+        // This used to walk every public playlist and, for each, count how many of its items and
+        // tags appeared in the subject's arrays — evaluated per row, with no index able to help,
+        // and then sorted on the result. The cost was (public playlists x their items x subject
+        // links): a full cross-product that ran on every public playlist page view and degraded
+        // to an empty row on failure, so it would have failed quietly under load.
+        //
+        // Starting from PlaylistItems and PlaylistTags asks the question the indexes answer —
+        // LinkId and TagId are both indexed — and the counting happens in one GROUP BY over
+        // matching rows rather than once per candidate.
+        var sharedLinks = await db.PlaylistItems
+            .Where(i => subject.Links.Contains(i.LinkId) && visible.Contains(i.PlaylistId))
+            .GroupBy(i => i.PlaylistId)
+            .Select(g => new { PlaylistId = g.Key, Count = g.Count() })
             .ToListAsync(ct);
+
+        var sharedTags = await db.PlaylistTags
+            .Where(pt => subject.Tags.Contains(pt.TagId) && visible.Contains(pt.PlaylistId))
+            .GroupBy(pt => pt.PlaylistId)
+            .Select(g => new { PlaylistId = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        // Two small lists of (playlist, count) merged here rather than in a third query. Shared
+        // links are the stronger signal and keep their weight.
+        var scores = new Dictionary<Guid, int>();
+        foreach (var row in sharedLinks)
+        {
+            scores[row.PlaylistId] = row.Count * SharedLinkWeight;
+        }
+
+        foreach (var row in sharedTags)
+        {
+            scores[row.PlaylistId] = scores.GetValueOrDefault(row.PlaylistId) + row.Count;
+        }
+
+        if (scores.Count == 0)
+        {
+            return [];
+        }
+
+        var best = scores.OrderByDescending(s => s.Value).Take(take).Select(s => s.Key).ToList();
+
+        var summaries = await candidates
+            .Where(p => best.Contains(p.Id))
+            .Select(Summarize())
+            .ToListAsync(ct);
+
+        // Ordered here because the scores live here, and the summary carries no id to match on —
+        // which is why it travels beside one. The creation-date tiebreak keeps the row stable
+        // between refreshes when two playlists score the same.
+        return
+        [
+            .. summaries
+                .OrderByDescending(s => scores.GetValueOrDefault(s.Id))
+                .ThenByDescending(s => s.Row.CreationTime)
+                .Select(s => s.Row),
+        ];
     }
 
     /// <summary>How much more a shared link counts than a shared tag.</summary>

@@ -14,10 +14,40 @@ namespace Linkbelli.Api.Common;
 public sealed class ETagFilter : IEndpointFilter
 {
     /// <summary>
-    /// Responses larger than this are sent without a tag. Hashing a very large body to save
-    /// sending it is a trade that stops paying somewhere, and this is a reasonable guess at where.
+    /// Responses larger than this are sent without a tag, and without being buffered to find out.
     /// </summary>
-    private const int MaxHashedBytes = 2 * 1024 * 1024;
+    /// <remarks>
+    /// It was two megabytes, which is not a size anybody re-validates — it is a size you download
+    /// once. Every export, backup and long search page was therefore copied into memory in full,
+    /// hashed, and copied again by <c>ToArray</c>, to produce a header that was then thrown away
+    /// because the body was too big to tag. A page of JSON is tens of kilobytes; this is well
+    /// clear of that and far below the point where buffering costs more than it saves.
+    /// </remarks>
+    private const int MaxHashedBytes = 512 * 1024;
+
+    /// <summary>
+    /// What is worth tagging.
+    /// </summary>
+    /// <remarks>
+    /// JSON is what clients poll — the extension, the sync client, a feed reader — and what is
+    /// cheap to re-render on a 304. Exports, backups, thumbnails and feeds each have their own
+    /// caching story and are large; buffering them to tag them is pure cost.
+    /// </remarks>
+    private static bool IsTaggable(HttpResponse response)
+    {
+        // A download is fetched once and saved, not polled. A JSON export is still JSON, so the
+        // content type alone would buffer and hash the whole of somebody's library to produce a
+        // tag nothing will ever send back.
+        if (response.Headers.ContainsKey(HeaderNames.ContentDisposition))
+        {
+            return false;
+        }
+
+        var contentType = response.ContentType;
+        return contentType is not null
+            && (contentType.StartsWith("application/json", StringComparison.OrdinalIgnoreCase)
+                || contentType.StartsWith("application/problem+json", StringComparison.OrdinalIgnoreCase));
+    }
 
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
@@ -29,7 +59,8 @@ public sealed class ETagFilter : IEndpointFilter
         }
 
         var original = http.Response.Body;
-        using var buffer = new MemoryStream();
+        using var buffer = new ETagBufferStream(
+            original, MaxHashedBytes, () => IsTaggable(http.Response));
         http.Response.Body = buffer;
 
         object? result;
@@ -46,11 +77,18 @@ public sealed class ETagFilter : IEndpointFilter
             http.Response.Body = original;
         }
 
-        var body = buffer.ToArray();
+        // Already on the wire: either it was never a candidate, or it outgrew the cap part way
+        // through. Nothing left to decide.
+        if (buffer.PassedThrough)
+        {
+            return Results.Empty;
+        }
+
+        var body = buffer.Buffered;
 
         // Only successful reads are tagged. A 404 or a 500 is not a representation of anything,
         // and caching one under an entity tag is how a transient failure becomes a sticky one.
-        if (http.Response.StatusCode is not (>= 200 and < 300) || body.Length is 0 or > MaxHashedBytes)
+        if (http.Response.StatusCode is not (>= 200 and < 300) || body.Length == 0)
         {
             await original.WriteAsync(body, http.RequestAborted);
             return Results.Empty;
@@ -58,7 +96,7 @@ public sealed class ETagFilter : IEndpointFilter
 
         // Weak, because this is a byte-for-byte comparison of one serialization of the resource
         // rather than a claim about the resource itself.
-        var etag = $"W/\"{Convert.ToHexStringLower(SHA256.HashData(body))[..32]}\"";
+        var etag = $"W/\"{Convert.ToHexStringLower(SHA256.HashData(body.Span))[..32]}\"";
         http.Response.Headers.ETag = etag;
 
         // A validator on a response with no cacheability directives is an invitation: RFC 9111
