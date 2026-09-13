@@ -46,7 +46,9 @@ public class PlaylistItemService(
             // The name rather than the id: this is rendered next to a row, and a client should
             // not have to resolve a guid to draw it. Whether it is worth showing — it is not, on
             // a playlist only one person touches — is the caller's decision, not this one's.
-            db.Users.Where(u => u.Id == i.AddedByUserId).Select(u => u.UserName).FirstOrDefault());
+            db.Users.Where(u => u.Id == i.AddedByUserId).Select(u => u.UserName).FirstOrDefault(),
+            i.ReadProgress,
+            i.LastReadAt);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)

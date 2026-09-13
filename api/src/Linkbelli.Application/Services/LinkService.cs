@@ -48,6 +48,12 @@ public class LinkService(
             throw new NotFoundException("No readable text was found on that page.");
         }
 
+        // The furthest the caller got in any copy of this link. A link in two playlists is one
+        // article, and the reader should open where the reading stopped whichever row was clicked.
+        var progress = await db.PlaylistItems
+            .Where(i => i.LinkId == linkId && i.Playlist!.OwnerId == ownerId && i.ReadProgress != null)
+            .MaxAsync(i => i.ReadProgress, cancellationToken);
+
         return new LinkContentResponse(
             link.Id,
             link.CanonicalUrl,
@@ -56,7 +62,59 @@ public class LinkService(
             link.SiteName,
             link.Content.Split(ArticleExtractor.ParagraphSeparator, StringSplitOptions.RemoveEmptyEntries),
             link.WordCount ?? 0,
-            link.ContentTruncated);
+            link.ContentTruncated,
+            progress);
+    }
+
+    /// <summary>
+    /// How far down the article counts as having read it.
+    /// </summary>
+    /// <remarks>
+    /// Not 1.0. Every article ends in a footer, a byline or a "related stories" block that
+    /// nobody reads, so demanding the very bottom means the last step is always manual — which
+    /// is the step this exists to remove.
+    /// </remarks>
+    public const double FinishedAt = 0.92;
+
+    public async Task SetReadProgressAsync(
+        Guid ownerId, Guid linkId, double progress, CancellationToken cancellationToken = default)
+    {
+        if (double.IsNaN(progress))
+        {
+            throw new ValidationException("progress", "Progress has to be a number between 0 and 1.");
+        }
+
+        var clamped = Math.Clamp(progress, 0, 1);
+        var now = DateTimeOffset.UtcNow;
+
+        var mine = await db.PlaylistItems
+            .Where(i => i.LinkId == linkId && i.Playlist!.OwnerId == ownerId)
+            .ToListAsync(cancellationToken);
+
+        if (mine.Count == 0)
+        {
+            // Not saved by this person. Reading is only ever offered from their own library, so
+            // this is either a stale tab or somebody guessing at ids.
+            throw new NotFoundException("Link not found.");
+        }
+
+        foreach (var item in mine)
+        {
+            // Never backwards. Scrolling up to re-read a paragraph is not un-reading it, and a
+            // progress bar that retreats while you look at it is worse than none.
+            item.ReadProgress = Math.Max(item.ReadProgress ?? 0, clamped);
+            item.LastReadAt = now;
+
+            if (clamped >= FinishedAt && item.Status == PlaylistItemStatus.Added)
+            {
+                // The interaction people expect: reaching the end of something is what finishing
+                // it means, and making them say so as well is a step for the app's benefit.
+                item.Status = PlaylistItemStatus.Watched;
+                item.StatusChangedAt = now;
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<LinkPreviewResponse> PreviewAsync(string url, CancellationToken cancellationToken = default)

@@ -38,6 +38,23 @@ public static class LinkEndpoints
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
             .WithName("GetLinkContent");
 
+        // How far down the reader got. Status had two values, so a twenty-two-minute piece read
+        // half of on the train was indistinguishable from one never opened — "Up next" kept
+        // offering it from the top, and the only way to clear it was to lie by marking it
+        // watched. Reaching the end marks it finished, which is the step this removes.
+        group.MapPut("/{id:guid}/progress", async (
+            Guid id,
+            ReadProgressRequest request,
+            System.Security.Claims.ClaimsPrincipal user,
+            ILinkService links,
+            CancellationToken ct) =>
+        {
+            await links.SetReadProgressAsync(user.GetUserId(), id, request.Progress, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("SetReadProgress");
+
         // Thumbnails are served from here rather than hotlinked. Rendering the origin URL told
         // every site in a playlist the viewer's IP and what they were looking at, and broke
         // outright whenever a host refused hotlinking.

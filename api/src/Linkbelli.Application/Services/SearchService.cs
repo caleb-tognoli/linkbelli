@@ -59,7 +59,10 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
         i.Score,
         i.CreationTime,
         i.StatusChangedAt,
-        i.Tags.Select(t => t.Tag!.Name).ToArray());
+        i.Tags.Select(t => t.Tag!.Name).ToArray(),
+        // Snippet is filled in afterwards, from the search text; progress comes off the row.
+        null,
+        i.ReadProgress);
 
     /// <summary>
     /// Folds operators typed into the box into the filters that already existed.
@@ -406,11 +409,14 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
     {
         if (string.Equals(sort, "queue", StringComparison.OrdinalIgnoreCase))
         {
-            // "What should I read next": things you rated highly come first, and among the
-            // unrated, the ones you have been carrying longest — because a queue that always
-            // surfaces the newest arrival is how a backlog becomes permanent.
+            // "What should I read next": something already started comes first, because the
+            // cheapest thing to finish is the thing you are part way through. Then what you
+            // rated highly, then among the unrated the ones you have been carrying longest —
+            // a queue that always surfaces the newest arrival is how a backlog becomes permanent.
             return items
-                .OrderBy(i => i.Score == null ? 1 : 0)
+                .OrderBy(i => i.ReadProgress == null ? 1 : 0)
+                .ThenByDescending(i => i.ReadProgress)
+                .ThenBy(i => i.Score == null ? 1 : 0)
                 .ThenByDescending(i => i.Score)
                 .ThenBy(i => i.CreationTime)
                 .ThenBy(i => i.Id);

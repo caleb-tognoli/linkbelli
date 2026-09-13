@@ -24,7 +24,9 @@ public record SearchHit(
     /// Where the term was found in the article text, when it was only found there. Null for a
     /// hit on the title or the note, where the reason it matched is already on screen.
     /// </summary>
-    string? Snippet = null);
+    string? Snippet = null,
+    /// <summary>How far through the article this is, 0 to 1. Null until it has been opened.</summary>
+    double? ReadProgress = null);
 
 /// <summary>Filters a search can be narrowed by, beyond the text itself.</summary>
 public record SearchQuery(

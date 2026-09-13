@@ -26,4 +26,15 @@ public interface ILinkService
     /// Links are global, so the text is only handed to people who actually saved the page.
     /// </summary>
     Task<LinkContentResponse> GetContentAsync(Guid ownerId, Guid linkId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records how far through an article somebody got, and marks it finished at the end.
+    /// </summary>
+    /// <remarks>
+    /// Written to every copy the caller has of that link. You read the article, not the row —
+    /// and a link in two playlists that stayed half-read in one of them would be a worse lie
+    /// than the two-state flag this replaces.
+    /// </remarks>
+    Task SetReadProgressAsync(
+        Guid ownerId, Guid linkId, double progress, CancellationToken cancellationToken = default);
 }

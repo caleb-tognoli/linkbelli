@@ -234,6 +234,7 @@ failure backs off exponentially from 6 hours and is given up on after 6 attempts
 
 | Method | Path | Purpose |
 |--------|------|---------|
+| `PUT` | `/api/v1/links/{id}/progress` | How far through the article you are, `{ "progress": 0.42 }`. Written to every copy you have of that link — a link in two playlists is one article. Reaching 92% marks it watched: every article ends in a footer nobody reads, so demanding the very bottom would leave the last step manual, which is the step this removes |
 | `POST` | `/api/v1/links/{id}/recheck` | Try a link again now. Clears its backoff first, so an explicit retry isn't swallowed by the wait it was already serving. Rate-limited |
 | `GET` | `/api/v1/links/{id}/content` | The article text kept when the page was first read — see [Saved articles](#saved-articles) |
 

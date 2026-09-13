@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Linkbelli.Application.Enrichment;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Url;
 using Linkbelli.Infrastructure;
@@ -131,6 +132,32 @@ public static class ItemSeeder
         // Ids are read after SaveChanges so a database-generated key is the one returned.
         await db.SaveChangesAsync();
         return seeded.Select(i => i.Id).ToList();
+    }
+
+    /// <summary>
+    /// Gives a seeded item's link some article text, so the reader has something to read.
+    /// </summary>
+    /// <remarks>
+    /// Article text comes from a live fetch, which a seeded .example host will never answer. The
+    /// content is not what these tests are about — that it exists is.
+    /// </remarks>
+    public static async Task GiveArticleTextAsync(this PostgresApiFactory factory, Guid itemId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+
+        var linkId = await db.PlaylistItems
+            .Where(i => i.Id == itemId)
+            .Select(i => i.LinkId)
+            .FirstAsync();
+
+        await db.Links
+            .Where(l => l.Id == linkId)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(
+                    l => l.Content,
+                    string.Join(ArticleExtractor.ParagraphSeparator, "A paragraph.", "And another one."))
+                .SetProperty(l => l.WordCount, 600));
     }
 
     /// <summary>

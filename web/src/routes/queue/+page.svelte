@@ -4,7 +4,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
-	import { Check, Star } from '@lucide/svelte';
+	import { BookOpen, Check, Star } from '@lucide/svelte';
+	import type { SearchHit } from '$lib/types';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -17,6 +18,16 @@
 		busy = null;
 		if (res.ok) await invalidateAll();
 	}
+
+	/**
+	 * The two halves of a queue.
+	 *
+	 * Something started is the cheapest thing to finish, so it leads — and until progress was
+	 * recorded, a twenty-two-minute piece read half of on the train looked exactly like one
+	 * never opened, and kept being offered from the top.
+	 */
+	const started = $derived(data.queue.items.filter((h) => (h.readProgress ?? 0) > 0.02));
+	const fresh = $derived(data.queue.items.filter((h) => (h.readProgress ?? 0) <= 0.02));
 
 	/** How long something has been waiting — the reason it is near the top. */
 	function waiting(iso: string): string {
@@ -33,8 +44,8 @@
 	<header>
 		<h1 class="text-2xl font-semibold">Up next</h1>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			Everything you have not got to yet, across every playlist — best rated first, then whatever
-			you have been carrying longest.
+			Everything you have not got to yet, across every playlist — what you started first, then
+			what you rated highly, then whatever you have been carrying longest.
 		</p>
 	</header>
 
@@ -50,9 +61,30 @@
 			{data.queue.total} waiting
 		</p>
 
+		{#if started.length > 0}
+			<h2 class="mt-5 text-sm font-medium">Carry on</h2>
+			<p class="text-xs" style="color: var(--color-muted)">
+				Part way through. The quickest things to finish.
+			</p>
+			<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+				{#each started as hit (hit.itemId)}
+					{@render row(hit)}
+				{/each}
+			</ul>
+
+			<h2 class="mt-6 text-sm font-medium">Not started</h2>
+		{/if}
+
 		<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
-			{#each data.queue.items as hit (hit.itemId)}
-				<li class="flex items-start gap-3 p-3" style="border-color: var(--color-border)">
+			{#each fresh as hit (hit.itemId)}
+				{@render row(hit)}
+			{/each}
+		</ul>
+	{/if}
+</section>
+
+{#snippet row(hit: SearchHit)}
+	<li class="flex items-start gap-3 p-3" style="border-color: var(--color-border)">
 					{#if hit.link.favicon}
 						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
 					{:else}
@@ -76,6 +108,24 @@
 							<a href={`/playlists/${hit.playlistId}`} class="hover:underline">{hit.playlistName}</a>
 							<span aria-hidden="true">·</span>
 							<span>waiting {waiting(hit.addedAt)}</span>
+							{#if (hit.readProgress ?? 0) > 0.02}
+								<span aria-hidden="true">·</span>
+								<a
+									href={`/read/${hit.link.id}?from=${hit.playlistId}`}
+									class="inline-flex items-center gap-1 hover:underline"
+								>
+									<BookOpen size={12} aria-hidden="true" />
+									{Math.round((hit.readProgress ?? 0) * 100)}% read
+								</a>
+							{:else if hit.link.wordCount}
+								<span aria-hidden="true">·</span>
+								<a
+									href={`/read/${hit.link.id}?from=${hit.playlistId}`}
+									class="inline-flex items-center gap-1 hover:underline"
+								>
+									<BookOpen size={12} aria-hidden="true" /> Read it here
+								</a>
+							{/if}
 							{#if hit.score !== null}
 								<span aria-hidden="true">·</span>
 								<span class="inline-flex items-center gap-1 tabular-nums">
@@ -93,10 +143,7 @@
 						style="border-color: var(--color-border)"
 						title="Mark watched"
 					>
-						<Check size={14} aria-hidden="true" /> Done
-					</button>
-				</li>
-			{/each}
-		</ul>
-	{/if}
-</section>
+			<Check size={14} aria-hidden="true" /> Done
+		</button>
+	</li>
+{/snippet}

@@ -214,6 +214,13 @@ export interface LinkContent {
 	wordCount: number;
 	/** Whether these paragraphs are only the start of the article. */
 	truncated: boolean;
+	/**
+	 * How far through this you got last time, 0 to 1. Null if you never opened it.
+	 *
+	 * Against the link rather than one saved copy of it: a link in two playlists is one article,
+	 * and reading it in one place does not leave the other half-read.
+	 */
+	readProgress?: number | null;
 }
 
 export type EnrichmentStatus = 'Pending' | 'Succeeded' | 'Failed' | 'Broken';
@@ -239,6 +246,15 @@ export interface PlaylistItem {
 	 * before this was recorded.
 	 */
 	addedBy?: string | null;
+	/**
+	 * How far through the article this is, 0 to 1. Null until it has been opened.
+	 *
+	 * Status has two values, so half-read and never-opened used to look the same — and the only
+	 * way to clear something you had started was to lie by marking it watched.
+	 */
+	readProgress?: number | null;
+	/** When the reader was last open on this. Null until it has been. */
+	lastReadAt?: string | null;
 }
 
 export interface LinkPreview {
@@ -429,6 +445,8 @@ export interface SearchHit {
 	 * on the title or the note, where the reason it matched is already on screen.
 	 */
 	snippet: string | null;
+	/** How far through the article this is, 0 to 1. Null until it has been opened. */
+	readProgress?: number | null;
 }
 
 /** A site the caller saves from, and how many of their links are on it. */

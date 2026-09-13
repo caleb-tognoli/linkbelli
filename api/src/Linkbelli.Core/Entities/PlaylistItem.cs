@@ -46,6 +46,22 @@ public class PlaylistItem : BaseEntity<Guid>
     public int? Score { get; set; }
 
     /// <summary>
+    /// How far through the article this is, from 0 to 1. Null until it has been opened.
+    /// </summary>
+    /// <remarks>
+    /// Status has two values, so a twenty-two-minute piece read half of on the train was
+    /// indistinguishable from one never opened: "Up next" kept offering it from the top, and the
+    /// only way to clear it was to lie by marking it watched.
+    ///
+    /// Three states are derived from this rather than added to the enum — untouched, in progress,
+    /// finished — so nothing that already reads Status has to change.
+    /// </remarks>
+    public double? ReadProgress { get; set; }
+
+    /// <summary>When the reader was last open on this. Null until it has been.</summary>
+    public DateTimeOffset? LastReadAt { get; set; }
+
+    /// <summary>
     /// When the owner's automation rules were run over this item. Null means they haven't been —
     /// which is what the sweep looks for, and what stops a rule acting on the same item twice.
     /// </summary>

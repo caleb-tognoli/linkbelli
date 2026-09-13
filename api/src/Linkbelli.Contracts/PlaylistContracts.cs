@@ -160,7 +160,11 @@ public record PlaylistItemResponse(
     /// Who added this, when a person did. Null for items a source created — SourceId is the
     /// honest answer there — and for everything saved before this was recorded.
     /// </summary>
-    string? AddedBy = null);
+    string? AddedBy = null,
+    /// <summary>How far through the article this is, 0 to 1. Null until it has been opened.</summary>
+    double? ReadProgress = null,
+    /// <summary>When the reader was last open on this. Null until it has been.</summary>
+    DateTimeOffset? LastReadAt = null);
 
 // --- Links ---
 public record CreateLinkRequest(string Url);
@@ -206,7 +210,18 @@ public record LinkContentResponse(
     /// <summary>Words in the whole article, even where the stored text stops short of it.</summary>
     int WordCount,
     /// <summary>Whether the paragraphs are only the start of the article.</summary>
-    bool Truncated);
+    bool Truncated,
+    /// <summary>
+    /// How far through this the caller got last time, 0 to 1. Null if they never opened it.
+    /// </summary>
+    /// <remarks>
+    /// Kept against the link rather than one saved copy of it: a link in two playlists is one
+    /// article, and reading it in one place does not leave the other half-read.
+    /// </remarks>
+    double? ReadProgress = null);
+
+/// <summary>How far through an article somebody has got.</summary>
+public record ReadProgressRequest(double Progress);
 
 /// <summary>The link an item is shared under. The token is the whole secret.</summary>
 public record ItemShareResponse(Guid ItemId, string Token, DateTimeOffset? SharedAt);

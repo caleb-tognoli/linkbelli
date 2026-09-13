@@ -302,6 +302,19 @@
 		else warn(failureMessage(res.status, 'Could not set the cover.'));
 	}
 
+	/**
+	 * "Half read", when there is something to continue.
+	 *
+	 * Only for items actually in progress: an untouched one says how long it will take, which is
+	 * the more useful thing to know, and a finished one is already marked watched.
+	 */
+	function startedLabel(item: PlaylistItem): string | null {
+		const progress = item.readProgress ?? 0;
+		if (progress <= 0.02 || progress >= 0.92) return null;
+
+		return `${Math.round(progress * 100)}% read`;
+	}
+
 	async function copyShareLink(item: PlaylistItem) {
 		actionFlyoutId = null;
 
@@ -551,15 +564,16 @@
 					<KindBadge kind={item.link.kind} />
 					{#if item.link.wordCount}
 						<!-- The text was kept at enrichment, so this still works once the page
-						     behind the link has gone. -->
+						     behind the link has gone. `from` is what lets the reader offer the
+						     next and previous item in this list. -->
 						<a
-							href={`/read/${item.link.id}`}
+							href={`/read/${item.link.id}${playlistId ? `?from=${playlistId}` : ''}`}
 							class="ml-1.5 inline-flex items-center gap-1 align-middle text-xs hover:underline"
 							style="color: var(--color-muted)"
-							title="Read the saved article"
+							title={startedLabel(item) ?? 'Read the saved article'}
 						>
 							<BookOpen size={12} aria-hidden="true" />
-							{readingLabel(item.link.wordCount)}
+							{startedLabel(item) ?? readingLabel(item.link.wordCount)}
 						</a>
 					{/if}
 					{#if item.metadata?.author}
