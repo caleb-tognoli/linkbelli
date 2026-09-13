@@ -36,6 +36,17 @@ public interface IPlaylistService
     /// <summary>Tags used across public playlists, with counts (global discovery tag cloud).</summary>
     Task<IReadOnlyList<TagSummary>> ListPublicTagsAsync(string? q, CancellationToken ct = default);
 
+    /// <summary>
+    /// Takes a copy of somebody's public playlist into the caller's own library.
+    /// </summary>
+    /// <remarks>
+    /// Discovery exists to put a list you want in front of you, and until now the only things you
+    /// could do with one were follow it — a stream of what it gains next, not the thing you just
+    /// found — or copy the links one at a time.
+    /// </remarks>
+    Task<PlaylistResponse> ForkAsync(
+        Guid ownerId, string username, string slug, CancellationToken ct = default);
+
     /// <summary>Every public playlist's address and date, for a sitemap.</summary>
     Task<PagedResult<SitemapEntry>> ListForSitemapAsync(
         int? limit, string? cursor, CancellationToken ct = default);

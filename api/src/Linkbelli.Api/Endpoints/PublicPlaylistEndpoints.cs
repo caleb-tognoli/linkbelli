@@ -33,6 +33,19 @@ public static class PublicPlaylistEndpoints
             .AllowAnonymous()
             .WithName("ListForSitemap");
 
+        // Take a copy. Discovery exists to put a list you want in front of you, and the only
+        // things you could do with one were follow it — a stream of what it gains next, not the
+        // thing you just found — or copy the links one at a time.
+        //
+        // Signed in, obviously, and rate-limited: this writes a row per item on one request.
+        group.MapPost("/playlists/{username}/{slug}/fork", async (
+            ClaimsPrincipal user, string username, string slug, IPlaylistService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ForkAsync(user.GetUserId(), username, slug, ct)))
+            .RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = AuthSchemes.BearerOrApiKey })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .RequireRateLimiting("sensitive")
+            .WithName("ForkPlaylist");
+
         // Lists like this one. Discovery otherwise ends at whatever you happened to open — there
         // was no way from a playlist you liked to the next one.
         group.MapGet("/playlists/{username}/{slug}/similar", async (

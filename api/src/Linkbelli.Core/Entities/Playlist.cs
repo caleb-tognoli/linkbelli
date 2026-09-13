@@ -34,6 +34,19 @@ public class Playlist : BaseEntity<Guid>
     /// </remarks>
     public Guid? CoverLinkId { get; set; }
 
+    /// <summary>
+    /// The public playlist this was copied from, if it was.
+    /// </summary>
+    /// <remarks>
+    /// Kept so the original's owner can be told how many people took a copy, which says more
+    /// about a list than a like count does — a like is a moment's approval, a fork is somebody
+    /// deciding to keep it.
+    ///
+    /// Not a foreign key with a cascade: a fork outlives its original, and deleting the source
+    /// should leave every copy standing, just without a parent to point at.
+    /// </remarks>
+    public Guid? ForkedFromPlaylistId { get; set; }
+
     public List<PlaylistItem> Items { get; set; } = [];
     public List<PlaylistSource> Sources { get; set; } = [];
     public List<PlaylistTag> Tags { get; set; } = [];

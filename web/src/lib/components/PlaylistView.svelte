@@ -13,7 +13,7 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ChevronDown, Download, Eye, EyeOff, Globe, Heart, Lock, Rss, Star, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, CopyPlus, Download, Eye, EyeOff, Globe, Heart, Lock, Rss, Star, Trash2 } from '@lucide/svelte';
 	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, PlaylistRole, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -80,6 +80,41 @@
 	let followerCount = $state(playlist.followerCount ?? 0);
 	let followedByMe = $state(playlist.followedByMe ?? false);
 	let following = $state(false);
+
+	let forking = $state(false);
+	let forkError = $state<string | null>(null);
+
+	/**
+	 * Takes a copy into your own library.
+	 *
+	 * Following is a stream of what this list gains next; forking is the thing you are looking
+	 * at. They answer different questions, so they are different buttons.
+	 */
+	async function fork() {
+		if (!isLoggedIn || !ownerUsername) return;
+
+		forking = true;
+		forkError = null;
+		try {
+			const res = await api.post(
+				`/public/playlists/${encodeURIComponent(ownerUsername)}/${encodeURIComponent(playlist.slug)}/fork`
+			);
+
+			if (res.ok) {
+				// Straight into the copy. Taking one and being left on the original is a
+				// half-finished action — the point was to have it.
+				const mine = (await res.json()) as Playlist;
+				await goto(`/playlists/${mine.id}`);
+			} else {
+				forkError =
+					res.status === 429
+						? 'Too many at once. Wait a minute and try again.'
+						: 'Could not take a copy of that.';
+			}
+		} finally {
+			forking = false;
+		}
+	}
 
 	// Liking says "this is good"; following says "tell me when there is more". They are
 	// different questions, so they are different buttons.
@@ -423,6 +458,31 @@
 					<Rss size={13} aria-hidden="true" />
 					{followedByMe ? 'Following' : 'Follow'}{followerCount ? ` · ${followerCount}` : ''}
 				</button>
+			{/if}
+			{#if !isOwner && isLoggedIn && ownerUsername}
+				<button
+					type="button"
+					onclick={fork}
+					disabled={forking}
+					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs disabled:opacity-60"
+					style="border-color: var(--color-border); color: var(--color-muted)"
+					title="Copy these links into a playlist of your own"
+				>
+					<CopyPlus size={13} aria-hidden="true" />
+					{forking ? 'Copying…' : 'Take a copy'}{playlist.forkCount ? ` · ${playlist.forkCount}` : ''}
+				</button>
+			{:else if isOwner && playlist.forkCount}
+				<!-- The number worth more than the like count: somebody decided to keep this. -->
+				<span
+					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
+					style="border-color: var(--color-border); color: var(--color-muted)"
+					title="People who took a copy of this playlist"
+				>
+					<CopyPlus size={13} aria-hidden="true" /> {playlist.forkCount} copied
+				</span>
+			{/if}
+			{#if forkError}
+				<span class="text-xs" style="color: var(--color-danger)" role="alert">{forkError}</span>
 			{/if}
 			{#if canAdd}
 				<PasteLinksDialog playlistId={playlist.id} onpasted={reloadItems} />

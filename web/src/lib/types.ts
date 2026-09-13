@@ -60,6 +60,15 @@ export interface Playlist {
 	followerCount?: number;
 	/** Whether the caller does. False when anonymous. */
 	followedByMe?: boolean;
+	/**
+	 * How many people have taken a copy of it.
+	 *
+	 * Says more than the like count does: a like is a moment's approval, a fork is somebody
+	 * deciding to keep it.
+	 */
+	forkCount?: number;
+	/** The public playlist this was copied from, if it was one. */
+	forkedFromPlaylistId?: string | null;
 	/** Whether the caller owns it, as opposed to it having been shared with them. */
 	isOwner?: boolean;
 	/** What a non-owner may do here. Null when they own it. */

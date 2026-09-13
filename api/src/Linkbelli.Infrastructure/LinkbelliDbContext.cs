@@ -93,6 +93,8 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.Property(p => p.Slug).HasMaxLength(200);
             e.Property(p => p.Description).HasMaxLength(2000);
             e.HasIndex(p => new { p.OwnerId, p.Slug }).IsUnique().ExcludeSoftDeleted();
+            // "How many people kept a copy of this" — one count per public playlist page.
+            e.HasIndex(p => p.ForkedFromPlaylistId);
             e.HasSoftDeleteFilter();
         });
 

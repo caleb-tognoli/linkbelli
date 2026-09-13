@@ -25,44 +25,88 @@ public record UpdatePlaylistRequest(
     /// </summary>
     Guid? CoverLinkId = null);
 
-public record PlaylistResponse(
-    Guid Id, string Name, string Slug, string? Description,
-    PlaylistVisibility Visibility, int ItemCount, DateTimeOffset CreationTime, string[] Tags, bool Nsfw,
-    Guid? FolderId = null, string? FolderName = null,
+public record PlaylistResponse
+{
+    public required Guid Id { get; init; }
+
+    public required string Name { get; init; }
+
+    public required string Slug { get; init; }
+
+    public string? Description { get; init; }
+
+    public required PlaylistVisibility Visibility { get; init; }
+
+    public required int ItemCount { get; init; }
+
+    public required DateTimeOffset CreationTime { get; init; }
+
+    public required string[] Tags { get; init; }
+
+    public required bool Nsfw { get; init; }
+
+    public Guid? FolderId { get; init; }
+
+    public string? FolderName { get; init; }
+
     /// <summary>
     /// Whether the owner set the adult flag by hand, or left it automatic. Null in listings,
     /// which don't report it — rather than defaulting to Auto and misreporting an override.
     /// </summary>
-    NsfwSetting? NsfwSetting = null,
+    public NsfwSetting? NsfwSetting { get; init; }
+
     /// <summary>
     /// Links added but not yet fetched. They aren't listed or counted until enrichment finishes,
     /// so without this the item count of a freshly filled playlist just creeps upward on its own.
     /// Null on reads that don't report it (a visitor can't do anything about it).
     /// </summary>
-    int? PendingCount = null,
+    public int? PendingCount { get; init; }
+
     /// <summary>Mean of the scores that were given, or null when nothing here is rated.</summary>
-    double? AverageScore = null,
+    public double? AverageScore { get; init; }
+
     /// <summary>How many items carry a score. Without it an average says nothing about its weight.</summary>
-    int? ScoredCount = null,
+    public int? ScoredCount { get; init; }
+
     /// <summary>How the caller last looked at this playlist. Null when they have no saved view.</summary>
-    PlaylistViewPreferences? View = null,
+    public PlaylistViewPreferences? View { get; init; }
+
     /// <summary>How many people have liked it. The lightest signal a public list gets.</summary>
-    int LikeCount = 0,
+    public int LikeCount { get; init; }
+
     /// <summary>Whether the caller is one of them. False when anonymous.</summary>
-    bool LikedByMe = false,
+    public bool LikedByMe { get; init; }
+
     /// <summary>How many people follow this playlist.</summary>
-    int FollowerCount = 0,
+    public int FollowerCount { get; init; }
+
     /// <summary>Whether the caller does. False when anonymous.</summary>
-    bool FollowedByMe = false,
+    public bool FollowedByMe { get; init; }
+
+    /// <summary>
+    /// How many people have taken a copy of it.
+    /// </summary>
+    /// <remarks>
+    /// Says more about a list than the like count does: a like is a moment's approval, a fork is
+    /// somebody deciding to keep it.
+    /// </remarks>
+    public int ForkCount { get; init; }
+
+    /// <summary>The public playlist this was copied from, if it was one.</summary>
+    public Guid? ForkedFromPlaylistId { get; init; }
+
     /// <summary>Whether the caller owns it. False when it was merely shared with them.</summary>
-    bool IsOwner = true,
+    public bool IsOwner { get; init; } = true;
+
     /// <summary>What a non-owner may do here. Null when they own it, or are only a visitor.</summary>
-    PlaylistRole? Role = null,
+    public PlaylistRole? Role { get; init; }
+
     /// <summary>
     /// The link whose image stands for this playlist. Null means "whatever the first item with
     /// one happens to be", which is a guess rather than a decision.
     /// </summary>
-    Guid? CoverLinkId = null);
+    public Guid? CoverLinkId { get; init; }
+}
 
 /// <summary>
 /// How one person looks at one playlist: sort, filters, and what the rows show. Saved per

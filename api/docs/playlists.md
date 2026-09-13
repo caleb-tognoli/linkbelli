@@ -373,6 +373,7 @@ want to hear about it again. Following is the next primitive up, and the feed is
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/api/v1/public/playlists` | Browse public playlists (`?q=`, `?tag=`, `?sort=`) |
+| `POST` | `/api/v1/public/playlists/{username}/{slug}/fork` | Take a copy into your own library. Signed in, rate-limited. The copy is **private**, carries the same links in the same order and the same tags, and carries none of the original owner's notes, scores or reading history. Public only — unlisted is share-by-link, and being shown something once is not the same as taking a permanent copy. Capped at 2,000 items |
 | `GET` | `/api/v1/public/playlists/{username}/{slug}/similar` | Lists like this one (`?limit=`, default 6) |
 | `GET` | `/api/v1/public/sitemap` | Every public playlist's owner, slug and last-modified date, for a sitemap (`?limit=`, up to 5 000, `?cursor=`). Deliberately lean: no counts, no tags, no like totals — a crawler wants an address and a date, and the discovery listing carries five correlated subqueries per row to answer neither |
 | `GET` | `/api/v1/public/tags/trending` | Tags that have seen activity lately (`?days=`, default 30) |

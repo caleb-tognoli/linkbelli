@@ -89,22 +89,27 @@ public class PlaylistService(
             .Select(x => new KeyedRow<PlaylistResponse>(
                 x.LastActivity,
                 x.Playlist.Id,
-                new PlaylistResponse(
-                x.Playlist.Id, x.Playlist.Name, x.Playlist.Slug, x.Playlist.Description,
-                x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags, x.Nsfw,
-                x.FolderId, x.FolderName, null, x.PendingCount,
-                AverageScore: null,
-                ScoredCount: null,
-                View: null,
-                // Left at zero on the listing, deliberately: two correlated counts per row, on a
-                // page that shows neither. GetAsync fills them in for the playlist actually open.
-                LikeCount: 0,
-                LikedByMe: false,
-                FollowerCount: 0,
-                FollowedByMe: false,
-                IsOwner: true,
-                Role: null,
-                CoverLinkId: x.Playlist.CoverLinkId)))
+                // Everything left unset is deliberate. The like and follow counts are two
+                // correlated subqueries per row on a page that shows neither, and GetAsync fills
+                // them in for the playlist actually open.
+                new PlaylistResponse
+                {
+                    Id = x.Playlist.Id,
+                    Name = x.Playlist.Name,
+                    Slug = x.Playlist.Slug,
+                    Description = x.Playlist.Description,
+                    Visibility = x.Playlist.Visibility,
+                    ItemCount = x.ItemCount,
+                    CreationTime = x.Playlist.CreationTime,
+                    Tags = x.Tags,
+                    Nsfw = x.Nsfw,
+                    FolderId = x.FolderId,
+                    FolderName = x.FolderName,
+                    PendingCount = x.PendingCount,
+                    ForkedFromPlaylistId = x.Playlist.ForkedFromPlaylistId,
+                    IsOwner = true,
+                    CoverLinkId = x.Playlist.CoverLinkId,
+                }))
             .ToListAsync(ct);
 
         return rows.ToPage(take);
@@ -145,24 +150,32 @@ public class PlaylistService(
             .Where(p => p.Id == id
                 && (p.OwnerId == ownerId
                     || db.PlaylistMembers.Any(m => m.PlaylistId == p.Id && m.UserId == ownerId)))
-            .Select(p => new PlaylistResponse(
-                p.Id, p.Name, p.Slug, p.Description, p.Visibility,
-                p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
-                db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
+            .Select(p => new PlaylistResponse
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Slug = p.Slug,
+                Description = p.Description,
+                Visibility = p.Visibility,
+                ItemCount = p.Items.Count(i => i.Link!.EnrichedAt != null),
+                CreationTime = p.CreationTime,
+                Tags = p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                Nsfw = p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+                FolderId = db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
                     .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
-                db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
+                FolderName = db.FolderPlaylists.Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
                     .Select(fp => fp.Folder!.Name).FirstOrDefault(),
                 // The owner's own read reports whether they set the flag by hand, so the control
                 // can show its real state rather than guessing.
-                p.NsfwOverride == null ? NsfwSetting.Auto : p.NsfwOverride.Value ? NsfwSetting.Yes : NsfwSetting.No,
-                p.Items.Count(i => i.Link!.EnrichedAt == null),
+                NsfwSetting = p.NsfwOverride == null
+                    ? NsfwSetting.Auto
+                    : p.NsfwOverride.Value ? NsfwSetting.Yes : NsfwSetting.No,
+                PendingCount = p.Items.Count(i => i.Link!.EnrichedAt == null),
                 // Averaged over the items that were actually rated — counting unrated ones as
                 // zero would drag the number down and say something false about the playlist.
-                p.Items.Where(i => i.Score != null).Average(i => (double?)i.Score),
-                p.Items.Count(i => i.Score != null),
-                db.PlaylistPreferences
+                AverageScore = p.Items.Where(i => i.Score != null).Average(i => (double?)i.Score),
+                ScoredCount = p.Items.Count(i => i.Score != null),
+                View = db.PlaylistPreferences
                     .Where(pp => pp.OwnerId == ownerId && pp.PlaylistId == p.Id)
                     .Select(pp => new PlaylistViewPreferences(
                         pp.Sort, pp.Source, pp.Status, pp.ShowUrls, pp.ShowThumbnails, pp.ViewMode))
@@ -170,18 +183,22 @@ public class PlaylistService(
                 // Counted for the owner too. These were hardcoded to zero on the owner's own
                 // reads, so the one person with a reason to care whether anybody liked or
                 // followed their playlist was the one person who could not find out.
-                db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-                db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == ownerId),
-                db.Follows.Count(f => f.PlaylistId == p.Id),
-                db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == ownerId),
+                LikeCount = db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                LikedByMe = db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == ownerId),
+                FollowerCount = db.Follows.Count(f => f.PlaylistId == p.Id),
+                FollowedByMe = db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == ownerId),
+                // And how many people kept a copy, which says more than a like does.
+                ForkCount = db.Playlists.Count(other => other.ForkedFromPlaylistId == p.Id),
+                ForkedFromPlaylistId = p.ForkedFromPlaylistId,
                 // What the caller may do here, so the page can show the controls that will
                 // actually work rather than ones that 404 when pressed.
-                p.OwnerId == ownerId,
-                db.PlaylistMembers
+                IsOwner = p.OwnerId == ownerId,
+                Role = db.PlaylistMembers
                     .Where(m => m.PlaylistId == p.Id && m.UserId == ownerId)
                     .Select(m => (PlaylistRole?)m.Role)
                     .FirstOrDefault(),
-                p.CoverLinkId))
+                CoverLinkId = p.CoverLinkId,
+            })
             .FirstOrDefaultAsync(ct);
 
         return playlist ?? throw new NotFoundException("Playlist not found.");
@@ -304,6 +321,89 @@ public class PlaylistService(
             ct: ct);
     }
 
+    /// <summary>
+    /// The most items one fork will copy.
+    /// </summary>
+    /// <remarks>
+    /// This writes a row per item on a single request, so it needs a ceiling. Two thousand is
+    /// above any playlist a person curates by hand and below the point where one request becomes
+    /// somebody else's problem; past it the fork takes the most recent that many and says so.
+    /// </remarks>
+    public const int MaxForkedItems = 2_000;
+
+    public async Task<PlaylistResponse> ForkAsync(
+        Guid ownerId, string username, string slug, CancellationToken ct = default)
+    {
+        var normalized = username.ToUpperInvariant();
+
+        // Public only. Unlisted is share-by-link: somebody holding the link can read it, and
+        // taking a permanent copy is a different thing from being shown it once.
+        var source = await db.Playlists
+            .Where(p => p.Slug == slug
+                && p.Visibility == PlaylistVisibility.Public
+                && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Description,
+                Tags = p.Tags.Select(pt => pt.Tag!.Name).ToList(),
+            })
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("Playlist not found.");
+
+        // What the page actually shows: enriched, and not on a host the instance has blocked.
+        // Copying a row nobody can see would be a list that says 40 and renders 31.
+        var links = await db.PlaylistItems
+            .Where(i => i.PlaylistId == source.Id
+                && i.Link!.EnrichedAt != null
+                && !i.Link.Host!.Blocked)
+            .OrderBy(i => i.Position)
+            .Select(i => i.LinkId)
+            .Take(MaxForkedItems)
+            .ToListAsync(ct);
+
+        var resolvedTags = await tags.ResolveAsync(TagNormalizer.Normalize(source.Tags), ct);
+
+        var fork = new Playlist
+        {
+            OwnerId = ownerId,
+            Name = source.Name,
+            Slug = await GenerateUniqueSlugAsync(ownerId, source.Name, ct),
+            Description = source.Description,
+            // Private. A copy is for reading, and republishing somebody's list under your own
+            // name is a decision for the person who took it, not a side effect of taking it.
+            Visibility = PlaylistVisibility.Private,
+            ForkedFromPlaylistId = source.Id,
+        };
+
+        db.Playlists.Add(fork);
+        foreach (var tag in resolvedTags)
+        {
+            db.PlaylistTags.Add(new PlaylistTag { PlaylistId = fork.Id, TagId = tag.Id });
+        }
+
+        var position = 0L;
+        foreach (var linkId in links)
+        {
+            position += PlaylistOrdering.Gap;
+            db.PlaylistItems.Add(new PlaylistItem
+            {
+                PlaylistId = fork.Id,
+                LinkId = linkId,
+                Position = position,
+                // Nothing else comes across. The note, the score and the status are the original
+                // owner's opinions and their reading history; inheriting them would put words in
+                // the new owner's mouth and mark things read that they have never opened.
+                AddedByUserId = ownerId,
+            });
+        }
+
+        await SaveWithUniqueSlugAsync(fork, ownerId, ct);
+
+        return fork.ToResponse(links.Count, resolvedTags.Select(t => t.Name), nsfw: false);
+    }
+
     public async Task<PlaylistResponse> GetPublicAsync(string username, string slug, Guid? viewerId, CancellationToken ct = default)
     {
         var normalized = username.ToUpperInvariant();
@@ -311,28 +411,32 @@ public class PlaylistService(
             .Where(p => p.Slug == slug
                 && p.Visibility != PlaylistVisibility.Private
                 && db.Users.Any(u => u.Id == p.OwnerId && u.NormalizedUserName == normalized))
-            .Select(p => new PlaylistResponse(
-                p.Id, p.Name, p.Slug, p.Description, p.Visibility,
-                p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+            .Select(p => new PlaylistResponse
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Slug = p.Slug,
+                Description = p.Description,
+                Visibility = p.Visibility,
+                ItemCount = p.Items.Count(i => i.Link!.EnrichedAt != null),
+                CreationTime = p.CreationTime,
+                Tags = p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                Nsfw = p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
                 // The viewer's own private folder placement (if they saved this playlist); null when anonymous.
-                db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
+                FolderId = db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
                     .Select(fp => (Guid?)fp.FolderId).FirstOrDefault(),
-                db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
+                FolderName = db.FolderPlaylists.Where(fp => fp.OwnerId == viewerId && fp.PlaylistId == p.Id)
                     .Select(fp => fp.Folder!.Name).FirstOrDefault(),
-                NsfwSetting: null,
-                PendingCount: null,
-                AverageScore: null,
-                ScoredCount: null,
-                View: null,
-                db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-                db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == viewerId),
-                db.Follows.Count(f => f.PlaylistId == p.Id),
-                db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == viewerId),
-                IsOwner: false,
-                Role: null,
-                p.CoverLinkId))
+                LikeCount = db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                LikedByMe = db.PlaylistLikes.Any(l => l.PlaylistId == p.Id && l.UserId == viewerId),
+                FollowerCount = db.Follows.Count(f => f.PlaylistId == p.Id),
+                FollowedByMe = db.Follows.Any(f => f.PlaylistId == p.Id && f.FollowerId == viewerId),
+                // How many people kept a copy. Worth more than the like count on a page whose
+                // whole job is deciding whether this list is for you.
+                ForkCount = db.Playlists.Count(other => other.ForkedFromPlaylistId == p.Id),
+                IsOwner = false,
+                CoverLinkId = p.CoverLinkId,
+            })
             .FirstOrDefaultAsync(ct);
 
         // Private/missing — and NSFW for viewers who haven't opted in — are all indistinguishable.
