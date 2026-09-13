@@ -1,8 +1,15 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
 	import Switch from '$lib/components/Switch.svelte';
-	import { describeContents, formatAge, formatSize, type Backup } from '$lib/backups';
-	import { Download, Trash2 } from '@lucide/svelte';
+	import {
+		describeContents,
+		formatAge,
+		formatSize,
+		type Backup,
+		type RestorePlan
+	} from '$lib/backups';
+	import { Download, RotateCcw, Trash2, Upload } from '@lucide/svelte';
 
 	let { enabled: initialEnabled = true }: { enabled?: boolean } = $props();
 
@@ -64,6 +71,97 @@
 		}
 	}
 
+	// Under the server's 30 MB request ceiling with room for JSON string-escaping on the way.
+	const MAX_FILE_BYTES = 20 * 1024 * 1024;
+
+	let plan = $state<RestorePlan | null>(null);
+
+	// What the shown plan was a plan for: a stored snapshot, or a file somebody picked off their
+	// own disk. Held so "Go ahead" restores the thing that was just costed, and not something else.
+	let pending = $state<{ id: string } | { file: string } | null>(null);
+	let picker = $state<HTMLInputElement | null>(null);
+
+	function count(n: number, one: string): string {
+		return `${n} ${n === 1 ? one : one + 's'}`;
+	}
+
+	/**
+	 * Asks what a restore would do, without doing it.
+	 *
+	 * Two steps rather than one confirmation dialog, because "are you sure" tells somebody
+	 * nothing and "this would add 412 links across 6 playlists, and leave 900 alone" tells them
+	 * everything they need to decide.
+	 */
+	async function preview(source: { id: string } | { file: string }) {
+		working = true;
+		error = null;
+		plan = null;
+
+		try {
+			plan =
+				'id' in source
+					? await json<RestorePlan>(await api.get(`/backups/${source.id}/restore`))
+					: await json<RestorePlan>(
+							await api.post('/backups/restore', { json: source.file, dryRun: true })
+						);
+			pending = source;
+		} catch {
+			error =
+				'id' in source
+					? 'Could not read that backup.'
+					: 'That file is not a Linkbelli export, or it was written by a newer version.';
+			pending = null;
+		} finally {
+			working = false;
+		}
+	}
+
+	async function confirmRestore() {
+		if (!pending) return;
+
+		working = true;
+		error = null;
+
+		const res =
+			'id' in pending
+				? await api.post(`/backups/${pending.id}/restore`)
+				: await api.post('/backups/restore', { json: pending.file });
+
+		working = false;
+		pending = null;
+
+		if (res.ok) {
+			plan = (await res.json()) as RestorePlan;
+			// Playlist counts, folder tree and sidebar are all a snapshot older than the truth now.
+			await invalidateAll();
+		} else {
+			plan = null;
+			error = 'Could not restore that. Nothing was changed.';
+		}
+	}
+
+	/**
+	 * Reading the file here rather than posting it as a multipart upload: an export is JSON the
+	 * restore endpoint already takes as a string, and this keeps one code path for both sources.
+	 */
+	async function pickFile(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+
+		// Chosen, then chosen again — clearing lets the same file be picked twice in a row.
+		input.value = '';
+		if (!file) return;
+
+		// The server stops accepting a request body at 30 MB. Saying so here beats letting the
+		// upload run its course and come back as an unexplained failure.
+		if (file.size > MAX_FILE_BYTES) {
+			error = `That file is ${formatSize(file.size)}, which is too big to send in one piece.`;
+			return;
+		}
+
+		await preview({ file: await file.text() });
+	}
+
 	async function remove(backup: Backup) {
 		if (!confirm(`Delete the backup from ${formatAge(backup.takenAt)}? This cannot be undone.`)) {
 			return;
@@ -85,17 +183,70 @@
 		A copy of everything you have here, taken weekly and kept for the last five. Nothing leaves
 		this server, and an unchanged library is not copied again.
 	</p>
-	<!-- Said plainly rather than left to be discovered on the day it matters: there is no restore
-	     yet, and somebody betting their library on a button that does not exist is worse off than
-	     somebody who knew to keep their own copy. -->
 	<p class="mt-2 max-w-prose text-sm" style="color: var(--color-muted)">
 		Downloading one gives you the same file as <a
 			href="/api/v1/export?format=json"
 			download
 			class="underline underline-offset-2">Export</a
-		>. There is no one-click restore yet — putting a backup back means importing its links,
-		which recovers what you saved but not how it was arranged.
+		>. Restoring adds back what is missing and leaves alone what is already here — so anything
+		you have saved since a snapshot survives putting that snapshot back.
 	</p>
+
+	{#if plan}
+		<!-- The numbers before the button, because the only way to trust a restore is to be told
+		     what it will do while it is still possible to decide otherwise. -->
+		<div class="mt-3 rounded-md border p-3 text-sm" style="border-color: var(--color-accent)">
+			<p class="font-medium">
+				{plan.dryRun ? 'Restoring' : 'Restored'} the snapshot from {formatAge(plan.takenAt)}
+			</p>
+			<ul class="mt-1 list-inside list-disc" style="color: var(--color-muted)">
+				<li>
+					{count(plan.playlistsAdded, 'playlist')}
+					{plan.dryRun ? 'to add' : 'added'}, {plan.playlistsMatched} already here
+				</li>
+				<li>
+					{count(plan.itemsAdded, 'link')}
+					{plan.dryRun ? 'to put back' : 'put back'}, {plan.itemsAlreadyThere} already saved
+				</li>
+				{#if plan.foldersAdded}
+					<li>{count(plan.foldersAdded, 'folder')} {plan.dryRun ? 'to rebuild' : 'rebuilt'}</li>
+				{/if}
+				{#if plan.sourcesAdded}
+					<li>
+						{count(plan.sourcesAdded, 'source')}, paused{plan.sourcesNeedCredentials
+							? ' — their passwords and keys were kept out of the backup on purpose, so some will need typing in again'
+							: ''}
+					</li>
+				{/if}
+				{#if plan.truncated}
+					<li>
+						More than can be restored in one go. Run it again to carry on where this left off.
+					</li>
+				{/if}
+			</ul>
+
+			{#if plan.dryRun}
+				<div class="mt-2 flex flex-wrap gap-2">
+					<button
+						type="button"
+						onclick={confirmRestore}
+						disabled={working}
+						class="rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-60"
+						style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					>{working ? 'Restoring…' : 'Go ahead'}</button>
+					<button
+						type="button"
+						onclick={() => {
+							plan = null;
+							pending = null;
+						}}
+						class="rounded-md border px-3 py-1.5 text-sm"
+						style="border-color: var(--color-border)"
+					>Never mind</button>
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<label class="mt-3 flex items-center gap-2 text-sm">
 		<Switch checked={enabled} onchange={setEnabled} label="Take weekly backups" />
@@ -112,6 +263,25 @@
 		>
 			{working ? 'Backing up…' : 'Back up now'}
 		</button>
+		<!-- The way back for somebody whose account is gone: they still have the file they
+		     downloaded, and nothing here is keyed to the server that wrote it. -->
+		<button
+			type="button"
+			onclick={() => picker?.click()}
+			disabled={working}
+			class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+			style="border-color: var(--color-border)"
+		>
+			<Upload size={15} aria-hidden="true" />
+			Restore from a file
+		</button>
+		<input
+			bind:this={picker}
+			type="file"
+			accept="application/json,.json"
+			onchange={pickFile}
+			class="hidden"
+		/>
 		{#if unchanged}
 			<span class="text-sm" style="color: var(--color-muted)">
 				Nothing has changed since the last one.
@@ -151,6 +321,17 @@
 							{describeContents(backup)} · {formatSize(backup.sizeBytes)}
 						</div>
 					</div>
+					<button
+						type="button"
+						onclick={() => preview({ id: backup.id })}
+						disabled={working}
+						title="See what restoring this would do"
+						class="rounded-md border p-2 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+						style="border-color: var(--color-border)"
+					>
+						<RotateCcw size={15} aria-hidden="true" />
+						<span class="sr-only">Restore</span>
+					</button>
 					<a
 						href={`/api/v1/backups/${backup.id}`}
 						download

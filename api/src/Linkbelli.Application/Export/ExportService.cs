@@ -79,6 +79,7 @@ public class ExportService(IAppDbContext db, SourceConfigSecrets secrets) : IExp
                 i.Score,
                 i.CreationTime,
                 i.Metadata,
+                Tags = i.Tags.Select(t => t.Tag!.Name).ToList(),
                 Url = i.Link!.CanonicalUrl,
                 i.Link.Title,
                 i.Link.Description,
@@ -93,7 +94,7 @@ public class ExportService(IAppDbContext db, SourceConfigSecrets secrets) : IExp
                 g => g.Key,
                 g => (IReadOnlyList<ExportItem>)g.Select(i => new ExportItem(
                     i.Id, i.Url, i.Title, i.Description, i.Note, i.Status.ToString(), i.Score,
-                    i.ThumbnailUrl, i.SiteName, i.CreationTime, i.Metadata)).ToList());
+                    i.ThumbnailUrl, i.SiteName, i.CreationTime, i.Metadata, i.Tags)).ToList());
 
         var folders = playlistId is null
             ? await db.Folders

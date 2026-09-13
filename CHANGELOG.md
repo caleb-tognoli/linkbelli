@@ -23,7 +23,11 @@ below is under `Unreleased`, and `0.1.0` will be cut from it.
   arrives next.
 - A link saved by email: mail a URL to the address on your profile and it lands in a playlist.
 - A weekly digest, to whoever asks for one.
-- Backups: a scheduled export of the whole library, restorable, kept for a retention window.
+- Backups: a scheduled export of the whole library, kept for a retention window, and a
+  restore that puts one back. It merges rather than replaces — anything saved since the
+  snapshot survives it — and says how many playlists and links it will add before it runs.
+  A file downloaded earlier restores the same way, so a library outlives the server it was
+  kept on.
 - A password reset that works, and an onboarding checklist for a new account.
 - An MCP server, so an assistant can read the library.
 - Full-text search over stored article text, backed by a Postgres index rather than a scan.
@@ -62,6 +66,8 @@ below is under `Unreleased`, and `0.1.0` will be cut from it.
 - The vulnerable-dependency CI gate actually fails when it finds something.
 - The API answers `400` and `409` where it was answering `500`.
 - The browser extension no longer asks for access to every website.
+- An export carries the tags on each link. They were being written out with the playlist's
+  tags and none of their own, so a round trip through a backup lost them.
 
 ### Security
 

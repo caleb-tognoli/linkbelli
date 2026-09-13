@@ -41,3 +41,39 @@ public record UpdateNotificationsRequest(
 
 /// <summary>The token out of an unsubscribe link. It names both the account and the kind.</summary>
 public record UnsubscribeRequest(string Token);
+
+/// <summary>
+/// What a restore would do, or did.
+/// </summary>
+/// <remarks>
+/// The same shape for both, because the only way to trust a restore is to be told what it will do
+/// while it is still possible to decide otherwise — and then to be told what it actually did.
+/// </remarks>
+/// <param name="DryRun">True when nothing was written.</param>
+/// <param name="FormatVersion">The shape of the file this came from.</param>
+/// <param name="TakenAt">When the snapshot was made.</param>
+/// <param name="PlaylistsMatched">Playlists already here, matched by slug and left alone.</param>
+/// <param name="ItemsAlreadyThere">
+/// Links the playlist already held. Left exactly as they are — a restore should not undo the
+/// reading somebody has done since the snapshot.
+/// </param>
+/// <param name="Truncated">True when the restore hit its ceiling and stopped part way.</param>
+/// <param name="SourcesNeedCredentials">
+/// True when sources were recreated. Their config came out of the export with its secrets
+/// redacted, so they arrive paused and may need credentials typed in again.
+/// </param>
+public record RestorePlan(
+    bool DryRun,
+    int FormatVersion,
+    DateTimeOffset TakenAt,
+    int FoldersAdded,
+    int PlaylistsAdded,
+    int PlaylistsMatched,
+    int ItemsAdded,
+    int ItemsAlreadyThere,
+    int SourcesAdded,
+    bool Truncated,
+    bool SourcesNeedCredentials);
+
+/// <summary>Restore from a file rather than a stored snapshot.</summary>
+public record RestoreFromFileRequest(string Json, bool DryRun = false);

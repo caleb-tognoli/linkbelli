@@ -55,3 +55,23 @@ export function describeContents(backup: Backup): string {
 
 	return `${items} across ${playlists}`;
 }
+
+/**
+ * What a restore would do, or did.
+ *
+ * A restore merges rather than replaces, so the interesting numbers are the two-sided ones:
+ * what it would add, and what it found already there and left alone.
+ */
+export interface RestorePlan {
+	dryRun: boolean;
+	formatVersion: number;
+	takenAt: string;
+	foldersAdded: number;
+	playlistsAdded: number;
+	playlistsMatched: number;
+	itemsAdded: number;
+	itemsAlreadyThere: number;
+	sourcesAdded: number;
+	truncated: boolean;
+	sourcesNeedCredentials: boolean;
+}

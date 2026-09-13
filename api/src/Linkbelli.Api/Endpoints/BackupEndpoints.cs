@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using Linkbelli.Api.Auth;
 using Linkbelli.Application.Backups;
+using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Linkbelli.Api.Endpoints;
@@ -60,5 +61,30 @@ public static class BackupEndpoints
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
             .WithName("DeleteBackup");
+
+        // A backup system with no restore is a file-copying system. Everything else was here —
+        // weekly snapshots, retention, content hashing — and the one thing the apparatus exists
+        // for was missing.
+        group.MapGet("/{id:guid}/restore", async (
+            Guid id, ClaimsPrincipal user, IRestoreService svc, CancellationToken ct) =>
+            Results.Ok(await svc.PreviewAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("PreviewRestore");
+
+        group.MapPost("/{id:guid}/restore", async (
+            Guid id, ClaimsPrincipal user, IRestoreService svc, CancellationToken ct) =>
+            Results.Ok(await svc.RestoreAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .RequireRateLimiting("sensitive")
+            .WithName("Restore");
+
+        // The case a backup system is actually for: the server it was taken from is gone, and
+        // what somebody has is the file they downloaded before it went.
+        group.MapPost("/restore", async (
+            RestoreFromFileRequest req, ClaimsPrincipal user, IRestoreService svc, CancellationToken ct) =>
+            Results.Ok(await svc.RestoreFromAsync(user.GetUserId(), req.Json, req.DryRun, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .RequireRateLimiting("sensitive")
+            .WithName("RestoreFromFile");
     }
 }
