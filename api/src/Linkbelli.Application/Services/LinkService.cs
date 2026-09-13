@@ -77,6 +77,17 @@ public class LinkService(
         var existing = await db.Links
             .Include(l => l.Host)
             .FirstOrDefaultAsync(l => l.UrlHash == canonical.Hash, cancellationToken);
+
+        // Deliberately not matched against another link's ResolvedUrlHash, tempting as it looks.
+        //
+        // Doing so would mean: you save the address a page actually lives at, and get handed the
+        // row somebody saved under a shortener, showing that shortener as the address. Even when
+        // it is the same page that is the worse of the two addresses; and when it is not — a
+        // paywall stub, a consent screen, a "this has moved" page, all of which several articles
+        // redirect to — it is simply wrong, silently.
+        //
+        // The redirect is recorded at enrichment and offered on the duplicates page as something
+        // to look at. A suggestion can be declined. This could not.
         if (existing is not null)
         {
             if (existing.Host!.Blocked)

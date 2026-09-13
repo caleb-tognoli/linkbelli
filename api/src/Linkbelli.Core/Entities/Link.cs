@@ -26,6 +26,24 @@ public class Link : BaseEntity<Guid>
 {
     public required string CanonicalUrl { get; set; }
     public required string UrlHash { get; set; }
+
+    /// <summary>
+    /// Where the fetch actually landed, when that was somewhere else.
+    /// </summary>
+    /// <remarks>
+    /// Null until enriched, and null afterwards when nothing redirected — which is the common
+    /// case, so the column is mostly empty and that is fine.
+    ///
+    /// A redirect is the single most ordinary way one page arrives under two addresses: a link
+    /// shortener, an <c>m.</c> subdomain, an article slug that was renamed, <c>?amp=1</c>. The
+    /// enricher followed them all along and threw the answer away, so saving
+    /// <c>/wiki/Really_Simple_Syndication</c> and <c>/wiki/RSS</c> produced two rows and the
+    /// duplicates page reported nothing saved twice.
+    /// </remarks>
+    public string? ResolvedUrl { get; set; }
+
+    /// <summary>The hash of <see cref="ResolvedUrl"/>, so it can be compared to another link's.</summary>
+    public string? ResolvedUrlHash { get; set; }
     /// <summary>Derived from CanonicalUrl by the canonicalizer; recomputable.</summary>
     public Guid HostId { get; set; }
     public string? Title { get; set; }

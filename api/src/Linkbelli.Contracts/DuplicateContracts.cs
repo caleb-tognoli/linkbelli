@@ -11,6 +11,20 @@ public enum DuplicateKind
     /// Canonicalization strips known tracking parameters, but not the ones it has never seen.
     /// </summary>
     SamePage,
+
+    /// <summary>
+    /// Different addresses that the fetch found leading to the same page.
+    /// </summary>
+    /// <remarks>
+    /// A shortener, an <c>m.</c> subdomain, a renamed article slug, <c>?amp=1</c>: the host and
+    /// path share nothing, so the grouping above cannot see it, and the enricher followed the
+    /// redirect without writing down where it went.
+    ///
+    /// A suggestion, not a verdict. A consent interstitial, a paywall and a "this has moved"
+    /// stub all land somewhere shared without being the same page, so this names the candidates
+    /// and leaves the decision to whoever saved them.
+    /// </remarks>
+    SameAfterRedirect,
 }
 
 /// <summary>One saved copy: where it lives, and what it is.</summary>

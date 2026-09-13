@@ -134,6 +134,30 @@ public static class ItemSeeder
     }
 
     /// <summary>
+    /// Records that a saved link's fetch ended up somewhere else.
+    /// </summary>
+    /// <remarks>
+    /// What LinkEnricher writes after following a redirect, done directly so a test does not
+    /// need a live origin that actually 301s. The unit tests cover the enricher deciding this;
+    /// these cover what the rest of the app does once it has.
+    /// </remarks>
+    public static async Task ResolveLinkAsync(
+        this PostgresApiFactory factory, string savedUrl, string landedAt)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+
+        UrlCanonicalizer.TryCanonicalize(savedUrl, out var saved);
+        UrlCanonicalizer.TryCanonicalize(landedAt, out var target);
+
+        await db.Links
+            .Where(l => l.UrlHash == saved.Hash)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(l => l.ResolvedUrl, target.Url)
+                .SetProperty(l => l.ResolvedUrlHash, target.Hash));
+    }
+
+    /// <summary>
     /// Gives every named playlist the same creation time, to the tick.
     /// </summary>
     /// <remarks>

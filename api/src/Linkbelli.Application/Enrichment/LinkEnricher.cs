@@ -87,6 +87,8 @@ public class LinkEnricher(
                 return;
             }
 
+            RecordWhereItLanded(link, response);
+
             var html = await response.Content.ReadAsStringAsync(cancellationToken);
             var metadata = extractor.Extract(html);
 
@@ -256,6 +258,42 @@ public class LinkEnricher(
         // Still stamped, because reads gate on it: the item should appear, labelled, rather than
         // sit invisible in a playlist its owner can see the count of.
         link.EnrichedAt ??= now;
+    }
+
+    /// <summary>
+    /// Keeps the address the fetch actually ended at, when it was not the one asked for.
+    /// </summary>
+    /// <remarks>
+    /// The client follows redirects and always did; what was missing is that the answer was
+    /// thrown away. A redirect is the most ordinary way one page arrives under two addresses —
+    /// a shortener, an <c>m.</c> subdomain, a renamed article slug, <c>?amp=1</c> — which is
+    /// exactly what the duplicates page says it finds and could not.
+    ///
+    /// Recorded, never acted on here. Two addresses behind one redirect target are not always
+    /// the same page: a consent interstitial, a paywall and a "this has moved" stub all land
+    /// somewhere shared. Merging them automatically would lose somebody's link; offering it as
+    /// a suggestion will not.
+    /// </remarks>
+    private static void RecordWhereItLanded(Link link, HttpResponseMessage response)
+    {
+        var landed = response.RequestMessage?.RequestUri?.ToString();
+        if (landed is null || !UrlCanonicalizer.TryCanonicalize(landed, out var canonical))
+        {
+            return;
+        }
+
+        // Nothing redirected, or it redirected somewhere that canonicalizes back to the same
+        // place. Either way there is nothing to record, and a column full of "itself" would make
+        // every link look like a duplicate of itself.
+        if (canonical.Hash == link.UrlHash)
+        {
+            link.ResolvedUrl = null;
+            link.ResolvedUrlHash = null;
+            return;
+        }
+
+        link.ResolvedUrl = canonical.Url;
+        link.ResolvedUrlHash = canonical.Hash;
     }
 
     private static void StampSuccess(Link link)

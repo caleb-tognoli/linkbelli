@@ -16,10 +16,19 @@
 	const total = $derived(data.groups.reduce((sum, g) => sum + g.copies.length - 1, 0));
 
 	function describe(group: DuplicateGroup): string {
-		return group.kind === 'SameLink'
-			? 'The same link, saved more than once'
-			: 'The same page, reached by different addresses';
+		if (group.kind === 'SameLink') return 'The same link, saved more than once';
+		if (group.kind === 'SamePage') return 'The same page, reached by different addresses';
+		return 'These addresses all lead to the same page';
 	}
+
+	/**
+	 * Whether this group is a guess rather than a fact.
+	 *
+	 * The first two kinds are certainties — the identical link, or the identical host and path.
+	 * A shared redirect target is not: a consent page, a paywall and a "this has moved" stub all
+	 * land somewhere shared without being the same page. Worth surfacing, worth labelling.
+	 */
+	const isSuggestion = (group: DuplicateGroup) => group.kind === 'SameAfterRedirect';
 
 	/** Removes every copy but the one the person chose to keep. */
 	async function keepOnly(group: DuplicateGroup, keep: DuplicateCopy) {
@@ -47,8 +56,8 @@
 	<header>
 		<h1 class="text-2xl font-semibold">Duplicates</h1>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			The same thing saved more than once — either the identical link in several playlists, or one
-			page reached by different addresses.
+			The same thing saved more than once — the identical link in several playlists, one page
+			reached by different addresses, or several addresses that all redirect to one page.
 		</p>
 	</header>
 
@@ -82,8 +91,23 @@
 					<div class="flex items-start gap-2">
 						<CopyCheck size={16} aria-hidden="true" class="mt-0.5 shrink-0" style="color: var(--color-muted)" />
 						<div class="min-w-0">
-							<p class="text-sm font-medium">{describe(group)}</p>
+							<p class="text-sm font-medium">
+								{describe(group)}
+								{#if isSuggestion(group)}
+									<span
+										class="ml-1.5 rounded px-1.5 py-0.5 align-middle text-xs font-normal"
+										style="background: var(--color-border); color: var(--color-muted)"
+									>worth checking</span>
+								{/if}
+							</p>
 							<p class="truncate text-xs" style="color: var(--color-muted)">{group.key}</p>
+							{#if isSuggestion(group)}
+								<p class="mt-1 text-xs" style="color: var(--color-muted)">
+									Following each address ended up here. Usually that means one page — but a
+									consent screen or a "this has moved" stub lands somewhere shared too, so have a
+									look before removing anything.
+								</p>
+							{/if}
 						</div>
 					</div>
 

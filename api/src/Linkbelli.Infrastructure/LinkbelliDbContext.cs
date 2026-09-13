@@ -108,7 +108,13 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.Property(l => l.CanonicalUrl).HasMaxLength(2048);
             e.Property(l => l.UrlHash).HasMaxLength(64);
             e.Property(l => l.Metadata).HasColumnType("jsonb");
+            e.Property(l => l.ResolvedUrl).HasMaxLength(2048);
+            e.Property(l => l.ResolvedUrlHash).HasMaxLength(64);
             e.HasIndex(l => l.UrlHash).IsUnique().ExcludeSoftDeleted();
+            // "Is anything already saved that lands here" — asked once per link saved, and once
+            // per redirect resolved. Not unique: two addresses legitimately redirecting to one
+            // page is the whole phenomenon being recorded.
+            e.HasIndex(l => l.ResolvedUrlHash);
             e.HasIndex(l => l.HostId);
             e.HasOne(l => l.Host).WithMany().OnDelete(DeleteBehavior.Restrict);
 

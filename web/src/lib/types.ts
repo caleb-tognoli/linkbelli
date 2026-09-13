@@ -442,7 +442,13 @@ export interface PublicProfile {
 	followedByMe?: boolean;
 }
 
-export type DuplicateKind = 'SameLink' | 'SamePage';
+/**
+ * Why a set of saved links is considered the same thing.
+ *
+ * `SameAfterRedirect` is a suggestion rather than a verdict: a consent page, a paywall and a
+ * "this has moved" stub all land somewhere shared without being the same page.
+ */
+export type DuplicateKind = 'SameLink' | 'SamePage' | 'SameAfterRedirect';
 
 export interface DuplicateCopy {
 	itemId: string;

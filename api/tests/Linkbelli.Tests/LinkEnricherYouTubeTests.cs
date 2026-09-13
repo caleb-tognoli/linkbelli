@@ -138,17 +138,6 @@ public class LinkEnricherYouTubeTests
         return (enricher, db, handler);
     }
 
-    private sealed class NullThrottle : IHostThrottle
-    {
-        public Task WaitAsync(string hostname, CancellationToken cancellationToken) => Task.CompletedTask;
-    }
-
-    private sealed class SingleClientFactory(HttpClient client) : IHttpClientFactory
-    {
-        public HttpClient CreateClient(string name)
-            => name == EnrichmentHttpClient.Name ? client : throw new InvalidOperationException($"unexpected client: {name}");
-    }
-
     private sealed class StubHandler(HttpStatusCode status, string body) : HttpMessageHandler
     {
         public List<HttpRequestMessage> Requests { get; } = new();
