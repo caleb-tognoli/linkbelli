@@ -147,7 +147,7 @@
 <section class="mx-auto max-w-4xl">
 	<h1 class="text-2xl font-semibold">Search</h1>
 	<p class="mt-1 text-sm" style="color: var(--color-muted)">
-		Across every playlist you own — titles, descriptions, notes, and addresses.
+		Across every playlist you own — titles, descriptions, notes, addresses and the article text.
 	</p>
 
 	<div class="relative mt-5">
@@ -160,12 +160,30 @@
 		<input
 			bind:value={term}
 			oninput={onInput}
-			placeholder="Search your links…"
+			placeholder="Search your links, or try site:bbc.co.uk under:10"
 			aria-label="Search your links"
 			class="w-full rounded-md border py-2.5 pr-3 pl-9"
 			style="border-color: var(--color-border); background: var(--color-bg)"
 		/>
 	</div>
+
+	<details class="mt-2">
+		<summary class="cursor-pointer text-xs" style="color: var(--color-muted)">
+			Things you can type
+		</summary>
+		<!-- The same filters as the buttons below, typed. Which matters because a typed search is
+		     one you can put in a URL, send to somebody, or save as a sentence. -->
+		<ul class="mt-2 grid gap-1 text-xs sm:grid-cols-2" style="color: var(--color-muted)">
+			<li><code>site:bbc.co.uk</code> — only that site</li>
+			<li><code>tag:rust</code> — only links you tagged that</li>
+			<li><code>is:unread</code>, <code>is:read</code> — where you got to</li>
+			<li><code>is:broken</code> — links whose page has gone</li>
+			<li><code>kind:video</code> — article, video, paper, audio…</li>
+			<li><code>under:10</code> — readable in ten minutes</li>
+			<li><code>score:&gt;80</code> — at least that well rated</li>
+			<li><code>"exact phrase"</code> and <code>-exclude</code></li>
+		</ul>
+	</details>
 
 	<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
 		<div class="inline-flex divide-x overflow-hidden rounded-md border" style="border-color: var(--color-border)">

@@ -4,6 +4,7 @@ using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Content;
 using Linkbelli.Core.Entities;
+using Linkbelli.Core.Search;
 using Linkbelli.Core.Tags;
 using Linkbelli.Core.Url;
 using Microsoft.EntityFrameworkCore;
@@ -60,8 +61,40 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
         i.StatusChangedAt,
         i.Tags.Select(t => t.Tag!.Name).ToArray());
 
-    public async Task<PagedResult<SearchHit>> SearchAsync(Guid ownerId, SearchQuery query, CancellationToken ct = default)
+    /// <summary>
+    /// Folds operators typed into the box into the filters that already existed.
+    /// </summary>
+    /// <remarks>
+    /// Every one of these was reachable only as a chip on the search page, so the filter could be
+    /// applied but not typed, not shared as a URL somebody else could read, and not saved as a
+    /// sentence. <c>site:bbc.co.uk under:10 is:unread</c> is how people expect to ask this.
+    ///
+    /// A typed operator wins over the same filter passed as a parameter. Both are visible on the
+    /// screen, and the box is the one being edited — somebody who types <c>site:</c> while a host
+    /// chip is set has just said which one they mean.
+    /// </remarks>
+    private static SearchQuery WithOperators(SearchQuery query)
     {
+        var parsed = SearchOperators.Parse(query.Q);
+
+        return query with
+        {
+            Q = parsed.Text,
+            Host = parsed.Host ?? query.Host,
+            ItemTags = parsed.ItemTags.Count > 0
+                ? [.. parsed.ItemTags.Concat(query.ItemTags ?? [])]
+                : query.ItemTags,
+            Status = parsed.Status ?? query.Status,
+            Broken = parsed.Broken ?? query.Broken,
+            Kind = parsed.Kind ?? query.Kind,
+            MinScore = parsed.MinScore ?? query.MinScore,
+            MaxMinutes = parsed.MaxMinutes ?? query.MaxMinutes,
+        };
+    }
+
+    public async Task<PagedResult<SearchHit>> SearchAsync(Guid ownerId, SearchQuery raw, CancellationToken ct = default)
+    {
+        var query = WithOperators(raw);
         var take = Paging.Take(query.Limit, MaxLimit, fallback: 25);
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
 

@@ -584,6 +584,29 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero. `queue` for "what now": rated things first, then whatever has been carried longest — a queue that leads with the newest arrival is how a backlog becomes permanent |
 | `limit`, `cursor` | Paging — see [Paging](#paging). A `limit` outside 1–100 is refused |
 
+### Operators
+
+`q` understands a few operators, so the filters beside it can also be typed — which is what makes
+a search shareable as a URL and savable as a sentence:
+
+| Typed | Same as |
+| --- | --- |
+| `site:bbc.co.uk` | `host=bbc.co.uk`. A whole address works too; the hostname is taken out of it |
+| `tag:rust` | `itemTag=rust`. May appear more than once |
+| `is:unread` / `is:read` | `status=unwatched` / `status=watched` |
+| `is:broken` / `is:ok` | `broken=true` / `broken=false` |
+| `kind:video` | `kind=video` |
+| `under:10` | `maxMinutes=10`. `10m` and `<10` also work |
+| `score:>80` | `minScore=80`. `>=80` and a bare `80` mean the same |
+
+A typed operator wins over the same filter passed as a parameter: both are visible on screen, and
+the box is the one being edited.
+
+Two things are deliberately **not** operators. `"exact phrase"` and `-exclusion` go straight to
+Postgres, which already understands both — reimplementing them would mean doing it worse and in a
+second place. And an unrecognised `word:value` stays in the search text, because a colon appears
+in prose and in addresses far more often than it introduces a filter nobody defined.
+
 - Results are ordered by relevance when `q` is given — a title hit, then a site-name hit, then
   anything else — and newest-first when it isn't, which is what a bare browse wants.
 - Each hit carries `playlistId` and `playlistName`, because "which list did I put it in" is most
