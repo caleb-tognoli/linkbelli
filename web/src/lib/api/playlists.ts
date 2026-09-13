@@ -26,6 +26,33 @@ export function listPlaylists(api: ApiFetch, opts: ListPlaylistsOptions = {}): P
 	return api(`/api/v1/playlists${suffix}`).then((r) => json<Paged<Playlist>>(r, 'List playlists'));
 }
 
+/**
+ * Every playlist, for a picker that has to offer all of them.
+ *
+ * Two pages used to ask for `limit=200` and get a hundred, because the API clamped an
+ * out-of-range limit instead of refusing it — so anybody with more than a hundred playlists had
+ * the rest silently missing from the "move this to…" list, with nothing anywhere saying so. The
+ * API now refuses that limit, and this walks the pages instead.
+ *
+ * Capped, because a picker is the wrong shape for a thousand entries anyway; past that the answer
+ * is a search box, not a longer list.
+ */
+export async function listAllPlaylists(api: ApiFetch, maxPages = 10): Promise<Playlist[]> {
+	const all: Playlist[] = [];
+	let cursor: string | undefined;
+
+	for (let page = 0; page < maxPages; page++) {
+		const res = await listPlaylists(api, { limit: 100, cursor }).catch(() => null);
+		if (!res) break;
+
+		all.push(...res.items);
+		if (!res.nextCursor) break;
+		cursor = res.nextCursor;
+	}
+
+	return all;
+}
+
 export function listOwnTags(api: ApiFetch): Promise<TagSummary[]> {
 	return api('/api/v1/tags').then((r) => json<TagSummary[]>(r, 'List tags'));
 }

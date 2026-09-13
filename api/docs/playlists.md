@@ -5,6 +5,26 @@ and operate only on the caller's own playlists. Responses are JSON; lists are pa
 an opaque `nextCursor` (pass it back as `?cursor=` for the next page; `null` means no more).
 Enum values such as `visibility` are strings: `Private`, `Unlisted`, `Public`.
 
+## Paging
+
+`nextCursor` names the row a page stopped at, not how many rows were skipped. So a page is not
+disturbed by anything written while you read: nothing you have already been given comes back, and
+nothing slips past unseen because something above it was deleted. It was an offset in base64
+before, which meant both.
+
+Two consequences worth knowing:
+
+- **A cursor is not an address.** It goes with the query that produced it and with this version of
+  the API. Do not store one, construct one, or reuse one across a different set of filters.
+- **A `limit` outside 1–100 is a `400`, not a quietly corrected page size**, as is a cursor that
+  cannot be read. Asking for 200 rows and being handed 100 without comment is how a client goes
+  years only ever seeing the first half of something.
+
+Three listings still page by counting, because their ordering is a computed value with no column
+to resume after: search results ranked by relevance, discovery sorted by `liked` or `largest`, and
+a playlist's items sorted by score or shuffled. Those can still shift under a concurrent write.
+Everything else names a position.
+
 All paths are under **`/api/v1`**. Reads require the `playlists:read` scope and writes the
 `playlists:write` scope (only relevant for scoped API keys — see [auth.md](auth.md#scopes)).
 
@@ -561,7 +581,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `kind` | One of `article`, `video`, `repository`, `paper`, `document`, `audio`, `image`, `social`. An unrecognised name matches **nothing** rather than everything, so a typo returns an empty list instead of quietly ignoring the filter |
 | `maxMinutes` | Only what can be read in this many minutes — how people actually pick what to open. Links with no article behind them have no length to compare and are excluded |
 | `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero. `queue` for "what now": rated things first, then whatever has been carried longest — a queue that leads with the newest arrival is how a backlog becomes permanent |
-| `limit`, `cursor` | Paging; `limit` maxes out at 100 |
+| `limit`, `cursor` | Paging — see [Paging](#paging). A `limit` outside 1–100 is refused |
 
 - Results are ordered by relevance when `q` is given — a title hit, then a site-name hit, then
   anything else — and newest-first when it isn't, which is what a bare browse wants.

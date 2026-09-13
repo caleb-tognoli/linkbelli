@@ -132,4 +132,28 @@ public static class ItemSeeder
         await db.SaveChangesAsync();
         return seeded.Select(i => i.Id).ToList();
     }
+
+    /// <summary>
+    /// Gives every named playlist the same creation time, to the tick.
+    /// </summary>
+    /// <remarks>
+    /// Created one at a time over HTTP they are microseconds apart, which is enough for a
+    /// timestamp alone to order them — so a paging bug that only appears on ties would never
+    /// show. An import creating fifty playlists in one SaveChanges produces exactly this state,
+    /// so it is a real shape rather than a contrived one.
+    ///
+    /// Written with ExecuteUpdate rather than by loading each row: the SaveChanges interceptor
+    /// stamps LastModified on anything tracked and modified, which would undo the point.
+    /// </remarks>
+    public static async Task SettleActivityAsync(
+        this PostgresApiFactory factory, IReadOnlyList<Guid> playlistIds)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+
+        var shared = DateTimeOffset.UtcNow;
+        await db.Playlists
+            .Where(p => playlistIds.Contains(p.Id))
+            .ExecuteUpdateAsync(u => u.SetProperty(p => p.CreationTime, shared));
+    }
 }

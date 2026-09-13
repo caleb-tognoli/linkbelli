@@ -62,7 +62,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
 
     public async Task<PagedResult<SearchHit>> SearchAsync(Guid ownerId, SearchQuery query, CancellationToken ct = default)
     {
-        var take = Math.Clamp(query.Limit ?? 25, 1, MaxLimit);
+        var take = Paging.Take(query.Limit, MaxLimit, fallback: 25);
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
 
         var items = db.PlaylistItems.Where(i => i.Playlist!.OwnerId == ownerId && i.Link!.EnrichedAt != null);
@@ -105,13 +105,13 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
                 && i.StatusChangedAt >= since);
         }
 
-        var continuing = Common.Cursor.TryDecodePage(query.Cursor, out var total, out var payload);
+        var continuing = Common.Cursor.DecodePage(query.Cursor, out var total, out var payload);
         if (!continuing)
         {
             total = await items.CountAsync(ct);
         }
 
-        var offset = int.TryParse(payload, out var parsed) ? parsed : 0;
+        var offset = Common.Cursor.ParseOffset(payload);
 
         // Offset paging: the ordering is a computed relevance bucket with no stored column to
         // key on. A search is read a page or two deep, so the offset stays small in practice.

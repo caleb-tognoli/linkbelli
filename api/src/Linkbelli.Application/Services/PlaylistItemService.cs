@@ -53,7 +53,7 @@ public class PlaylistItemService(
     {
         await EnsureCanReadAsync(playlistId, ownerId, ct);
 
-        var take = Math.Clamp(limit ?? 50, 1, 100);
+        var take = Paging.Take(limit);
         var showNsfw = await prefs.ShowNsfwAsync(ownerId, ct);
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlistId && i.Link!.EnrichedAt != null);
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
@@ -244,7 +244,7 @@ public class PlaylistItemService(
             throw new NotFoundException("Playlist not found.");
         }
 
-        var take = Math.Clamp(limit ?? 50, 1, 100);
+        var take = Paging.Take(limit);
         var query = db.PlaylistItems.Where(i => i.PlaylistId == playlist.Id && i.Link!.EnrichedAt != null);
         if (!showNsfw) query = query.Where(i => !i.Link!.Nsfw);
         query = ApplySourceFilter(query, source);
@@ -322,7 +322,7 @@ public class PlaylistItemService(
         // The total is counted once, on the first page, then carried inside the cursor. Counting on
         // every "load more" ran a second full pass over the filtered set — doubling the cost of
         // exactly the queries (filtered, searched, large) that are already the slowest.
-        var continuing = Cursor.TryDecodePage(cursor, out var total, out var payload);
+        var continuing = Cursor.DecodePage(cursor, out var total, out var payload);
         if (!continuing)
         {
             total = await query.CountAsync(ct);
@@ -337,9 +337,16 @@ public class PlaylistItemService(
             if (sep > 0
                 && double.TryParse(payload[..sep], System.Globalization.NumberStyles.Float,
                     System.Globalization.CultureInfo.InvariantCulture, out seed)
-                && int.TryParse(payload[(sep + 1)..], out offset))
+                && int.TryParse(payload[(sep + 1)..], out offset)
+                && offset >= 0)
             {
                 // Seed + offset restored from the cursor: the same shuffle order continues.
+            }
+            else if (continuing)
+            {
+                // A shuffle that quietly restarts deals the same links again in a new order, and
+                // the reader has no way to tell that from the shuffle simply being like that.
+                throw Cursor.Malformed();
             }
             else { seed = NewSeed(); offset = 0; }
 
@@ -374,12 +381,12 @@ public class PlaylistItemService(
             // Keyset on (CreationTime, Id), not CreationTime alone. A source run inserts all of
             // its items in one SaveChanges, so they share a creation timestamp to the tick; a
             // cursor that only compared timestamps skipped every tied row after the page break.
-            var sep = payload.IndexOf(':');
-            if (sep > 0
-                && long.TryParse(payload[..sep], out var ticks)
-                && Guid.TryParse(payload[(sep + 1)..], out var lastId))
+            if (continuing)
             {
-                var t = new DateTimeOffset(ticks, TimeSpan.Zero);
+                var at = Cursor.ParseTimeKey(payload)
+                    ?? throw Cursor.Malformed();
+                var t = at.At;
+                var lastId = at.Id;
                 query = asc
                     ? query.Where(i => i.CreationTime > t || (i.CreationTime == t && i.Id.CompareTo(lastId) > 0))
                     : query.Where(i => i.CreationTime < t || (i.CreationTime == t && i.Id.CompareTo(lastId) < 0));
@@ -393,7 +400,7 @@ public class PlaylistItemService(
             if (rows.Count > take)
             {
                 rows.RemoveAt(take);
-                next = Cursor.EncodePage(total, $"{rows[^1].CreationTime.UtcTicks}:{rows[^1].Id}");
+                next = Cursor.EncodePage(total, Cursor.FormatTimeKey(rows[^1].CreationTime, rows[^1].Id));
             }
             return new PagedResult<PlaylistItemResponse>(rows, next) { Total = total };
         }
@@ -401,7 +408,7 @@ public class PlaylistItemService(
         if (sort is "score-asc" or "score-desc")
         {
             bool asc = sort == "score-asc";
-            int offset = int.TryParse(payload, out var o) ? o : 0;
+            var offset = Cursor.ParseOffset(payload);
             // NULL scores always sort last regardless of direction.
             IQueryable<PlaylistItem> ordered = asc
                 ? query.OrderBy(i => i.Score == null ? 1 : 0).ThenBy(i => i.Score).ThenBy(i => i.Position)
@@ -416,7 +423,7 @@ public class PlaylistItemService(
         {
             // Offset paging, not a keyset: the relevance bucket isn't a stored column, so there
             // is no cursor value to compare the next page against.
-            var offset = int.TryParse(payload, out var searchOffset) ? searchOffset : 0;
+            var offset = Cursor.ParseOffset(payload);
             var rows = await OrderByRelevance(query, q!)
                 .Skip(offset).Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
@@ -426,8 +433,15 @@ public class PlaylistItemService(
 
         else
         {
-            if (long.TryParse(payload, out var afterPos))
+            if (continuing)
+            {
+                if (!long.TryParse(payload, out var afterPos))
+                {
+                    throw Cursor.Malformed();
+                }
+
                 query = query.Where(i => i.Position > afterPos);
+            }
             var rows = await query.OrderBy(i => i.Position).Take(take + 1).Select(ToResponse).ToListAsync(ct);
             string? next = null;
             if (rows.Count > take) { rows.RemoveAt(take); next = Cursor.EncodePage(total, rows[^1].Position.ToString()); }

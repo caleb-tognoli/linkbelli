@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
@@ -37,8 +38,8 @@ public class PlaylistService(
     public async Task<PagedResult<PlaylistResponse>> ListAsync(
         Guid ownerId, int? limit, string? cursor, string[]? tags, string? q = null, bool unfiled = false, CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 50, 1, 100);
-        var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
+        var take = Paging.Take(limit);
+        var after = Cursor.DecodeTimeKey(cursor);
 
         var query = FilterByTags(db.Playlists.Where(p => p.OwnerId == ownerId), tags);
 
@@ -75,9 +76,20 @@ public class PlaylistService(
                     .Where(fp => fp.OwnerId == ownerId && fp.PlaylistId == p.Id)
                     .Select(fp => fp.Folder!.Name).FirstOrDefault(),
             })
+            // Keyset rather than an offset: this list reorders itself every time a link is
+            // added to any playlist in it, so a page counted from the start would show the same
+            // playlist twice as often as not.
+            .Where(x => after == null
+                || x.LastActivity < after.Value.At
+                || (x.LastActivity == after.Value.At && x.Playlist.Id.CompareTo(after.Value.Id) < 0))
             .OrderByDescending(x => x.LastActivity).ThenByDescending(x => x.Playlist.Id)
-            .Skip(offset).Take(take + 1)
-            .Select(x => new PlaylistResponse(
+            .Take(take + 1)
+            // The key travels with the row: the response has no field for "when this list was
+            // last touched", and the cursor for the next page is made of exactly that.
+            .Select(x => new KeyedRow<PlaylistResponse>(
+                x.LastActivity,
+                x.Playlist.Id,
+                new PlaylistResponse(
                 x.Playlist.Id, x.Playlist.Name, x.Playlist.Slug, x.Playlist.Description,
                 x.Playlist.Visibility, x.ItemCount, x.Playlist.CreationTime, x.Tags, x.Nsfw,
                 x.FolderId, x.FolderName, null, x.PendingCount,
@@ -92,17 +104,10 @@ public class PlaylistService(
                 FollowedByMe: false,
                 IsOwner: true,
                 Role: null,
-                CoverLinkId: x.Playlist.CoverLinkId))
+                CoverLinkId: x.Playlist.CoverLinkId)))
             .ToListAsync(ct);
 
-        string? next = null;
-        if (rows.Count > take)
-        {
-            rows.RemoveAt(take);
-            next = Cursor.Encode((offset + take).ToString());
-        }
-
-        return new PagedResult<PlaylistResponse>(rows, next);
+        return rows.ToPage(take);
     }
 
     public async Task<PlaylistResponse> CreateAsync(Guid ownerId, CreatePlaylistRequest request, CancellationToken ct = default)
@@ -465,8 +470,8 @@ public class PlaylistService(
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("Profile not found.");
 
-        var take = Math.Clamp(limit ?? 50, 1, 100);
-        var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
+        var take = Paging.Take(limit);
+        var after = Cursor.DecodeTimeKey(cursor);
 
         // Public only: Unlisted is share-by-link, so it never appears in a listing, not even the
         // owner's own profile page.
@@ -476,33 +481,32 @@ public class PlaylistService(
 
         var rows = await (from p in query
                           join u in db.Users on p.OwnerId equals u.Id
+                          where after == null
+                              || p.CreationTime < after.Value.At
+                              || (p.CreationTime == after.Value.At && p.Id.CompareTo(after.Value.Id) < 0)
                           orderby p.CreationTime descending, p.Id descending
-                          select new PublicPlaylistSummary(
-                              u.UserName!, p.Slug, p.Name, p.Description,
-                              p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                              p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                              p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
-                              db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-                              p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
-            .Skip(offset).Take(take + 1)
+                          select new KeyedRow<PublicPlaylistSummary>(
+                              p.CreationTime,
+                              p.Id,
+                              new PublicPlaylistSummary(
+                                  u.UserName!, p.Slug, p.Name, p.Description,
+                                  p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+                                  p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                                  p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+                                  db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+                                  p.Items.Max(i => (DateTimeOffset?)i.CreationTime))))
+            .Take(take + 1)
             .ToListAsync(ct);
 
-        string? next = null;
-        if (rows.Count > take)
-        {
-            rows.RemoveAt(take);
-            next = Cursor.Encode((offset + take).ToString());
-        }
-
-        return new PagedResult<PublicPlaylistSummary>(rows, next);
+        return rows.ToPage(take);
     }
 
     public async Task<PagedResult<PublicPlaylistSummary>> DiscoverPublicAsync(
         string? q, string[]? tags, string? sort, int? limit, string? cursor, Guid? viewerId,
         CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 50, 1, 100);
-        var offset = Cursor.TryDecode(cursor, out var v) && int.TryParse(v, out var o) ? Math.Max(0, o) : 0;
+        var take = Paging.Take(limit);
+        var ranking = sort?.Trim().ToLowerInvariant();
 
         var query = db.Playlists.Where(p => p.Visibility == PlaylistVisibility.Public);
         if (!string.IsNullOrWhiteSpace(q))
@@ -516,65 +520,106 @@ public class PlaylistService(
 
         query = query.VisibleTo(await prefs.ShowNsfwAsync(viewerId, ct));
 
-        // Ordered first, projected second: the owner's name comes from a subquery rather than a
-        // join so the ordering stays expressed over the playlist itself, which is the only form
-        // EF can translate.
-        var rows = await Rank(query, sort)
-            .Select(p => new PublicPlaylistSummary(
-                db.Users.Where(u => u.Id == p.OwnerId).Select(u => u.UserName!).FirstOrDefault()!,
-                p.Slug, p.Name, p.Description,
-                p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
-                p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
-                p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
-                db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
-                p.Items.Max(i => (DateTimeOffset?)i.CreationTime)))
-            .Skip(offset).Take(take + 1)
-            .ToListAsync(ct);
-
-        string? next = null;
-        if (rows.Count > take)
+        // Two of the four orderings run off a value the cursor can name. The other two rank by a
+        // correlated count — likes, items — which is not a column, so there is nothing to compare
+        // the next page against and they stay on offsets. Said here rather than discovered later:
+        // "cursor" is opaque to clients, and only one of these two kinds is actually stable.
+        if (ranking is "liked" or "largest")
         {
-            rows.RemoveAt(take);
-            next = Cursor.Encode((offset + take).ToString());
+            var offset = Cursor.DecodeOffset(cursor);
+
+            // Ordered first, projected second: the owner's name comes from a subquery rather than
+            // a join so the ordering stays expressed over the playlist itself, which is the only
+            // form EF can translate.
+            var ranked = await ByCount(query, ranking)
+                .Select(Summarize())
+                .Skip(offset).Take(take + 1)
+                .ToListAsync(ct);
+
+            string? more = null;
+            if (ranked.Count > take)
+            {
+                ranked.RemoveAt(take);
+                more = Cursor.Encode((offset + take).ToString());
+            }
+
+            return new PagedResult<PublicPlaylistSummary>(ranked, more);
         }
 
-        return new PagedResult<PublicPlaylistSummary>(rows, next);
+        var after = Cursor.DecodeTimeKey(cursor);
+
+        // "active" is ordered by the newest thing in the list; everything else by when the list
+        // itself appeared. Both fall back to the id, which is what makes the position total —
+        // several playlists created in the same tick is a normal outcome of an import.
+        var byActivity = ranking == "active";
+
+        var rows = await query
+            .Select(p => new
+            {
+                Playlist = p,
+                Key = byActivity
+                    ? p.Items.Max(i => (DateTimeOffset?)i.CreationTime) ?? p.CreationTime
+                    : p.CreationTime,
+            })
+            .Where(x => after == null
+                || x.Key < after.Value.At
+                || (x.Key == after.Value.At && x.Playlist.Id.CompareTo(after.Value.Id) < 0))
+            .OrderByDescending(x => x.Key).ThenByDescending(x => x.Playlist.Id)
+            .Take(take + 1)
+            .Select(x => new KeyedRow<PublicPlaylistSummary>(
+                x.Key,
+                x.Playlist.Id,
+                new PublicPlaylistSummary(
+                    db.Users.Where(u => u.Id == x.Playlist.OwnerId).Select(u => u.UserName!).FirstOrDefault()!,
+                    x.Playlist.Slug, x.Playlist.Name, x.Playlist.Description,
+                    x.Playlist.Items.Count(i => i.Link!.EnrichedAt != null), x.Playlist.CreationTime,
+                    x.Playlist.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+                    x.Playlist.NsfwOverride != null
+                        ? x.Playlist.NsfwOverride.Value
+                        : x.Playlist.Items.Any(i => i.Link!.Nsfw),
+                    db.PlaylistLikes.Count(l => l.PlaylistId == x.Playlist.Id),
+                    x.Playlist.Items.Max(i => (DateTimeOffset?)i.CreationTime))))
+            .ToListAsync(ct);
+
+        return rows.ToPage(take);
     }
 
+    /// <summary>One public playlist as a listing shows it. Shared by both paging paths.</summary>
+    private Expression<Func<Playlist, PublicPlaylistSummary>> Summarize() =>
+        p => new PublicPlaylistSummary(
+            db.Users.Where(u => u.Id == p.OwnerId).Select(u => u.UserName!).FirstOrDefault()!,
+            p.Slug, p.Name, p.Description,
+            p.Items.Count(i => i.Link!.EnrichedAt != null), p.CreationTime,
+            p.Tags.Select(pt => pt.Tag!.Name).ToArray(),
+            p.NsfwOverride != null ? p.NsfwOverride.Value : p.Items.Any(i => i.Link!.Nsfw),
+            db.PlaylistLikes.Count(l => l.PlaylistId == p.Id),
+            p.Items.Max(i => (DateTimeOffset?)i.CreationTime));
+
     /// <summary>
-    /// How discovery orders what it found.
+    /// The two discovery orderings that rank by a count rather than by a date.
     /// </summary>
     /// <remarks>
     /// Ordering everything by age rewards being new rather than being good, and a list posted
-    /// last year that people keep coming back to was unfindable. Every ordering falls back to the
-    /// creation date, so the page doesn't reshuffle between refreshes on a tie.
+    /// last year that people keep coming back to was unfindable. These two are the answer to
+    /// that, and they are also the two that cannot page by cursor: a correlated count is not a
+    /// column, so there is no value for the next page to resume after.
+    ///
+    /// The date-ordered pair — newest, and "active" — are handled in
+    /// <see cref="DiscoverPublicAsync"/> itself, where the key can travel in the cursor.
     ///
     /// Expressed over the entities rather than over the projected summary: EF cannot translate an
     /// OrderBy that reaches into a type the query has just constructed.
     /// </remarks>
-    private IOrderedQueryable<Playlist> Rank(IQueryable<Playlist> playlists, string? sort) =>
-        sort?.Trim().ToLowerInvariant() switch
-        {
-            // A list nobody has added to in a year is finished, whatever else it is.
-            "active" => playlists
-                .OrderByDescending(p =>
-                    p.Items.Max(i => (DateTimeOffset?)i.CreationTime) ?? p.CreationTime)
-                .ThenByDescending(p => p.CreationTime),
-
-            "liked" => playlists
+    private IOrderedQueryable<Playlist> ByCount(IQueryable<Playlist> playlists, string sort) =>
+        sort == "liked"
+            ? playlists
                 .OrderByDescending(p => db.PlaylistLikes.Count(l => l.PlaylistId == p.Id))
-                .ThenByDescending(p => p.CreationTime),
-
-            "largest" => playlists
+                .ThenByDescending(p => p.CreationTime)
+                .ThenByDescending(p => p.Id)
+            : playlists
                 .OrderByDescending(p => p.Items.Count(i => i.Link!.EnrichedAt != null))
-                .ThenByDescending(p => p.CreationTime),
-
-            // Newest first: what discovery has always done, and still the right default for a
-            // page whose job is to show you something you haven't seen.
-            _ => playlists
-                .OrderByDescending(p => p.CreationTime)
-                .ThenByDescending(p => p.Id),
-        };
+                .ThenByDescending(p => p.CreationTime)
+                .ThenByDescending(p => p.Id);
 
     /// <summary>
     /// Public playlists that look like this one: sharing its tags, or holding the same links.
@@ -586,7 +631,7 @@ public class PlaylistService(
     public async Task<IReadOnlyList<PublicPlaylistSummary>> ListSimilarAsync(
         string username, string slug, int? limit, Guid? viewerId, CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 6, 1, 24);
+        var take = Paging.Take(limit, max: 24, fallback: 6);
         var normalized = username.ToUpperInvariant();
 
         var subject = await db.Playlists

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using static Linkbelli.IntegrationTests.ApiTestHelpers;
@@ -82,14 +83,44 @@ public class ItemPagingTests(PostgresApiFactory factory)
         Assert.Equal(2, page.Items.Count);
     }
 
-    [Fact]
-    public async Task A_garbled_cursor_is_treated_as_a_first_page()
+    /// <summary>
+    /// A garbled cursor is refused, where it used to be quietly treated as a first page.
+    /// </summary>
+    /// <remarks>
+    /// This test previously asserted the opposite, and the old behaviour is what it was written
+    /// against. Silently restarting hides the client bug that produced the bad cursor — the
+    /// reader sees the top of the list again and assumes they scrolled wrong — and on a shuffled
+    /// playlist it deals the same links out in a new order with nothing to say it happened.
+    /// </remarks>
+    [Theory]
+    // Not base64.
+    [InlineData("not-a-cursor")]
+    // Base64, but not one of ours: no carried total.
+    [InlineData("MTUw")]
+    public async Task A_garbled_cursor_is_refused_rather_than_restarting(string cursor)
     {
         var client = await NewUserAsync();
         var playlist = await NewPlaylistAsync(client, "Bad cursor");
         await factory.SeedEnrichedItemsAsync(playlist, 4);
 
-        var page = await PageAsync(client, playlist, "limit=10&cursor=not-a-cursor");
+        var res = await client.GetAsync(
+            $"/api/v1/playlists/{playlist}/items?limit=10&cursor={Uri.EscapeDataString(cursor)}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    /// <summary>
+    /// An absent cursor is still a first page — <c>?cursor=</c> comes off a form as readily as
+    /// it comes off a bug, and asking for the start is not an error.
+    /// </summary>
+    [Fact]
+    public async Task An_empty_cursor_is_still_a_first_page()
+    {
+        var client = await NewUserAsync();
+        var playlist = await NewPlaylistAsync(client, "No cursor");
+        await factory.SeedEnrichedItemsAsync(playlist, 4);
+
+        var page = await PageAsync(client, playlist, "limit=10&cursor=");
 
         Assert.Equal(4, page.Total);
         Assert.Equal(4, page.Items.Count);

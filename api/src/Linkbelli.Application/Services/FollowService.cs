@@ -153,7 +153,7 @@ public sealed class FollowService(IAppDbContext db, INotificationQueue notificat
     public async Task<FeedResponse> GetFeedAsync(
         Guid userId, int? limit, string? cursor, CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 25, 1, MaxLimit);
+        var take = Paging.Take(limit, MaxLimit, fallback: 25);
         var seenAt = await db.Users
             .Where(u => u.Id == userId)
             .Select(u => u.FeedSeenAt)
@@ -167,16 +167,21 @@ public sealed class FollowService(IAppDbContext db, INotificationQueue notificat
             ? await items.CountAsync(ct)
             : await items.Where(i => i.CreationTime > seenAt).CountAsync(ct);
 
-        var offset = Cursor.TryDecode(cursor, out var payload) && int.TryParse(payload, out var parsed)
-            ? Math.Max(0, parsed)
-            : 0;
+        var after = Cursor.DecodeTimeKey(cursor);
 
         var rows = await items
+            // Keyset, not an offset: this is the feed, everybody followed keeps adding to it, and
+            // an offset page shifts under the reader every time one of them does.
+            .Where(i => after == null
+                || i.CreationTime < after.Value.At
+                || (i.CreationTime == after.Value.At && i.Id.CompareTo(after.Value.Id) < 0))
             .OrderByDescending(i => i.CreationTime)
             .ThenByDescending(i => i.Id)
-            .Skip(offset)
             .Take(take + 1)
-            .Select(i => new FeedItem(
+            .Select(i => new KeyedRow<FeedItem>(
+                i.CreationTime,
+                i.Id,
+                new FeedItem(
                 i.Id,
                 i.LinkId,
                 i.PlaylistId,
@@ -188,17 +193,11 @@ public sealed class FollowService(IAppDbContext db, INotificationQueue notificat
                 i.Link.Host!.Hostname,
                 i.Link.Kind,
                 i.Link.WordCount,
-                i.CreationTime))
+                i.CreationTime)))
             .ToListAsync(ct);
 
-        string? next = null;
-        if (rows.Count > take)
-        {
-            rows.RemoveAt(take);
-            next = Cursor.Encode((offset + take).ToString());
-        }
-
-        return new FeedResponse(rows, next, newCount, seenAt);
+        var page = rows.ToPage(take);
+        return new FeedResponse(page.Items, page.NextCursor, newCount, seenAt);
     }
 
     public async Task MarkFeedSeenAsync(Guid userId, CancellationToken ct = default)

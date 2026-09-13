@@ -1,3 +1,4 @@
+using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
@@ -9,7 +10,7 @@ public class AdminService(IAppDbContext db) : IAdminService
 {
     public async Task<IReadOnlyList<AdminUserSummary>> SearchUsersAsync(string? q, int? limit, CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 50, 1, 100);
+        var take = Paging.Take(limit);
         var query = db.Users.AsQueryable();
         if (!string.IsNullOrWhiteSpace(q))
         {
@@ -32,7 +33,7 @@ public class AdminService(IAppDbContext db) : IAdminService
 
     public async Task<IReadOnlyList<AdminHostSummary>> ListHostsAsync(string? q, bool? blocked, int? limit, CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 50, 1, 100);
+        var take = Paging.Take(limit);
         var query = db.Hosts.AsQueryable();
         if (!string.IsNullOrWhiteSpace(q))
         {

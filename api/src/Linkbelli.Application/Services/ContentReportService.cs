@@ -84,10 +84,14 @@ public sealed class ContentReportService(IAppDbContext db, IAuditLog audit) : IC
     public async Task<PagedResult<ContentReportResponse>> ListAsync(
         ReportStatus? status, int? limit, string? cursor, CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 50, 1, MaxLimit);
-        var offset = Cursor.TryDecode(cursor, out var payload) && int.TryParse(payload, out var parsed)
-            ? Math.Max(0, parsed)
-            : 0;
+        var take = Paging.Take(limit, MaxLimit);
+
+        // Offsets, unlike the other listings. The first sort key is whether the report is still
+        // open, which is not a column but a state somebody is actively changing — a cursor naming
+        // a row cannot say which side of that line the row was on when it was named. The queue is
+        // short and read by one or two moderators, so paging it by count is honest enough; the id
+        // tiebreaker below is what makes that count mean the same thing twice.
+        var offset = Cursor.DecodeOffset(cursor);
 
         var query = db.ContentReports.AsNoTracking();
         if (status is { } wanted)
@@ -99,6 +103,7 @@ public sealed class ContentReportService(IAppDbContext db, IAuditLog audit) : IC
             // Open first, then newest: a queue sorted purely by date buries what still needs doing.
             .OrderBy(r => r.Status == ReportStatus.Open ? 0 : 1)
             .ThenByDescending(r => r.CreationTime)
+            .ThenByDescending(r => r.Id)
             .Skip(offset)
             .Take(take + 1)
             .Select(r => new ContentReportResponse(

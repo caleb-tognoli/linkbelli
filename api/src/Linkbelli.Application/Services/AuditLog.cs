@@ -82,10 +82,8 @@ public sealed class AuditLog(IAppDbContext db, ILogger<AuditLog> logger) : IAudi
         string? action, Guid? actorId, Guid? targetId, int? limit, string? cursor,
         CancellationToken ct = default)
     {
-        var take = Math.Clamp(limit ?? 50, 1, MaxLimit);
-        var offset = Cursor.TryDecode(cursor, out var payload) && int.TryParse(payload, out var parsed)
-            ? Math.Max(0, parsed)
-            : 0;
+        var take = Paging.Take(limit, MaxLimit);
+        var after = Cursor.DecodeTimeKey(cursor);
 
         var query = db.AuditEntries.AsNoTracking();
 
@@ -100,22 +98,24 @@ public sealed class AuditLog(IAppDbContext db, ILogger<AuditLog> logger) : IAudi
         if (targetId is { } target) query = query.Where(e => e.TargetId == target);
 
         var rows = await query
+            // Keyset, not an offset. This is append-only and read newest-first, so every entry
+            // written while somebody reads pushes the whole list down by one — an offset page
+            // would hand back rows it had already shown, which on an audit trail reads as the
+            // same action having happened twice.
+            .Where(e => after == null
+                || e.CreationTime < after.Value.At
+                || (e.CreationTime == after.Value.At && e.Id.CompareTo(after.Value.Id) < 0))
             .OrderByDescending(e => e.CreationTime)
             .ThenByDescending(e => e.Id)
-            .Skip(offset)
             .Take(take + 1)
-            .Select(e => new AuditEntryResponse(
-                e.Id, e.ActorId, e.ActorName, e.AsAdmin, e.Action, e.TargetType, e.TargetId,
-                e.Summary, e.Details, e.CreationTime))
+            .Select(e => new KeyedRow<AuditEntryResponse>(
+                e.CreationTime,
+                e.Id,
+                new AuditEntryResponse(
+                    e.Id, e.ActorId, e.ActorName, e.AsAdmin, e.Action, e.TargetType, e.TargetId,
+                    e.Summary, e.Details, e.CreationTime)))
             .ToListAsync(ct);
 
-        string? next = null;
-        if (rows.Count > take)
-        {
-            rows.RemoveAt(take);
-            next = Cursor.Encode((offset + take).ToString());
-        }
-
-        return new PagedResult<AuditEntryResponse>(rows, next);
+        return rows.ToPage(take);
     }
 }
