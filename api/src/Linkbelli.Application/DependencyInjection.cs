@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<IInviteService, InviteService>();
         services.AddScoped<IRegistrationPolicy, RegistrationPolicy>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPreferences, NotificationPreferences>();

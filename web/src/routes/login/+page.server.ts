@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { API_BASE } from '$lib/server/config';
 import { setTokens } from '$lib/server/auth';
+import { safeRedirect } from '$lib/server/redirectTo';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
@@ -25,13 +26,6 @@ export const actions: Actions = {
 
 		setTokens(cookies, await res.json());
 
-		const redirectTo = url.searchParams.get('redirectTo');
-		// Only allow same-origin paths. Reject protocol-relative ("//evil.com") and
-		// backslash-prefixed ("/\evil.com") values, which browsers resolve as absolute URLs.
-		const safeRedirect =
-			redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.startsWith('/\\')
-				? redirectTo
-				: '/';
-		throw redirect(303, safeRedirect);
+		throw redirect(303, safeRedirect(url.searchParams.get('redirectTo')));
 	}
 };

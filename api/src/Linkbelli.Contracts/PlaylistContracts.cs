@@ -153,6 +153,27 @@ public record PublicProfile(
 /// </remarks>
 public record SitemapEntry(string OwnerUsername, string Slug, DateTimeOffset LastModified);
 
+/// <summary>Invite somebody to a playlist. Email optional — the link works either way.</summary>
+public record CreateInviteRequest(string? Email = null, PlaylistRole? Role = null);
+
+/// <summary>
+/// A fresh invitation. The link is shown once and never recoverable — copy it now.
+/// </summary>
+/// <param name="Emailed">
+/// Whether it was also sent. False when no address was given, or when this instance has no mail
+/// configured — which is why the link comes back regardless.
+/// </param>
+public record InviteCreated(Guid Id, string Url, DateTimeOffset ExpiresAt, bool Emailed);
+
+/// <summary>What a link leads to, shown before anybody commits to it.</summary>
+public record InvitePreview(string PlaylistName, string InvitedBy, PlaylistRole Role, DateTimeOffset ExpiresAt);
+
+/// <summary>Where an accepted invitation landed.</summary>
+public record InviteAccepted(Guid PlaylistId, string PlaylistName, PlaylistRole Role);
+
+/// <summary>A live invitation, as its sender sees it. The token is not among the fields.</summary>
+public record InviteSummary(Guid Id, string? Email, PlaylistRole Role, DateTimeOffset ExpiresAt);
+
 /// <summary>A tag and how many playlists carry it (within the queried scope).</summary>
 public record TagSummary(string Name, int PlaylistCount);
 

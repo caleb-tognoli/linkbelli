@@ -19,7 +19,9 @@ const MAIL_LANDINGS = ['/unsubscribe', '/confirm-email'];
 // endpoints; the API still enforces per-endpoint auth (protected calls get 401).
 // "/i" is a shared link: it is opened by whoever it was sent to, who by definition has no
 // account here. Bouncing them to a sign-in page would defeat the point of sharing.
-const ANON_PREFIXES = ['/discover', '/public', '/embed', '/oembed', '/i', '/api/v1'];
+// "/invite" is a link sent to somebody who by definition has no account here yet — being asked
+// to sign in before being told what the invitation is for is the wrong order.
+const ANON_PREFIXES = ['/discover', '/public', '/embed', '/oembed', '/i', '/invite', '/api/v1'];
 
 // Served to crawlers, which never carry a session.
 const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml', '/manifest.webmanifest'];

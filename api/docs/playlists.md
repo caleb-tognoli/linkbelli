@@ -373,6 +373,11 @@ want to hear about it again. Following is the next primitive up, and the feed is
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/api/v1/public/playlists` | Browse public playlists (`?q=`, `?tag=`, `?sort=`) |
+| `POST` | `/api/v1/playlists/{id}/invites` | A link for somebody who has no account here yet. `{ "email": "…", "role": "Contributor" }` — both optional. The link comes back **whether or not it was emailed**, because mail is optional on this product and an instance without it still has to be able to invite people |
+| `GET` | `/api/v1/playlists/{id}/invites` | The live ones. A used or expired invitation is not something to offer to revoke |
+| `DELETE` | `/api/v1/playlists/{id}/invites/{inviteId}` | Take one back before it is used |
+| `GET` | `/api/v1/invites/{token}` | What the link leads to. **Anonymous**, so somebody can see what they are being asked to join before deciding whether to make an account |
+| `POST` | `/api/v1/invites/{token}/accept` | Take it up. Signed in, because it needs somebody to make a member of |
 | `POST` | `/api/v1/public/playlists/{username}/{slug}/fork` | Take a copy into your own library. Signed in, rate-limited. The copy is **private**, carries the same links in the same order and the same tags, and carries none of the original owner's notes, scores or reading history. Public only — unlisted is share-by-link, and being shown something once is not the same as taking a permanent copy. Capped at 2,000 items |
 | `GET` | `/api/v1/public/playlists/{username}/{slug}/similar` | Lists like this one (`?limit=`, default 6) |
 | `GET` | `/api/v1/public/sitemap` | Every public playlist's owner, slug and last-modified date, for a sitemap (`?limit=`, up to 5 000, `?cursor=`). Deliberately lean: no counts, no tags, no like totals — a crawler wants an address and a date, and the discovery listing carries five correlated subqueries per row to answer neither |
@@ -588,6 +593,25 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero. `queue` for "what now": rated things first, then whatever has been carried longest — a queue that leads with the newest arrival is how a backlog becomes permanent |
 | `snoozed` | `true` for only what is put aside and not yet due. Anything else hides those — which is what "not now" has to mean if the button is worth pressing |
 | `limit`, `cursor` | Paging — see [Paging](#paging). A `limit` outside 1–100 is refused |
+
+### Invitations
+
+Membership resolved an existing username or failed, so collaborating meant the other person
+already had an account here **and** you knew their exact username — which, on an instance
+somebody has just stood up, nobody does. Paired with registration that can be closed, an
+operator's only two options were "let the whole internet sign up" and "nobody can ever share with
+me". The two gaps made each other worse.
+
+The token is hashed on the way in, exactly as an API key is: the link is shown once and is never
+recoverable afterwards, because a table of live invitation tokens is a table of ways into other
+people's playlists. It works **once** and lasts **14 days**.
+
+Used, expired and never-existed all answer `404` with the same words. Which of the three it is
+tells an anonymous caller something about a link they were not given.
+
+Two behaviours worth knowing: an invitation to do *more* than somebody can already do is a
+promotion, and one to do *less* is not a demotion — existing access is not taken away by a link.
+And an owner following their own link is not an error; there is simply no membership to add.
 
 ### Operators
 

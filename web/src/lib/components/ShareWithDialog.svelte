@@ -61,6 +61,59 @@
 		}
 	}
 
+	let inviteLink = $state<string | null>(null);
+	let inviteEmailed = $state(false);
+	let inviting = $state(false);
+	let copied = $state(false);
+
+	/**
+	 * A link for somebody who is not here yet.
+	 *
+	 * Adding by username needs them to already have an account and needs you to know its exact
+	 * name — which, on an instance somebody just stood up, nobody does. The link comes back
+	 * whether or not it was emailed, because mail is optional on this product and an instance
+	 * without it still has to be able to invite people.
+	 */
+	async function invite() {
+		inviting = true;
+		error = null;
+		copied = false;
+		try {
+			const address = username.trim();
+			const res = await api.post(`/playlists/${playlistId}/invites`, {
+				// The same box. Somebody typing an address plainly means "send it to them", and
+				// making them find a second field to say so would be the app being pedantic.
+				email: address.includes('@') ? address : null,
+				role
+			});
+
+			if (!res.ok) {
+				error = await problem(res);
+				return;
+			}
+
+			const created = (await res.json()) as { url: string; emailed: boolean };
+			inviteLink = created.url;
+			inviteEmailed = created.emailed;
+			username = '';
+		} finally {
+			inviting = false;
+		}
+	}
+
+	async function copyInvite() {
+		if (!inviteLink) return;
+
+		try {
+			await navigator.clipboard.writeText(inviteLink);
+			copied = true;
+		} catch {
+			// Clipboard refused — a permissions prompt declined, or an insecure origin. The link
+			// is on screen and selectable, which is the fallback anyway.
+			copied = false;
+		}
+	}
+
 	async function setRole(member: PlaylistMember, value: PlaylistRole) {
 		const res = await api.put(
 			`/playlists/${playlistId}/members/${encodeURIComponent(member.username)}`,
@@ -100,15 +153,16 @@
 			</div>
 
 			<p class="mt-1 shrink-0 text-sm" style="color: var(--color-muted)">
-				With specific people, by username. Making it public is a separate decision.
+				With specific people, by username — or with a link, for somebody who has no account
+				here yet. Making it public is a separate decision.
 			</p>
 
 			<div class="mt-3 flex shrink-0 gap-2">
 				<input
 					bind:value={username}
 					onkeydown={(e) => e.key === 'Enter' && share()}
-					placeholder="username"
-					aria-label="Username"
+					placeholder="username or email"
+					aria-label="Username or email address"
 					class="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
 					style={fieldStyle}
 				/>
@@ -129,6 +183,50 @@
 			<p class="mt-1.5 shrink-0 text-xs" style="color: var(--color-muted)">
 				{roles.find((r) => r.value === role)?.hint}
 			</p>
+
+			<div class="mt-2 shrink-0">
+				<button
+					type="button"
+					onclick={invite}
+					disabled={inviting}
+					class="text-xs underline underline-offset-2 disabled:opacity-60"
+					style="color: var(--color-accent)"
+				>
+					{inviting ? 'Making a link…' : 'Invite by link instead'}
+				</button>
+				{#if username.includes('@')}
+					<span class="ml-1 text-xs" style="color: var(--color-muted)">— and email it there</span>
+				{/if}
+			</div>
+
+			{#if inviteLink}
+				<div
+					class="mt-2 shrink-0 rounded-md border p-2.5 text-xs"
+					style="border-color: var(--color-border)"
+				>
+					<p style="color: var(--color-muted)">
+						{inviteEmailed
+							? 'Sent. The link also works if you would rather pass it on yourself:'
+							: 'Copy this and send it however you like. It works once, and lasts two weeks.'}
+					</p>
+					<div class="mt-1.5 flex items-center gap-2">
+						<input
+							readonly
+							value={inviteLink}
+							onfocus={(e) => e.currentTarget.select()}
+							aria-label="Invitation link"
+							class="min-w-0 flex-1 rounded border px-2 py-1 font-mono"
+							style={fieldStyle}
+						/>
+						<button
+							type="button"
+							onclick={copyInvite}
+							class="shrink-0 rounded-md border px-2 py-1"
+							style="border-color: var(--color-border)"
+						>{copied ? 'Copied' : 'Copy'}</button>
+					</div>
+				</div>
+			{/if}
 
 			{#if error}
 				<p class="mt-2 shrink-0 text-sm" style="color: var(--color-danger)">{error}</p>

@@ -305,6 +305,7 @@ v1.MapFolderEndpoints();
 v1.MapLinkEndpoints();
 v1.MapSourceEndpoints();
 v1.MapTagEndpoints();
+v1.MapInviteEndpoints();
 v1.MapAdminEndpoints();
 v1.MapImportEndpoints();
 v1.MapTrashEndpoints();

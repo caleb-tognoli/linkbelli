@@ -32,6 +32,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<PlaylistLike> PlaylistLikes => Set<PlaylistLike>();
     public DbSet<Follow> Follows => Set<Follow>();
     public DbSet<PlaylistMember> PlaylistMembers => Set<PlaylistMember>();
+    public DbSet<Invite> Invites => Set<Invite>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
@@ -230,6 +231,17 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.Property(r => r.TitlePattern).HasMaxLength(200);
             e.Property(r => r.UrlPattern).HasMaxLength(200);
             e.HasIndex(r => new { r.OwnerId, r.Position });
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<Invite>(e =>
+        {
+            e.Property(i => i.TokenHash).HasMaxLength(64);
+            e.Property(i => i.Email).HasMaxLength(256);
+            // The only lookup there is: a link arrives and the hash is the whole of what it says.
+            e.HasIndex(i => i.TokenHash).IsUnique().ExcludeSoftDeleted();
+            e.HasIndex(i => i.PlaylistId);
+            e.HasOne(i => i.Playlist).WithMany().OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 

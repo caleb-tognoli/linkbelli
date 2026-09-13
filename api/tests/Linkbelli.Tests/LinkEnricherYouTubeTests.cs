@@ -184,6 +184,7 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
     public DbSet<PlaylistLike> PlaylistLikes => Set<PlaylistLike>();
     public DbSet<Follow> Follows => Set<Follow>();
     public DbSet<PlaylistMember> PlaylistMembers => Set<PlaylistMember>();
+    public DbSet<Invite> Invites => Set<Invite>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();

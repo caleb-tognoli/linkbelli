@@ -95,6 +95,28 @@ public static class EmailTemplates
             ],
             ("Confirm this address", confirmUrl));
 
+    /// <summary>
+    /// Somebody asking you to join a playlist.
+    /// </summary>
+    /// <remarks>
+    /// The name of whoever sent it and the name of the list are both things a person chose, so
+    /// both go through the escaper — which is the difference between an invitation and an
+    /// injection.
+    /// </remarks>
+    public static EmailMessage PlaylistInvite(
+        string to, string from, string playlistName, string url, int validForDays) =>
+        Compose(
+            "playlist-invite",
+            to,
+            $"{from} shared a playlist with you on Linkbelli",
+            "You have been invited",
+            [
+                $"{from} would like you to join \"{playlistName}\" on Linkbelli.",
+                $"The link works once, and stops working after {validForDays} days.",
+                "You do not need an account yet — you can make one on the way in.",
+            ],
+            ("Open the playlist", url));
+
     public static EmailMessage PasswordReset(string to, string resetUrl, int validForHours) =>
         Compose(
             "password-reset",

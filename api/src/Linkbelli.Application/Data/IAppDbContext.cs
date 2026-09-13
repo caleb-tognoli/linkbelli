@@ -37,6 +37,7 @@ public interface IAppDbContext
     DbSet<PlaylistLike> PlaylistLikes { get; }
     DbSet<Follow> Follows { get; }
     DbSet<PlaylistMember> PlaylistMembers { get; }
+    DbSet<Invite> Invites { get; }
     DbSet<AuditEntry> AuditEntries { get; }
     DbSet<ContentReport> ContentReports { get; }
     DbSet<IdempotencyRecord> IdempotencyRecords { get; }

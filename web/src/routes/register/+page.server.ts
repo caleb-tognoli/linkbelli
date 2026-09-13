@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { API_BASE } from '$lib/server/config';
 import { setTokens } from '$lib/server/auth';
+import { safeRedirect } from '$lib/server/redirectTo';
 import type { Actions } from './$types';
 
 /** Pull a readable message out of an RFC7807 ValidationProblemDetails body. */
@@ -15,7 +16,7 @@ function firstValidationError(body: unknown): string | null {
 }
 
 export const actions: Actions = {
-	default: async ({ request, cookies, fetch }) => {
+	default: async ({ request, cookies, fetch, url }) => {
 		const data = await request.formData();
 		const username = String(data.get('username') ?? '').trim();
 		const email = String(data.get('email') ?? '').trim();
@@ -48,11 +49,16 @@ export const actions: Actions = {
 		});
 
 		if (!login.ok) {
-			// Account exists but auto-login failed — send them to the login page.
-			throw redirect(303, '/login');
+			// Account exists but auto-login failed — send them to the login page, keeping where
+			// they were going so they still get there.
+			const next = url.searchParams.get('redirectTo');
+			throw redirect(303, next ? `/login?redirectTo=${encodeURIComponent(safeRedirect(next))}` : '/login');
 		}
 
 		setTokens(cookies, await login.json());
-		throw redirect(303, '/');
+
+		// Somebody who signed up from an invitation link lands back on it, rather than on a home
+		// page holding a link they have half used. Login has always done this; register did not.
+		throw redirect(303, safeRedirect(url.searchParams.get('redirectTo')));
 	}
 };

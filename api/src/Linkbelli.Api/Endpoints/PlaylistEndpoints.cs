@@ -64,6 +64,32 @@ public static class PlaylistEndpoints
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
             .WithName("RemovePlaylistMember");
 
+        // Membership resolved an existing username or failed, so collaborating meant the other
+        // person already had an account here and you knew their exact username — which, on an
+        // instance you have just stood up, nobody does.
+        group.MapPost("/{id:guid}/invites", async (
+            Guid id, CreateInviteRequest req, ClaimsPrincipal user,
+            IInviteService svc, CancellationToken ct) =>
+            Results.Ok(await svc.CreateAsync(user.GetUserId(), id, req, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .RequireRateLimiting("sensitive")
+            .WithName("CreatePlaylistInvite");
+
+        group.MapGet("/{id:guid}/invites", async (
+            Guid id, ClaimsPrincipal user, IInviteService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListAsync(user.GetUserId(), id, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("ListPlaylistInvites");
+
+        group.MapDelete("/{id:guid}/invites/{inviteId:guid}", async (
+            Guid id, Guid inviteId, ClaimsPrincipal user, IInviteService svc, CancellationToken ct) =>
+        {
+            await svc.RevokeAsync(user.GetUserId(), inviteId, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("RevokePlaylistInvite");
+
         // The lightest thing a visitor can say about someone else's list. Signed in, because a
         // count anyone can run up says nothing — and it is what discovery ranks on.
         group.MapPost("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
