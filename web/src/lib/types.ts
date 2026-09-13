@@ -535,6 +535,8 @@ export interface SavedSearch {
 	kind: string | null;
 	/** Only what can be read in this many minutes. */
 	maxMinutes: number | null;
+	/** Whether this one is kept in the sidebar, with a live count. */
+	pinned?: boolean;
 }
 
 /** One value a source template asks the person for. */
@@ -575,6 +577,13 @@ export interface Usage {
 }
 
 /** One "when this arrives, do that" over your own collection. Conditions are all required. */
+/** A saved search kept in the sidebar, and how many things match it right now. */
+export interface PinnedSearch {
+	id: string;
+	name: string;
+	count: number;
+}
+
 export interface AutomationRule {
 	id: string;
 	name: string;

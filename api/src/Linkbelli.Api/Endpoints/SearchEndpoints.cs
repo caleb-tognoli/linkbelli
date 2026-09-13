@@ -50,6 +50,20 @@ public static class SearchEndpoints
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
             .WithName("SaveSearch");
 
+        // A saved search was a question you re-asked by hand from this page. Pinned, it is
+        // something with a number beside it in the sidebar — which is most of what a "smart
+        // playlist" would be, for a fraction of the decisions one brings with it.
+        group.MapGet("/saved/pinned", async (ClaimsPrincipal user, ISearchService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListPinnedAsync(user.GetUserId(), ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
+            .WithName("ListPinnedSearches");
+
+        group.MapPut("/saved/{id:guid}/pinned", async (
+            Guid id, PinSearchRequest req, ClaimsPrincipal user, ISearchService svc, CancellationToken ct) =>
+            Results.Ok(await svc.PinAsync(user.GetUserId(), id, req.Pinned, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("PinSavedSearch");
+
         group.MapGet("/saved/{id:guid}", async (
             Guid id, ClaimsPrincipal user, ISearchService svc, int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.RunSavedAsync(user.GetUserId(), id, limit, cursor, ct)))

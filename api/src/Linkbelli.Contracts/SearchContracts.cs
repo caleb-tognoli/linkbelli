@@ -67,6 +67,12 @@ public record SearchQuery(
     bool? Snoozed = null);
 
 /// <summary>A search someone wants to come back to. Membership is whatever matches right now.</summary>
+/// <summary>A pinned search and how many things match it right now.</summary>
+public record PinnedSearch(Guid Id, string Name, int Count);
+
+/// <summary>Keep a saved search in the sidebar, or take it out.</summary>
+public record PinSearchRequest(bool Pinned);
+
 public record SavedSearchResponse(
     Guid Id,
     string Name,
@@ -82,7 +88,9 @@ public record SavedSearchResponse(
     /// <summary>Restrict to one kind of thing.</summary>
     string? Kind = null,
     /// <summary>Only what can be read in this many minutes.</summary>
-    int? MaxMinutes = null);
+    int? MaxMinutes = null,
+    /// <summary>Whether this one is kept in the sidebar.</summary>
+    bool Pinned = false);
 
 public record SaveSearchRequest(
     string Name,

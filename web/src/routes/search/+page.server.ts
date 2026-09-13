@@ -33,14 +33,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	for (const tag of itemTags) params.append('itemTag', tag);
 	params.set('limit', '25');
 
+	// Opened from the sidebar. The saved search is run by id rather than unpacked into query
+	// parameters, so what runs is exactly what was saved — including anything added to saved
+	// searches later that the unpacking here has not learned about yet.
+	const savedId = url.searchParams.get('saved');
+
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
 	const [resultsRes, hostsRes, savedRes] = await Promise.all([
-		locals.api(`/api/v1/search?${params}`),
+		locals.api(savedId ? `/api/v1/search/saved/${savedId}?limit=25` : `/api/v1/search?${params}`),
 		locals.api('/api/v1/search/hosts'),
 		locals.api('/api/v1/search/saved')
 	]);
 
 	return {
+		savedId,
 		q,
 		host,
 		status,

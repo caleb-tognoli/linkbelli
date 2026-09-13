@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
-	import { Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge } from '@lucide/svelte';
+	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -81,6 +81,30 @@
 			</a>
 		{/each}
 	</nav>
+
+	{#if showLabels && data.pinned.length > 0}
+		<!-- A saved search was a question you re-asked by hand from the search page, so
+		     "everything unread from these five sites under ten minutes" could be asked but not
+		     had. With a number beside it, it is a thing you look at. -->
+		<div class="mt-4 border-t pt-3" style="border-color: var(--color-border)">
+			<p class="px-3 pb-1.5 text-xs font-medium" style="color: var(--color-muted)">Searches</p>
+			<nav class="flex flex-col gap-0.5 text-sm">
+				{#each data.pinned as saved (saved.id)}
+					<a
+						href={`/search?saved=${saved.id}`}
+						class="flex items-center gap-2 rounded-md px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+						title={saved.name}
+					>
+						<Bookmark size={15} aria-hidden="true" class="shrink-0" />
+						<span class="min-w-0 flex-1 truncate">{saved.name}</span>
+						<span class="shrink-0 text-xs tabular-nums" style="color: var(--color-muted)">
+							{saved.count}
+						</span>
+					</a>
+				{/each}
+			</nav>
+		</div>
+	{/if}
 
 	{#if showLabels && data.folders.length > 0}
 		<!-- Folders are a ten-deep tree in the API and were only reachable one page at a time. -->

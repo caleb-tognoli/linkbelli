@@ -26,6 +26,20 @@ public interface ISearchService
     /// <summary>Searches the caller has saved to come back to, newest first.</summary>
     Task<IReadOnlyList<SavedSearchResponse>> ListSavedAsync(Guid ownerId, CancellationToken ct = default);
 
+    /// <summary>
+    /// How many things each pinned search matches right now.
+    /// </summary>
+    /// <remarks>
+    /// The count is the point. A saved search without one is a link; with one it is something you
+    /// glance at. Capped at a handful because this is a count query each, on a request the app
+    /// layout makes on every navigation.
+    /// </remarks>
+    Task<IReadOnlyList<PinnedSearch>> ListPinnedAsync(Guid ownerId, CancellationToken ct = default);
+
+    /// <summary>Keeps one in the sidebar, or takes it out.</summary>
+    Task<SavedSearchResponse> PinAsync(
+        Guid ownerId, Guid id, bool pinned, CancellationToken ct = default);
+
     /// <summary>Saves a search under a name.</summary>
     Task<SavedSearchResponse> SaveAsync(Guid ownerId, SaveSearchRequest request, CancellationToken ct = default);
 
@@ -211,8 +225,78 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
             .OrderByDescending(ss => ss.CreationTime)
             .Select(ss => new SavedSearchResponse(
                 ss.Id, ss.Name, ss.Query, ss.Host, ss.Tags, ss.ItemTags,
-                ss.Status, ss.MinScore, ss.Broken, ss.Sort, ss.CreationTime))
+                ss.Status, ss.MinScore, ss.Broken, ss.Sort, ss.CreationTime,
+                ss.Kind, ss.MaxMinutes, ss.Pinned))
             .ToListAsync(ct);
+
+    /// <summary>
+    /// The most that can be kept in the sidebar.
+    /// </summary>
+    /// <remarks>
+    /// Each one is a count query on a request the layout makes on every navigation, so this is a
+    /// budget rather than a taste. It is also about as many as a sidebar can show before it stops
+    /// being a sidebar.
+    /// </remarks>
+    public const int MaxPinned = 5;
+
+    public async Task<IReadOnlyList<PinnedSearch>> ListPinnedAsync(
+        Guid ownerId, CancellationToken ct = default)
+    {
+        var pinned = await db.SavedSearches
+            .Where(ss => ss.OwnerId == ownerId && ss.Pinned)
+            .OrderBy(ss => ss.Name)
+            .Take(MaxPinned)
+            .ToListAsync(ct);
+
+        var counts = new List<PinnedSearch>(pinned.Count);
+        foreach (var saved in pinned)
+        {
+            // One page of one, for the total. SearchAsync counts the filtered set on a first
+            // page and carries it, so asking for the smallest page is asking for the count.
+            var page = await SearchAsync(ownerId, ToQuery(saved, limit: 1, cursor: null), ct);
+            counts.Add(new PinnedSearch(saved.Id, saved.Name, page.Total ?? 0));
+        }
+
+        return counts;
+    }
+
+    public async Task<SavedSearchResponse> PinAsync(
+        Guid ownerId, Guid id, bool pinned, CancellationToken ct = default)
+    {
+        var saved = await db.SavedSearches.FirstOrDefaultAsync(ss => ss.Id == id && ss.OwnerId == ownerId, ct)
+            ?? throw new NotFoundException("Saved search not found.");
+
+        if (pinned && !saved.Pinned)
+        {
+            var already = await db.SavedSearches.CountAsync(ss => ss.OwnerId == ownerId && ss.Pinned, ct);
+            if (already >= MaxPinned)
+            {
+                throw new ValidationException(
+                    "pinned",
+                    $"You can keep {MaxPinned} searches in the sidebar. Take one out first.");
+            }
+        }
+
+        saved.Pinned = pinned;
+        await db.SaveChangesAsync(ct);
+
+        return new SavedSearchResponse(
+            saved.Id, saved.Name, saved.Query, saved.Host, saved.Tags, saved.ItemTags,
+            saved.Status, saved.MinScore, saved.Broken, saved.Sort, saved.CreationTime,
+            saved.Kind, saved.MaxMinutes, saved.Pinned);
+    }
+
+    /// <summary>
+    /// A saved search as the query it stands for.
+    /// </summary>
+    /// <remarks>
+    /// Run now rather than as of when it was saved: that is the whole point of keeping the
+    /// question rather than the answer.
+    /// </remarks>
+    private static SearchQuery ToQuery(SavedSearch saved, int? limit, string? cursor) =>
+        new(saved.Query, saved.Host, saved.Tags, saved.ItemTags, saved.Status, saved.MinScore,
+            FinishedSince: null, saved.Broken ? true : null, saved.Kind, saved.MaxMinutes,
+            saved.Sort, limit, cursor);
 
     public async Task<SavedSearchResponse> SaveAsync(
         Guid ownerId, SaveSearchRequest request, CancellationToken ct = default)
@@ -263,12 +347,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
         var saved = await db.SavedSearches.FirstOrDefaultAsync(ss => ss.Id == id && ss.OwnerId == ownerId, ct)
             ?? throw new NotFoundException("Saved search not found.");
 
-        // Run now, not as of when it was saved: that is the whole point of saving the question
-        // rather than the answer.
-        return await SearchAsync(ownerId, new SearchQuery(
-            saved.Query, saved.Host, saved.Tags, saved.ItemTags, saved.Status, saved.MinScore,
-            FinishedSince: null, saved.Broken ? true : null, saved.Kind, saved.MaxMinutes,
-            saved.Sort, limit, cursor), ct);
+        return await SearchAsync(ownerId, ToQuery(saved, limit, cursor), ct);
     }
 
     /// <summary>

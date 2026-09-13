@@ -30,6 +30,21 @@ public class SavedSearch : BaseEntity<Guid>
 
     public int? MinScore { get; set; }
 
+    /// <summary>
+    /// Kept in the sidebar, with a count of what matches right now.
+    /// </summary>
+    /// <remarks>
+    /// A saved search was a question you re-asked by hand from the search page, so "everything
+    /// unread from these five sites under ten minutes" could be asked but not <em>had</em> — not
+    /// opened from the sidebar, not glanced at, not a thing with a number beside it.
+    ///
+    /// The full version of this is a playlist whose membership is a query, which brings a pile
+    /// of decisions with it: manual ordering, a cover, membership roles, all of which a query
+    /// cannot have. Pinning is most of the value for a fraction of that, and a way to find out
+    /// whether anybody wants the rest.
+    /// </remarks>
+    public bool Pinned { get; set; }
+
     /// <summary>Only links whose page is gone or unreadable.</summary>
     public bool Broken { get; set; }
 

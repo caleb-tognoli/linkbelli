@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, BookOpen, Bookmark, Search, Eye, Star, X } from '@lucide/svelte';
+	import { AlertCircle, BookOpen, Bookmark, Pin, Search, Eye, Star, X } from '@lucide/svelte';
 	import KindBadge from '$lib/components/KindBadge.svelte';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
 	import type { Paged, SavedSearch, SearchHit } from '$lib/types';
@@ -99,6 +99,36 @@
 		goto(`/search?${params}`, { noScroll: true });
 	}
 
+	/** The saved search being shown, when the page was opened from the sidebar. */
+	const openedSaved = $derived(
+		data.savedId ? (data.saved.find((s) => s.id === data.savedId) ?? null) : null
+	);
+
+	let pinning = $state<string | null>(null);
+	let pinError = $state<string | null>(null);
+
+	/**
+	 * Keeps a saved search in the sidebar, or takes it out.
+	 *
+	 * Capped on the API side, because each pinned search is a count query on a request the app
+	 * layout makes on every navigation — so refusing the sixth is a budget, not a taste.
+	 */
+	async function togglePin(saved: SavedSearch) {
+		pinning = saved.id;
+		pinError = null;
+
+		const res = await api.put(`/search/saved/${saved.id}/pinned`, { pinned: !saved.pinned });
+		pinning = null;
+
+		if (res.ok) {
+			await invalidateAll();
+		} else if (res.status === 400) {
+			pinError = 'You can keep five searches in the sidebar. Take one out first.';
+		} else {
+			pinError = 'Could not change that.';
+		}
+	}
+
 	async function forgetSaved(saved: SavedSearch) {
 		const ok = await confirmDialog(`Forget "${saved.name}"? The links it finds are not affected.`, {
 			confirmLabel: 'Forget'
@@ -145,9 +175,15 @@
 </script>
 
 <section class="mx-auto max-w-4xl">
-	<h1 class="text-2xl font-semibold">Search</h1>
+	<h1 class="text-2xl font-semibold">{openedSaved?.name ?? 'Search'}</h1>
 	<p class="mt-1 text-sm" style="color: var(--color-muted)">
-		Across every playlist you own — titles, descriptions, notes, addresses and the article text.
+		{#if openedSaved}
+			<!-- Said plainly, because the boxes and chips below show the empty search rather than
+			     this one — the saved search is run by id, not unpacked into them. -->
+			A saved search, run just now. <a href="/search" class="underline underline-offset-2">Start a new one</a>
+		{:else}
+			Across every playlist you own — titles, descriptions, notes, addresses and the article text.
+		{/if}
 	</p>
 
 	<div class="relative mt-5">
@@ -276,6 +312,9 @@
 
 	{#if data.saved.length || hasFilters}
 		<div class="mt-3 flex flex-wrap items-center gap-1.5">
+			{#if pinError}
+				<span class="text-xs" style="color: var(--color-danger)" role="alert">{pinError}</span>
+			{/if}
 			{#each data.saved as saved (saved.id)}
 				<span
 					class="inline-flex items-center rounded-md border text-xs"
@@ -283,6 +322,19 @@
 				>
 					<button type="button" onclick={() => applySaved(saved)} class="px-2 py-1 hover:underline">
 						<Bookmark size={11} aria-hidden="true" class="mr-1 inline" />{saved.name}
+					</button>
+					<button
+						type="button"
+						onclick={() => togglePin(saved)}
+						disabled={pinning !== null}
+						class="border-l px-1.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+						style="border-color: var(--color-border); color: {saved.pinned
+							? 'var(--color-accent)'
+							: 'var(--color-muted)'}"
+						title={saved.pinned ? `Take ${saved.name} out of the sidebar` : `Keep ${saved.name} in the sidebar`}
+						aria-pressed={saved.pinned ?? false}
+					>
+						<Pin size={11} aria-hidden="true" />
 					</button>
 					<button
 						type="button"

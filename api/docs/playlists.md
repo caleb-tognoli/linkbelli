@@ -628,6 +628,20 @@ Two behaviours worth knowing: an invitation to do *more* than somebody can alrea
 promotion, and one to do *less* is not a demotion — existing access is not taken away by a link.
 And an owner following their own link is not an error; there is simply no membership to add.
 
+### Saved searches, pinned
+
+A saved search was a question you re-asked by hand from the search page. `PUT
+/api/v1/search/saved/{id}/pinned` with `{ "pinned": true }` keeps it in the sidebar instead, and
+`GET /api/v1/search/saved/pinned` returns each one with **how many things match right now**.
+
+The count is the point. Without one a saved search is a link; with one it is something you glance
+at, which is most of what a "smart playlist" would be — for a fraction of the decisions one brings
+with it, since a playlist whose membership is a query cannot have manual ordering, a cover, or
+members.
+
+**Five at most.** Each pinned search is a count query on a request the app layout makes on every
+navigation, so the limit is a budget rather than a taste. The sixth is a `400` saying so.
+
 ### Operators
 
 `q` understands a few operators, so the filters beside it can also be typed — which is what makes
