@@ -62,11 +62,37 @@ The cache is only what stands in when there is no network at all, and a request 
 gets a plain offline page written into the worker itself, since the one thing certainly
 unavailable in that branch is the server.
 
-Registration is explicit (`src/lib/serviceWorker.ts`), called once from the root layout. It is not
-left to the framework: nothing in the built output registered it, and a worker that is compiled
-but never installed looks like offline support while providing none.
+Registration is explicit (`src/lib/serviceWorker.svelte.ts`), called once from the root layout. It
+is not left to the framework: nothing in the built output registered it, and a worker that is
+compiled but never installed looks like offline support while providing none.
 
-> **Not verified in an automated test.** Service worker registration is blocked in the browser
-> this was developed against, so the caching behaviour above has only been reasoned about and
-> built, not exercised. The queue, which is the part that prevents losing a link, is verified
-> end to end. Check the worker in a real browser's Application tab before relying on it.
+### When it does not install
+
+Some browsers refuse, and for reasons the app cannot fix — an embedded webview, a private window,
+an enterprise policy, a page served over plain http from something other than localhost.
+
+That used to be caught and discarded, on the reasoning that a failed registration costs nothing
+the app had before. It costs the app the feature this document promises, and it costs the
+maintainer any chance of noticing, because a capability that fails in silence is indistinguishable
+from one that works. So now:
+
+- The outcome is recorded (`pending` / `ready` / `unsupported` / `failed`) and the browser's own
+  words are kept.
+- The failure is logged with `console.warn`, saying what stops working.
+- `/save` and the settings page say the app will need a connection to open. Settings also prints
+  the browser's reason; `/save` does not, because a raw `TypeError` on the share-sheet screen is
+  noise in the one place speed matters.
+
+The wording keeps the two halves apart. Without the worker the app cannot be **opened** offline;
+the queue is `localStorage` and is unaffected, so a link saved from a tab that is already open is
+still kept. "Offline saving is unavailable" would be the easy sentence and the wrong one.
+
+`shellCacheBlocked` — the part decided before asking the browser, including the localhost
+exemption that keeps development honest — is covered in `src/lib/shellCache.test.ts`.
+
+> **The caching behaviour itself is not covered by an automated test.** Registration was verified
+> by hand: it succeeds in Chrome against the Docker build, and fails in the embedded Chromium this
+> was developed in — which is what the notice above exists for. What the worker then caches has
+> been reasoned about and built, not exercised. The queue, which is the part that prevents losing
+> a link, is verified end to end. Check the worker in a real browser's Application tab before
+> relying on it.

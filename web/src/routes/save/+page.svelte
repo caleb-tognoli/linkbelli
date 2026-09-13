@@ -4,6 +4,7 @@
 	import { api } from '$lib/api/client';
 	import { Check, Clock, ExternalLink } from '@lucide/svelte';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
+	import OfflineSupportNotice from '$lib/components/OfflineSupportNotice.svelte';
 	import { outcomeFor } from '$lib/offlineQueue';
 	import type { PageData } from './$types';
 
@@ -172,6 +173,10 @@
 				class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
 				style="background: var(--color-accent); color: var(--color-accent-contrast)"
 			>{busy ? 'Saving…' : 'Save'}</button>
+
+			<!-- This is the screen the share sheet lands on, and the one that promises to work
+			     without a connection. If it will not, here is where that has to be said. -->
+			<OfflineSupportNotice compact />
 
 			{#if url.trim()}
 				<a

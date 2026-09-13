@@ -10,7 +10,7 @@
 	import FolderTree from '$lib/components/FolderTree.svelte';
 	import OfflineQueueBanner from '$lib/components/OfflineQueueBanner.svelte';
 	import { watchConnection } from '$lib/offlineSaves.svelte';
-	import { registerServiceWorker } from '$lib/serviceWorker';
+	import { registerServiceWorker } from '$lib/serviceWorker.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
