@@ -6,7 +6,7 @@
 	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
 	import OnboardingChecklist from '$lib/components/OnboardingChecklist.svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
-	import { CopyCheck, Trash2 } from '@lucide/svelte';
+	import { CopyCheck, Tags, Trash2 } from '@lucide/svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -26,6 +26,14 @@
 				aria-label="Duplicates"
 			>
 				<CopyCheck size={18} aria-hidden="true" />
+			</a>
+			<a
+				href="/tags"
+				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+				title="Tags"
+				aria-label="Tags"
+			>
+				<Tags size={18} aria-hidden="true" />
 			</a>
 			<a
 				href="/trash"

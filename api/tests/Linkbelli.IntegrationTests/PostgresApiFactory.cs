@@ -52,6 +52,18 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
     /// </remarks>
     public const int CredentialsPerMinute = 5000;
 
+    /// <summary>
+    /// The global burst this suite runs with.
+    /// </summary>
+    /// <remarks>
+    /// The shipped 300 sustains 900 requests a minute per partition, and every anonymous request
+    /// in the suite — every register, every login, every public page — shares one. A full run
+    /// passes that, so the limiter would start refusing whichever tests happened to run last,
+    /// which is how this arrived: a handful of failures that moved between runs and passed
+    /// whenever the class was run on its own.
+    /// </remarks>
+    public const int GlobalBurst = 20_000;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -72,6 +84,7 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
         // anything. Raised, not removed — RateLimitTests still proves the limiter applies.
         builder.UseSetting("RateLimits:SensitivePerMinute", SensitivePerMinute.ToString());
         builder.UseSetting("RateLimits:CredentialsPerMinute", CredentialsPerMinute.ToString());
+        builder.UseSetting("RateLimits:GlobalBurst", GlobalBurst.ToString());
 
         builder.ConfigureServices(services =>
         {

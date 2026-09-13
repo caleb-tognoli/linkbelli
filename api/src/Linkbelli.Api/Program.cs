@@ -117,13 +117,19 @@ builder.Services.AddRateLimiter(options =>
 
         return ValueTask.CompletedTask;
     };
+    // Configurable for the same reason the two policies below are: every anonymous caller shares
+    // one partition, and a signed-out crowd behind one NAT — or an integration suite registering
+    // six hundred accounts from one host — looks exactly like a single abusive client. Replenishes
+    // at half the burst every ten seconds, so the shipped 300 sustains 900 a minute.
+    var globalBurst = builder.Configuration.GetValue<int?>("RateLimits:GlobalBurst") ?? 300;
+
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
         RateLimitPartition.GetTokenBucketLimiter(ResolvePartitionKey(http), _ => new TokenBucketRateLimiterOptions
         {
             // Per user session (see ResolvePartitionKey). A single page load fans out to several
             // API calls, so allow generous bursts; replenish steadily.
-            TokenLimit = 300,
-            TokensPerPeriod = 150,
+            TokenLimit = globalBurst,
+            TokensPerPeriod = globalBurst / 2,
             ReplenishmentPeriod = TimeSpan.FromSeconds(10),
             QueueLimit = 0,
             AutoReplenishment = true,

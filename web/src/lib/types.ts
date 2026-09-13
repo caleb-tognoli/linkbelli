@@ -82,6 +82,26 @@ export interface TagSummary {
 	playlistCount: number;
 }
 
+/**
+ * A tag counted on both sides, for the management screen.
+ *
+ * Separate from TagSummary because the item count is only ever asked for over your own library —
+ * autocomplete and discovery want the playlist count and nothing else.
+ */
+export interface TagUsage {
+	name: string;
+	playlistCount: number;
+	itemCount: number;
+}
+
+/** What a rename or a delete actually touched. */
+export interface TagChange {
+	playlists: number;
+	items: number;
+	/** True when the destination already existed, making this a merge rather than a rename. */
+	merged: boolean;
+}
+
 /** A private folder node. The tree is built client-side from `parentId`. */
 export interface Folder {
 	id: string;

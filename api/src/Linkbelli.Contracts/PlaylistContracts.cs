@@ -102,6 +102,28 @@ public record PublicProfile(
 /// <summary>A tag and how many playlists carry it (within the queried scope).</summary>
 public record TagSummary(string Name, int PlaylistCount);
 
+/// <summary>
+/// A tag the caller uses, counted on both sides.
+/// </summary>
+/// <remarks>
+/// Separate from <see cref="TagSummary"/> rather than a field added to it: the item count is
+/// only ever asked for over one person's own library, and a playlist-only count is the right
+/// answer for autocomplete and for discovery, where item tags are nobody else's business.
+/// </remarks>
+public record TagUsage(string Name, int PlaylistCount, int ItemCount);
+
+/// <summary>Rename a tag, or merge it into one that already exists.</summary>
+public record RenameTagRequest(string From, string To);
+
+/// <summary>Remove every use of a tag from the caller's library.</summary>
+public record DeleteTagRequest(string Name);
+
+/// <summary>What a rename or a delete actually touched.</summary>
+/// <param name="Playlists">Playlist tags repointed or removed.</param>
+/// <param name="Items">Item tags repointed or removed.</param>
+/// <param name="Merged">Whether the destination name already existed, making this a merge.</param>
+public record TagChange(int Playlists, int Items, bool Merged = false);
+
 // --- Items ---
 public record AddItemRequest(string Url, string? Note);
 

@@ -118,6 +118,7 @@ the first three are the ones you reach for when something is wrong.
 | `Registration:Mode` | `Open` | `Open`, `FirstUserOnly` (only while the instance has no accounts) or `Closed`. There is otherwise no way to stop anyone who can reach the address getting an account, an outbound fetcher and a public profile on your domain. |
 | `RateLimits:CredentialsPerMinute` | `20` | Sign-in and sign-up attempts per caller. Lockout already caps failures per account; this caps them per caller. |
 | `RateLimits:SensitivePerMinute` | `10` | Per caller, for the endpoints whose cost falls on somebody else — an outbound fetch, a provider's send quota, a person's inbox. |
+| `RateLimits:GlobalBurst` | `300` | Requests a caller may burst before throttling, across everything. Replenishes at half this every ten seconds, so `300` sustains 900 a minute. Raise it if a crowd behind one address shares a partition — signed-out callers are bucketed by IP. |
 | `ForwardedHeaders:TrustedNetworks` | private ranges | CIDRs whose `X-Forwarded-For` is believed. The API always sits behind the web BFF, and without this every request appears to come from it — which makes the anonymous rate limit one bucket for the whole internet. |
 | `ForwardedHeaders:Limit` | `2` | How many proxy hops to trust: one for the BFF, one for a proxy in front of it. |
 | `Quota:DefaultMaxSources` | see `UserQuota` | Applied when a user's quota row is first created. |
