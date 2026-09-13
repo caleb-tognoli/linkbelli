@@ -164,7 +164,22 @@ public record PlaylistItemResponse(
     /// <summary>How far through the article this is, 0 to 1. Null until it has been opened.</summary>
     double? ReadProgress = null,
     /// <summary>When the reader was last open on this. Null until it has been.</summary>
-    DateTimeOffset? LastReadAt = null);
+    DateTimeOffset? LastReadAt = null,
+    /// <summary>Put aside until this moment. Null when it is not.</summary>
+    DateTimeOffset? SnoozedUntil = null,
+    /// <summary>How many times it has been put aside — a signal in itself once it climbs.</summary>
+    int SnoozeCount = 0);
+
+/// <summary>
+/// Put something aside.
+/// </summary>
+/// <param name="Preset">
+/// <c>tonight</c>, <c>tomorrow</c>, <c>weekend</c>, <c>week</c>, <c>month</c>. Presets rather
+/// than a date picker: "not now" is a feeling, and making somebody pick a Tuesday to express it
+/// is why snooze buttons go unused.
+/// </param>
+/// <param name="Until">An explicit moment, for a client that has a real date in mind.</param>
+public record SnoozeRequest(string? Preset = null, DateTimeOffset? Until = null);
 
 // --- Links ---
 public record CreateLinkRequest(string Url);

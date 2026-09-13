@@ -62,6 +62,30 @@ public class PlaylistItem : BaseEntity<Guid>
     public DateTimeOffset? LastReadAt { get; set; }
 
     /// <summary>
+    /// Put aside until this moment. Null when it is not.
+    /// </summary>
+    /// <remarks>
+    /// Every other timestamp on this row looks backwards. Ordering the queue by age stops new
+    /// arrivals burying old ones and does nothing about the item offered forty times and skipped
+    /// forty times, which is the actual way a backlog becomes permanent. "Not now" was the
+    /// missing verb.
+    ///
+    /// The same column pointed the other way is "remind me": a reference you will want again in
+    /// six months is snoozed rather than left in a list you have finished with.
+    /// </remarks>
+    public DateTimeOffset? SnoozedUntil { get; set; }
+
+    /// <summary>
+    /// How many times this has been put aside.
+    /// </summary>
+    /// <remarks>
+    /// An item passed over repeatedly is a signal. Offering to get rid of it is kinder than
+    /// silently re-offering it, and than letting somebody feel guilty about a list they will
+    /// never read.
+    /// </remarks>
+    public int SnoozeCount { get; set; }
+
+    /// <summary>
     /// When the owner's automation rules were run over this item. Null means they haven't been —
     /// which is what the sweep looks for, and what stops a rule acting on the same item twice.
     /// </summary>

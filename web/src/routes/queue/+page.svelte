@@ -4,7 +4,9 @@
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
-	import { BookOpen, Check, Star } from '@lucide/svelte';
+	import { BookOpen, Check, Clock, Star, Trash2 } from '@lucide/svelte';
+	import { PRESETS, PRESET_LABELS, backWhen, resolvePreset, type SnoozePreset } from '$lib/snooze';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import type { SearchHit } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -12,9 +14,53 @@
 
 	let busy = $state<string | null>(null);
 
+	let snoozing = $state<string | null>(null);
+
 	async function markWatched(itemId: string) {
 		busy = itemId;
 		const res = await api.patch(`/items/${itemId}`, { status: 'Watched' });
+		busy = null;
+		if (res.ok) await invalidateAll();
+	}
+
+	/**
+	 * Puts something aside until a moment worked out here.
+	 *
+	 * Resolved in the browser rather than by name, because the browser is the only thing that
+	 * knows what evening means where the reader is.
+	 */
+	async function snooze(hit: SearchHit, preset: SnoozePreset) {
+		snoozing = null;
+		busy = hit.itemId;
+		const res = await api.post(`/items/${hit.itemId}/snooze`, {
+			until: resolvePreset(preset).toISOString()
+		});
+		busy = null;
+		if (res.ok) await invalidateAll();
+	}
+
+	/**
+	 * Offered once something has been put aside three times.
+	 *
+	 * An item passed over that often is a signal. Saying so is kinder than re-offering it
+	 * forever, and kinder than letting somebody feel guilty about a list they will never read.
+	 */
+	async function wake(itemId: string) {
+		busy = itemId;
+		const res = await api.del(`/items/${itemId}/snooze`);
+		busy = null;
+		if (res.ok) await invalidateAll();
+	}
+
+	async function letGo(hit: SearchHit) {
+		const ok = await confirmDialog(
+			`You have put "${hit.link.title ?? hit.link.url}" aside ${hit.snoozeCount} times. Move it to the trash? You can get it back from there.`,
+			{ danger: true, confirmLabel: 'Move to trash' }
+		);
+		if (!ok) return;
+
+		busy = hit.itemId;
+		const res = await api.del(`/items/${hit.itemId}`);
 		busy = null;
 		if (res.ok) await invalidateAll();
 	}
@@ -81,6 +127,43 @@
 			{/each}
 		</ul>
 	{/if}
+
+	{#if data.aside.items.length > 0}
+		<!-- Visible, and reversible. Somewhere to look is the difference between putting
+		     something aside and losing it. -->
+		<details class="mt-6">
+			<summary class="cursor-pointer text-sm font-medium">
+				Put aside ({data.aside.total ?? data.aside.items.length})
+			</summary>
+			<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+				{#each data.aside.items as hit (hit.itemId)}
+					<li class="flex items-center gap-3 p-3" style="border-color: var(--color-border)">
+						<div class="min-w-0 flex-1">
+							<a
+								href={hit.link.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="break-words text-sm hover:underline"
+							>{hit.link.title ?? hit.link.url}</a>
+							<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
+								{hit.snoozedUntil ? backWhen(hit.snoozedUntil) : ''}
+								{#if (hit.snoozeCount ?? 0) > 1}
+									· put aside {hit.snoozeCount} times
+								{/if}
+							</p>
+						</div>
+						<button
+							type="button"
+							onclick={() => wake(hit.itemId)}
+							disabled={busy !== null}
+							class="inline-flex shrink-0 items-center rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60"
+							style="border-color: var(--color-border)"
+						>Bring it back</button>
+					</li>
+				{/each}
+			</ul>
+		</details>
+	{/if}
 </section>
 
 {#snippet row(hit: SearchHit)}
@@ -135,15 +218,62 @@
 						</p>
 					</div>
 
-					<button
-						type="button"
-						onclick={() => markWatched(hit.itemId)}
-						disabled={busy !== null}
-						class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-						title="Mark watched"
-					>
+	<div class="flex shrink-0 items-center gap-1">
+		<div class="relative">
+			<button
+				type="button"
+				onclick={() => (snoozing = snoozing === hit.itemId ? null : hit.itemId)}
+				disabled={busy !== null}
+				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				style="border-color: var(--color-border)"
+				title="Not now"
+				aria-expanded={snoozing === hit.itemId}
+			>
+				<Clock size={14} aria-hidden="true" /> Not now
+			</button>
+
+			{#if snoozing === hit.itemId}
+				<!-- Five choices, not a date picker: "not now" is a feeling, and being made to
+				     pick a Tuesday to express it is why snooze buttons go unused. -->
+				<div
+					class="absolute right-0 z-10 mt-1 flex w-40 flex-col rounded-md border py-1 text-sm shadow-lg"
+					style="border-color: var(--color-border); background: var(--color-surface)"
+				>
+					{#each PRESETS as preset (preset)}
+						<button
+							type="button"
+							onclick={() => snooze(hit, preset)}
+							class="px-3 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
+						>{PRESET_LABELS[preset]}</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
+
+		{#if (hit.snoozeCount ?? 0) >= 3}
+			<button
+				type="button"
+				onclick={() => letGo(hit)}
+				disabled={busy !== null}
+				class="inline-flex items-center rounded-md border p-1.5 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				style="border-color: var(--color-border); color: var(--color-danger)"
+				title="Put aside {hit.snoozeCount} times — let it go?"
+				aria-label="Move to trash"
+			>
+				<Trash2 size={14} aria-hidden="true" />
+			</button>
+		{/if}
+
+		<button
+			type="button"
+			onclick={() => markWatched(hit.itemId)}
+			disabled={busy !== null}
+			class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+			style="border-color: var(--color-border)"
+			title="Mark watched"
+		>
 			<Check size={14} aria-hidden="true" /> Done
 		</button>
+	</div>
 	</li>
 {/snippet}

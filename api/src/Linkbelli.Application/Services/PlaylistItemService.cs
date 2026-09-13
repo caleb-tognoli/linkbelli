@@ -48,7 +48,9 @@ public class PlaylistItemService(
             // a playlist only one person touches — is the caller's decision, not this one's.
             db.Users.Where(u => u.Id == i.AddedByUserId).Select(u => u.UserName).FirstOrDefault(),
             i.ReadProgress,
-            i.LastReadAt);
+            i.LastReadAt,
+            i.SnoozedUntil,
+            i.SnoozeCount);
 
     public async Task<PagedResult<PlaylistItemResponse>> ListAsync(
         Guid ownerId, Guid playlistId, int? limit, string? cursor, string? sort, string? source, string? status, string? q, CancellationToken ct = default)
@@ -149,6 +151,45 @@ public class PlaylistItemService(
         var item = await FindOwnedItemAsync(itemId, ownerId, ct);
         item.Score = score;
         await db.SaveChangesAsync(ct);
+        return await ProjectAsync(itemId, ct);
+    }
+
+    /// <summary>
+    /// How many times something has to be put aside before it is worth saying so.
+    /// </summary>
+    /// <remarks>
+    /// Three is "you keep meaning to". A client can use the count to offer getting rid of it,
+    /// which is kinder than silently re-offering it forever — and kinder than letting somebody
+    /// feel guilty about a list they are never going to read.
+    /// </remarks>
+    public const int SnoozesWorthMentioning = 3;
+
+    public async Task<PlaylistItemResponse> SnoozeAsync(
+        Guid ownerId, Guid itemId, DateTimeOffset? until, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var item = await FindOwnedItemAsync(itemId, ownerId, ct);
+
+        if (until is null)
+        {
+            // Waking it, not snoozing it. The count stays: how often it has been put aside is
+            // still true, and is the thing worth knowing.
+            item.SnoozedUntil = null;
+            await db.SaveChangesAsync(ct);
+            return await ProjectAsync(itemId, ct);
+        }
+
+        if (until <= now)
+        {
+            throw new ValidationException("until", "Pick a moment that has not already happened.");
+        }
+
+        // Stored in UTC. The offset matters while a preset is being worked out — "tonight" is
+        // the caller's evening — and not at all afterwards, since it is the same instant either
+        // way; Npgsql refuses anything else for a timestamptz.
+        item.SnoozedUntil = until.Value.ToUniversalTime();
+        item.SnoozeCount++;
+        await db.SaveChangesAsync(ct);
+
         return await ProjectAsync(itemId, ct);
     }
 

@@ -26,7 +26,11 @@ public record SearchHit(
     /// </summary>
     string? Snippet = null,
     /// <summary>How far through the article this is, 0 to 1. Null until it has been opened.</summary>
-    double? ReadProgress = null);
+    double? ReadProgress = null,
+    /// <summary>Put aside until this moment. Null when it is not.</summary>
+    DateTimeOffset? SnoozedUntil = null,
+    /// <summary>How many times it has been put aside.</summary>
+    int SnoozeCount = 0);
 
 /// <summary>Filters a search can be narrowed by, beyond the text itself.</summary>
 public record SearchQuery(
@@ -55,7 +59,12 @@ public record SearchQuery(
     /// <summary>"score" for best-rated first; otherwise relevance, or newest when there is no term.</summary>
     string? Sort,
     int? Limit,
-    string? Cursor);
+    string? Cursor,
+    /// <summary>
+    /// True to see only what is put aside and not yet due. Anything else hides those, which is
+    /// what "not now" has to mean if the button is to be worth pressing.
+    /// </summary>
+    bool? Snoozed = null);
 
 /// <summary>A search someone wants to come back to. Membership is whatever matches right now.</summary>
 public record SavedSearchResponse(

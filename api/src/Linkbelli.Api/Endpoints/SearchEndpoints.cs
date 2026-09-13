@@ -23,13 +23,13 @@ public static class SearchEndpoints
             ClaimsPrincipal user, ISearchService svc,
             string? q, string? host, string[]? tag, string[]? itemTag, string? status, int? minScore,
             DateTimeOffset? finishedSince, bool? broken, string? kind, int? maxMinutes,
-            string? sort, int? limit, string? cursor,
+            string? sort, int? limit, string? cursor, bool? snoozed,
             CancellationToken ct) =>
             Results.Ok(await svc.SearchAsync(
                 user.GetUserId(),
                 new SearchQuery(
                     q, host, tag, itemTag, status, minScore, finishedSince, broken, kind, maxMinutes,
-                    sort, limit, cursor),
+                    sort, limit, cursor, snoozed),
                 ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
             .WithName("Search");

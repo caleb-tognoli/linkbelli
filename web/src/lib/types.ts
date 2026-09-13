@@ -255,6 +255,10 @@ export interface PlaylistItem {
 	readProgress?: number | null;
 	/** When the reader was last open on this. Null until it has been. */
 	lastReadAt?: string | null;
+	/** Put aside until this moment. Null when it is not. */
+	snoozedUntil?: string | null;
+	/** How many times it has been put aside — a signal in itself once it climbs. */
+	snoozeCount?: number;
 }
 
 export interface LinkPreview {
@@ -447,6 +451,10 @@ export interface SearchHit {
 	snippet: string | null;
 	/** How far through the article this is, 0 to 1. Null until it has been opened. */
 	readProgress?: number | null;
+	/** Put aside until this moment. Null when it is not. */
+	snoozedUntil?: string | null;
+	/** How many times it has been put aside. */
+	snoozeCount?: number;
 }
 
 /** A site the caller saves from, and how many of their links are on it. */

@@ -234,6 +234,8 @@ failure backs off exponentially from 6 hours and is given up on after 6 attempts
 
 | Method | Path | Purpose |
 |--------|------|---------|
+| `POST` | `/api/v1/items/{id}/snooze` | Put it aside. `{ "preset": "weekend" }` — one of `tonight`, `tomorrow`, `weekend`, `week`, `month` — or `{ "until": "2026-04-01T08:00:00Z" }`. A preset resolved here uses the **server's** clock, so a client that knows the reader's timezone should resolve it and send `until` |
+| `DELETE` | `/api/v1/items/{id}/snooze` | Bring it back now. The count of how often it has been put aside survives |
 | `PUT` | `/api/v1/links/{id}/progress` | How far through the article you are, `{ "progress": 0.42 }`. Written to every copy you have of that link — a link in two playlists is one article. Reaching 92% marks it watched: every article ends in a footer nobody reads, so demanding the very bottom would leave the last step manual, which is the step this removes |
 | `POST` | `/api/v1/links/{id}/recheck` | Try a link again now. Clears its backoff first, so an explicit retry isn't swallowed by the wait it was already serving. Rate-limited |
 | `GET` | `/api/v1/links/{id}/content` | The article text kept when the page was first read — see [Saved articles](#saved-articles) |
@@ -583,6 +585,7 @@ The per-playlist item list answers "where in this list is it". This answers "whe
 | `kind` | One of `article`, `video`, `repository`, `paper`, `document`, `audio`, `image`, `social`. An unrecognised name matches **nothing** rather than everything, so a typo returns an empty list instead of quietly ignoring the filter |
 | `maxMinutes` | Only what can be read in this many minutes — how people actually pick what to open. Links with no article behind them have no length to compare and are excluded |
 | `sort` | `score` for best-rated first, across every playlist. Unrated items sort last rather than as zero. `queue` for "what now": rated things first, then whatever has been carried longest — a queue that leads with the newest arrival is how a backlog becomes permanent |
+| `snoozed` | `true` for only what is put aside and not yet due. Anything else hides those — which is what "not now" has to mean if the button is worth pressing |
 | `limit`, `cursor` | Paging — see [Paging](#paging). A `limit` outside 1–100 is refused |
 
 ### Operators

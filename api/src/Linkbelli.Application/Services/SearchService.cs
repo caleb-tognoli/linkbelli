@@ -60,9 +60,11 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
         i.CreationTime,
         i.StatusChangedAt,
         i.Tags.Select(t => t.Tag!.Name).ToArray(),
-        // Snippet is filled in afterwards, from the search text; progress comes off the row.
+        // Snippet is filled in afterwards, from the search text; the rest comes off the row.
         null,
-        i.ReadProgress);
+        i.ReadProgress,
+        i.SnoozedUntil,
+        i.SnoozeCount);
 
     /// <summary>
     /// Folds operators typed into the box into the filters that already existed.
@@ -103,6 +105,14 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
 
         var items = db.PlaylistItems.Where(i => i.Playlist!.OwnerId == ownerId && i.Link!.EnrichedAt != null);
         if (!showNsfw) items = items.Where(i => !i.Link!.Nsfw);
+
+        // Put aside, and not due back yet. "Not now" has to mean it is actually gone for a while
+        // or it is a button that changes nothing — so this holds across search, not only in the
+        // queue. Asking for them specifically is how you get them back.
+        var due = DateTimeOffset.UtcNow;
+        items = query.Snoozed == true
+            ? items.Where(i => i.SnoozedUntil != null && i.SnoozedUntil > due)
+            : items.Where(i => i.SnoozedUntil == null || i.SnoozedUntil <= due);
 
         items = ApplyText(items, query.Q);
         items = ApplyHost(items, query.Host);

@@ -3,6 +3,7 @@ using Linkbelli.Api.Auth;
 using Linkbelli.Api.Common;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
+using Linkbelli.Core.Playlists;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Linkbelli.Api.Endpoints;
@@ -50,6 +51,39 @@ public static class PlaylistItemEndpoints
             IPlaylistItemService svc, CancellationToken ct) =>
             Results.Ok(await svc.UpdateAsync(user.GetUserId(), id, req, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
+
+        // "Not now". Ordering the queue by age stops new arrivals burying old ones and does
+        // nothing about the item offered forty times and skipped forty times, which is the actual
+        // way a backlog becomes permanent.
+        item.MapPost("/{id:guid}/snooze", async (
+            Guid id, SnoozeRequest req, ClaimsPrincipal user, IPlaylistItemService svc, CancellationToken ct) =>
+        {
+            // A preset resolved here lands in the server's evening, which is only the caller's
+            // evening by coincidence. The web app knows the reader's timezone and sends an
+            // explicit moment; the preset is the fallback for a script or an assistant, where
+            // the server's clock is the best guess available and a better one than none.
+            var now = DateTimeOffset.Now;
+            var until = req.Until ?? SnoozePresets.Resolve(req.Preset, now);
+
+            if (until is null)
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["preset"] = [$"Use one of: {string.Join(", ", SnoozePresets.Names)} — or send an explicit moment."],
+                });
+            }
+
+            return Results.Ok(await svc.SnoozeAsync(user.GetUserId(), id, until, now, ct));
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("SnoozeItem");
+
+        // Back now, rather than when it was due.
+        item.MapDelete("/{id:guid}/snooze", async (
+            Guid id, ClaimsPrincipal user, IPlaylistItemService svc, CancellationToken ct) =>
+            Results.Ok(await svc.SnoozeAsync(user.GetUserId(), id, null, DateTimeOffset.UtcNow, ct)))
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("WakeItem");
 
         item.MapDelete("/{id:guid}", async (Guid id, ClaimsPrincipal user, IPlaylistItemService svc, CancellationToken ct) =>
         {
