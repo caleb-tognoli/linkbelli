@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { upstreamFailure } from '$lib/server/upstream';
 import type { RequestHandler } from './$types';
 
 /**
@@ -81,7 +82,16 @@ const handler: RequestHandler = async ({ params, request, url, locals, getClient
 		if (body.byteLength > 0) init.body = body;
 	}
 
-	const res = await locals.api(`/api/v1/${params.path}${url.search}`, init);
+	let res: Response;
+	try {
+		res = await locals.api(`/api/v1/${params.path}${url.search}`, init);
+	} catch (failure) {
+		// The API is down, restarting, or hung. Answered here in the API's own error shape, rather
+		// than left to become SvelteKit's generic 500 — which says nothing, and says it in a shape
+		// the client does not otherwise have to read.
+		console.error(`[${locals.requestId}] API call failed:`, failure);
+		return upstreamFailure(failure, locals.requestId);
+	}
 
 	const responseHeaders = new Headers();
 	for (const name of FORWARD_RESPONSE) {

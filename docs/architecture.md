@@ -68,6 +68,26 @@ In order, for a request arriving at the API:
    retried safely) and `ETagFilter` (conditional GETs; buffers JSON up to 512 KB and streams
    anything larger or non-JSON straight through).
 
+### In front of it: the web proxy
+
+Every browser call to the API goes through `web/src/routes/api/v1/[...path]/+server.ts`, which
+holds the tokens in httpOnly cookies so they never reach page script. It is a deliberate proxy
+rather than a pass-through:
+
+- **Header allowlists both ways.** Conditional-GET headers, `Idempotency-Key` and `Content-Type`
+  go up; `ETag`, `Content-Disposition`, `Cache-Control`, `Retry-After` and `X-Request-Id` come
+  down. Cookies and a page-set `Authorization` never go up; `Set-Cookie` never comes down.
+- **One trace per browser request.** The hook starts a W3C `traceparent` for each request and
+  sends it on every API call that request makes; the API adopts it, so the `X-Request-Id` the
+  browser is shown is the id in both servers' logs. Pages carry the header too.
+- **A deadline to the first byte, not the last.** An API that has not started answering in 60
+  seconds is abandoned; a slow download that has started is not.
+- **Its own failures in the API's shape.** An API that is down or hung is answered `502`/`504` as
+  Problem Details with the request id, not as SvelteKit's generic 500.
+- **Bodies buffered, deliberately.** A request body is read as bytes once, so it can be replayed
+  after a token refresh — a stream cannot be sent twice.
+- `X-Forwarded-For` is appended, and unsafe methods must come from the same origin.
+
 Two authentication schemes coexist: ASP.NET Identity bearer tokens and a custom `X-Api-Key`.
 Endpoints that accept both say so explicitly (`AuthSchemes.BearerOrApiKey`); API keys additionally
 carry scopes, checked by policy. See [auth.md](../api/docs/auth.md).

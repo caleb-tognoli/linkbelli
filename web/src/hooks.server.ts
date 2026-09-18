@@ -1,6 +1,7 @@
 import { redirect, type Handle } from '@sveltejs/kit';
 import { API_BASE } from '$lib/server/config';
 import { ACCESS_COOKIE, REFRESH_COOKIE, clearTokens, setTokens } from '$lib/server/auth';
+import { fetchWithDeadline, newTraceparent, UPSTREAM_DEADLINE_MS } from '$lib/server/upstream';
 
 // Auth pages: redirect already-signed-in users away from these.
 const AUTH_PAGES = ['/login', '/register', '/forgot-password', '/reset-password'];
@@ -32,15 +33,25 @@ const startsWithSegment = (path: string, prefix: string) =>
 export const handle: Handle = async ({ event, resolve }) => {
 	const { cookies, fetch } = event;
 
+	// One trace for everything this browser request makes the API do — the page's loads, a
+	// token refresh, a proxied call — so they all log under the id the browser is shown.
+	const trace = newTraceparent();
+	event.locals.requestId = trace.traceId;
+
 	async function refresh(): Promise<boolean> {
 		const refreshToken = cookies.get(REFRESH_COOKIE);
 		if (!refreshToken) return false;
 
-		const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ refreshToken })
-		});
+		const res = await fetchWithDeadline(
+			`${API_BASE}/api/v1/auth/refresh`,
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/json', traceparent: trace.traceparent },
+				body: JSON.stringify({ refreshToken })
+			},
+			UPSTREAM_DEADLINE_MS,
+			fetch
+		);
 		if (!res.ok) {
 			clearTokens(cookies);
 			return false;
@@ -61,7 +72,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 			const headers = new Headers(init.headers);
 			if (access) headers.set('Authorization', `Bearer ${access}`);
 			if (init.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
-			return fetch(`${API_BASE}${path}`, { ...init, headers });
+			headers.set('traceparent', trace.traceparent);
+			return fetchWithDeadline(`${API_BASE}${path}`, { ...init, headers }, UPSTREAM_DEADLINE_MS, fetch);
 		};
 
 		let res = await call();
@@ -122,6 +134,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// and, on a local run, a good way to lock yourself out of your own machine's http origin.
 	if (event.url.protocol === 'https:') {
 		response.headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+	}
+
+	// On pages too, not only on proxied API calls, so a report about a page that failed to load
+	// can name the request as well as one about a button that failed.
+	if (!response.headers.has('x-request-id')) {
+		response.headers.set('x-request-id', trace.traceId);
 	}
 
 	return response;

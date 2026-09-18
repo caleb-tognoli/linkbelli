@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { UpstreamTimeout } from '$lib/server/upstream';
 import { DELETE, GET, POST } from './+server';
 
 /**
@@ -38,7 +39,7 @@ function event(opts: {
 		params: { path: opts.path ?? 'playlists' },
 		url,
 		request: new Request(url, { method, headers: opts.headers, body: opts.body }),
-		locals: { api: opts.api, authenticated: true },
+		locals: { api: opts.api, authenticated: true, requestId: 'trace-abc' },
 		getClientAddress: () => opts.clientAddress ?? '203.0.113.7'
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} as any;
@@ -204,5 +205,37 @@ describe('BFF proxy — CSRF', () => {
 		const { api } = upstream(new Response('{}'));
 		const res = await GET(event({ api }));
 		expect(res.status).toBe(200);
+	});
+});
+
+describe('BFF proxy — when the API cannot answer', () => {
+	it('says 502 in the API’s own error shape when it cannot be reached', async () => {
+		const api = vi.fn(async () => {
+			throw new TypeError('fetch failed');
+		});
+		const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+		const res = await GET(event({ api }));
+
+		expect(res.status).toBe(502);
+		expect(res.headers.get('content-type')).toBe('application/problem+json');
+		expect(res.headers.get('x-request-id')).toBe('trace-abc');
+		expect((await res.json()).requestId).toBe('trace-abc');
+		errors.mockRestore();
+	});
+
+	it('says 504 when it took too long to start answering', async () => {
+		const api = vi.fn(async () => {
+			throw new UpstreamTimeout(60_000);
+		});
+		const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+		const res = await POST(
+			event({ method: 'POST', api, headers: { origin: ORIGIN, 'content-type': 'application/json' }, body: '{}' })
+		);
+
+		expect(res.status).toBe(504);
+		expect((await res.json()).title).toBe('The API took too long to answer');
+		errors.mockRestore();
 	});
 });

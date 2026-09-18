@@ -47,6 +47,10 @@ below is under `Unreleased`, and `0.1.0` will be cut from it.
 
 ### Changed
 
+- **The web server's proxy to the API names every request and gives up on a hung API.** One
+  trace id now runs from the browser's `X-Request-Id` through both servers' logs; an API that has
+  not started answering in a minute is abandoned; and an API that is down comes back as a `502`
+  or `504` saying so, rather than as an unexplained 500.
 - **Listings page by position rather than by offset.** A cursor now names the row a page stopped
   at, so nothing is repeated or skipped when something is written while you read. Search
   relevance, discovery's `liked`/`largest` orderings, a playlist's score and shuffle sorts, and
