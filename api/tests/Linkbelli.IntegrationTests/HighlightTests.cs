@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Linkbelli.Application.Data;
+using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Linkbelli.IntegrationTests.ApiTestHelpers;
@@ -64,7 +65,7 @@ public class HighlightTests(PostgresApiFactory factory)
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         var link = await db.Links.FirstAsync(l => l.Id == linkId);
-        link.Content = content;
+        link.Content = new LinkContent { Id = link.Id, Text = content };
         link.WordCount = content.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
         await db.SaveChangesAsync();
     }

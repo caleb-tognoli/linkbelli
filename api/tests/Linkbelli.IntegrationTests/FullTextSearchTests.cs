@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Linkbelli.Application.Data;
+using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Linkbelli.IntegrationTests.ApiTestHelpers;
@@ -50,7 +51,7 @@ public class FullTextSearchTests(PostgresApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var link = await db.Links.FirstAsync(l => l.Id == linkId);
-        link.Content = content;
+        link.Content = new LinkContent { Id = link.Id, Text = content };
         link.WordCount = content.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
         await db.SaveChangesAsync();
 
@@ -180,7 +181,7 @@ public class FullTextSearchTests(PostgresApiFactory factory)
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var buried = await db.Links.FirstAsync(l => l.Title == "Buried mention");
-            buried.Content = "A long piece about canals that mentions zeppelins exactly once, here.";
+            buried.Content = new LinkContent { Id = buried.Id, Text = "A long piece about canals that mentions zeppelins exactly once, here." };
             await db.SaveChangesAsync();
         }
 

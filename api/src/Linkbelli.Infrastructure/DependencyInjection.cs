@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,7 +36,16 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("Default");
 
         var dataSource = new NpgsqlDataSourceBuilder(connectionString).EnableDynamicJson().Build();
-        services.AddDbContext<LinkbelliDbContext>(options => options.UseNpgsql(dataSource));
+        services.AddDbContext<LinkbelliDbContext>(options => options
+            .UseNpgsql(dataSource)
+            .ConfigureWarnings(w => w
+                // LinkContent shares Link's row and has one column of its own, which is null when a
+                // page had no article. EF warns that it cannot tell "no article" from "not there" —
+                // which is exactly the point: they mean the same thing.
+                .Ignore(RelationalEventId.OptionalDependentWithoutIdentifyingPropertyWarning)
+                // And that Link is filtered while LinkContent is not. It is the same row, only
+                // reached through a Link, so Link's filter is the one that applies.
+                .Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)));
 
         // Expose the same scoped DbContext instance as the Application's abstraction.
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<LinkbelliDbContext>());

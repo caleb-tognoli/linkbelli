@@ -213,6 +213,12 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<PlaylistItem>().Ignore(p => p.Metadata);
         modelBuilder.Entity<Source>().Ignore(s => s.Runs);
 
+        // The article text shares the link's row in the real mapping (table splitting), so
+        // writing it is an update of a row that always exists. The in-memory provider keeps
+        // every entity type apart and has no such row. Nothing here asserts on stored text; the
+        // round trip is covered against Postgres in LinkContentSplitTests.
+        modelBuilder.Entity<Link>().Ignore(l => l.Content);
+
         // Identity's own tables come configured by IdentityDbContext, which this plain context is
         // not. Only their keys matter here — nothing in these tests reads a role.
         modelBuilder.Entity<IdentityUserRole<Guid>>().HasKey(r => new { r.UserId, r.RoleId });

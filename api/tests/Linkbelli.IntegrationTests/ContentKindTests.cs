@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Core.Content;
+using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Linkbelli.IntegrationTests.ApiTestHelpers;
@@ -72,7 +73,7 @@ public class ContentKindTests(PostgresApiFactory factory)
         if (wordCount is { } words)
         {
             link.WordCount = words;
-            link.Content = "Stored article text.";
+            link.Content = new LinkContent { Id = link.Id, Text = "Stored article text." };
         }
 
         await db.SaveChangesAsync();

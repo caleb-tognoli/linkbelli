@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Email;
 using Linkbelli.Application.Enrichment;
+using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Linkbelli.IntegrationTests.ApiTestHelpers;
@@ -186,9 +187,8 @@ public class DigestTests(PostgresApiFactory factory)
                 .ExecuteUpdateAsync(s => s.SetProperty(i => i.CreationTime, DateTimeOffset.UtcNow.AddDays(-60)));
 
             var linkId = await db.PlaylistItems.Where(i => i.Id == items[0]).Select(i => i.LinkId).FirstAsync();
-            await db.Links.Where(l => l.Id == linkId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    l => l.Content, "Headline" + ArticleExtractor.ParagraphSeparator + "A sentence worth keeping."));
+            await factory.SetArticleTextAsync(
+                linkId, "Headline" + ArticleExtractor.ParagraphSeparator + "A sentence worth keeping.");
 
             (await client.PostAsJsonAsync($"/api/v1/links/{linkId}/highlights", new
             {

@@ -47,6 +47,11 @@ below is under `Unreleased`, and `0.1.0` will be cut from it.
 
 ### Changed
 
+- **Loading a link no longer loads its article.** Every place that read a link — the automation
+  sweep's two hundred items a minute, every save, every enrichment — used to pull the whole
+  stored article with it. Measured on real data: 19 ms for two hundred links with their text,
+  0.5 ms without. The text is now loaded only by the reader and by highlighting. No schema change
+  and no data to move: it is the same column on the same row.
 - **The web server's proxy to the API names every request and gives up on a hung API.** One
   trace id now runs from the browser's `X-Request-Id` through both servers' logs; an API that has
   not started answering in a minute is abandoned; and an API that is down comes back as a `502`

@@ -69,13 +69,16 @@ public class Link : BaseEntity<Guid>
     public string? Metadata { get; set; }
 
     /// <summary>
-    /// The readable text of the page, kept at enrichment. Without it a saved article is only
-    /// searchable by the handful of words in its title, and can't be read back once it rots.
-    /// Null when the page had no article in it, which most pages don't.
+    /// The readable text of the page, kept at enrichment. Not loaded unless asked for — see
+    /// <see cref="LinkContent"/> for why it is not a plain property any more. Null both when it
+    /// was not loaded and when the page had no article in it.
     /// </summary>
-    public string? Content { get; set; }
+    public LinkContent? Content { get; set; }
 
-    /// <summary>Words in the whole article, even when <see cref="Content"/> stops short of it.</summary>
+    /// <summary>
+    /// Words in the whole article, even when the stored text stops short of it. Kept here rather
+    /// than with the text: every row in every list shows a reading time, and it is one integer.
+    /// </summary>
     public int? WordCount { get; set; }
 
     /// <summary>Whether the stored text is only the start of the article.</summary>

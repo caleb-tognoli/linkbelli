@@ -109,8 +109,32 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.HasSoftDeleteFilter();
         });
 
+        // The article text, split off the Link entity onto the same row (table splitting): same
+        // table, same column, same generated search vector, so the schema does not change — only
+        // what gets loaded does. See LinkContent for the measurement that made this worth doing.
+        modelBuilder.Entity<LinkContent>(e =>
+        {
+            e.ToTable("Links");
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Text).HasColumnName("Content");
+
+            // Everything sharing a row has to agree on its concurrency token, or a write through
+            // one view of the row would not notice the other had changed it.
+            e.Property<uint>("xmin")
+                .HasColumnName("xmin")
+                .HasColumnType("xmin")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            // No soft-delete filter of its own, and deliberately no DbSet: it is only ever reached
+            // through a Link, whose filter already decides whether the row is there. Mapping the
+            // deletion column a second time made EF rename Link's own — a schema change this was
+            // supposed not to need.
+        });
+
         modelBuilder.Entity<Link>(e =>
         {
+            e.HasOne(l => l.Content).WithOne().HasForeignKey<LinkContent>(c => c.Id);
             e.Property(l => l.CanonicalUrl).HasMaxLength(2048);
             e.Property(l => l.UrlHash).HasMaxLength(64);
             e.Property(l => l.Metadata).HasColumnType("jsonb");

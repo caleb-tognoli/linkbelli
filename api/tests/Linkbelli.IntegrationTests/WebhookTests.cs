@@ -424,12 +424,7 @@ public class WebhookTests(PostgresApiFactory factory)
         await factory.SeedEnrichedItemsAsync(playlist, 1);
         var linkId = (await client.GetFromJsonAsync<PagedItems>($"/api/v1/playlists/{playlist}/items"))!.Items[0].Link.Id;
 
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            await db.Links.Where(l => l.Id == linkId)
-                .ExecuteUpdateAsync(s => s.SetProperty(l => l.Content, "Headline\n\nThe part worth keeping."));
-        }
+        await factory.SetArticleTextAsync(linkId, "Headline\n\nThe part worth keeping.");
 
         var created = await NewHookAsync(client, NewReceiver(), WebhookEvents.HighlightCreated);
         (await client.PostAsJsonAsync($"/api/v1/links/{linkId}/highlights", new { paragraphIndex = 1, start = 0, end = 22 }))

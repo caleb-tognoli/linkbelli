@@ -212,7 +212,7 @@ public class HighlightService(IAppDbContext db, IWebhookEvents webhooks) : IHigh
             .AsNoTracking()
             .Where(l => l.Id == linkId
                 && db.PlaylistItems.Any(i => i.LinkId == l.Id && i.Playlist!.OwnerId == ownerId))
-            .Select(l => l.Content)
+            .Select(l => l.Content!.Text)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("No readable text was found on that page.");
 

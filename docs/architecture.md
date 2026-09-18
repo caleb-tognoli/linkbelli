@@ -99,7 +99,9 @@ About thirty entities. The groups, and the edges that matter:
 - **Identity** — `ApplicationUser` (ASP.NET Identity), `ApiKey`, `UserQuota`, `AuditEntry`.
 - **Content** — `Link` is globally deduplicated by the SHA-256 of its canonical URL and shared by
   everyone; `Host` is likewise get-or-created per hostname and carries the moderation blocklist.
-  A `Link` holds the fetched metadata and the extracted article text.
+  A `Link` holds the fetched metadata; the extracted article text is `LinkContent`, mapped onto
+  the same row (EF table splitting) so it is only loaded when asked for — by the reader and by
+  highlighting. It stays on the row because the search vector is generated from it there.
 - **Collections** — `Playlist` → `PlaylistItem` → `Link`. A playlist has `PlaylistMember` for
   sharing, `PlaylistLike`, `PlaylistPreference` (per person, per playlist), and lives optionally
   in a `Folder` via `FolderPlaylist`.

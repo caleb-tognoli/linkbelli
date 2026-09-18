@@ -153,11 +153,31 @@ public static class ItemSeeder
 
         await db.Links
             .Where(l => l.Id == linkId)
-            .ExecuteUpdateAsync(u => u
-                .SetProperty(
-                    l => l.Content,
-                    string.Join(ArticleExtractor.ParagraphSeparator, "A paragraph.", "And another one."))
-                .SetProperty(l => l.WordCount, 600));
+            .ExecuteUpdateAsync(u => u.SetProperty(l => l.WordCount, 600));
+
+        await factory.SetArticleTextAsync(
+            linkId, string.Join(ArticleExtractor.ParagraphSeparator, "A paragraph.", "And another one."));
+    }
+
+    /// <summary>
+    /// Stores article text on a link the way enrichment does: the link loaded without its text,
+    /// the text attached, one save.
+    /// </summary>
+    /// <remarks>
+    /// Written through the entity rather than with a bulk update on purpose. The text shares the
+    /// link's row, and this is the one write that has to turn "attach something to a row that
+    /// already exists" into an UPDATE of that row — every test that seeds an article through here
+    /// is also a test that it does.
+    /// </remarks>
+    public static async Task SetArticleTextAsync(this PostgresApiFactory factory, Guid linkId, string? text)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+
+        var link = await db.Links.FirstAsync(l => l.Id == linkId);
+        link.Content ??= new LinkContent { Id = link.Id };
+        link.Content.Text = text;
+        await db.SaveChangesAsync();
     }
 
     /// <summary>

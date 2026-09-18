@@ -38,12 +38,13 @@ public class LinkService(
         var link = await db.Links
             .AsNoTracking()
             .Include(l => l.Host)
+            .Include(l => l.Content)
             .Where(l => l.Id == linkId
                 && db.PlaylistItems.Any(i => i.LinkId == l.Id && i.Playlist!.OwnerId == ownerId))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException("Link not found.");
 
-        if (string.IsNullOrEmpty(link.Content))
+        if (string.IsNullOrEmpty(link.Content?.Text))
         {
             // Most pages are not articles, and the ones that are may have been saved before the
             // text was ever kept. Either way there is nothing to read here.
@@ -62,7 +63,7 @@ public class LinkService(
             link.Host!.Hostname,
             link.Title,
             link.SiteName,
-            link.Content.Split(ArticleExtractor.ParagraphSeparator, StringSplitOptions.RemoveEmptyEntries),
+            link.Content!.Text!.Split(ArticleExtractor.ParagraphSeparator, StringSplitOptions.RemoveEmptyEntries),
             link.WordCount ?? 0,
             link.ContentTruncated,
             progress);
