@@ -45,6 +45,7 @@ public interface IAppDbContext
     DbSet<Folder> Folders { get; }
     DbSet<FolderPlaylist> FolderPlaylists { get; }
     DbSet<Backup> Backups { get; }
+    DbSet<Highlight> Highlights { get; }
 
     /// <summary>Begins a database transaction, pinning a single connection for the duration.</summary>
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

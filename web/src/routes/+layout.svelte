@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
-	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge } from '@lucide/svelte';
+	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge, Highlighter } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -33,6 +33,12 @@
 		{ href: '/automations', label: 'Rules', Icon: Wand2, match: (p: string) => inSection(p, '/automations') },
 		{ href: '/search', label: 'Search', Icon: Search, match: (p: string) => inSection(p, '/search') },
 		{ href: '/queue', label: 'Up next', Icon: ListChecks, match: (p: string) => inSection(p, '/queue') },
+		{
+			href: '/highlights',
+			label: 'Highlights',
+			Icon: Highlighter,
+			match: (p: string) => inSection(p, '/highlights')
+		},
 		{ href: '/feed', label: 'Feed', Icon: Rss, match: (p: string) => inSection(p, '/feed') },
 		{ href: '/discover', label: 'Discover', Icon: Compass, match: (p: string) => inSection(p, '/discover') },
 		{ href: '/import', label: 'Import', Icon: Upload, match: (p: string) => inSection(p, '/import') }

@@ -20,7 +20,13 @@ public record ExportBundle(
     ///
     /// <see cref="ExportFormatVersion.Current"/> says what this is now and what changed.
     /// </remarks>
-    int Version = ExportFormatVersion.Current);
+    int Version = ExportFormatVersion.Current,
+    /// <summary>
+    /// Passages marked in saved articles. Held at the top level rather than on each item, because
+    /// a highlight belongs to an article and an article can sit in more than one playlist —
+    /// hanging it off items would write it out once per copy and restore it as duplicates.
+    /// </summary>
+    IReadOnlyList<ExportHighlight>? Highlights = null);
 
 /// <summary>What each version of the export format added.</summary>
 public static class ExportFormatVersion
@@ -34,8 +40,24 @@ public static class ExportFormatVersion
     /// <summary>Item tags, which the original dropped on the floor.</summary>
     public const int WithItemTags = 2;
 
-    public const int Current = WithItemTags;
+    /// <summary>Highlights and their notes.</summary>
+    public const int WithHighlights = 3;
+
+    public const int Current = WithHighlights;
 }
+
+/// <summary>
+/// A marked passage, named by the article's address rather than by an id: the file has to make
+/// sense on an instance where none of the ids it was written with exist.
+/// </summary>
+public record ExportHighlight(
+    string Url,
+    int ParagraphIndex,
+    int Start,
+    int End,
+    string Text,
+    string? Note,
+    DateTimeOffset CreatedAt);
 
 public record ExportFolder(Guid Id, string Name, Guid? ParentId);
 

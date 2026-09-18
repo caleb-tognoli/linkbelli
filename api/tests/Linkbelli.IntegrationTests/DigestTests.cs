@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Email;
+using Linkbelli.Application.Enrichment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Linkbelli.IntegrationTests.ApiTestHelpers;
@@ -162,6 +163,51 @@ public class DigestTests(PostgresApiFactory factory)
         Assert.Contains("Some of what came in:", mail.TextBody);
         // A link, so it can be opened straight from the message.
         Assert.Contains("http", mail.TextBody);
+    }
+
+    /// <summary>
+    /// Reading an old backlog adds nothing and marks a great deal. A digest that only counted
+    /// arrivals would call that week empty and stay silent about the only thing that happened.
+    /// </summary>
+    [Fact]
+    public async Task A_week_of_marking_passages_is_not_a_quiet_week()
+    {
+        var (client, userId, email) = await NewUserAsync();
+        await SubscribeAsync(client);
+        var playlist = await NewPlaylistAsync(client, $"Backlog {Guid.NewGuid():N}");
+        var items = await factory.SeedEnrichedItemsAsync(playlist.Id, 1);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
+            // Saved long ago: nothing arrived this week.
+            await db.PlaylistItems.Where(i => i.Id == items[0])
+                .ExecuteUpdateAsync(s => s.SetProperty(i => i.CreationTime, DateTimeOffset.UtcNow.AddDays(-60)));
+
+            var linkId = await db.PlaylistItems.Where(i => i.Id == items[0]).Select(i => i.LinkId).FirstAsync();
+            await db.Links.Where(l => l.Id == linkId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    l => l.Content, "Headline" + ArticleExtractor.ParagraphSeparator + "A sentence worth keeping."));
+
+            (await client.PostAsJsonAsync($"/api/v1/links/{linkId}/highlights", new
+            {
+                paragraphIndex = 1,
+                start = 0,
+                end = 25,
+                text = "",
+            })).EnsureSuccessStatusCode();
+        }
+
+        await QuietEveryoneAsync();
+        await SetDueAsync(userId);
+        factory.Email.Clear();
+        await SweepAsync();
+
+        var mail = factory.Email.LastTo(email);
+        Assert.NotNull(mail);
+        Assert.Contains("Nothing new arrived", mail!.TextBody);
+        Assert.Contains("“A sentence worth keeping.”", mail.TextBody);
     }
 
     [Fact]

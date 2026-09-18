@@ -48,7 +48,18 @@ public sealed class DigestSweep(
     /// A summary that lists two hundred links is not a summary. Enough to recognise the week by,
     /// and the app is one click away for the rest.
     /// </remarks>
-    public const int Highlights = 5;
+    public const int Named = 5;
+
+    /// <summary>How many of the week's marked passages to quote.</summary>
+    /// <remarks>
+    /// Fewer than the links, because each one is a paragraph rather than a line. These are the
+    /// most personal thing the digest can say — the parts somebody stopped at and chose — and
+    /// three is enough to bring a week of reading back without becoming the week of reading.
+    /// </remarks>
+    public const int Quoted = 3;
+
+    /// <summary>The longest a quoted passage runs in the email before it is cut.</summary>
+    public const int QuoteLength = 240;
 
     private readonly EmailOptions _options = options.Value;
 
@@ -125,9 +136,18 @@ public sealed class DigestSweep(
         var unread = await mine.CountAsync(
             i => i.Status == PlaylistItemStatus.Added && i.Link!.EnrichedAt != null, cancellationToken);
 
+        // What was marked this week, newest first. Taken whatever arrived: somebody working
+        // through an old backlog saves nothing new and reads a great deal.
+        var marked = await db.Highlights
+            .Where(h => h.OwnerId == userId && h.CreationTime >= since)
+            .OrderByDescending(h => h.CreationTime)
+            .Take(Quoted)
+            .Select(h => new { h.Text, h.Link!.Title, h.Link.CanonicalUrl })
+            .ToListAsync(cancellationToken);
+
         // A week in which nothing happened is not worth an email. Sending one anyway is how a
-        // digest becomes the thing people unsubscribe from.
-        if (!force && added == 0)
+        // digest becomes the thing people unsubscribe from. Reading counts as something.
+        if (!force && added == 0 && marked.Count == 0)
         {
             logger.LogDebug("Nothing happened for {Owner} this week; no digest.", userId);
             return false;
@@ -142,7 +162,7 @@ public sealed class DigestSweep(
         var candidates = await mine
             .Where(i => i.CreationTime >= since && i.Link!.EnrichedAt != null)
             .OrderByDescending(i => i.CreationTime)
-            .Take(Highlights * 4)
+            .Take(Named * 4)
             .Select(i => new
             {
                 i.Link!.Title,
@@ -150,9 +170,9 @@ public sealed class DigestSweep(
             })
             .ToListAsync(cancellationToken);
 
-        var highlights = candidates
+        var arrivals = candidates
             .DistinctBy(c => c.CanonicalUrl)
-            .Take(Highlights)
+            .Take(Named)
             .ToList();
 
         // Sources that ran and found nothing all week. Named, because knowing which one to look
@@ -166,7 +186,7 @@ public sealed class DigestSweep(
             .Where(QuietSource.Since(since, db.SourceRuns))
             .OrderBy(s => s.Name)
             .Select(s => s.Name)
-            .Take(Highlights)
+            .Take(Named)
             .ToListAsync(cancellationToken);
 
         var message = EmailTemplates.Digest(
@@ -176,10 +196,12 @@ public sealed class DigestSweep(
             unread,
             // No title means the address is all there is to call it, and printing that twice —
             // once as the name and once as the link — is worse than printing it once.
-            [.. highlights.Select(h => string.IsNullOrWhiteSpace(h.Title)
+            [.. arrivals.Select(h => string.IsNullOrWhiteSpace(h.Title)
                 ? new EmailTemplates.NotificationLine(h.CanonicalUrl)
                 : new EmailTemplates.NotificationLine(h.Title, h.CanonicalUrl))],
-            quiet);
+            quiet,
+            [.. marked.Select(m => new EmailTemplates.QuotedLine(
+                Shorten(m.Text), string.IsNullOrWhiteSpace(m.Title) ? m.CanonicalUrl : m.Title, m.CanonicalUrl))]);
 
         var token = unsubscribe.Create(userId, NotificationKind.WeeklyDigest);
         var withFooter = EmailTemplates.WithUnsubscribe(
@@ -188,5 +210,17 @@ public sealed class DigestSweep(
             NotificationKind.WeeklyDigest);
 
         return await email.SendAsync(withFooter, cancellationToken);
+    }
+
+    /// <summary>A passage cut at a word, so an email quote does not stop halfway through one.</summary>
+    private static string Shorten(string text)
+    {
+        if (text.Length <= QuoteLength)
+        {
+            return text;
+        }
+
+        var cut = text.LastIndexOf(' ', QuoteLength);
+        return text[..(cut > QuoteLength / 2 ? cut : QuoteLength)].TrimEnd() + "…";
     }
 }

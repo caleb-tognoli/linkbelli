@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { ApiError, clampPage, createClient, trimArticle } from './client.js';
 import {
 	formatArticle,
+	formatHighlights,
 	formatHits,
 	formatItems,
 	formatPlaylists
@@ -88,6 +89,44 @@ export function createServer(client, { readOnly = false } = {}) {
 			const { paragraphs, truncated } = trimArticle(content.paragraphs);
 
 			return reply(formatArticle(content, paragraphs, truncated));
+		})
+	);
+
+	server.registerTool(
+		'list_highlights',
+		{
+			title: 'List highlighted passages',
+			description:
+				'Passages the person marked while reading, with their own notes on them — the parts ' +
+				'of their library they stopped at and chose. Newest first across everything, or ' +
+				'only those in one article when given a linkId. Prefer these over the full article ' +
+				'when asked what somebody thought was important.',
+			inputSchema: {
+				linkId: z.string().optional().describe('Only the passages marked in this article.'),
+				limit: z.number().int().min(1).max(50).optional(),
+				cursor: z.string().optional().describe('From a previous result, to get the next page.')
+			},
+			annotations: { readOnlyHint: true }
+		},
+		guard(async ({ linkId, limit, cursor }) => {
+			if (linkId) {
+				// The one-article listing has no title on each row, so it is borrowed from the
+				// article: a quote with no source is the thing these are meant not to be.
+				const [highlights, content] = await Promise.all([
+					client.listHighlightsFor(linkId),
+					client.getContent(linkId)
+				]);
+
+				return reply(
+					formatHighlights(
+						highlights.map((h) => ({ ...h, title: content.title, url: content.url })),
+						null
+					)
+				);
+			}
+
+			const page = await client.listHighlights(limit, cursor);
+			return reply(formatHighlights(page.items, page.nextCursor));
 		})
 	);
 

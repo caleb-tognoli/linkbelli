@@ -64,12 +64,35 @@ public class EmailTemplateTests
             "https://x",
             addedThisWeek: 1,
             unread: 0,
-            highlights: [new EmailTemplates.NotificationLine("<script>alert(1)</script>", "https://x/1")],
+            arrivals: [new EmailTemplates.NotificationLine("<script>alert(1)</script>", "https://x/1")],
             quiet: []);
 
         // A link title comes off the open web, and a playlist name is whatever somebody typed.
         Assert.DoesNotContain("<script>", message.HtmlBody);
         Assert.Contains("&lt;script&gt;", message.HtmlBody);
+    }
+
+    [Fact]
+    public void A_marked_passage_is_quoted_with_where_it_came_from()
+    {
+        var message = EmailTemplates.Digest(
+            "a@b.com", "https://x", 0, 0, [], [],
+            [new EmailTemplates.QuotedLine("The line that mattered.", "An article", "https://x/a")]);
+
+        Assert.Contains("Something you marked:", message.TextBody);
+        Assert.Contains("“The line that mattered.” — An article, https://x/a", message.TextBody);
+    }
+
+    /// <summary>A passage is text off the open web, the same as a title.</summary>
+    [Fact]
+    public void A_marked_passage_is_escaped_not_rendered()
+    {
+        var message = EmailTemplates.Digest(
+            "a@b.com", "https://x", 0, 0, [], [],
+            [new EmailTemplates.QuotedLine("<img src=x onerror=alert(1)>", "<b>Title</b>", "https://x/a")]);
+
+        Assert.DoesNotContain("<img src=x", message.HtmlBody);
+        Assert.DoesNotContain("<b>Title</b>", message.HtmlBody);
     }
 
     [Fact]

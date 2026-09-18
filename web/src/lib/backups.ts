@@ -74,4 +74,6 @@ export interface RestorePlan {
 	sourcesAdded: number;
 	truncated: boolean;
 	sourcesNeedCredentials: boolean;
+	/** Marked passages put back, onto articles that are saved here once it is done. */
+	highlightsAdded: number;
 }

@@ -214,6 +214,7 @@
 			<li><code>tag:rust</code> — only links you tagged that</li>
 			<li><code>is:unread</code>, <code>is:read</code> — where you got to</li>
 			<li><code>is:broken</code> — links whose page has gone</li>
+			<li><code>is:highlighted</code> — articles you marked a passage in</li>
 			<li><code>kind:video</code> — article, video, paper, audio…</li>
 			<li><code>under:10</code> — readable in ten minutes</li>
 			<li><code>score:&gt;80</code> — at least that well rated</li>

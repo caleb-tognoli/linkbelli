@@ -56,6 +56,7 @@ The response's `token` is shown once. Give the key the `playlists:read` scope fo
 |------|--------------|
 | `search_links` | Search titles, notes and **saved article text** across every playlist. Filters by site, tag, status, kind, score, broken-ness |
 | `read_article` | The stored text of one saved page, by `linkId` |
+| `list_highlights` | Passages marked while reading, with their notes — everywhere, or in one article by `linkId` |
 | `list_playlists` | The playlists, with counts and visibility |
 | `list_playlist_items` | What is in one playlist, in its own order |
 | `save_link` | Add a URL to a playlist |

@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IInviteService, InviteService>();
         services.AddScoped<IRestoreService, RestoreService>();
+        services.AddScoped<IHighlightService, HighlightService>();
         services.AddScoped<IRegistrationPolicy, RegistrationPolicy>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPreferences, NotificationPreferences>();

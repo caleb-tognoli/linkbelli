@@ -29,6 +29,8 @@ function fakeClient(over = {}) {
 		addItem: vi.fn(async () => ({ id: 'i1' })),
 		createPlaylist: vi.fn(async () => ({ id: 'p2', name: 'New' })),
 		setStatus: vi.fn(async () => ({ affected: 2, skipped: 0 })),
+		listHighlights: vi.fn(async () => ({ items: [], nextCursor: null })),
+		listHighlightsFor: vi.fn(async () => []),
 		...over
 	};
 }
@@ -53,6 +55,7 @@ describe('the tools on offer', () => {
 
 		expect(names).toEqual([
 			'create_playlist',
+			'list_highlights',
 			'list_playlist_items',
 			'list_playlists',
 			'mark_items',
@@ -68,6 +71,7 @@ describe('the tools on offer', () => {
 
 		// Not merely refused at call time — an agent should not see a tool it cannot use.
 		expect(names).toEqual([
+			'list_highlights',
 			'list_playlist_items',
 			'list_playlists',
 			'read_article',
@@ -319,6 +323,61 @@ describe('mark_items', () => {
 
 		expect(text).toContain('Marked 2 watched');
 		expect(text).toContain('1 were already that way or not yours');
+	});
+});
+
+describe('list_highlights', () => {
+	it('quotes each passage with its note and where it came from', async () => {
+		const client = fakeClient({
+			listHighlights: vi.fn(async () => ({
+				items: [
+					{
+						id: 'h1',
+						linkId: 'l1',
+						url: 'https://example.com/a',
+						title: 'An article',
+						text: 'The line that mattered.',
+						note: 'Came back for this'
+					}
+				],
+				nextCursor: 'next-page'
+			}))
+		});
+		const mcp = await connect(client);
+
+		const text = textOf(await mcp.callTool({ name: 'list_highlights', arguments: { limit: 5 } }));
+
+		expect(text).toContain('> The line that mattered.');
+		expect(text).toContain('Note: Came back for this');
+		expect(text).toContain('— An article (https://example.com/a)');
+		expect(text).toContain('next-page');
+		expect(client.listHighlights).toHaveBeenCalledWith(5, undefined);
+	});
+
+	/** A quote with no source is the thing these exist not to be. */
+	it('borrows the article title for the passages in one article', async () => {
+		const client = fakeClient({
+			listHighlightsFor: vi.fn(async () => [
+				{ id: 'h1', linkId: 'l1', text: 'Second paragraph.', note: null }
+			])
+		});
+		const mcp = await connect(client);
+
+		const text = textOf(
+			await mcp.callTool({ name: 'list_highlights', arguments: { linkId: 'l1' } })
+		);
+
+		expect(client.listHighlightsFor).toHaveBeenCalledWith('l1');
+		expect(text).toContain('> Second paragraph.');
+		expect(text).toContain('— An article');
+	});
+
+	it('says plainly when nothing is marked', async () => {
+		const mcp = await connect(fakeClient());
+
+		const text = textOf(await mcp.callTool({ name: 'list_highlights', arguments: {} }));
+
+		expect(text).toBe('Nothing has been highlighted yet.');
 	});
 });
 

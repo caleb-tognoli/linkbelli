@@ -17,6 +17,7 @@ export const PLACES: Command[] = [
 	{ id: 'go-playlists', label: 'Playlists', kind: 'Go', href: '/playlists', keywords: 'lists home' },
 	{ id: 'go-search', label: 'Search', kind: 'Go', href: '/search', keywords: 'find look' },
 	{ id: 'go-queue', label: 'Up next', kind: 'Go', href: '/queue', keywords: 'queue unread backlog' },
+	{ id: 'go-highlights', label: 'Highlights', kind: 'Go', href: '/highlights', keywords: 'marked quotes notes' },
 	{ id: 'go-sources', label: 'Sources', kind: 'Go', href: '/sources', keywords: 'feeds scrapers' },
 	{ id: 'go-rules', label: 'Rules', kind: 'Go', href: '/automations', keywords: 'automation filing tagging' },
 	{ id: 'go-feed', label: 'Feed', kind: 'Go', href: '/feed', keywords: 'following new updates' },

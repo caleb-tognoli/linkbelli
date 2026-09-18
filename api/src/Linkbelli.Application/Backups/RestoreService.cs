@@ -133,6 +133,15 @@ public sealed class RestoreService(
             await db.SaveChangesAsync(ct);
         }
 
+        // Last, because a highlight needs the article it marks to be saved here first — and in a
+        // real run that means after the items above have been written.
+        await RestoreHighlightsAsync(ownerId, bundle, dryRun, plan, ct);
+
+        if (!dryRun && plan.HighlightsAdded > 0)
+        {
+            await db.SaveChangesAsync(ct);
+        }
+
         return new RestorePlan(
             dryRun,
             bundle.Version,
@@ -148,7 +157,8 @@ public sealed class RestoreService(
             // around, and a scraper's auth header has no business travelling in one. Which means
             // a restored source may need its credentials typed in again, and saying so here is
             // the difference between a surprise and an expectation.
-            plan.SourcesAdded > 0);
+            plan.SourcesAdded > 0,
+            plan.HighlightsAdded);
     }
 
     private async Task<Dictionary<Guid, Guid>> RestoreFoldersAsync(
@@ -352,6 +362,7 @@ public sealed class RestoreService(
             }
 
             plan.ItemsAdded++;
+            plan.Arriving.Add(canonical.Hash);
             if (dryRun)
             {
                 continue;
@@ -432,9 +443,112 @@ public sealed class RestoreService(
         }
     }
 
+    /// <summary>
+    /// Puts back the passages marked in articles that are saved here.
+    /// </summary>
+    /// <remarks>
+    /// Matched to an article by address, since none of the file's ids mean anything here, and to
+    /// an existing highlight by position — the same passage marked twice is one passage, which is
+    /// also what makes running a restore again harmless.
+    ///
+    /// The offsets are not checked against the article's text. The link may have been created a
+    /// moment ago and not enriched yet, and when it is, a highlight whose words have moved is
+    /// already reported as orphaned rather than drawn in the wrong place. The quote is the part
+    /// that has to survive, and it does.
+    /// </remarks>
+    private async Task RestoreHighlightsAsync(
+        Guid ownerId, ExportBundle bundle, bool dryRun, RestoreCounts plan, CancellationToken ct)
+    {
+        var incoming = (bundle.Highlights ?? [])
+            .Select(h => (Highlight: h, Hash: UrlCanonicalizer.TryCanonicalize(h.Url, out var c) ? c.Hash : null))
+            .Where(x => x.Hash is not null
+                && x.Highlight.ParagraphIndex >= 0
+                && x.Highlight.Start >= 0
+                && x.Highlight.End > x.Highlight.Start
+                && !string.IsNullOrEmpty(x.Highlight.Text)
+                && x.Highlight.Text.Length <= Highlight.MaxTextLength)
+            .ToList();
+
+        if (incoming.Count == 0)
+        {
+            return;
+        }
+
+        var hashes = incoming.Select(x => x.Hash!).Distinct().ToList();
+
+        // Articles the owner has saved. In a real run the items restored above are written by
+        // now and turn up here; a dry run adds the ones it would have written, so both count
+        // exactly the same set.
+        var saved = await db.PlaylistItems
+            .Where(i => i.Playlist!.OwnerId == ownerId && hashes.Contains(i.Link!.UrlHash))
+            .Select(i => new { i.LinkId, i.Link!.UrlHash })
+            .Distinct()
+            .ToListAsync(ct);
+
+        var linkByHash = saved
+            .GroupBy(s => s.UrlHash, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => (Guid?)g.First().LinkId, StringComparer.OrdinalIgnoreCase);
+
+        if (dryRun)
+        {
+            foreach (var hash in plan.Arriving)
+            {
+                linkByHash.TryAdd(hash, null);
+            }
+        }
+
+        var linkIds = linkByHash.Values.OfType<Guid>().ToList();
+        var present = (await db.Highlights
+                .Where(h => h.OwnerId == ownerId && linkIds.Contains(h.LinkId))
+                .Select(h => new { h.LinkId, h.ParagraphIndex, h.Start, h.End })
+                .ToListAsync(ct))
+            .Select(h => (h.LinkId, h.ParagraphIndex, h.Start, h.End))
+            .ToHashSet();
+
+        foreach (var (highlight, hash) in incoming)
+        {
+            if (!linkByHash.TryGetValue(hash!, out var linkId))
+            {
+                // Nowhere to put it: the article it marks is not saved here.
+                continue;
+            }
+
+            if (linkId is { } id
+                && !present.Add((id, highlight.ParagraphIndex, highlight.Start, highlight.End)))
+            {
+                continue;
+            }
+
+            plan.HighlightsAdded++;
+            if (dryRun || linkId is null)
+            {
+                continue;
+            }
+
+            var note = highlight.Note?.Trim();
+            db.Highlights.Add(new Highlight
+            {
+                OwnerId = ownerId,
+                LinkId = linkId.Value,
+                ParagraphIndex = highlight.ParagraphIndex,
+                Start = highlight.Start,
+                End = highlight.End,
+                Text = highlight.Text,
+                // Cut rather than refused: a file from somewhere with a longer limit should still
+                // bring the passage back, and the start of a note is most of one.
+                Note = string.IsNullOrEmpty(note) ? null : note[..Math.Min(note.Length, Highlight.MaxNoteLength)],
+            });
+        }
+    }
+
     /// <summary>Running totals, so the dry run and the real thing count the same way.</summary>
     private sealed class RestoreCounts
     {
+        /// <summary>The articles this restore adds, by URL hash — what highlights can land on.</summary>
+        public HashSet<string> Arriving { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public int HighlightsAdded { get; set; }
+
         public int FoldersAdded { get; set; }
 
         public int PlaylistsAdded { get; set; }

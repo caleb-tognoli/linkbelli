@@ -64,15 +64,17 @@ public record SearchQuery(
     /// True to see only what is put aside and not yet due. Anything else hides those, which is
     /// what "not now" has to mean if the button is to be worth pressing.
     /// </summary>
-    bool? Snoozed = null);
+    bool? Snoozed = null,
+    /// <summary>True to see only what has a passage marked in it.</summary>
+    bool? Highlighted = null);
 
-/// <summary>A search someone wants to come back to. Membership is whatever matches right now.</summary>
 /// <summary>A pinned search and how many things match it right now.</summary>
 public record PinnedSearch(Guid Id, string Name, int Count);
 
 /// <summary>Keep a saved search in the sidebar, or take it out.</summary>
 public record PinSearchRequest(bool Pinned);
 
+/// <summary>A search someone wants to come back to. Membership is whatever matches right now.</summary>
 public record SavedSearchResponse(
     Guid Id,
     string Name,

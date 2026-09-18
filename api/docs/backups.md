@@ -140,6 +140,10 @@ instance that wrote it, so a file from one Linkbelli restores into another.
 ### Format versions
 
 An export carries a `version`. Version 1 was the original; version 2 added each link's own tags,
-which earlier exports dropped. A restore reads any version up to the one it knows and **refuses
+which earlier exports dropped; version 3 added [highlights](highlights.md), held in a top-level
+`highlights` list keyed by article address rather than on each item — an article can sit in more
+than one playlist, and hanging its marks off items would restore them as duplicates. A highlight is
+put back only onto an article that is saved once the restore has run, and the plan reports how many
+as `highlightsAdded`. A restore reads any version up to the one it knows and **refuses
 anything newer** rather than half-reading it — a restore that silently ignores fields it does not
 understand is worse than one that declines and says so.

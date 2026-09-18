@@ -95,6 +95,31 @@ export function formatItems(playlistName, items, nextCursor) {
 	return `${playlistName} — ${items.length} shown:\n${items.map(formatItem).join('\n')}${tail}`;
 }
 
+/**
+ * Passages somebody marked, as quotations with where they came from.
+ *
+ * Quoted rather than listed as fields: what a model does with these is quote them back, and
+ * handing them over already in that shape makes it more likely to get the attribution right.
+ */
+export function formatHighlights(highlights, nextCursor) {
+	if (!highlights?.length) return 'Nothing has been highlighted yet.';
+
+	const body = highlights
+		.map((h) => {
+			const source = h.title || h.url;
+			const lines = [`> ${h.text}`];
+			if (h.note) lines.push(`Note: ${h.note}`);
+			if (source) lines.push(`— ${source}${h.url && h.url !== source ? ` (${h.url})` : ''}`);
+			if (h.linkId) lines.push(`linkId: ${h.linkId}`);
+			return lines.join('\n');
+		})
+		.join('\n\n');
+
+	const tail = nextCursor ? `\n\nMore: pass cursor "${nextCursor}".` : '';
+
+	return `${highlights.length} highlighted:\n\n${body}${tail}`;
+}
+
 /** A saved article, as something to read rather than a record to parse. */
 export function formatArticle(content, paragraphs, truncated) {
 	const head = [content.title || content.url, content.url];

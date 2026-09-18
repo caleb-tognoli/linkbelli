@@ -108,6 +108,7 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
             Kind = parsed.Kind ?? query.Kind,
             MinScore = parsed.MinScore ?? query.MinScore,
             MaxMinutes = parsed.MaxMinutes ?? query.MaxMinutes,
+            Highlighted = parsed.Highlighted ? true : query.Highlighted,
         };
     }
 
@@ -148,6 +149,13 @@ public class SearchService(IAppDbContext db, IUserPreferenceService prefs, IFull
         }
 
         items = ApplyKind(items, query.Kind);
+
+        if (query.Highlighted == true)
+        {
+            // Marks belong to the article and the person, not the row, so a link marked while
+            // reading it from one list is marked in every list it sits in.
+            items = items.Where(i => db.Highlights.Any(h => h.OwnerId == ownerId && h.LinkId == i.LinkId));
+        }
 
         if (query.MaxMinutes is { } minutes)
         {

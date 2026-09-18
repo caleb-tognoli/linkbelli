@@ -45,7 +45,14 @@ public sealed class PostgresFullTextSearch(LinkbelliDbContext db) : IFullTextSea
                 .Matches(EF.Functions.WebSearchToTsQuery(Configuration, text))
             || EF.Functions.ILike(i.Link!.CanonicalUrl, literal, "\\")
             || EF.Functions.ILike(i.Link!.Host!.Hostname, literal, "\\")
-            || (i.Note != null && EF.Functions.ILike(i.Note, literal, "\\")));
+            || (i.Note != null && EF.Functions.ILike(i.Note, literal, "\\"))
+            // What somebody wrote beside a passage is the same kind of thing as the note on the
+            // item, and was unsearchable. The passage itself is usually in the article already;
+            // it is matched here too for the ones the article has since lost.
+            || db.Highlights.Any(h => h.LinkId == i.LinkId
+                && h.OwnerId == i.Playlist!.OwnerId
+                && (EF.Functions.ILike(h.Text, literal, "\\")
+                    || (h.Note != null && EF.Functions.ILike(h.Note, literal, "\\")))));
     }
 
     public IQueryable<PlaylistItem> OrderByRelevance(IQueryable<PlaylistItem> items, string query)

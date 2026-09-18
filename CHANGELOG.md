@@ -15,6 +15,12 @@ below is under `Unreleased`, and `0.1.0` will be cut from it.
 
 ### Added
 
+- Highlights: select a passage in the reader to mark it, with an optional note beside it. Marks
+  belong to the article rather than to one playlist's copy of it, survive the article being
+  re-extracted (a passage that has moved is kept and flagged rather than drawn in the wrong place),
+  and are listed together on a new Highlights page. Notes are searchable, `is:highlighted` narrows
+  a search to what you marked, the weekly digest quotes a few, exports and backups carry them, and
+  the MCP server can read them.
 - Tags can be renamed, merged and removed, with a management screen that counts how many
   playlists and links a change will touch before it runs.
 - An owner can see who added each link on a shared playlist, and who liked a playlist they
@@ -66,6 +72,8 @@ below is under `Unreleased`, and `0.1.0` will be cut from it.
 - The vulnerable-dependency CI gate actually fails when it finds something.
 - The API answers `400` and `409` where it was answering `500`.
 - The browser extension no longer asks for access to every website.
+- Moving to the next or previous article in the reader no longer carries the last article's
+  reading position over, or saves it onto the new one.
 - An export carries the tags on each link. They were being written out with the playlist's
   tags and none of their own, so a round trip through a backup lost them.
 

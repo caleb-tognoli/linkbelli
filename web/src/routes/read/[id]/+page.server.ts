@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import type { Highlight } from '$lib/highlights';
 import type { LinkContent, Paged, PlaylistItem } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -9,8 +10,12 @@ import type { PageServerLoad } from './$types';
  * the whole of a two-thousand-item playlist to find two of them would be absurd, so this is a
  * window: past it, the keys do nothing and the buttons are not offered. Said here rather than
  * discovered, because a control that silently stops working is worse than one that is absent.
+ *
+ * The API's own page ceiling. This was 200 once, which the API now refuses outright rather than
+ * quietly trimming — and since a failed lookup here only hides the buttons, next and previous
+ * disappeared everywhere without a single error to say why.
  */
-const NEIGHBOUR_WINDOW = 200;
+const NEIGHBOUR_WINDOW = 100;
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const res = await locals.api(`/api/v1/links/${params.id}/content`);
@@ -24,11 +29,27 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
 	return {
 		content,
+		// Marks have to be on the page when it paints, not a moment later: text that changes
+		// colour after you have started reading it is worse than text that never did.
+		highlights: await highlightsAsync(locals.api, params.id),
 		// Where the reader came from, so Esc has somewhere to go back to.
 		from: url.searchParams.get('from'),
 		...(await neighboursAsync(locals.api, url.searchParams.get('from'), params.id))
 	};
 };
+
+/**
+ * The passages already marked in this article.
+ *
+ * An empty list on failure rather than an error: not being able to draw the marks is a worse
+ * reason to refuse somebody the article than not having them.
+ */
+async function highlightsAsync(api: App.Locals['api'], linkId: string): Promise<Highlight[]> {
+	const res = await api(`/api/v1/links/${linkId}/highlights`).catch(() => null);
+	if (!res?.ok) return [];
+
+	return (await res.json()) as Highlight[];
+}
 
 interface Neighbour {
 	linkId: string;

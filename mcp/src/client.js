@@ -108,6 +108,15 @@ export function createClient({ baseUrl, apiKey, fetchImpl = fetch }) {
 
 		getContent: (linkId) => request('GET', `/links/${linkId}/content`),
 
+		listHighlights: (limit, cursor) =>
+			request(
+				'GET',
+				`/highlights?limit=${clampPage(limit)}` +
+					(cursor ? `&cursor=${encodeURIComponent(cursor)}` : '')
+			),
+
+		listHighlightsFor: (linkId) => request('GET', `/links/${linkId}/highlights`),
+
 		addItem: (playlistId, url, note) =>
 			request('POST', `/playlists/${playlistId}/items`, { url, note: note ?? null }),
 

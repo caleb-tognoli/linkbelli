@@ -211,6 +211,12 @@
 				{#if plan.foldersAdded}
 					<li>{count(plan.foldersAdded, 'folder')} {plan.dryRun ? 'to rebuild' : 'rebuilt'}</li>
 				{/if}
+				{#if plan.highlightsAdded}
+					<li>
+						{count(plan.highlightsAdded, 'highlight')}
+						{plan.dryRun ? 'to put back' : 'put back'}
+					</li>
+				{/if}
 				{#if plan.sourcesAdded}
 					<li>
 						{count(plan.sourcesAdded, 'source')}, paused{plan.sourcesNeedCredentials

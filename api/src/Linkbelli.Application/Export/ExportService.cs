@@ -106,6 +106,21 @@ public class ExportService(IAppDbContext db, SourceConfigSecrets secrets) : IExp
 
         var sources = playlistId is null ? await ExportSourcesAsync(ownerId, ct) : [];
 
+        // For one playlist, the marks in its articles; for everything, every mark, including in
+        // articles since removed from every list — they are still somebody's words about it.
+        var highlightQuery = db.Highlights.Where(h => h.OwnerId == ownerId);
+        if (playlistId is not null)
+        {
+            highlightQuery = highlightQuery.Where(h =>
+                db.PlaylistItems.Any(i => i.PlaylistId == playlistId && i.LinkId == h.LinkId));
+        }
+
+        var highlights = await highlightQuery
+            .OrderBy(h => h.CreationTime)
+            .Select(h => new ExportHighlight(
+                h.Link!.CanonicalUrl, h.ParagraphIndex, h.Start, h.End, h.Text, h.Note, h.CreationTime))
+            .ToListAsync(ct);
+
         return new ExportBundle(
             username,
             DateTimeOffset.UtcNow,
@@ -114,7 +129,8 @@ public class ExportService(IAppDbContext db, SourceConfigSecrets secrets) : IExp
                 p.Id, p.Name, p.Slug, p.Description, p.Visibility.ToString(), p.Tags, p.FolderId,
                 p.CreationTime,
                 itemsByPlaylist.TryGetValue(p.Id, out var list) ? list : [])).ToList(),
-            sources);
+            sources,
+            Highlights: highlights);
     }
 
     private async Task<List<ExportSource>> ExportSourcesAsync(Guid ownerId, CancellationToken ct)

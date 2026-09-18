@@ -653,6 +653,7 @@ a search shareable as a URL and savable as a sentence:
 | `tag:rust` | `itemTag=rust`. May appear more than once |
 | `is:unread` / `is:read` | `status=unwatched` / `status=watched` |
 | `is:broken` / `is:ok` | `broken=true` / `broken=false` |
+| `is:highlighted` / `is:marked` | `highlighted=true` — articles with a passage marked in them |
 | `kind:video` | `kind=video` |
 | `under:10` | `maxMinutes=10`. `10m` and `<10` also work |
 | `score:>80` | `minScore=80`. `>=80` and a bare `80` mean the same |

@@ -153,6 +153,9 @@ public static class EmailTemplates
     /// <summary>One thing worth telling somebody about, as a line in a notification mail.</summary>
     public record NotificationLine(string Text, string? Url = null);
 
+    /// <summary>A passage somebody marked, and the article it came from.</summary>
+    public record QuotedLine(string Quote, string Source, string Url);
+
     public static EmailMessage Notification(
         string to, string subject, string heading, string intro, IReadOnlyList<NotificationLine> lines, string publicUrl)
     {
@@ -191,8 +194,9 @@ public static class EmailTemplates
         string publicUrl,
         int addedThisWeek,
         int unread,
-        IReadOnlyList<NotificationLine> highlights,
-        IReadOnlyList<string> quiet)
+        IReadOnlyList<NotificationLine> arrivals,
+        IReadOnlyList<string> quiet,
+        IReadOnlyList<QuotedLine>? marked = null)
     {
         var paragraphs = new List<string>
         {
@@ -201,10 +205,18 @@ public static class EmailTemplates
                 : $"{addedThisWeek} {(addedThisWeek == 1 ? "link" : "links")} arrived this week.",
         };
 
-        if (highlights.Count > 0)
+        if (arrivals.Count > 0)
         {
             paragraphs.Add("Some of what came in:");
-            paragraphs.AddRange(highlights.Select(h => h.Url is null ? $"• {h.Text}" : $"• {h.Text} — {h.Url}"));
+            paragraphs.AddRange(arrivals.Select(h => h.Url is null ? $"• {h.Text}" : $"• {h.Text} — {h.Url}"));
+        }
+
+        // Quoted back in their own words: the most personal thing a summary of somebody's week
+        // can say is what they stopped at while reading it.
+        if (marked is { Count: > 0 })
+        {
+            paragraphs.Add(marked.Count == 1 ? "Something you marked:" : "Some of what you marked:");
+            paragraphs.AddRange(marked.Select(m => $"“{m.Quote}” — {m.Source}, {m.Url}"));
         }
 
         if (unread > 0)

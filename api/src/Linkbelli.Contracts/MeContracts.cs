@@ -73,7 +73,12 @@ public record RestorePlan(
     int ItemsAlreadyThere,
     int SourcesAdded,
     bool Truncated,
-    bool SourcesNeedCredentials);
+    bool SourcesNeedCredentials,
+    /// <summary>
+    /// Marked passages put back. Only onto articles that are saved here once the restore is
+    /// done — a highlight is a mark in something you kept, and has nowhere to go otherwise.
+    /// </summary>
+    int HighlightsAdded = 0);
 
 /// <summary>Restore from a file rather than a stored snapshot.</summary>
 public record RestoreFromFileRequest(string Json, bool DryRun = false);

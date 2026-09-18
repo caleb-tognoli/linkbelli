@@ -40,6 +40,7 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
     public DbSet<Backup> Backups => Set<Backup>();
+    public DbSet<Highlight> Highlights => Set<Highlight>();
 
     /// <summary>
     /// The weighted vector every search matches against.
@@ -169,6 +170,18 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             e.Property(b => b.ContentHash).HasMaxLength(64);
             // Newest first, per owner — every read of this table is "what does this person have".
             e.HasIndex(b => new { b.OwnerId, b.CreationTime });
+        });
+
+        modelBuilder.Entity<Highlight>(e =>
+        {
+            e.Property(h => h.Text).HasMaxLength(Highlight.MaxTextLength);
+            e.Property(h => h.Note).HasMaxLength(Highlight.MaxNoteLength);
+            // The reader's own question, asked on every open: what have I marked in this article.
+            e.HasIndex(h => new { h.OwnerId, h.LinkId });
+            // And the library-wide one: everything I have marked, newest first.
+            e.HasIndex(h => new { h.OwnerId, h.CreationTime });
+            e.HasOne(h => h.Link).WithMany().OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
         });
 
         modelBuilder.Entity<ContentReport>(e =>

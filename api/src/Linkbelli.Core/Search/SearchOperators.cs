@@ -11,6 +11,7 @@ namespace Linkbelli.Core.Search;
 /// <param name="Kind">From <c>kind:</c>.</param>
 /// <param name="MinScore">From <c>score:&gt;80</c>.</param>
 /// <param name="MaxMinutes">From <c>under:10</c>.</param>
+/// <param name="Highlighted">From <c>is:highlighted</c>.</param>
 public record ParsedSearch(
     string? Text,
     string? Host,
@@ -19,7 +20,8 @@ public record ParsedSearch(
     bool? Broken,
     string? Kind,
     int? MinScore,
-    int? MaxMinutes);
+    int? MaxMinutes,
+    bool Highlighted = false);
 
 /// <summary>
 /// Turns what somebody typed into the filters the search already had.
@@ -55,6 +57,7 @@ public static class SearchOperators
         string? kind = null;
         int? minScore = null;
         int? maxMinutes = null;
+        var highlighted = false;
 
         var text = new StringBuilder();
         var found = 0;
@@ -98,6 +101,10 @@ public static class SearchOperators
                         case "ok":
                         case "alive":
                             broken = false;
+                            break;
+                        case "highlighted":
+                        case "marked":
+                            highlighted = true;
                             break;
                         default:
                             handled = false;
@@ -149,7 +156,8 @@ public static class SearchOperators
             broken,
             kind,
             minScore,
-            maxMinutes);
+            maxMinutes,
+            highlighted);
     }
 
     /// <summary>An operator is <c>name:value</c>, with a name of plain letters.</summary>

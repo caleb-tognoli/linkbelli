@@ -14,6 +14,10 @@
 	--color-danger: #dc2626;
 	--color-success: #15803d;
 	--color-warning: #b45309;
+	/* Marked text in the reader. A wash rather than a fluorescent block: the words underneath
+	   still have to be the easiest thing on the page to read. */
+	--color-highlight: #fdf0b8;
+	--color-highlight-strong: #f7dd72;
 }
 
 :root[data-theme='dark'] {
@@ -27,6 +31,10 @@
 	--color-danger: #ef4444;
 	--color-success: #4ade80;
 	--color-warning: #fbbf24;
+	/* On a dark page a yellow wash would be the brightest thing on it, so the mark is carried
+	   by a dim amber behind unchanged text instead. */
+	--color-highlight: #4a3d18;
+	--color-highlight-strong: #6b5720;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,6 +49,8 @@
 		--color-danger: #ef4444;
 		--color-success: #4ade80;
 		--color-warning: #fbbf24;
+		--color-highlight: #4a3d18;
+		--color-highlight-strong: #6b5720;
 	}
 }
 

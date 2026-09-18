@@ -84,6 +84,15 @@ public class SearchOperatorTests
         Assert.Null(SearchOperators.Parse("is:unread").Broken);
     }
 
+    [Fact]
+    public void Highlighted_asks_for_what_you_marked()
+    {
+        Assert.True(SearchOperators.Parse("is:highlighted").Highlighted);
+        Assert.True(SearchOperators.Parse("canals is:marked").Highlighted);
+        Assert.Equal("canals", SearchOperators.Parse("canals is:marked").Text);
+        Assert.False(SearchOperators.Parse("is:unread").Highlighted);
+    }
+
     [Theory]
     [InlineData("score:>80", 80)]
     [InlineData("score:>=80", 80)]
