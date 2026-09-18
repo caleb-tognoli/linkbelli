@@ -20,7 +20,7 @@ public static class PublicPlaylistEndpoints
 
         // Discover: search/browse public playlists (by name query and/or tag). NSFW filtered by
         // the viewer's preference if authenticated, otherwise hidden.
-        group.MapGet("/playlists", async (ClaimsPrincipal user, IPlaylistService svc, string? q, string[]? tag, string? sort, int? limit, string? cursor, CancellationToken ct) =>
+        group.MapGet("/playlists", async (ClaimsPrincipal user, IDiscoveryService svc, string? q, string[]? tag, string? sort, int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.DiscoverPublicAsync(q, tag, sort, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
 
@@ -28,7 +28,7 @@ public static class PublicPlaylistEndpoints
         // discovery listing meant fifty serial round trips per crawler fetch, each running a
         // deeper offset query carrying five correlated subqueries per row — none of which a
         // crawler reads. This is one query of three columns, five thousand rows at a time.
-        group.MapGet("/sitemap", async (IPlaylistService svc, int? limit, string? cursor, CancellationToken ct) =>
+        group.MapGet("/sitemap", async (IDiscoveryService svc, int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.ListForSitemapAsync(limit, cursor, ct)))
             .AllowAnonymous()
             .WithName("ListForSitemap");
@@ -49,7 +49,7 @@ public static class PublicPlaylistEndpoints
         // Lists like this one. Discovery otherwise ends at whatever you happened to open — there
         // was no way from a playlist you liked to the next one.
         group.MapGet("/playlists/{username}/{slug}/similar", async (
-            ClaimsPrincipal user, string username, string slug, IPlaylistService svc, int? limit,
+            ClaimsPrincipal user, string username, string slug, IDiscoveryService svc, int? limit,
             CancellationToken ct) =>
             Results.Ok(await svc.ListSimilarAsync(username, slug, limit, ViewerId(user), ct)))
             .AllowAnonymous()
@@ -62,7 +62,7 @@ public static class PublicPlaylistEndpoints
             .AllowAnonymous()
             .WithName("GetSharedItem");
 
-        group.MapGet("/playlists/{username}/{slug}", async (ClaimsPrincipal user, string username, string slug, IPlaylistService svc, CancellationToken ct) =>
+        group.MapGet("/playlists/{username}/{slug}", async (ClaimsPrincipal user, string username, string slug, IPublicPlaylistService svc, CancellationToken ct) =>
             Results.Ok(await svc.GetPublicAsync(username, slug, ViewerId(user), ct)))
             .AllowAnonymous();
 
@@ -72,7 +72,7 @@ public static class PublicPlaylistEndpoints
             .AllowAnonymous();
 
         // Shared sources attached to a public playlist (private sources are never exposed).
-        group.MapGet("/playlists/{username}/{slug}/sources", async (string username, string slug, IPlaylistService svc, CancellationToken ct) =>
+        group.MapGet("/playlists/{username}/{slug}/sources", async (string username, string slug, IPlaylistSourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.ListPublicAttachedSourcesAsync(username, slug, ct)))
             .AllowAnonymous();
 
@@ -105,12 +105,12 @@ public static class PublicPlaylistEndpoints
 
         // A public playlist names its owner; without these there was nowhere to click through to.
         group.MapGet("/users/{username}", async (
-            ClaimsPrincipal user, string username, IPlaylistService svc, CancellationToken ct) =>
+            ClaimsPrincipal user, string username, IPublicPlaylistService svc, CancellationToken ct) =>
             Results.Ok(await svc.GetPublicProfileAsync(username, ViewerId(user), ct)))
             .AllowAnonymous();
 
         group.MapGet("/users/{username}/playlists", async (
-            ClaimsPrincipal user, string username, IPlaylistService svc,
+            ClaimsPrincipal user, string username, IPublicPlaylistService svc,
             int? limit, string? cursor, CancellationToken ct) =>
             Results.Ok(await svc.ListUserPublicPlaylistsAsync(username, limit, cursor, ViewerId(user), ct)))
             .AllowAnonymous();
@@ -126,13 +126,13 @@ public static class PublicPlaylistEndpoints
             .WithName("ReportPlaylist");
 
         // Public tag cloud: tags used across public playlists, with counts.
-        group.MapGet("/tags", async (IPlaylistService svc, string? q, CancellationToken ct) =>
+        group.MapGet("/tags", async (IDiscoveryService svc, string? q, CancellationToken ct) =>
             Results.Ok(await svc.ListPublicTagsAsync(q, ct)))
             .AllowAnonymous();
 
         // The same cloud, narrowed to what has actually seen activity. The all-time one is
         // dominated by whatever was popular first and never changes.
-        group.MapGet("/tags/trending", async (IPlaylistService svc, int? days, CancellationToken ct) =>
+        group.MapGet("/tags/trending", async (IDiscoveryService svc, int? days, CancellationToken ct) =>
             Results.Ok(await svc.ListTrendingTagsAsync(days, ct)))
             .AllowAnonymous()
             .WithName("ListTrendingTags");

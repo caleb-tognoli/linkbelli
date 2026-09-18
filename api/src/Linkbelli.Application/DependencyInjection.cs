@@ -27,6 +27,10 @@ public static class DependencyInjection
         services.Configure<QuotaOptions>(configuration.GetSection("Quota"));
         services.AddScoped<ILinkService, LinkService>();
         services.AddScoped<IPlaylistService, PlaylistService>();
+        services.AddScoped<IPublicPlaylistService, PublicPlaylistService>();
+        services.AddScoped<IDiscoveryService, DiscoveryService>();
+        services.AddScoped<IPlaylistLikeService, PlaylistLikeService>();
+        services.AddScoped<IPlaylistSourceService, PlaylistSourceService>();
         services.AddScoped<ITagResolver, TagResolver>();
         services.AddScoped<ITagManagementService, TagManagementService>();
         services.AddScoped<IPlaylistItemService, PlaylistItemService>();

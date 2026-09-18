@@ -92,12 +92,12 @@ public static class PlaylistEndpoints
 
         // The lightest thing a visitor can say about someone else's list. Signed in, because a
         // count anyone can run up says nothing — and it is what discovery ranks on.
-        group.MapPost("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        group.MapPost("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistLikeService svc, CancellationToken ct) =>
             Results.Ok(await svc.LikeAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
             .WithName("LikePlaylist");
 
-        group.MapDelete("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        group.MapDelete("/{id:guid}/like", async (Guid id, ClaimsPrincipal user, IPlaylistLikeService svc, CancellationToken ct) =>
             Results.Ok(await svc.UnlikeAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead))
             .WithName("UnlikePlaylist");
@@ -114,26 +114,26 @@ public static class PlaylistEndpoints
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
 
         // Sources currently feeding this playlist (incl. cross-user shared subscriptions).
-        group.MapGet("/{id:guid}/sources", async (Guid id, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        group.MapGet("/{id:guid}/sources", async (Guid id, ClaimsPrincipal user, IPlaylistSourceService svc, CancellationToken ct) =>
             Results.Ok(await svc.ListAttachedSourcesAsync(user.GetUserId(), id, ct)))
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsRead));
 
         // Subscribe/unsubscribe a source to this playlist (own source, or any shared one).
-        group.MapPost("/{id:guid}/sources", async (Guid id, SubscribeSourceRequest req, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        group.MapPost("/{id:guid}/sources", async (Guid id, SubscribeSourceRequest req, ClaimsPrincipal user, IPlaylistSourceService svc, CancellationToken ct) =>
         {
             var discoveredCount = await svc.SubscribeSourceAsync(user.GetUserId(), id, req.SourceId, ct);
             return Results.Ok(new { discoveredCount });
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
 
-        group.MapPost("/{id:guid}/sources/{sourceId:guid}/backfill", async (Guid id, Guid sourceId, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        group.MapPost("/{id:guid}/sources/{sourceId:guid}/backfill", async (Guid id, Guid sourceId, ClaimsPrincipal user, IPlaylistSourceService svc, CancellationToken ct) =>
         {
             var itemsAdded = await svc.BackfillFromSourceAsync(user.GetUserId(), id, sourceId, ct);
             return Results.Ok(new { itemsAdded });
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite));
 
-        group.MapDelete("/{id:guid}/sources/{sourceId:guid}", async (Guid id, Guid sourceId, ClaimsPrincipal user, IPlaylistService svc, CancellationToken ct) =>
+        group.MapDelete("/{id:guid}/sources/{sourceId:guid}", async (Guid id, Guid sourceId, ClaimsPrincipal user, IPlaylistSourceService svc, CancellationToken ct) =>
         {
             await svc.UnsubscribeSourceAsync(user.GetUserId(), id, sourceId, ct);
             return Results.NoContent();
