@@ -7,6 +7,7 @@ using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Identity;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
+using Linkbelli.Application.Webhooks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -32,6 +33,11 @@ public sealed class MaintenanceScheduler(
     public const string DigestJobId = "digest:weekly";
 
     public const string AccountPurgeJobId = "accounts:purge";
+
+    public const string WebhookPurgeJobId = "webhooks:purge-deliveries";
+
+    /// <summary>Nightly, clear of the other small-hours jobs.</summary>
+    public const string WebhookPurgeCron = "51 3 * * *";
 
     /// <summary>Nightly, off the hour so it doesn't pile onto every hourly source schedule.</summary>
     public const string Cron = "17 3 * * *";
@@ -104,6 +110,9 @@ public sealed class MaintenanceScheduler(
 
             recurringJobs.AddOrUpdate<ILinkArchiveSweep>(
                 ArchiveJobId, svc => svc.SweepAsync(CancellationToken.None), ArchiveCron);
+
+            recurringJobs.AddOrUpdate<IWebhookDeliveryRetention>(
+                WebhookPurgeJobId, svc => svc.PurgeAsync(CancellationToken.None), WebhookPurgeCron);
 
             recurringJobs.AddOrUpdate<IIdempotencyRetention>(
                 IdempotencyJobId, svc => svc.PurgeAsync(CancellationToken.None), IdempotencyCron);

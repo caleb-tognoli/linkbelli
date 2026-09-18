@@ -52,6 +52,9 @@ services:
       Email__PublicUrl: ${Email__PublicUrl:-http://localhost:5173}
       # Only needed for email-in, and only so the app can show somebody their inbox address.
       Email__InboxDomain: ${Email__InboxDomain:-}
+      # Whether webhooks may be sent to addresses on a private network (a Home Assistant box on
+      # the LAN, say). Off unless .env turns it on — see .env.example for why it is yours to decide.
+      Webhooks__AllowPrivateNetworks: ${Webhooks__AllowPrivateNetworks:-false}
     ports:
       - "5180:8080"
     volumes:

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Application.Email;
 using Linkbelli.Application.Observability;
 using Linkbelli.Application.Services;
@@ -22,6 +23,7 @@ public sealed class SourceRunner(
     ISourceScheduler scheduler,
     AppMetrics metrics,
     INotificationQueue notifications,
+    IWebhookEvents webhooks,
     ILogger<SourceRunner> logger) : ISourceRunner
 {
     /// <summary>
@@ -59,6 +61,10 @@ public sealed class SourceRunner(
         var run = new SourceRun { SourceId = sourceId, Status = SourceRunStatus.Running };
         db.SourceRuns.Add(run);
         await db.SaveChangesAsync(cancellationToken);
+
+        // What this run put where, and whether it gave up — told to webhooks once it is saved.
+        var added = new List<PlaylistItem>();
+        string? stoppedWith = null;
 
         try
         {
@@ -207,7 +213,7 @@ public sealed class SourceRunner(
                     }
 
                     nextPosition += PlaylistOrdering.Gap;
-                    db.PlaylistItems.Add(new PlaylistItem
+                    var item = new PlaylistItem
                     {
                         PlaylistId = playlistId,
                         LinkId = link.Id,
@@ -217,7 +223,9 @@ public sealed class SourceRunner(
                         Metadata = metadata is { Count: > 0 }
                             ? new Dictionary<string, string>(metadata)
                             : null,
-                    });
+                    };
+                    db.PlaylistItems.Add(item);
+                    added.Add(item);
                 }
             }
             run.Status = SourceRunStatus.Succeeded;
@@ -244,6 +252,7 @@ public sealed class SourceRunner(
                 // has quietly stopped filling and nothing else in the app announces that.
                 // Inside the status check, so a source that keeps failing only says so once.
                 notifications.QueueSourceStopped(source.OwnerId, sourceId);
+                stoppedWith = ex.Message;
             }
         }
         finally
@@ -258,6 +267,18 @@ public sealed class SourceRunner(
                 run.FoundCount,
                 run.AddedCount,
                 run.SkippedCount);
+
+            // Only when the run's items were actually written — a run that failed part way
+            // added nothing, and announcing what it meant to add would be announcing nothing.
+            if (run.Status == SourceRunStatus.Succeeded && added.Count > 0)
+            {
+                await webhooks.ItemsAddedAsync([.. added.Select(i => i.Id)], ItemOrigin.Source, cancellationToken);
+            }
+
+            if (stoppedWith is not null)
+            {
+                await webhooks.SourceStoppedAsync(sourceId, stoppedWith, cancellationToken);
+            }
         }
     }
 }

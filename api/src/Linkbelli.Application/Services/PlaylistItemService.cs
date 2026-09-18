@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Linkbelli.Application.Automation;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Playlists;
@@ -17,7 +18,8 @@ public class PlaylistItemService(
     IUserPreferenceService prefs,
     ITagResolver tags,
     IAutomationRunner automation,
-    IPlaylistAccess access) : IPlaylistItemService
+    IPlaylistAccess access,
+    IWebhookEvents webhooks) : IPlaylistItemService
 {
     /// <summary>
     /// One item as the API returns it.
@@ -100,6 +102,10 @@ public class PlaylistItemService(
         db.PlaylistItems.Add(item);
         await db.SaveChangesAsync(ct);
 
+        // Before the rules run, so a receiver hears where it was saved; anything a rule then
+        // does to it is an event of its own.
+        await webhooks.ItemsAddedAsync([item.Id], ItemOrigin.Manual, ct);
+
         // Straight away for a manual add, where the person is watching: a rule that files their
         // link a minute after they saved it looks like the app moved it on its own. The sweep is
         // what makes the rules reliable; this is what makes them feel immediate.
@@ -118,11 +124,15 @@ public class PlaylistItemService(
             item.Note = request.Note.Trim();
         }
 
+        var finished = false;
         if (request.Status is not null && request.Status.Value != item.Status)
         {
             item.Status = request.Status.Value;
             item.StatusChangedAt = DateTimeOffset.UtcNow;
+            finished = item.Status == PlaylistItemStatus.Watched;
         }
+
+        List<string> tagged = [];
 
         if (request.Tags is not null)
         {
@@ -131,6 +141,11 @@ public class PlaylistItemService(
             var resolved = await tags.ResolveAsync(TagNormalizer.Normalize(request.Tags), ct);
             var existing = await db.PlaylistItemTags.Where(t => t.PlaylistItemId == itemId).ToListAsync(ct);
             db.PlaylistItemTags.RemoveRange(existing);
+
+            // Only the ones that are new. Sending the whole set back is how a client removes one,
+            // and that should not announce every tag it kept as though it had just been added.
+            var had = existing.Select(t => t.TagId).ToHashSet();
+            tagged = [.. resolved.Where(t => !had.Contains(t.Id)).Select(t => t.Name)];
 
             foreach (var tag in resolved)
             {
@@ -143,6 +158,17 @@ public class PlaylistItemService(
         }
 
         await db.SaveChangesAsync(ct);
+
+        if (finished)
+        {
+            await webhooks.ItemsFinishedAsync([itemId], ct);
+        }
+
+        foreach (var tag in tagged)
+        {
+            await webhooks.ItemsTaggedAsync([itemId], tag, ct);
+        }
+
         return await ProjectAsync(itemId, ct);
     }
 

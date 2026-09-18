@@ -12,11 +12,58 @@ namespace Linkbelli.Application.Http;
 /// </summary>
 public static class SsrfProtection
 {
-    public static async ValueTask<Stream> ConnectCallback(SocketsHttpConnectionContext context, CancellationToken ct)
+    public static ValueTask<Stream> ConnectCallback(SocketsHttpConnectionContext context, CancellationToken ct) =>
+        ConnectAsync(context, IsPublic, ct);
+
+    /// <summary>
+    /// The guard for webhook deliveries, which an operator may widen to their own network.
+    /// </summary>
+    /// <remarks>
+    /// The events people most want to send go to things on a home network — a Home Assistant box
+    /// at 192.168.1.10 is the canonical webhook receiver — and the public-only rule refuses every
+    /// one of them. So an operator, and only an operator, can allow the private ranges. Never
+    /// loopback, which is this server and whatever else listens on it, and never link-local,
+    /// which is where a cloud instance's metadata service answers with its credentials.
+    /// </remarks>
+    public static Func<SocketsHttpConnectionContext, CancellationToken, ValueTask<Stream>> ConnectCallbackFor(
+        bool allowPrivateNetworks) =>
+        allowPrivateNetworks
+            ? (context, ct) => ConnectAsync(context, a => IsPublic(a) || IsPrivateNetwork(a), ct)
+            : ConnectCallback;
+
+    /// <summary>
+    /// The ranges a home or office network is numbered from: RFC 1918 and IPv6 unique-local.
+    /// Nothing else that <see cref="IsPublic"/> refuses.
+    /// </summary>
+    public static bool IsPrivateNetwork(IPAddress address)
+    {
+        if (address.IsIPv4MappedToIPv6)
+        {
+            address = address.MapToIPv4();
+        }
+
+        Span<byte> b = stackalloc byte[16];
+        if (!address.TryWriteBytes(b, out var written))
+        {
+            return false;
+        }
+
+        return written switch
+        {
+            4 => b[0] == 10
+                || (b[0] == 172 && b[1] is >= 16 and <= 31)
+                || (b[0] == 192 && b[1] == 168),
+            16 => (b[0] & 0xFE) == 0xFC,
+            _ => false,
+        };
+    }
+
+    private static async ValueTask<Stream> ConnectAsync(
+        SocketsHttpConnectionContext context, Func<IPAddress, bool> permitted, CancellationToken ct)
     {
         var endpoint = context.DnsEndPoint;
         var addresses = await Dns.GetHostAddressesAsync(endpoint.Host, ct).ConfigureAwait(false);
-        var allowed = addresses.Where(IsPublic).ToArray();
+        var allowed = addresses.Where(permitted).ToArray();
         if (allowed.Length == 0)
         {
             throw new HttpRequestException($"Refusing to connect to non-public host '{endpoint.Host}'.");

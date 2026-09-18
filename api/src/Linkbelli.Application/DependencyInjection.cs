@@ -15,6 +15,8 @@ using Linkbelli.Application.Feeds;
 using Linkbelli.Application.Backups;
 using Linkbelli.Application.Email;
 using Linkbelli.Application.Export;
+using Linkbelli.Application.Webhooks;
+using Microsoft.Extensions.Options;
 
 namespace Linkbelli.Application;
 
@@ -46,6 +48,11 @@ public static class DependencyInjection
         services.AddScoped<IInviteService, InviteService>();
         services.AddScoped<IRestoreService, RestoreService>();
         services.AddScoped<IHighlightService, HighlightService>();
+        services.Configure<WebhookOptions>(configuration.GetSection(WebhookOptions.Section));
+        services.AddScoped<IWebhookEvents, WebhookPublisher>();
+        services.AddScoped<IWebhookService, WebhookService>();
+        services.AddScoped<IWebhookDispatcher, WebhookDispatcher>();
+        services.AddScoped<IWebhookDeliveryRetention, WebhookDeliveryRetention>();
         services.AddScoped<IRegistrationPolicy, RegistrationPolicy>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<INotificationPreferences, NotificationPreferences>();
@@ -123,6 +130,22 @@ public static class DependencyInjection
                 AutomaticDecompression = DecompressionMethods.All,
                 ConnectTimeout = EnrichmentHttpClient.ConnectTimeout,
                 ConnectCallback = SsrfProtection.ConnectCallback,
+            });
+
+        // Its own client rather than enrichment's: no browser disguise, no redirects, a short
+        // timeout, and a guard an operator can widen to their own network without widening what
+        // enrichment is allowed to fetch.
+        services.AddHttpClient(WebhookHttpClient.Name, client =>
+            {
+                client.Timeout = WebhookHttpClient.Timeout;
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(WebhookHttpClient.UserAgent);
+            })
+            .ConfigurePrimaryHttpMessageHandler(provider => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                ConnectTimeout = WebhookHttpClient.ConnectTimeout,
+                ConnectCallback = SsrfProtection.ConnectCallbackFor(
+                    provider.GetRequiredService<IOptions<WebhookOptions>>().Value.AllowPrivateNetworks),
             });
 
         return services;

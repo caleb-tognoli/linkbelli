@@ -5,6 +5,7 @@
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import BackupsPanel from '$lib/components/BackupsPanel.svelte';
 	import NotificationsPanel from '$lib/components/NotificationsPanel.svelte';
+	import WebhooksPanel from '$lib/components/WebhooksPanel.svelte';
 	import OfflineSupportNotice from '$lib/components/OfflineSupportNotice.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Switch from '$lib/components/Switch.svelte';
@@ -262,6 +263,8 @@
 	<div>
 		<ApiKeysManager keys={data.apiKeys} />
 	</div>
+
+	<WebhooksPanel />
 
 	<!-- The counterpart of the four export formats above. Data portability was taken seriously
 	     here and its opposite was missing entirely: there was no way out at all. -->

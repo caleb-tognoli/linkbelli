@@ -41,6 +41,8 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
     public DbSet<FolderPlaylist> FolderPlaylists => Set<FolderPlaylist>();
     public DbSet<Backup> Backups => Set<Backup>();
     public DbSet<Highlight> Highlights => Set<Highlight>();
+    public DbSet<Webhook> Webhooks => Set<Webhook>();
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
 
     /// <summary>
     /// The weighted vector every search matches against.
@@ -181,6 +183,26 @@ public class LinkbelliDbContext(DbContextOptions<LinkbelliDbContext> options)
             // And the library-wide one: everything I have marked, newest first.
             e.HasIndex(h => new { h.OwnerId, h.CreationTime });
             e.HasOne(h => h.Link).WithMany().OnDelete(DeleteBehavior.Cascade);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<Webhook>(e =>
+        {
+            e.Property(w => w.Url).HasMaxLength(Webhook.MaxUrlLength);
+            e.Property(w => w.Description).HasMaxLength(Webhook.MaxDescriptionLength);
+            e.Property(w => w.DisabledReason).HasMaxLength(500);
+            // Asked on every item that is saved, finished or tagged: does this owner have one.
+            e.HasIndex(w => w.OwnerId);
+            e.HasSoftDeleteFilter();
+        });
+
+        modelBuilder.Entity<WebhookDelivery>(e =>
+        {
+            e.Property(d => d.Event).HasMaxLength(64);
+            e.Property(d => d.Error).HasMaxLength(WebhookDelivery.MaxErrorLength);
+            // A webhook's recent deliveries, newest first — the only way the log is read.
+            e.HasIndex(d => new { d.WebhookId, d.CreationTime });
+            e.HasOne(d => d.Webhook).WithMany().OnDelete(DeleteBehavior.Cascade);
             e.HasSoftDeleteFilter();
         });
 

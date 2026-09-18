@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.Net;
 using Linkbelli.Application.Email;
+using Linkbelli.Application.Webhooks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +37,12 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
 
     /// <summary>Every message the app tried to send, in order.</summary>
     public RecordingEmailSender Email { get; } = new();
+
+    /// <summary>Deliveries that were queued, which tests then send themselves.</summary>
+    public RecordingWebhookQueue WebhookQueue { get; } = new();
+
+    /// <summary>Stands in for every webhook receiver, so nothing leaves the test process.</summary>
+    public WebhookReceiver WebhookReceiver { get; } = new();
 
     /// <summary>
     /// The "sensitive" allowance this suite runs with, shared so the test that proves the limiter
@@ -92,6 +100,16 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
             // only way to test these features, and it needs no SMTP server to do it.
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender>(Email);
+
+            // Recorded rather than handed to Hangfire, whose Postgres storage polls every
+            // fifteen seconds: a test sends each delivery itself, and knows exactly when.
+            services.RemoveAll<IWebhookQueue>();
+            services.AddSingleton<IWebhookQueue>(WebhookQueue);
+
+            // Replaces the real handler — and with it the SSRF guard, which is tested on its own.
+            // What these tests are about is what gets sent and what happens to the answer.
+            services.AddHttpClient(WebhookHttpClient.Name)
+                .ConfigurePrimaryHttpMessageHandler(() => WebhookReceiver);
         });
     }
 }
@@ -130,4 +148,51 @@ public sealed class RecordingEmailSender : IEmailSender
 public sealed class IntegrationCollection : ICollectionFixture<PostgresApiFactory>
 {
     public const string Name = "integration";
+}
+
+/// <summary>Remembers what was queued and scheduled, instead of running it.</summary>
+public sealed class RecordingWebhookQueue : IWebhookQueue
+{
+    private readonly ConcurrentQueue<Guid> _enqueued = new();
+    private readonly ConcurrentQueue<(Guid Id, TimeSpan Delay)> _scheduled = new();
+
+    public IReadOnlyCollection<Guid> Enqueued => _enqueued;
+
+    public IReadOnlyCollection<(Guid Id, TimeSpan Delay)> Scheduled => _scheduled;
+
+    public void Enqueue(Guid deliveryId) => _enqueued.Enqueue(deliveryId);
+
+    public void Schedule(Guid deliveryId, TimeSpan delay) => _scheduled.Enqueue((deliveryId, delay));
+}
+
+/// <summary>
+/// Every webhook receiver at once. Keyed by address, so tests running side by side each see only
+/// what was sent to theirs, and each can choose how its receiver answers.
+/// </summary>
+public sealed class WebhookReceiver : HttpMessageHandler
+{
+    public sealed record Received(string Url, string Body, IReadOnlyDictionary<string, string> Headers);
+
+    private readonly ConcurrentDictionary<string, ConcurrentQueue<Received>> _received = new();
+    private readonly ConcurrentDictionary<string, HttpStatusCode> _answers = new();
+
+    /// <summary>Makes the receiver at this address answer with this status from now on.</summary>
+    public void Answer(string url, HttpStatusCode status) => _answers[url] = status;
+
+    public IReadOnlyList<Received> At(string url) =>
+        _received.TryGetValue(url, out var list) ? [.. list] : [];
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        var url = request.RequestUri!.ToString();
+        var body = request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(ct);
+        var headers = request.Headers
+            .Concat(request.Content?.Headers ?? Enumerable.Empty<KeyValuePair<string, IEnumerable<string>>>())
+            .ToDictionary(h => h.Key, h => string.Join(",", h.Value), StringComparer.OrdinalIgnoreCase);
+
+        _received.GetOrAdd(url, _ => new ConcurrentQueue<Received>()).Enqueue(new Received(url, body, headers));
+
+        var status = _answers.TryGetValue(url, out var answer) ? answer : HttpStatusCode.OK;
+        return new HttpResponseMessage(status) { Content = new StringContent(status == HttpStatusCode.OK ? "ok" : "receiver says no") };
+    }
 }

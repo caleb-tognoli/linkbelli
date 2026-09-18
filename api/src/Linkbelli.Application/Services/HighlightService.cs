@@ -1,6 +1,7 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ public interface IHighlightService
 }
 
 /// <inheritdoc />
-public class HighlightService(IAppDbContext db) : IHighlightService
+public class HighlightService(IAppDbContext db, IWebhookEvents webhooks) : IHighlightService
 {
     /// <summary>
     /// The most passages one article will hold.
@@ -165,6 +166,7 @@ public class HighlightService(IAppDbContext db) : IHighlightService
 
         db.Highlights.Add(highlight);
         await db.SaveChangesAsync(ct);
+        await webhooks.HighlightCreatedAsync(highlight.Id, ct);
 
         return Describe(highlight, paragraphs);
     }

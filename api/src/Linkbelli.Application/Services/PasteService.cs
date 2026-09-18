@@ -1,6 +1,7 @@
 using Linkbelli.Application.Automation;
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Playlists;
@@ -27,7 +28,8 @@ public sealed class PasteService(
     IAppDbContext db,
     ILinkService links,
     IPlaylistAccess access,
-    IAutomationRunner automation) : IPasteService
+    IAutomationRunner automation,
+    IWebhookEvents webhooks) : IPasteService
 {
     public async Task<PasteResponse> PasteAsync(
         Guid ownerId, Guid playlistId, string? text, CancellationToken ct = default)
@@ -97,6 +99,8 @@ public sealed class PasteService(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await webhooks.ItemsAddedAsync(added, ItemOrigin.Paste, ct);
 
         // The rules see a pasted link exactly as they see one added by hand.
         await automation.ApplyAsync(added, ct);

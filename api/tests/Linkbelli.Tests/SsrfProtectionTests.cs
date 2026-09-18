@@ -66,4 +66,39 @@ public class SsrfProtectionTests
     {
         Assert.True(SsrfProtection.IsPublic(IPAddress.Parse(ip)));
     }
+
+    /// <summary>
+    /// What an operator can open webhooks up to: the ranges a home or office network is numbered
+    /// from, where a Home Assistant box or an n8n instance usually lives.
+    /// </summary>
+    [Theory]
+    [InlineData("10.0.0.5")]
+    [InlineData("172.16.3.4")]
+    [InlineData("172.31.255.1")]
+    [InlineData("192.168.1.10")]
+    [InlineData("fd12:3456:789a::1")]   // IPv6 unique-local
+    [InlineData("::ffff:192.168.1.10")] // the same, written v4-mapped
+    public void A_home_network_counts_as_private(string ip)
+    {
+        Assert.True(SsrfProtection.IsPrivateNetwork(IPAddress.Parse(ip)));
+    }
+
+    /// <summary>
+    /// Never opened up, whatever the operator says: loopback is this server and everything else
+    /// listening on it, and link-local is where a cloud instance's metadata service hands out its
+    /// credentials.
+    /// </summary>
+    [Theory]
+    [InlineData("127.0.0.1")]
+    [InlineData("::1")]
+    [InlineData("169.254.169.254")]
+    [InlineData("fe80::1")]
+    [InlineData("100.64.0.1")]   // CGNAT: the provider's network, not the operator's
+    [InlineData("0.0.0.0")]
+    [InlineData("224.0.0.1")]
+    [InlineData("8.8.8.8")]      // public, which is a different question
+    public void Nothing_else_counts_as_private(string ip)
+    {
+        Assert.False(SsrfProtection.IsPrivateNetwork(IPAddress.Parse(ip)));
+    }
 }

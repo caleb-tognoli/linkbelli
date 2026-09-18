@@ -1,6 +1,7 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Services;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Core.Automation;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Playlists;
@@ -41,6 +42,7 @@ public interface IAutomationRunner
 public sealed class AutomationRunner(
     IAppDbContext db,
     ITagResolver tags,
+    IWebhookEvents webhooks,
     ILogger<AutomationRunner> logger) : IAutomationRunner
 {
     /// <summary>Items per sweep. Enough to keep up with a large source run without a long lock.</summary>
@@ -104,6 +106,7 @@ public sealed class AutomationRunner(
         var compiled = new CompiledRule(rule);
         var now = DateTimeOffset.UtcNow;
         var acted = 0;
+        var effects = new RunEffects();
 
         foreach (var item in items)
         {
@@ -122,13 +125,14 @@ public sealed class AutomationRunner(
                 continue;
             }
 
-            await ActAsync(item, rule, cancellationToken);
+            await ActAsync(item, rule, effects, cancellationToken);
             rule.MatchCount++;
             rule.LastMatchedAt = now;
             acted++;
         }
 
         await db.SaveChangesAsync(cancellationToken);
+        await effects.PublishAsync(webhooks, cancellationToken);
 
         logger.LogInformation(
             "Rule {RuleId} run over {Count} existing items; acted on {Acted}.", ruleId, items.Count, acted);
@@ -180,6 +184,7 @@ public sealed class AutomationRunner(
 
         var now = DateTimeOffset.UtcNow;
         var acted = 0;
+        var effects = new RunEffects();
 
         foreach (var item in items)
         {
@@ -190,13 +195,14 @@ public sealed class AutomationRunner(
                 continue;
             }
 
-            if (await RunRulesAsync(item, rules, now, cancellationToken))
+            if (await RunRulesAsync(item, rules, now, effects, cancellationToken))
             {
                 acted++;
             }
         }
 
         await db.SaveChangesAsync(cancellationToken);
+        await effects.PublishAsync(webhooks, cancellationToken);
 
         if (acted > 0)
         {
@@ -208,7 +214,7 @@ public sealed class AutomationRunner(
 
     /// <summary>Runs one item past the rules in order. Returns whether anything happened to it.</summary>
     private async Task<bool> RunRulesAsync(
-        PlaylistItem item, List<CompiledRule> rules, DateTimeOffset now, CancellationToken ct)
+        PlaylistItem item, List<CompiledRule> rules, DateTimeOffset now, RunEffects effects, CancellationToken ct)
     {
         var candidate = new RuleCandidate(
             item.PlaylistId,
@@ -229,7 +235,7 @@ public sealed class AutomationRunner(
                 continue;
             }
 
-            await ActAsync(item, rule.Rule, ct);
+            await ActAsync(item, rule.Rule, effects, ct);
 
             rule.Rule.MatchCount++;
             rule.Rule.LastMatchedAt = now;
@@ -254,17 +260,18 @@ public sealed class AutomationRunner(
         return acted;
     }
 
-    private async Task ActAsync(PlaylistItem item, AutomationRule rule, CancellationToken ct)
+    private async Task ActAsync(PlaylistItem item, AutomationRule rule, RunEffects effects, CancellationToken ct)
     {
         if (rule.AddTags.Length > 0)
         {
-            await AddTagsAsync(item, rule.AddTags, ct);
+            await AddTagsAsync(item, rule.AddTags, effects, ct);
         }
 
         if (rule.MarkWatched && item.Status != PlaylistItemStatus.Watched)
         {
             item.Status = PlaylistItemStatus.Watched;
             item.StatusChangedAt = DateTimeOffset.UtcNow;
+            effects.Finished.Add(item.Id);
         }
 
         if (rule.SetScore is { } score)
@@ -284,12 +291,12 @@ public sealed class AutomationRunner(
 
         if (rule.CopyToPlaylistId is { } copyTo)
         {
-            await CopyAsync(item, copyTo, ct);
+            await CopyAsync(item, copyTo, effects, ct);
         }
 
         if (rule.MoveToPlaylistId is { } moveTo && moveTo != item.PlaylistId)
         {
-            await MoveAsync(item, moveTo, ct);
+            await MoveAsync(item, moveTo, effects, ct);
         }
 
         if (rule.Trash)
@@ -298,7 +305,7 @@ public sealed class AutomationRunner(
         }
     }
 
-    private async Task AddTagsAsync(PlaylistItem item, string[] names, CancellationToken ct)
+    private async Task AddTagsAsync(PlaylistItem item, string[] names, RunEffects effects, CancellationToken ct)
     {
         var resolved = await tags.ResolveAsync(names, ct);
         var existing = item.Tags.Select(t => t.TagId).ToHashSet();
@@ -306,6 +313,7 @@ public sealed class AutomationRunner(
         foreach (var tag in resolved.Where(t => !existing.Contains(t.Id)))
         {
             item.Tags.Add(new PlaylistItemTag { PlaylistItemId = item.Id, TagId = tag.Id });
+            effects.Tagged(tag.Name).Add(item.Id);
         }
 
         // Tags live in join rows, so nothing on the item itself changes — without this a sync
@@ -313,7 +321,7 @@ public sealed class AutomationRunner(
         item.LastModified = DateTimeOffset.UtcNow;
     }
 
-    private async Task MoveAsync(PlaylistItem item, Guid playlistId, CancellationToken ct)
+    private async Task MoveAsync(PlaylistItem item, Guid playlistId, RunEffects effects, CancellationToken ct)
     {
         if (!await OwnedAsync(item, playlistId, ct))
         {
@@ -330,9 +338,10 @@ public sealed class AutomationRunner(
 
         item.PlaylistId = playlistId;
         item.Position = await NextPositionAsync(playlistId, ct);
+        effects.Arrived.Add(item.Id);
     }
 
-    private async Task CopyAsync(PlaylistItem item, Guid playlistId, CancellationToken ct)
+    private async Task CopyAsync(PlaylistItem item, Guid playlistId, RunEffects effects, CancellationToken ct)
     {
         if (playlistId == item.PlaylistId || !await OwnedAsync(item, playlistId, ct))
         {
@@ -344,7 +353,7 @@ public sealed class AutomationRunner(
             return;
         }
 
-        db.PlaylistItems.Add(new PlaylistItem
+        var copy = new PlaylistItem
         {
             PlaylistId = playlistId,
             LinkId = item.LinkId,
@@ -355,7 +364,42 @@ public sealed class AutomationRunner(
             // Already been past the rules: it was put here by one, and running them over it
             // again is how two rules pointing at each other become a loop.
             AutomationAppliedAt = DateTimeOffset.UtcNow,
-        });
+        };
+
+        db.PlaylistItems.Add(copy);
+        effects.Arrived.Add(copy.Id);
+    }
+
+    /// <summary>
+    /// What a run did that webhooks hear about, gathered as it goes and told once it is saved.
+    /// </summary>
+    /// <remarks>
+    /// Told afterwards rather than as each rule acts, because until the save nothing has
+    /// happened — and a later rule in the same run may trash the item, which the publisher then
+    /// finds gone and leaves out, rather than announcing a link that is no longer there.
+    /// </remarks>
+    private sealed class RunEffects
+    {
+        private readonly Dictionary<string, List<Guid>> _tagged = new(StringComparer.Ordinal);
+
+        public List<Guid> Finished { get; } = [];
+
+        /// <summary>Filed into another playlist, by a copy or a move.</summary>
+        public List<Guid> Arrived { get; } = [];
+
+        public List<Guid> Tagged(string tag) =>
+            _tagged.TryGetValue(tag, out var ids) ? ids : _tagged[tag] = [];
+
+        public async Task PublishAsync(IWebhookEvents webhooks, CancellationToken ct)
+        {
+            await webhooks.ItemsAddedAsync(Arrived, ItemOrigin.Rule, ct);
+            await webhooks.ItemsFinishedAsync(Finished, ct);
+
+            foreach (var (tag, ids) in _tagged)
+            {
+                await webhooks.ItemsTaggedAsync(ids, tag, ct);
+            }
+        }
     }
 
     /// <summary>

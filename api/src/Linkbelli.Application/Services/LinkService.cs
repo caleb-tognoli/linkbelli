@@ -2,6 +2,7 @@ using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Application.Mapping;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Url;
@@ -15,6 +16,7 @@ public class LinkService(
     ILinkEnrichmentQueue enrichmentQueue,
     ILinkEnricher enricher,
     LinkMetadataFetcher metadataFetcher,
+    IWebhookEvents webhooks,
     ILogger<LinkService> logger) : ILinkService
 {
     public async Task<LinkResponse> CreateAsync(CreateLinkRequest request, CancellationToken cancellationToken = default)
@@ -98,6 +100,7 @@ public class LinkService(
             throw new NotFoundException("Link not found.");
         }
 
+        var finished = new List<Guid>();
         foreach (var item in mine)
         {
             // Never backwards. Scrolling up to re-read a paragraph is not un-reading it, and a
@@ -111,10 +114,12 @@ public class LinkService(
                 // it means, and making them say so as well is a step for the app's benefit.
                 item.Status = PlaylistItemStatus.Watched;
                 item.StatusChangedAt = now;
+                finished.Add(item.Id);
             }
         }
 
         await db.SaveChangesAsync(cancellationToken);
+        await webhooks.ItemsFinishedAsync(finished, cancellationToken);
     }
 
     public async Task<LinkPreviewResponse> PreviewAsync(string url, CancellationToken cancellationToken = default)

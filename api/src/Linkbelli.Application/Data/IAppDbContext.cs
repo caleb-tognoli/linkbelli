@@ -46,6 +46,8 @@ public interface IAppDbContext
     DbSet<FolderPlaylist> FolderPlaylists { get; }
     DbSet<Backup> Backups { get; }
     DbSet<Highlight> Highlights { get; }
+    DbSet<Webhook> Webhooks { get; }
+    DbSet<WebhookDelivery> WebhookDeliveries { get; }
 
     /// <summary>Begins a database transaction, pinning a single connection for the duration.</summary>
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

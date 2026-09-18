@@ -15,6 +15,12 @@ below is under `Unreleased`, and `0.1.0` will be cut from it.
 
 ### Added
 
+- Outbound webhooks: tell another system when links are saved, finished or tagged, when a source
+  stops, or when a passage is marked. Deliveries are signed, retried over a few hours, logged for
+  thirty days with the receiver's answer, and a webhook that keeps failing is switched off rather
+  than called forever. One action is one event — a source run that finds forty links sends one
+  request, not forty. Addresses go through the same SSRF guard as page fetching; an operator can
+  allow private-network receivers with `Webhooks__AllowPrivateNetworks`.
 - Highlights: select a passage in the reader to mark it, with an optional note beside it. Marks
   belong to the article rather than to one playlist's copy of it, survive the article being
   re-extracted (a passage that has moved is kept and flagged rather than drawn in the wrong place),

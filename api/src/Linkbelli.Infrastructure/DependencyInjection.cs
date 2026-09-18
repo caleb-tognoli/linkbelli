@@ -8,6 +8,7 @@ using Linkbelli.Application.Identity;
 using Linkbelli.Application.Security;
 using Linkbelli.Application.Services;
 using Linkbelli.Application.Sources;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Infrastructure.Email;
 using Linkbelli.Infrastructure.Jobs;
 using Linkbelli.Infrastructure.Search;
@@ -95,6 +96,8 @@ public static class DependencyInjection
         services.AddSingleton<ILinkEnrichmentQueue, HangfireLinkEnrichmentQueue>();
         services.AddSingleton<ISourceScheduler, HangfireSourceScheduler>();
         services.AddSingleton<INotificationQueue, HangfireNotificationQueue>();
+        services.AddSingleton<IWebhookQueue, HangfireWebhookQueue>();
+        services.AddScoped<WebhookDeliveryJob>();
         services.AddSingleton<IBackgroundJobStats, HangfireJobStats>();
         services.AddHostedService<SourceScheduleSyncService>();
         services.AddHostedService<AdminRoleSeeder>();

@@ -1,5 +1,6 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Application.Enrichment;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
@@ -12,12 +13,15 @@ namespace Linkbelli.Application.Services;
 public class ImportService(
     IAppDbContext db,
     IPlaylistService playlists,
-    ILinkEnrichmentQueue enrichmentQueue) : IImportService
+    ILinkEnrichmentQueue enrichmentQueue,
+    IWebhookEvents webhooks) : IImportService
 {
     public const int MaxRows = 2000;
 
     public async Task<ImportResult> ImportAsync(Guid ownerId, ImportRequest request, CancellationToken ct = default)
     {
+        var addedItems = new List<Guid>();
+
         if (request.Rows.Length == 0)
             return new ImportResult(0, 0, []);
 
@@ -170,7 +174,7 @@ public class ImportService(
             }
 
             maxPos += PlaylistOrdering.Gap;
-            db.PlaylistItems.Add(new PlaylistItem
+            var item = new PlaylistItem
             {
                 PlaylistId = playlistId.Value,
                 LinkId = link.Id,
@@ -178,13 +182,17 @@ public class ImportService(
                 Note = row.Note?.Trim(),
                 Status = PlaylistItemStatus.Added,
                 AddedByUserId = ownerId,
-            });
+            };
+            db.PlaylistItems.Add(item);
+            addedItems.Add(item.Id);
             existingItemLinkIds.Add(link.Id);
             imported++;
         }
 
         // --- Step 6: persist hosts + links + items in one round-trip ---
         await db.SaveChangesAsync(ct);
+
+        await webhooks.ItemsAddedAsync(addedItems, ItemOrigin.Import, ct);
 
         // --- Step 7: enqueue enrichment for every brand-new link ---
         foreach (var link in newLinks)

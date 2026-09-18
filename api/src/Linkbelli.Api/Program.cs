@@ -312,6 +312,7 @@ v1.MapTrashEndpoints();
 v1.MapExportEndpoints();
 v1.MapBackupEndpoints();
 v1.MapHighlightEndpoints();
+v1.MapWebhookEndpoints();
 v1.MapNotificationEndpoints();
 v1.MapSearchEndpoints();
 v1.MapAutomationEndpoints();

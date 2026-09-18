@@ -159,6 +159,7 @@ recurring job twice. Scaling out means moving the workers out of the API process
 - [playlists.md](../api/docs/playlists.md) — the main API surface, paging, search
 - [sources.md](../api/docs/sources.md) — the three source types and how a run works
 - [folders.md](../api/docs/folders.md), [backups.md](../api/docs/backups.md),
-  [highlights.md](../api/docs/highlights.md), [email.md](../api/docs/email.md)
+  [highlights.md](../api/docs/highlights.md), [webhooks.md](../api/docs/webhooks.md),
+  [email.md](../api/docs/email.md)
 - [web/docs/offline.md](../web/docs/offline.md) — the save queue and the service worker
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — the conventions a change is expected to follow

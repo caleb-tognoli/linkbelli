@@ -1,5 +1,6 @@
 using Linkbelli.Application.Common;
 using Linkbelli.Application.Data;
+using Linkbelli.Application.Webhooks;
 using Linkbelli.Contracts;
 using Linkbelli.Core.Entities;
 using Linkbelli.Core.Playlists;
@@ -20,7 +21,7 @@ public interface IBulkItemService
 }
 
 /// <inheritdoc />
-public class BulkItemService(IAppDbContext db) : IBulkItemService
+public class BulkItemService(IAppDbContext db, IWebhookEvents webhooks) : IBulkItemService
 {
     public async Task<BulkItemResult> ApplyAsync(Guid ownerId, BulkItemRequest request, CancellationToken ct = default)
     {
@@ -55,6 +56,11 @@ public class BulkItemService(IAppDbContext db) : IBulkItemService
             return new BulkItemResult(0, skipped);
         }
 
+        // Noted before the switch changes them: what counts as finished is what was not already.
+        var finishing = request.Action == BulkAction.SetStatus && request.Status == PlaylistItemStatus.Watched
+            ? items.Where(i => i.Status != PlaylistItemStatus.Watched).Select(i => i.Id).ToList()
+            : [];
+
         var affected = request.Action switch
         {
             BulkAction.Delete => Delete(items),
@@ -71,6 +77,8 @@ public class BulkItemService(IAppDbContext db) : IBulkItemService
         }
 
         await db.SaveChangesAsync(ct);
+
+        await webhooks.ItemsFinishedAsync(finishing, ct);
 
         return new BulkItemResult(affected, skipped);
     }
