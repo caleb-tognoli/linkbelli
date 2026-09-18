@@ -47,21 +47,16 @@ public sealed class SmtpEmailSender(
             return false;
         }
 
-        var mime = Build(message);
-
         try
         {
+            // Inside the try: an address the mail library cannot parse is a message that cannot be
+            // sent, which this method answers with false like any other — not an exception
+            // escaping into a caller that was promised a yes or a no.
+            var mime = Build(message);
+
             using var client = new SmtpClient { Timeout = TimeoutMs };
 
-            // 465 is TLS from the first byte; 587 upgrades. Getting this the wrong way round is
-            // the single most common way an SMTP config fails to connect at all.
-            var security = !_options.UseTls
-                ? SecureSocketOptions.None
-                : _options.Port == 465
-                    ? SecureSocketOptions.SslOnConnect
-                    : SecureSocketOptions.StartTls;
-
-            await client.ConnectAsync(host, _options.Port, security, cancellationToken);
+            await client.ConnectAsync(host, _options.Port, SecurityFor(_options.UseTls, _options.Port), cancellationToken);
 
             // A local catch-all mailbox accepts anything and has no accounts to log in to.
             if (!string.IsNullOrWhiteSpace(_options.Username))
@@ -93,7 +88,22 @@ public sealed class SmtpEmailSender(
         }
     }
 
-    private MimeMessage Build(EmailMessage message)
+    /// <summary>
+    /// How to secure the connection for a given setting and port.
+    /// </summary>
+    /// <remarks>
+    /// 465 is TLS from the first byte; 587 upgrades. Getting this the wrong way round is the single
+    /// most common way an SMTP config fails to connect at all, which is why it is its own method
+    /// with its own tests.
+    /// </remarks>
+    internal static SecureSocketOptions SecurityFor(bool useTls, int port) =>
+        !useTls
+            ? SecureSocketOptions.None
+            : port == 465
+                ? SecureSocketOptions.SslOnConnect
+                : SecureSocketOptions.StartTls;
+
+    internal MimeMessage Build(EmailMessage message)
     {
         var mime = new MimeMessage();
         mime.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));

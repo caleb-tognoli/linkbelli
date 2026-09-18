@@ -69,6 +69,7 @@ npm run dev
 ```sh
 cd api
 dotnet test tests/Linkbelli.Tests/Linkbelli.Tests.csproj                 # unit, no infra
+dotnet test tests/Linkbelli.Infrastructure.Tests/Linkbelli.Infrastructure.Tests.csproj  # Infrastructure logic, no infra
 dotnet test tests/Linkbelli.IntegrationTests/Linkbelli.IntegrationTests.csproj  # Testcontainers (needs Docker)
 
 cd web

@@ -37,6 +37,13 @@ jobs:
           dotnet test tests/Linkbelli.Tests/Linkbelli.Tests.csproj --no-build -c Release
           --collect:"XPlat Code Coverage" --results-directory coverage
 
+      # Infrastructure's pure logic, apart so it needs neither Docker nor a database: who can
+      # reach the job dashboard, whether a stored secret comes back.
+      - name: Infrastructure unit tests
+        run: >
+          dotnet test tests/Linkbelli.Infrastructure.Tests/Linkbelli.Infrastructure.Tests.csproj --no-build -c Release
+          --collect:"XPlat Code Coverage" --results-directory coverage
+
       # coverlet was a dependency of both test projects and was never once invoked, so nobody
       # knew what was covered. Published rather than gated: the useful finding is which
       # directories sit at zero, not the headline percentage.
