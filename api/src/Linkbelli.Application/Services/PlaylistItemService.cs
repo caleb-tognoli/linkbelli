@@ -19,7 +19,8 @@ public class PlaylistItemService(
     ITagResolver tags,
     IAutomationRunner automation,
     IPlaylistAccess access,
-    IWebhookEvents webhooks) : IPlaylistItemService
+    IWebhookEvents webhooks,
+    ISeededShuffle shuffle) : IPlaylistItemService
 {
     /// <summary>
     /// One item as the API returns it.
@@ -419,19 +420,7 @@ public class PlaylistItemService(
             }
             else { seed = NewSeed(); offset = 0; }
 
-            // setseed() and ORDER BY random() must run in the same PG session.
-            // The transaction pins the connection; setseed is session-state, not rolled back.
-            await using var tx = await db.BeginTransactionAsync(ct);
-            await db.SeedRandomAsync(seed, ct);
-
-            var rows = await query
-                .OrderBy(_ => EF.Functions.Random())
-                .Skip(offset)
-                .Take(take + 1)
-                .Select(ToResponse)
-                .ToListAsync(ct);
-
-            await tx.CommitAsync(ct);
+            var rows = await shuffle.PageAsync(query, ToResponse, seed, offset, take + 1, ct);
 
             string? next = null;
             if (rows.Count > take)

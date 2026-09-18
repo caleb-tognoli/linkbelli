@@ -44,8 +44,17 @@ implemented in `Infrastructure`:
 
 - `IAppDbContext` exposes `DbSet<T>` and `SaveChangesAsync` without exposing `LinkbelliDbContext`.
 - `IFullTextSearch` hides `NpgsqlTsVector`, `websearch_to_tsquery` and `ts_headline`.
+- `ISeededShuffle` hides `setseed()` and the connection pinning a repeatable random order needs.
 - Shadow properties (`EF.Property<T>(...)`) hold columns no entity should carry — the search
   vector, the host+path duplicate key — so Core stays free of them.
+
+Be clear about what that rule does and does not give you. It keeps Npgsql, the migrations,
+Identity's store and Hangfire out of the services' reach. It does **not** make the Application
+layer persistence-agnostic — the services are written against EF Core LINQ and its translation
+behaviour — and it does not make them unit-testable, since `IAppDbContext` hands out real
+`DbSet`s. That is why services are tested against a real Postgres in the integration suite
+rather than with fakes. Provider-specific behaviour gets its own narrow interface rather than a
+method on `IAppDbContext`.
 
 ## The request pipeline
 

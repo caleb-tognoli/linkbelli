@@ -11,7 +11,6 @@ using Linkbelli.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Linkbelli.Tests;
@@ -197,12 +196,6 @@ internal sealed class TestDbContext : DbContext, IAppDbContext
     public DbSet<Highlight> Highlights => Set<Highlight>();
     public DbSet<Webhook> Webhooks => Set<Webhook>();
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
-
-    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("Transactions are not needed in these unit tests.");
-
-    public Task SeedRandomAsync(double seed, CancellationToken cancellationToken = default)
-        => Task.CompletedTask;
 
     public new EntityEntry Entry(object entity) => base.Entry(entity);
 

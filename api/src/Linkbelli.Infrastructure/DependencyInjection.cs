@@ -69,6 +69,7 @@ public static class DependencyInjection
 
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
         services.AddScoped<IFullTextSearch, PostgresFullTextSearch>();
+        services.AddScoped<ISeededShuffle, PostgresSeededShuffle>();
 
         // --- Mail ---
         // Bound from configuration and nothing else, so which provider sends the mail is an

@@ -3,15 +3,29 @@ using Linkbelli.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Linkbelli.Application.Data;
 
 /// <summary>
 /// The persistence surface the Application layer depends on, implemented by the EF
-/// DbContext in Infrastructure. Keeps Application free of the Infrastructure project
-/// while still using EF Core LINQ directly.
+/// DbContext in Infrastructure.
 /// </summary>
+/// <remarks>
+/// What this buys is narrower than it looks, and it is worth being plain about it.
+///
+/// It keeps the Application project from referencing Infrastructure: Npgsql's types, the
+/// migrations, Identity's store configuration, Hangfire and the SMTP client stay out of reach,
+/// so a service cannot quietly start depending on one of them. Anything that has to be
+/// Postgres-specific goes behind its own narrow interface instead — <c>IFullTextSearch</c> for
+/// text search, <c>ISeededShuffle</c> for a repeatable random order — and not on this one.
+///
+/// What it does not buy is a persistence-agnostic Application layer. The services are written
+/// against EF Core LINQ and depend on how EF translates it; several say so in comments. Nor does
+/// it make them unit-testable: it hands out real <c>DbSet</c>s, which cannot sensibly be faked,
+/// which is why the services are tested against a real Postgres in the integration suite. Going
+/// further in either direction — dropping this and referencing Infrastructure, or real
+/// repositories with domain-shaped methods — was considered and not judged worth it yet.
+/// </remarks>
 public interface IAppDbContext
 {
     DbSet<ApplicationUser> Users { get; }
@@ -48,15 +62,6 @@ public interface IAppDbContext
     DbSet<Highlight> Highlights { get; }
     DbSet<Webhook> Webhooks { get; }
     DbSet<WebhookDelivery> WebhookDeliveries { get; }
-
-    /// <summary>Begins a database transaction, pinning a single connection for the duration.</summary>
-    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Sets the PostgreSQL random seed so that subsequent <c>ORDER BY random()</c> queries
-    /// produce a deterministic order on the same connection.
-    /// </summary>
-    Task SeedRandomAsync(double seed, CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

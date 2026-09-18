@@ -125,4 +125,52 @@ public class ItemPagingTests(PostgresApiFactory factory)
         Assert.Equal(4, page.Total);
         Assert.Equal(4, page.Items.Count);
     }
+
+    /// <summary>
+    /// A shuffle has to be the same shuffle from one page to the next, or the second page deals
+    /// links the first already showed and never shows others. That rests on seeding Postgres's
+    /// random number generator on the same connection as the query — easy to break without any
+    /// single page looking wrong, which is why it is asserted across all of them.
+    /// </summary>
+    [Fact]
+    public async Task A_shuffle_deals_every_item_exactly_once_across_its_pages()
+    {
+        var client = await NewUserAsync();
+        var playlist = await NewPlaylistAsync(client, $"Shuffled {Guid.NewGuid():N}");
+        var seeded = await factory.SeedEnrichedItemsAsync(playlist, 7);
+
+        var dealt = new List<Guid>();
+        string? cursor = null;
+        var pages = 0;
+        do
+        {
+            var query = "sort=shuffle&limit=3" + (cursor is null ? "" : $"&cursor={Uri.EscapeDataString(cursor)}");
+            var page = await PageAsync(client, playlist, query);
+            dealt.AddRange(page.Items.Select(i => i.Id));
+            cursor = page.NextCursor;
+            pages++;
+        }
+        while (cursor is not null && pages < 10);
+
+        Assert.Equal(3, pages);
+        Assert.Equal(7, dealt.Count);
+        Assert.Equal(seeded.OrderBy(id => id), dealt.OrderBy(id => id));
+    }
+
+    /// <summary>The same cursor is the same page: a retry or a back button does not reshuffle.</summary>
+    [Fact]
+    public async Task The_same_shuffle_cursor_gives_the_same_page()
+    {
+        var client = await NewUserAsync();
+        var playlist = await NewPlaylistAsync(client, $"Reshuffled {Guid.NewGuid():N}");
+        await factory.SeedEnrichedItemsAsync(playlist, 9);
+
+        var first = await PageAsync(client, playlist, "sort=shuffle&limit=3");
+        var next = $"sort=shuffle&limit=3&cursor={Uri.EscapeDataString(first.NextCursor!)}";
+
+        var once = await PageAsync(client, playlist, next);
+        var again = await PageAsync(client, playlist, next);
+
+        Assert.Equal(once.Items.Select(i => i.Id), again.Items.Select(i => i.Id));
+    }
 }
