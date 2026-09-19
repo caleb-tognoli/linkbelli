@@ -1,6 +1,9 @@
 <svelte:head><title>Playlists - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { X } from '@lucide/svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import TagFilter from '$lib/components/TagFilter.svelte';
 	import type { Paged, Playlist } from '$lib/types';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
@@ -17,7 +20,10 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const showFolders = $derived(data.rootFolders.length > 0);
+	const filtering = $derived(data.activeTags.length > 0);
+	// Folders are not tagged, so a filtered list is playlists alone.
+	const showFolders = $derived(data.rootFolders.length > 0 && !filtering);
+	const tagHref = (tag: string) => `/playlists?tag=${encodeURIComponent(tag)}`;
 
 	/**
 	 * Pages fetched past the first.
@@ -48,7 +54,8 @@
 		if (!nextCursor || loadingMore) return;
 		loadingMore = true;
 		try {
-			const qs = new URLSearchParams({ unfiled: 'true', cursor: nextCursor });
+			const qs = new URLSearchParams({ cursor: nextCursor });
+			if (!filtering) qs.set('unfiled', 'true');
 			for (const t of data.activeTags) qs.append('tag', t);
 			const res = await api.get(`/playlists?${qs}`);
 			if (!res.ok) {
@@ -75,7 +82,20 @@
 		<OnboardingChecklist usage={data.usage} dismissed={data.onboardingDismissed} />
 	</div>
 
-	{#if isEmpty}
+	<div class="mt-6">
+		<TagFilter active={data.activeTags} basePath="/playlists" suggestPath="/tags" />
+	</div>
+
+	{#if isEmpty && filtering}
+		<div class="mt-6 rounded-card border border-dashed p-10 text-center">
+			<p class="font-medium">
+				No playlists tagged {data.activeTags.join(' and ')}.
+			</p>
+			<p class="mt-3">
+				<Button href="/playlists" icon={X}>Clear the filter</Button>
+			</p>
+		</div>
+	{:else if isEmpty}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">No folders or playlists yet.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
@@ -104,6 +124,7 @@
 						visibility={playlist.visibility}
 						itemCount={playlist.itemCount}
 						pendingCount={playlist.pendingCount}
+						{tagHref}
 					/>
 				{/each}
 			</div>

@@ -27,6 +27,7 @@
 		itemCount,
 		pendingCount = 0,
 		likeCount = 0,
+		tagHref,
 		actions
 	}: {
 		href: string;
@@ -45,6 +46,8 @@
 		/** Links still being fetched, so the count does not just creep up on its own. */
 		pendingCount?: number | null;
 		likeCount?: number | null;
+		/** Where a tag on the card leads — a list filtered by it. Without it tags are just labels. */
+		tagHref?: (tag: string) => string;
 		actions?: Snippet;
 	} = $props();
 </script>
@@ -81,9 +84,10 @@
 	{/if}
 
 	{#if tags.length}
-		<div class="flex flex-wrap gap-1">
+		<!-- Raised above the card's stretched link, so a tag can be a link of its own. -->
+		<div class="relative z-(--z-sticky) flex flex-wrap gap-1 self-start">
 			{#each tags as tag (tag)}
-				<Chip>{tag}</Chip>
+				<Chip href={tagHref?.(tag)} title={tagHref ? `Show playlists tagged ${tag}` : undefined}>{tag}</Chip>
 			{/each}
 		</div>
 	{/if}

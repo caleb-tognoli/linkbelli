@@ -132,6 +132,9 @@
 					visibility={entry.ownedByMe ? entry.visibility : undefined}
 					owner={entry.ownedByMe ? undefined : entry.ownerUsername}
 					itemCount={entry.itemCount}
+					tagHref={entry.ownedByMe
+						? (tag) => `/playlists?tag=${encodeURIComponent(tag)}`
+						: (tag) => `/discover?tag=${encodeURIComponent(tag)}`}
 				>
 					{#snippet actions()}
 						<SaveToFolderDialog

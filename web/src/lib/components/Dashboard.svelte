@@ -126,6 +126,7 @@
 						visibility={playlist.visibility}
 						itemCount={playlist.itemCount}
 						pendingCount={playlist.pendingCount}
+						tagHref={(tag) => `/playlists?tag=${encodeURIComponent(tag)}`}
 					/>
 				{/each}
 			</div>

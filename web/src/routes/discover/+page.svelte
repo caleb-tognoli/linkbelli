@@ -131,6 +131,7 @@
 					owner={playlist.ownerUsername}
 					itemCount={playlist.itemCount}
 					likeCount={playlist.likeCount}
+					tagHref={(tag) => `/discover?tag=${encodeURIComponent(tag)}`}
 				/>
 			{/each}
 		</div>

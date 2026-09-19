@@ -10,8 +10,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const activeTags = url.searchParams.getAll('tag');
 	const qs = new URLSearchParams();
 	for (const t of activeTags) qs.append('tag', t);
-	// This is the "root" playlist view: only playlists not filed in a folder, alongside the folder tree.
-	qs.set('unfiled', 'true');
+	// This is the "root" playlist view: only playlists not filed in a folder, alongside the folder
+	// tree. Filtered by a tag it is a search instead, and a playlist filed away matches too.
+	if (activeTags.length === 0) qs.set('unfiled', 'true');
 
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
 	const [plRes, folders, sharedRes, usageRes, meRes] = await Promise.all([
