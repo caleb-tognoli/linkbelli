@@ -51,9 +51,16 @@
 	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
 	const isAuthPage = $derived(['/login', '/register'].includes(page.url.pathname));
 
+	// An embed is a card inside somebody else's page. It gets none of the app around it — no
+	// brand bar, no sidebar, no dialogs or palette — whoever is looking at it.
+	const isEmbed = $derived(page.url.pathname.startsWith('/embed/'));
+
 	// onMount, not $effect: this is one-time setup, and as an effect it looped — flushing the
 	// queue reads and writes the same state the effect was tracking, so each flush re-ran it.
 	onMount(() => {
+		// The worker and the save queue belong to the app, not to a card framed on another site.
+		if (page.url.pathname.startsWith('/embed/')) return;
+
 		registerServiceWorker();
 
 		// A link queued on the share sheet has to be sent the moment a connection returns,
@@ -159,7 +166,9 @@
 	</div>
 {/snippet}
 
-{#if data.user}
+{#if isEmbed}
+	{@render children()}
+{:else if data.user}
 	<div class="flex min-h-screen flex-col md:flex-row">
 		<!-- Mobile top bar with hamburger; hidden at md+ where the sidebar shows. -->
 		<header
@@ -231,8 +240,10 @@
 	</div>
 {/if}
 
-<GlobalDialog />
-{#if data.user}
-	<!-- Signed-in only: everything it offers needs an account. -->
-	<CommandPalette />
+{#if !isEmbed}
+	<GlobalDialog />
+	{#if data.user}
+		<!-- Signed-in only: everything it offers needs an account. -->
+		<CommandPalette />
+	{/if}
 {/if}

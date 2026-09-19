@@ -1,8 +1,9 @@
 import type { LayoutServerLoad } from './$types';
 import type { Folder, PinnedSearch, User } from '$lib/types';
 
-export const load: LayoutServerLoad = async ({ locals }) => {
-	if (!locals.authenticated) {
+export const load: LayoutServerLoad = async ({ locals, url }) => {
+	// An embed renders none of the chrome these feed, so it does not pay for them either.
+	if (!locals.authenticated || url.pathname.startsWith('/embed/')) {
 		return { user: null, folders: [] as Folder[], pinned: [] as PinnedSearch[] };
 	}
 
