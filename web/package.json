@@ -45,5 +45,10 @@
     "@lucide/svelte": "^1.18.0",
     "bits-ui": "^1.0.0",
     "svelte-dnd-action": "^0.9.55"
+  },
+  "overrides": {
+    "@sveltejs/kit": {
+      "cookie": "^0.7.0"
+    }
   }
 }
