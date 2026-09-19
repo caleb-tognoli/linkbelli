@@ -21,7 +21,13 @@
 	} = $props();
 
 	let preview = $state<LinkPreview | null>(null);
-	let busy = $state(false);
+	/**
+	 * Two jobs, two flags. They used to share one, so pressing Enter while the preview was still
+	 * being fetched — a second or so after pasting — did nothing at all, and the Add button sat
+	 * disabled for the same reason.
+	 */
+	let previewing = $state(false);
+	let adding = $state(false);
 	let error = $state<string | null>(null);
 	/** Something worth saying that is not a problem. */
 	let notice = $state<string | null>(null);
@@ -62,27 +68,31 @@
 	});
 
 	async function doPreview() {
-		if (!showAdd || !query.trim() || busy) return;
-		busy = true;
+		if (!showAdd || !query.trim() || previewing || adding) return;
+		const asked = query;
+		previewing = true;
 		error = null;
 		preview = null;
 		try {
-			const res = await api.post('/links/preview', { url: query });
+			const res = await api.post('/links/preview', { url: asked });
+			// Added, or changed, while this was on its way: the answer is about something else now.
+			if (query !== asked || adding) return;
 			if (!res.ok) {
 				error = 'Could not preview that URL.';
 				return;
 			}
 			preview = (await res.json()) as LinkPreview;
 		} catch {
-			error = 'Could not reach the server.';
+			if (query === asked && !adding) error = 'Could not reach the server.';
 		} finally {
-			busy = false;
+			previewing = false;
 		}
 	}
 
 	async function doAdd() {
-		if (!showAdd || !query.trim() || busy) return;
-		busy = true;
+		if (!showAdd || !query.trim() || adding) return;
+		clearTimeout(previewTimer);
+		adding = true;
 		error = null;
 		notice = null;
 		try {
@@ -106,7 +116,7 @@
 		} catch {
 			error = 'Could not reach the server.';
 		} finally {
-			busy = false;
+			adding = false;
 		}
 	}
 </script>
@@ -129,7 +139,7 @@
 				variant="primary"
 				icon={Plus}
 				onclick={doAdd}
-				disabled={busy}
+				loading={adding}
 				aria-label={looksAlreadyHere ? 'Add it anyway' : 'Add link'}
 			>
 				{looksAlreadyHere ? 'Add anyway' : 'Add'}
@@ -152,6 +162,10 @@
 				<div class="text-xs" style="color: var(--color-muted)">{preview.host}</div>
 			</div>
 		</div>
+	{/if}
+
+	{#if showAdd && previewing && !preview}
+		<p class="mt-2 text-xs" style="color: var(--color-muted)" aria-live="polite">Looking at that page…</p>
 	{/if}
 
 	{#if looksAlreadyHere && !error}

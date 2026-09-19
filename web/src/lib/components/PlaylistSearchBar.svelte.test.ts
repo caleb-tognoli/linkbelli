@@ -138,6 +138,29 @@ describe('PlaylistSearchBar', () => {
 		expect(calls.filter((c) => c.path === '/links/preview')).toHaveLength(1);
 	});
 
+	/** The preview takes a moment; pressing Enter in that moment used to do nothing at all. */
+	it('adds on Enter while the preview is still on its way', async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		let answerPreview: (r: Response) => void = () => {};
+		const { calls } = fakeApi({
+			'POST /links/preview': () => new Promise<Response>((resolve) => (answerPreview = resolve)),
+			'POST /playlists/p1/items': json({ id: 'i1', link: { id: 'l1', url: URL } }, 201)
+		});
+		const { box, onAdded } = setup();
+		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+		await user.click(box);
+		await user.paste(URL);
+		await vi.advanceTimersByTimeAsync(800);
+		expect(calls.filter((c) => c.path === '/links/preview')).toHaveLength(1);
+
+		await user.keyboard('{Enter}');
+
+		expect(onAdded).toHaveBeenCalledOnce();
+		expect(calls.filter((c) => c.path === '/playlists/p1/items')).toHaveLength(1);
+		answerPreview(json({ canonicalUrl: URL, host: 'example.org', title: 'Late', description: null, imageUrl: null, siteName: null }));
+	});
+
 	/** Somebody reading a shared playlist can search it, but it is not theirs to add to. */
 	it('never offers adding to somebody who does not own the playlist', async () => {
 		const { calls } = fakeApi({});
