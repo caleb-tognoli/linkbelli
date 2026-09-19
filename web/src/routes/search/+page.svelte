@@ -1,6 +1,7 @@
 <svelte:head><title>Search - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
@@ -239,20 +240,16 @@
 		<button
 			type="button"
 			onclick={() => navigate({ finished: data.finished ? '' : '7', status: '' })}
-			class="rounded-md border px-3 py-1.5"
-			class:font-medium={!!data.finished}
-			style="border-color: {data.finished ? 'var(--color-accent)' : 'var(--color-border)'};
-			       color: {data.finished ? 'var(--color-accent)' : 'inherit'}"
+			class={buttonClass('secondary', 'md', false, data.finished ? 'border-accent text-accent' : '')}
+			aria-pressed={!!data.finished}
 			title="Items you marked watched in the last week"
 		>Finished this week</button>
 
 		<button
 			type="button"
 			onclick={() => navigate({ sort: data.sort === 'score' ? '' : 'score' })}
-			class="rounded-md border px-3 py-1.5"
-			class:font-medium={data.sort === 'score'}
-			style="border-color: {data.sort === 'score' ? 'var(--color-accent)' : 'var(--color-border)'};
-			       color: {data.sort === 'score' ? 'var(--color-accent)' : 'inherit'}"
+			class={buttonClass('secondary', 'md', false, data.sort === 'score' ? 'border-accent text-accent' : '')}
+			aria-pressed={data.sort === 'score'}
 			title="Your highest-scored links, across every playlist"
 		>Best rated</button>
 
@@ -275,20 +272,16 @@
 		<button
 			type="button"
 			onclick={() => navigate({ maxMinutes: data.maxMinutes ? '' : '5' })}
-			class="rounded-md border px-3 py-1.5"
-			class:font-medium={!!data.maxMinutes}
-			style="border-color: {data.maxMinutes ? 'var(--color-accent)' : 'var(--color-border)'};
-			       color: {data.maxMinutes ? 'var(--color-accent)' : 'inherit'}"
+			class={buttonClass('secondary', 'md', false, data.maxMinutes ? 'border-accent text-accent' : '')}
+			aria-pressed={!!data.maxMinutes}
 			title="Articles you could finish in five minutes"
 		>Under 5 min</button>
 
 		<button
 			type="button"
 			onclick={() => navigate({ broken: data.broken ? '' : '1' })}
-			class="rounded-md border px-3 py-1.5"
-			class:font-medium={!!data.broken}
-			style="border-color: {data.broken ? 'var(--color-danger)' : 'var(--color-border)'};
-			       color: {data.broken ? 'var(--color-danger)' : 'inherit'}"
+			class={buttonClass('secondary', 'md', false, data.broken ? 'border-danger text-danger' : '')}
+			aria-pressed={!!data.broken}
 			title="Links whose page is gone or can no longer be read"
 		>Broken</button>
 

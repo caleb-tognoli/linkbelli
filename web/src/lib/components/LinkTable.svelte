@@ -451,11 +451,6 @@
 	}
 
 	const toggleClass = 'inline-flex min-h-6 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors';
-	function toggleStyle(active: boolean) {
-		return active
-			? 'border-color: var(--color-accent); color: var(--color-accent)'
-			: 'border-color: var(--color-border); color: var(--color-muted)';
-	}
 
 	/** A filter or sort chip: accent when it narrows or reorders what is shown. */
 	function chipTrigger(active: boolean) {
@@ -938,10 +933,10 @@
 		<button
 			type="button"
 			onclick={() => { showThumbnails = !showThumbnails; if (playlistId) savePrefs(playlistId, { showThumbnails }); }}
-			class="{toggleClass} inline-flex items-center gap-1"
-			style={toggleStyle(showThumbnails)}
+			class={chipTrigger(showThumbnails)}
+			aria-pressed={showThumbnails}
 		>
-			<Image size={11} aria-hidden="true" /> Thumbnail
+			<Image size={12} aria-hidden="true" /> Thumbnails
 		</button>
 
 		{#if total !== null}
