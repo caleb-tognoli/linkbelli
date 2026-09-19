@@ -844,7 +844,7 @@
 			</Menu>
 		{/if}
 		{#if attachedSources.length > 0 || !readonly}
-			<span class="text-xs" style="color: var(--color-border)">|</span>
+			<span class="text-xs" style="color: var(--color-border)" aria-hidden="true">|</span>
 		{/if}
 
 		<!-- Second section: sort + display options -->
@@ -873,7 +873,7 @@
 			/>
 		</Menu>
 
-		<span class="text-xs" style="color: var(--color-border)">|</span>
+		<span class="text-xs" style="color: var(--color-border)" aria-hidden="true">|</span>
 
 		<Menu triggerClass={chipTrigger(showUrls)} title="Show titles or addresses">
 			{#snippet trigger()}

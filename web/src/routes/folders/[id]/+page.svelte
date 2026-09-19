@@ -51,14 +51,20 @@
 
 <section class="mx-auto max-w-5xl">
 	<!-- Breadcrumb trail: Playlists / ancestors / current -->
-	<nav class="flex flex-wrap items-center gap-1 text-sm" style="color: var(--color-muted)">
-		<a href="/playlists" class="hover:underline">Playlists</a>
-		{#each folder.breadcrumbs as crumb (crumb.id)}
-			<span>/</span>
-			<a href={`/folders/${crumb.id}`} class="hover:underline">{crumb.name}</a>
-		{/each}
-		<span>/</span>
-		<span style="color: var(--color-text)">{folderName}</span>
+	<nav aria-label="Breadcrumb" class="text-sm" style="color: var(--color-muted)">
+		<ol class="flex flex-wrap items-center gap-1">
+			<li><a href="/playlists" class="hover:underline">Playlists</a></li>
+			{#each folder.breadcrumbs as crumb (crumb.id)}
+				<li class="flex items-center gap-1">
+					<span aria-hidden="true">/</span>
+					<a href={`/folders/${crumb.id}`} class="hover:underline">{crumb.name}</a>
+				</li>
+			{/each}
+			<li class="flex items-center gap-1">
+				<span aria-hidden="true">/</span>
+				<span aria-current="page" style="color: var(--color-text)">{folderName}</span>
+			</li>
+		</ol>
 	</nav>
 
 	<header class="mt-3 flex flex-wrap items-center justify-between gap-3">
