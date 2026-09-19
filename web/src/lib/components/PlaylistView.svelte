@@ -319,33 +319,44 @@
 		total = page.total ?? null;
 	}
 
-	async function reloadItems() {
-		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
+	/** A refetch in flight, so the list can say it is about to change rather than sit stale. */
+	let refreshing = $state(false);
+
+	/** Fetches the first page again for the current sort, filters and search. */
+	async function fetchFirstPage() {
+		refreshing = true;
+		try {
+			const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
+			if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
+			else toast.error(failureMessage(res.status, 'Could not load the links.'));
+		} catch {
+			toast.error('Could not reach the server.');
+		} finally {
+			refreshing = false;
+		}
 	}
+
+	const reloadItems = fetchFirstPage;
 
 	async function onfetchsort(sort: string) {
 		serverSort = sort;
 		savePrefs(playlist.id, { sort });
 		nextCursor = null; // clear stale cursor immediately while loading
-		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
+		await fetchFirstPage();
 	}
 
 	async function applySourceFilter(source: string | null) {
 		sourceFilter = source;
 		savePrefs(playlist.id, { source });
 		nextCursor = null;
-		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
+		await fetchFirstPage();
 	}
 
 	async function applyStatusFilter(status: StatusFilter) {
 		statusFilter = status;
 		savePrefs(playlist.id, { status });
 		nextCursor = null;
-		const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
-		if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
+		await fetchFirstPage();
 	}
 
 	async function loadMore() {
@@ -610,7 +621,9 @@
 		/>
 	</div>
 
-	<div class="mt-5">
+	<!-- Dimmed and marked busy while a new sort, filter or search is on its way, so the list
+	     being shown is never mistaken for the answer. -->
+	<div class="mt-5 transition-opacity" class:opacity-60={refreshing} aria-busy={refreshing}>
 		<LinkTable
 			bind:items
 			readonly={!canEdit}

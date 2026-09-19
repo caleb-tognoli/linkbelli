@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NavigationProgress from '$lib/components/NavigationProgress.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
@@ -271,6 +272,7 @@
 {/if}
 
 {#if !isEmbed}
+	<NavigationProgress />
 	<GlobalDialog />
 	<Toaster />
 	{#if data.user}
