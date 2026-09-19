@@ -1,6 +1,7 @@
 <svelte:head><title>Tags - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
@@ -13,8 +14,6 @@
 
 	let filter = $state('');
 	let busy = $state<string | null>(null);
-	let error = $state<string | null>(null);
-	let done = $state<string | null>(null);
 
 	const shown = $derived(
 		filter.trim()
@@ -75,20 +74,19 @@
 
 	async function run(tag: string, body: () => Promise<Response>, describe: (c: TagChange) => string) {
 		busy = tag;
-		error = null;
-		done = null;
 		const res = await body();
 		busy = null;
 
 		if (!res.ok) {
-			error =
+			toast.error(
 				res.status === 404
 					? `"${tag}" is not one of your tags any more. Reload the page.`
-					: 'That did not work. Try again.';
+					: 'That did not work. Try again.'
+			);
 			return;
 		}
 
-		done = describe((await res.json()) as TagChange);
+		toast.success(describe((await res.json()) as TagChange));
 		await invalidateAll();
 	}
 
@@ -170,21 +168,7 @@
 		</p>
 	</header>
 
-	{#if error}
-		<p
-			class="mt-4 rounded-md border px-3 py-2 text-sm"
-			style="border-color: var(--color-danger); color: var(--color-danger)"
-			role="alert"
-		>
-			{error}
-		</p>
-	{/if}
 
-	{#if done}
-		<p class="mt-4 rounded-md border px-3 py-2 text-sm" style="border-color: var(--color-border)" role="status">
-			{done}
-		</p>
-	{/if}
 
 	{#if data.tags.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">

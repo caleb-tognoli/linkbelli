@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import { api, json } from '$lib/api/client';
 	import { EyeOff, Globe, Lock } from '@lucide/svelte';
 	import {
@@ -35,7 +36,6 @@
 	let mode = $state<DropMode>('move');
 	let over = $state<string | null>(null);
 	let busy = $state(false);
-	let toast = $state<string | null>(null);
 
 	// Fetched once and kept: a drag is not the moment to wait on a request, and the list of
 	// playlists does not change between two drags.
@@ -67,7 +67,6 @@
 		if (!ourDrag(e)) return;
 
 		dragging = true;
-		toast = null;
 		loadOnce();
 	}
 
@@ -115,18 +114,18 @@
 			});
 
 			if (!res.ok) {
-				toast = 'That did not work.';
+				toast.error('That did not work.');
 				return;
 			}
 
 			const result = await json<{ affected: number; skipped: number }>(res);
-			toast = describeResult(dropped, result.affected, result.skipped, playlist.name);
+			toast.success(describeResult(dropped, result.affected, result.skipped, playlist.name));
 
 			// Only when something actually changed — a drop that moved nothing has not invalidated
 			// what the page is showing.
 			if (result.affected > 0) await ondropped?.();
 		} catch {
-			toast = 'That did not work.';
+			toast.error('That did not work.');
 		} finally {
 			busy = false;
 			dragging = false;
@@ -193,20 +192,3 @@
 	</aside>
 {/if}
 
-{#if toast}
-	<div
-		class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-md border px-3 py-2 text-sm shadow-lg"
-		style="border-color: var(--color-border); background: var(--color-surface)"
-		role="status"
-	>
-		{toast}
-		<button
-			type="button"
-			onclick={() => (toast = null)}
-			class="ml-2 text-xs underline underline-offset-2"
-			style="color: var(--color-muted)"
-		>
-			dismiss
-		</button>
-	</div>
-{/if}

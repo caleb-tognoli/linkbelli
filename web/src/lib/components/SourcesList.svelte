@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
@@ -11,7 +12,6 @@
 	let { sources: initial }: { sources: Source[] } = $props();
 	let sources = $state(initial);
 	let visibleCount = $state(PAGE_SIZE);
-	let toast = $state<string | null>(null);
 	let query = $state('');
 
 	// Own sources arrive as one full array (GET /sources takes no query), so filter client-side.
@@ -40,8 +40,9 @@
 
 	async function run(src: Source) {
 		const res = await api.post(`/sources/${src.id}/run`);
-		toast = res.status === 202 ? `Queued a run for "${src.name}".` : `Could not run "${src.name}".`;
-		setTimeout(() => (toast = null), 3000);
+		if (res.status === 202) toast.success(`Queued a run for "${src.name}".`);
+		else if (res.status === 429) toast.error('Daily run limit reached — try again later.');
+		else toast.error(`Could not run "${src.name}".`);
 	}
 
 	function lastRun(iso: string | null): string {
@@ -184,8 +185,4 @@
 			</button>
 		{/if}
 	{/if}
-{/if}
-
-{#if toast}
-	<p class="mt-2 text-sm" style="color: var(--color-muted)">{toast}</p>
 {/if}

@@ -1,6 +1,7 @@
 <svelte:head><title>Duplicates - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
@@ -12,7 +13,6 @@
 	let { data }: { data: PageData } = $props();
 
 	let busy = $state<string | null>(null);
-	let error = $state<string | null>(null);
 
 	const total = $derived(data.groups.reduce((sum, g) => sum + g.copies.length - 1, 0));
 
@@ -41,7 +41,6 @@
 		if (!ok) return;
 
 		busy = group.key;
-		error = null;
 		const res = await api.post('/items/bulk', {
 			itemIds: drop.map((c) => c.itemId),
 			action: 'Delete'
@@ -49,7 +48,7 @@
 		busy = null;
 
 		if (res.ok) await invalidateAll();
-		else error = 'Could not remove those. Try again.';
+		else toast.error('Could not remove those. Try again.');
 	}
 </script>
 
@@ -62,15 +61,6 @@
 		</p>
 	</header>
 
-	{#if error}
-		<p
-			class="mt-4 rounded-md border px-3 py-2 text-sm"
-			style="border-color: var(--color-danger); color: var(--color-danger)"
-			role="alert"
-		>
-			{error}
-		</p>
-	{/if}
 
 	{#if data.groups.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">

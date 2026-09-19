@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeApi, json } from '$lib/testing/fakeApi';
 import type { PlaylistItem } from '$lib/types';
 import LinkTable from './LinkTable.svelte';
+import Toaster from './Toaster.svelte';
+import { toast } from '$lib/toast.svelte';
 
 // The confirmation for a bulk delete is drawn by a dialog mounted once in the root layout, which
 // these tests do not render. Answered here instead, per test.
@@ -46,6 +48,8 @@ function item(n: number, over: Partial<PlaylistItem> = {}): PlaylistItem {
 }
 
 function setup(count = 3) {
+	// The table reports through the app's toasts, which the root layout draws.
+	render(Toaster);
 	const onmove = vi.fn(async () => {});
 	render(LinkTable, { items: Array.from({ length: count }, (_, n) => item(n + 1)), playlistId: 'p1', onmove });
 	return { onmove };
@@ -70,6 +74,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	vi.unstubAllGlobals();
+	toast.clear();
 });
 
 describe('LinkTable — selecting', () => {

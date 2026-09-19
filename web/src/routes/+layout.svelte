@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import GlobalDialog from '$lib/components/GlobalDialog.svelte';
+	import Toaster from '$lib/components/Toaster.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import FolderTree from '$lib/components/FolderTree.svelte';
 	import OfflineQueueBanner from '$lib/components/OfflineQueueBanner.svelte';
@@ -242,6 +243,7 @@
 
 {#if !isEmbed}
 	<GlobalDialog />
+	<Toaster />
 	{#if data.user}
 		<!-- Signed-in only: everything it offers needs an account. -->
 		<CommandPalette />

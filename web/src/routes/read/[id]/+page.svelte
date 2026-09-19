@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -78,7 +79,6 @@
 	/** The highlight whose note is being looked at, and what to hang the panel off. */
 	let active = $state<{ id: string; anchor: Element } | null>(null);
 	let draft = $state('');
-	let problem = $state<string | null>(null);
 
 	// Bumped on scroll and resize so the floating panels follow what they are attached to.
 	let viewport = $state(0);
@@ -326,13 +326,7 @@
 		mark?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
 	}
 
-	let problemTimer: ReturnType<typeof setTimeout> | null = null;
-
-	function complain(message: string) {
-		problem = message;
-		if (problemTimer) clearTimeout(problemTimer);
-		problemTimer = setTimeout(() => (problem = null), 4000);
-	}
+	const complain = (message: string) => toast.error(message);
 
 	/**
 	 * A click on marked text opens its note.
@@ -445,7 +439,6 @@
 			document.removeEventListener('selectionchange', onSelectionChange);
 			if (saveTimer) clearTimeout(saveTimer);
 			if (settleTimer) clearTimeout(settleTimer);
-			if (problemTimer) clearTimeout(problemTimer);
 			// Closing the tab is the most likely way to leave, and it does not navigate.
 			void save();
 		};
@@ -754,15 +747,6 @@
 	</div>
 {/if}
 
-{#if problem}
-	<p
-		class="popover-surface fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-md border px-3 py-2 text-sm shadow-lg"
-		style="color: var(--color-danger)"
-		role="alert"
-	>
-		{problem}
-	</p>
-{/if}
 
 <style>
 	/* A note is marked by a line under the words, so it can be seen without opening anything. */

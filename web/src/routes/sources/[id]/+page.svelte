@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -16,7 +17,6 @@
 
 	let { data }: { data: PageData } = $props();
 	let busy = $state(false);
-	let toast = $state<string | null>(null);
 
 	const backHref = $derived(routePage.url.searchParams.get('from') ?? '/sources');
 	const backLabel = $derived(routePage.url.searchParams.get('fromLabel') ?? 'Sources');
@@ -57,9 +57,9 @@
 		busy = true;
 		try {
 			const res = await api.post(`/sources/${data.source.id}/run`);
-			if (res.status === 202) toast = 'Run queued. Refresh history in a moment.';
-			else if (res.status === 429) toast = 'Daily run limit reached — try again later.';
-			else toast = 'Could not queue a run.';
+			if (res.status === 202) toast.success('Run queued. Refresh history in a moment.');
+			else if (res.status === 429) toast.error('Daily run limit reached — try again later.');
+			else toast.error('Could not queue a run.');
 		} finally {
 			busy = false;
 		}
@@ -92,7 +92,7 @@
 				filter: data.source.filter ?? undefined
 			});
 			if (!res.ok) {
-				toast = 'Could not duplicate source.';
+				toast.error('Could not duplicate source.');
 				return;
 			}
 
@@ -224,10 +224,6 @@
 		</div>
 	</header>
 
-	{#if toast}
-		<p class="mt-2 text-sm" style="color: var(--color-muted)">{toast}</p>
-	{/if}
-
 	{#key data.source.id}
 		<div class="mt-5">
 			<SourceForm mode="edit" source={data.source} ondelete={remove} />
@@ -325,7 +321,7 @@
 				Run history
 			</button>
 			{#if historyOpen}
-				<button type="button" onclick={() => { toast = null; invalidateAll(); }} class="inline-flex items-center rounded p-1" style="color: var(--color-muted)" title="Refresh" aria-label="Refresh run history">
+				<button type="button" onclick={() => invalidateAll()} class="inline-flex items-center rounded p-1" style="color: var(--color-muted)" title="Refresh" aria-label="Refresh run history">
 					<RotateCcw size={15} aria-hidden="true" />
 				</button>
 			{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -54,8 +55,6 @@
 	let open = $state(false);
 	let busy = $state(false);
 
-	/** What just happened, for actions whose result is a number rather than a visible change. */
-	let message = $state<string | null>(null);
 	let error = $state<string | null>(null);
 	let preview = $state<AutomationPreview | null>(null);
 
@@ -235,15 +234,16 @@
 		try {
 			const res = await api.post(`/automations/${rule.id}/run`, {});
 			if (!res.ok) {
-				message = 'Could not run that rule.';
+				toast.error('Could not run that rule.');
 				return;
 			}
 
 			const { acted } = (await res.json()) as { acted: number };
-			message =
+			toast.success(
 				acted === 0
 					? `"${rule.name}" matched nothing already here.`
-					: `"${rule.name}" acted on ${acted} ${acted === 1 ? 'link' : 'links'}.`;
+					: `"${rule.name}" acted on ${acted} ${acted === 1 ? 'link' : 'links'}.`
+			);
 			await invalidateAll();
 		} finally {
 			running = null;
@@ -279,21 +279,6 @@
 		<Button variant="primary" icon={Plus} onclick={startNew}>New rule</Button>
 	</header>
 
-	{#if message}
-		<p
-			class="mt-4 rounded-md border px-3 py-2 text-sm"
-			style="border-color: var(--color-border); background: var(--color-surface)"
-			role="status"
-		>
-			{message}
-			<button
-				type="button"
-				onclick={() => (message = null)}
-				class="ml-2 underline underline-offset-2"
-				style="color: var(--color-muted)">Dismiss</button
-			>
-		</p>
-	{/if}
 
 	{#if data.rules.length === 0}
 		<p class="mt-8 rounded-lg border px-4 py-8 text-center text-sm"

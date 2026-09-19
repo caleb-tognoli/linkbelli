@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
@@ -273,24 +274,16 @@
 	let draftNote = $state('');
 	let draftTags = $state('');
 	let actionFlyoutId = $state<string | null>(null);
-	/** What the last "copy share link" did, so the row can say so rather than silently succeeding. */
 	/**
-	 * One line of feedback about the last thing that happened.
+	 * Feedback about the last thing that happened, through the app's toasts.
 	 *
-	 * Was `shareToast` and only ever said "Share link copied". Every other write on this table
-	 * discarded its own failures, so a refused delete, a rejected rating and a bulk move that
-	 * moved nothing all looked identical to success. Errors are announced assertively, because a
-	 * polite one goes unread by exactly the person who most needs it.
+	 * Every write on this table used to discard its own failures, so a refused delete, a rejected
+	 * rating and a bulk move that moved nothing all looked identical to success. Errors stay until
+	 * dismissed and are announced assertively, because a polite one goes unread by exactly the
+	 * person who most needs it.
 	 */
-	let toast = $state<{ text: string; error: boolean } | null>(null);
-
-	function say(text: string) {
-		toast = { text, error: false };
-	}
-
-	function warn(text: string) {
-		toast = { text, error: true };
-	}
+	const say = (text: string) => toast.success(text);
+	const warn = (text: string) => toast.error(text);
 
 	async function setCover(item: PlaylistItem) {
 		actionFlyoutId = null;
@@ -333,8 +326,8 @@
 			say('Share link copied.');
 		} catch {
 			// Clipboard access is denied often enough (insecure origins, permissions) that the
-			// link itself has to be recoverable from the message.
-			say(url);
+			// link itself has to be recoverable from the message — so it stays until dismissed.
+			toast.info(url, { duration: null });
 		}
 	}
 
@@ -957,23 +950,6 @@
 	</div>
 {/if}
 
-{#if toast}
-	<p
-		class="mb-2 rounded-md border px-3 py-2 text-sm"
-		style="border-color: {toast.error ? 'var(--color-danger)' : 'var(--color-border)'};
-		       background: var(--color-surface);
-		       color: {toast.error ? 'var(--color-danger)' : 'inherit'}"
-		role={toast.error ? 'alert' : 'status'}
-	>
-		{toast.text}
-		<button
-			type="button"
-			onclick={() => (toast = null)}
-			class="ml-2 underline underline-offset-2"
-			style="color: var(--color-muted)"
-		>Dismiss</button>
-	</p>
-{/if}
 
 {#if items.length === 0}
 	{#if sourceFilter !== null || statusFilter !== 'All' || isSearching}

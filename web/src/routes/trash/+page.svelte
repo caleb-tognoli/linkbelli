@@ -1,6 +1,7 @@
 <svelte:head><title>Trash - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -10,7 +11,6 @@
 	let { data }: { data: PageData } = $props();
 
 	let busy = $state<string | null>(null);
-	let error = $state<string | null>(null);
 
 	const total = $derived(data.trash.playlists.length + data.trash.items.length);
 
@@ -23,16 +23,15 @@
 
 	async function restore(kind: 'playlists' | 'items', id: string) {
 		busy = id;
-		error = null;
 		const res = await api.post(`/trash/${kind}/${id}/restore`);
 		busy = null;
 
 		if (res.ok) {
 			await invalidateAll();
 		} else if (res.status === 409) {
-			error = 'That link is already back in the playlist.';
+			toast.error('That link is already back in the playlist.');
 		} else {
-			error = 'Could not restore that. Try again.';
+			toast.error('Could not restore that. Try again.');
 		}
 	}
 
@@ -44,12 +43,11 @@
 		if (!ok) return;
 
 		busy = 'all';
-		error = null;
 		const res = await api.del('/trash');
 		busy = null;
 
 		if (res.ok) await invalidateAll();
-		else error = 'Could not empty the trash. Try again.';
+		else toast.error('Could not empty the trash. Try again.');
 	}
 </script>
 
@@ -74,15 +72,6 @@
 		{/if}
 	</header>
 
-	{#if error}
-		<p
-			class="mt-4 rounded-md border px-3 py-2 text-sm"
-			style="border-color: var(--color-danger); color: var(--color-danger)"
-			role="alert"
-		>
-			{error}
-		</p>
-	{/if}
 
 	{#if total === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
