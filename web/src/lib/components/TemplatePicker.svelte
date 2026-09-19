@@ -14,13 +14,20 @@
 	let error = $state<string | null>(null);
 	let loading = $state(true);
 
+	// Nothing to choose from — none seeded, or the list could not be fetched — means the form
+	// by hand, decided here rather than in the markup: calling back into the parent from a
+	// template expression mutates its state mid-render, which Svelte refuses outright and which
+	// left the page stuck on "Loading templates…" with no way to create a source at all.
 	$effect(() => {
 		api
 			.get('/sources/templates')
 			.then((res) => json<SourceTemplate[]>(res))
-			.then((list) => (templates = list))
-			.catch(() => (templates = []))
-			.finally(() => (loading = false));
+			.catch(() => [] as SourceTemplate[])
+			.then((list) => {
+				templates = list;
+				loading = false;
+				if (list.length === 0) onskip();
+			});
 	});
 
 	function choose(template: SourceTemplate) {
@@ -65,8 +72,7 @@
 {#if loading}
 	<p class="text-sm" style="color: var(--color-muted)">Loading templates…</p>
 {:else if templates.length === 0}
-	<!-- Nothing seeded: fall through rather than showing an empty chooser. -->
-	{onskip()}
+	<!-- The effect above has already handed over to the form by hand. -->
 {:else if !chosen}
 	<div>
 		<h2 class="flex items-center gap-1.5 font-medium">
