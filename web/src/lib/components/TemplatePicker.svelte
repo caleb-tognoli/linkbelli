@@ -1,7 +1,8 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { api, json } from '$lib/api/client';
 	import { goto } from '$app/navigation';
-	import { Sparkles } from '@lucide/svelte';
+	import { Sparkles, Check } from '@lucide/svelte';
 	import type { SourceTemplate } from '$lib/types';
 
 	let { onskip }: { onskip: () => void } = $props();
@@ -146,20 +147,10 @@
 		{/if}
 
 		<div class="flex items-center gap-2">
-			<button
-				type="button"
-				onclick={create}
-				disabled={!ready || busy}
-				class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-			>{busy ? 'Creating…' : 'Create source'}</button>
-
-			<button
-				type="button"
-				onclick={onskip}
-				class="text-sm underline underline-offset-2"
-				style="color: var(--color-muted)"
-			>Set one up by hand instead</button>
+			<Button variant="primary" icon={Check} onclick={create} loading={busy} disabled={!ready}>
+				{busy ? 'Creating…' : 'Create source'}
+			</Button>
+			<Button variant="ghost" onclick={onskip}>Set one up by hand instead</Button>
 		</div>
 	</div>
 {/if}

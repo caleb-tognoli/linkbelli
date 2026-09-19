@@ -1,10 +1,11 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import { describeRule } from '$lib/automation';
-	import { History, Plus, Trash2, Wand2, X } from '@lucide/svelte';
+	import { Check, History, Plus, Trash2, Wand2, X } from '@lucide/svelte';
 	import type { AutomationPreview, AutomationRule, ContentKind } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -273,15 +274,7 @@
 				have.
 			</p>
 		</div>
-		<button
-			type="button"
-			onclick={startNew}
-			class="inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
-			style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-		>
-			<Plus size={16} aria-hidden="true" />
-			New rule
-		</button>
+		<Button variant="primary" icon={Plus} onclick={startNew}>New rule</Button>
 	</header>
 
 	{#if message}
@@ -528,26 +521,13 @@
 			</fieldset>
 
 			<div class="mt-4 flex flex-wrap items-center gap-3">
-				<button
-					type="button"
-					onclick={save}
-					disabled={busy}
-					class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>{editing ? 'Save' : 'Create'}</button>
+				<Button variant="primary" icon={Check} onclick={save} disabled={busy}>
+					{editing ? 'Save' : 'Create'}
+				</Button>
 
 				<!-- A rule only ever acts on what arrives next, so this is the only way to find out
 				     whether it works without waiting to see what it does. -->
-				<button
-					type="button"
-					onclick={tryIt}
-					disabled={busy}
-					class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm disabled:opacity-60"
-					style="border-color: var(--color-border)"
-				>
-					<Wand2 size={15} aria-hidden="true" />
-					Try it on what I have
-				</button>
+				<Button icon={Wand2} onclick={tryIt} disabled={busy}>Try it on what I have</Button>
 
 				{#if error}
 					<p class="text-sm" style="color: var(--color-danger)">{error}</p>

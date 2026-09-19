@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { Popover } from 'bits-ui';
 	import { dragHandle, dragHandleZone } from 'svelte-dnd-action';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -827,26 +828,15 @@
 						/>
 					</div>
 					<div class="flex flex-col gap-1">
-						<button
-							type="button"
+						<Button
+							variant="primary"
+							size="sm"
+							icon={Check}
 							onclick={() => { saveNote(item); noteEditId = null; }}
-							class="inline-flex items-center rounded p-1.5"
-							style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-							title="Save note"
-							aria-label="Save note"
 						>
-							<Check size={14} aria-hidden="true" />
-						</button>
-						<button
-							type="button"
-							onclick={() => { noteEditId = null; }}
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-							style="color: var(--color-muted)"
-							title="Cancel"
-							aria-label="Cancel"
-						>
-							<X size={14} aria-hidden="true" />
-						</button>
+							Save
+						</Button>
+						<Button size="sm" variant="ghost" onclick={() => { noteEditId = null; }}>Cancel</Button>
 					</div>
 				</div>
 			</td>

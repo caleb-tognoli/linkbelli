@@ -1,6 +1,7 @@
 <svelte:head><title>An invitation - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { MailX, UserPlus } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
@@ -50,11 +51,7 @@
 
 		{#if data.signedIn}
 			<form method="post" class="mt-4">
-				<button
-					type="submit"
-					class="w-full rounded-md px-3 py-2 text-sm font-medium"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>Join this playlist</button>
+				<Button type="submit" variant="primary" class="w-full">Join this playlist</Button>
 			</form>
 		{:else}
 			<!-- No account yet is the case this whole feature exists for, so it is the first
@@ -63,16 +60,10 @@
 				Sign in or make an account, and you will come back here.
 			</p>
 			<div class="mt-2 flex gap-2">
-				<a
-					href={`/register?redirectTo=${here}`}
-					class="flex-1 rounded-md px-3 py-2 text-center text-sm font-medium"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>Make an account</a>
-				<a
-					href={`/login?redirectTo=${here}`}
-					class="flex-1 rounded-md border px-3 py-2 text-center text-sm"
-					style="border-color: var(--color-border)"
-				>Sign in</a>
+				<Button href={`/register?redirectTo=${here}`} variant="primary" class="flex-1">
+					Make an account
+				</Button>
+				<Button href={`/login?redirectTo=${here}`} class="flex-1">Sign in</Button>
 			</div>
 		{/if}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import { api } from '$lib/api/client';
@@ -753,36 +754,23 @@
 			}}
 		></textarea>
 		<div class="mt-1 flex items-center gap-0.5">
-			<button
-				type="button"
+			<Button
+				variant="ghost-danger"
+				icon={Trash2}
+				iconOnly
+				label="Remove this highlight"
 				onclick={() => remove(activeHighlight)}
-				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-				title="Remove this highlight"
-				aria-label="Remove this highlight"
-			>
-				<Trash2 size={16} aria-hidden="true" />
-			</button>
+			/>
 			<div class="flex-1"></div>
-			<button
-				type="button"
-				onclick={closePanel}
-				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-				title="Close (Esc)"
-				aria-label="Close"
-			>
-				<X size={16} aria-hidden="true" />
-			</button>
-			<button
-				type="button"
+			<Button variant="ghost" icon={X} iconOnly label="Close (Esc)" onclick={closePanel} />
+			<Button
+				variant="primary"
+				icon={Check}
+				iconOnly
+				label="Save the note (Ctrl+Enter)"
 				onclick={saveNote}
 				disabled={(activeHighlight.note ?? '') === draft.trim()}
-				class="inline-flex items-center rounded-md p-1.5 disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				title="Save the note (Ctrl+Enter)"
-				aria-label="Save the note"
-			>
-				<Check size={16} aria-hidden="true" />
-			</button>
+			/>
 		</div>
 	</div>
 {/if}

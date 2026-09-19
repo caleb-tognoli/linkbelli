@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import { Check, X } from '@lucide/svelte';
 	import { Dialog } from 'bits-ui';
 	import { getDialogState, resolveDialog } from '$lib/dialog.svelte';
 
@@ -46,24 +48,14 @@
 				{/if}
 
 				<div class="mt-4 flex justify-center gap-2 text-sm">
-					<button
-						type="button"
-						onclick={cancel}
-						class="rounded-md border px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
+					<Button icon={X} onclick={cancel}>Cancel</Button>
+					<Button
+						variant={dlg.kind === 'confirm' && dlg.danger ? 'danger' : 'primary'}
+						icon={Check}
 						onclick={confirm}
-						class="rounded-md px-3 py-1.5 font-medium"
-						style={dlg.kind === 'confirm' && dlg.danger
-							? 'background: var(--color-danger-solid); color: var(--color-on-solid)'
-							: 'background: var(--color-accent-solid); color: var(--color-on-solid)'}
 					>
 						{dlg.confirmLabel ?? (dlg.kind === 'prompt' ? 'Save' : 'Confirm')}
-					</button>
+					</Button>
 				</div>
 			{/if}
 		</Dialog.Content>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { page } from '$app/state';
 
 	/**
@@ -41,28 +42,10 @@
 	     page is the public introduction, and /playlists bounces to sign-in if it has to. -->
 	<div class="mt-6 flex flex-wrap justify-center gap-3 text-sm">
 		{#if status === 401}
-			<a
-				href="/login"
-				class="rounded-md px-3 py-2 font-medium"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-			>
-				Sign in
-			</a>
+			<Button href="/login" variant="primary">Sign in</Button>
 		{:else}
-			<a
-				href="/playlists"
-				class="rounded-md px-3 py-2 font-medium"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-			>
-				Your playlists
-			</a>
+			<Button href="/playlists" variant="primary">Your playlists</Button>
 		{/if}
-		<a
-			href="/"
-			class="rounded-md border px-3 py-2"
-			style="border-color: var(--color-border)"
-		>
-			Home
-		</a>
+		<Button href="/">Home</Button>
 	</div>
 </section>

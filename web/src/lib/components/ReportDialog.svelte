@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { Flag, X } from '@lucide/svelte';
@@ -48,12 +49,8 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger
-		class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
-		style="border-color: var(--color-border); color: var(--color-muted)"
-		title="Report this playlist"
-	>
-		<Flag size={13} aria-hidden="true" />
+	<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Report this playlist">
+		<Flag size={15} aria-hidden="true" />
 		Report
 	</Dialog.Trigger>
 	<Dialog.Portal>
@@ -107,13 +104,9 @@
 					<p class="mt-2 text-sm" style="color: var(--color-danger)">{error}</p>
 				{/if}
 
-				<button
-					type="button"
-					onclick={send}
-					disabled={busy}
-					class="mt-4 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>Send report</button>
+				<Button variant="primary" icon={Flag} class="mt-4" onclick={send} loading={busy}>
+					Send report
+				</Button>
 			{/if}
 		</Dialog.Content>
 	</Dialog.Portal>

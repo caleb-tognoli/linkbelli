@@ -1,6 +1,7 @@
 <svelte:head><title>Confirm your address - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { MailCheck, MailX } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
@@ -61,15 +62,9 @@
 			{#if resent}
 				<p class="mt-4 text-sm">Another link is on its way to {data.email}.</p>
 			{:else}
-				<button
-					type="button"
-					onclick={resend}
-					disabled={resending}
-					class="mt-4 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>
+				<Button variant="primary" onclick={resend} loading={resending} class="mt-4">
 					{resending ? 'Sending…' : 'Send another link'}
-				</button>
+				</Button>
 			{/if}
 
 			{#if resendError}

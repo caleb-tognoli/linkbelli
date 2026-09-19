@@ -1,6 +1,7 @@
 <svelte:head><title>linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { ListMusic, Rss, Compass, Upload, LogIn, UserPlus, ArrowRight } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
@@ -50,35 +51,11 @@
 
 		<div class="mt-6 flex flex-wrap items-center gap-2 text-sm">
 			{#if data.user}
-				<a
-					href="/playlists"
-					class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 font-medium"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>
-					<ListMusic size={18} aria-hidden="true" /> Your playlists
-				</a>
-				<a
-					href="/sources"
-					class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 font-medium hover:bg-black/5 dark:hover:bg-white/10"
-					style="border-color: var(--color-border)"
-				>
-					<Rss size={18} aria-hidden="true" /> Your sources
-				</a>
+				<Button href="/playlists" variant="primary" icon={ListMusic}>Your playlists</Button>
+				<Button href="/sources" icon={Rss}>Your sources</Button>
 			{:else}
-				<a
-					href="/register"
-					class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 font-medium"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>
-					<UserPlus size={18} aria-hidden="true" /> Create account
-				</a>
-				<a
-					href="/login"
-					class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 font-medium hover:bg-black/5 dark:hover:bg-white/10"
-					style="border-color: var(--color-border)"
-				>
-					<LogIn size={18} aria-hidden="true" /> Sign in
-				</a>
+				<Button href="/register" variant="primary" icon={UserPlus}>Create account</Button>
+				<Button href="/login" icon={LogIn}>Sign in</Button>
 			{/if}
 		</div>
 	</section>

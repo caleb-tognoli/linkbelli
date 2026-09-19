@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import PlaylistSearchBar from './PlaylistSearchBar.svelte';
 	import LinkTable from './LinkTable.svelte';
 	import TagEditor from './TagEditor.svelte';
@@ -359,14 +360,11 @@
 		<div class="flex flex-wrap items-center gap-2">
 			{#if isOwner}
 				<Popover.Root bind:open={visOpen}>
-					<Popover.Trigger
-						class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]"
-						style="border-color: var(--color-border)"
-						title="Change visibility"
-						aria-label="Visibility"
-					>
+					<Popover.Trigger class={buttonClass('secondary', 'sm')} title="Change visibility">
 						<currentVis.icon size={15} aria-hidden="true" />
+						<span class="sr-only">Visibility:</span>
 						{currentVis.label}
+						<ChevronDown size={13} aria-hidden="true" />
 					</Popover.Trigger>
 					<Popover.Content
 						class="popover-surface z-30 rounded-md border shadow-md overflow-hidden"
@@ -389,16 +387,10 @@
 				{#if publicPreviewHref}
 					<!-- The obvious thing to want straight after publishing, and previously
 					     impossible: your own public address redirected you back to this editor. -->
-					<a
-						href={publicPreviewHref}
-						class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]"
-						style="border-color: var(--color-border)"
-						title="See this the way a visitor does"
-					>
-						<Eye size={15} aria-hidden="true" />
+					<Button href={publicPreviewHref} size="sm" icon={Eye} title="See this the way a visitor does">
 						<span class="hidden sm:inline">View as a visitor</span>
 						<span class="sr-only sm:hidden">View as a visitor</span>
-					</a>
+					</Button>
 				{/if}
 				{#if visibility !== 'Private' && (likeCount > 0 || followerCount > 0)}
 					<!-- Read-only, and only once somebody has actually done it: a published
@@ -432,16 +424,15 @@
 					type="button"
 					onclick={toggleLike}
 					disabled={!isLoggedIn || liking}
-					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs disabled:cursor-default"
-					style="border-color: {likedByMe ? 'var(--color-accent)' : 'var(--color-border)'};
-					       color: {likedByMe ? 'var(--color-accent)' : 'var(--color-muted)'}"
+					class={buttonClass('secondary', 'sm', false, likedByMe ? 'border-accent text-accent' : '')}
 					title={isLoggedIn
 						? (likedByMe ? 'You like this' : 'Like this playlist')
 						: 'Sign in to like this'}
 					aria-pressed={likedByMe}
 				>
-					<Heart size={13} aria-hidden="true" fill={likedByMe ? 'currentColor' : 'none'} />
+					<Heart size={15} aria-hidden="true" fill={likedByMe ? 'currentColor' : 'none'} />
 					{likeCount}
+					<span class="sr-only">{likeCount === 1 ? 'like' : 'likes'}</span>
 				</button>
 			{/if}
 			{#if !isOwner && isLoggedIn}
@@ -449,36 +440,32 @@
 					type="button"
 					onclick={toggleFollow}
 					disabled={following}
-					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs disabled:opacity-60"
-					style="border-color: {followedByMe ? 'var(--color-accent)' : 'var(--color-border)'};
-					       color: {followedByMe ? 'var(--color-accent)' : 'var(--color-muted)'}"
+					class={buttonClass('secondary', 'sm', false, followedByMe ? 'border-accent text-accent' : '')}
 					aria-pressed={followedByMe}
 					title={followedByMe ? 'New links here reach your feed' : 'Get new links from this list in your feed'}
 				>
-					<Rss size={13} aria-hidden="true" />
+					<Rss size={15} aria-hidden="true" />
 					{followedByMe ? 'Following' : 'Follow'}{followerCount ? ` · ${followerCount}` : ''}
 				</button>
 			{/if}
 			{#if !isOwner && isLoggedIn && ownerUsername}
-				<button
-					type="button"
+				<Button
+					size="sm"
+					icon={CopyPlus}
 					onclick={fork}
-					disabled={forking}
-					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs disabled:opacity-60"
-					style="border-color: var(--color-border); color: var(--color-muted)"
+					loading={forking}
 					title="Copy these links into a playlist of your own"
 				>
-					<CopyPlus size={13} aria-hidden="true" />
 					{forking ? 'Copying…' : 'Take a copy'}{playlist.forkCount ? ` · ${playlist.forkCount}` : ''}
-				</button>
+				</Button>
 			{:else if isOwner && playlist.forkCount}
 				<!-- The number worth more than the like count: somebody decided to keep this. -->
 				<span
-					class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
-					style="border-color: var(--color-border); color: var(--color-muted)"
+					class="inline-flex items-center gap-1.5 px-1 text-sm"
+					style="color: var(--color-muted)"
 					title="People who took a copy of this playlist"
 				>
-					<CopyPlus size={13} aria-hidden="true" /> {playlist.forkCount} copied
+					<CopyPlus size={15} aria-hidden="true" /> {playlist.forkCount} copied
 				</span>
 			{/if}
 			{#if forkError}
@@ -505,9 +492,7 @@
 			{#if isOwner && (isNsfw || nsfwSetting !== 'Auto')}
 				<Popover.Root bind:open={nsfwOpen}>
 					<Popover.Trigger
-						class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
-						style="border-color: {isNsfw ? 'var(--color-danger)' : 'var(--color-border)'};
-						       color: {isNsfw ? 'var(--color-danger)' : 'var(--color-muted)'}"
+						class={buttonClass('secondary', 'sm', false, isNsfw ? 'border-danger text-danger' : '')}
 						title="Adult content"
 					>
 						{isNsfw ? 'Adult' : 'Not adult'}
@@ -537,7 +522,7 @@
 			{#if isOwner}
 				<Popover.Root bind:open={exportOpen}>
 					<Popover.Trigger
-						class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+						class={buttonClass('ghost', 'md', true)}
 						title="Export this playlist"
 						aria-label="Export this playlist"
 					>
@@ -561,16 +546,7 @@
 						{/each}
 					</Popover.Content>
 				</Popover.Root>
-				<button
-					type="button"
-					onclick={deletePlaylist}
-					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-					style="color: var(--color-danger)"
-					title="Delete playlist"
-					aria-label="Delete playlist"
-				>
-					<Trash2 size={17} aria-hidden="true" />
-				</button>
+				<Button variant="ghost-danger" icon={Trash2} iconOnly label="Delete playlist" onclick={deletePlaylist} />
 			{/if}
 		</div>
 	</header>

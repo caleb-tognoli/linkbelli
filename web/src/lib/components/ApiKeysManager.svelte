@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -157,22 +158,12 @@
 						{/if}
 
 						<div class="mt-2 flex justify-center gap-2 text-sm">
-							<Dialog.Close
-								class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-								style="border-color: var(--color-border)"
-							>
-								<X size={15} aria-hidden="true" /> Cancel
+							<Dialog.Close class={buttonClass('secondary')}>
+								<X size={17} aria-hidden="true" /> Cancel
 							</Dialog.Close>
-							<button
-								type="button"
-								onclick={create}
-								disabled={busy || !name.trim()}
-								class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-								style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-							>
-								<Check size={15} aria-hidden="true" />
-								{busy ? 'Creating…' : 'Create'}
-							</button>
+							<Button variant="primary" icon={Check} onclick={create} loading={busy} disabled={!name.trim()}>
+								{busy ? 'Creating…' : 'Create key'}
+							</Button>
 						</div>
 					</div>
 				</Dialog.Content>
@@ -185,29 +176,10 @@
 			<p class="font-medium">Copy your new key now — it won't be shown again:</p>
 			<code class="mt-2 block break-all rounded p-2" style="background: var(--color-surface)">{createdToken.token}</code>
 			<div class="mt-2 flex items-center gap-3">
-				<button
-					type="button"
-					class="inline-flex items-center rounded-md p-1.5"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-					onclick={copyToken}
-					title={copied ? 'Copied!' : 'Copy key'}
-					aria-label={copied ? 'Copied!' : 'Copy key'}
-				>
-					{#if copied}
-						<Check size={15} aria-hidden="true" />
-					{:else}
-						<Copy size={15} aria-hidden="true" />
-					{/if}
-				</button>
-				<button
-					type="button"
-					onclick={() => (createdToken = null)}
-					title="Dismiss"
-					aria-label="Dismiss"
-					class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-				>
-					<X size={15} aria-hidden="true" />
-				</button>
+				<Button variant="primary" size="sm" icon={copied ? Check : Copy} onclick={copyToken}>
+					{copied ? 'Copied' : 'Copy key'}
+				</Button>
+				<Button variant="ghost" size="sm" icon={X} iconOnly label="Dismiss" onclick={() => (createdToken = null)} />
 			</div>
 		</div>
 	{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass, type ButtonVariant } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
@@ -6,10 +7,9 @@
 
 	let {
 		parentId = null,
-		label = 'New folder',
-		triggerClass = 'rounded-md px-3 py-2 text-sm font-medium',
-		triggerStyle = 'background: var(--color-accent-solid); color: var(--color-on-solid)'
-	}: { parentId?: string | null; label?: string; triggerClass?: string; triggerStyle?: string } = $props();
+		variant = 'secondary',
+		iconOnly = false
+	}: { parentId?: string | null; variant?: ButtonVariant; iconOnly?: boolean } = $props();
 
 	let open = $state(false);
 	let name = $state('');
@@ -40,11 +40,13 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger class={triggerClass} style={triggerStyle} title={label || 'New folder'} aria-label={label || 'New folder'}>
-		<span class="inline-flex items-center gap-1.5">
-			<FolderPlus size={18} aria-hidden="true" />
-			{#if label}{label}{/if}
-		</span>
+	<Dialog.Trigger
+		class={buttonClass(variant, 'md', iconOnly)}
+		title={iconOnly ? 'New folder' : undefined}
+		aria-label={iconOnly ? 'New folder' : undefined}
+	>
+		<FolderPlus size={17} aria-hidden="true" />
+		{#if !iconOnly}New folder{/if}
 	</Dialog.Trigger>
 
 	<Dialog.Portal>
@@ -67,26 +69,12 @@
 				{/if}
 
 				<div class="mt-2 flex justify-center gap-2 text-sm">
-					<Dialog.Close
-						class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-						title="Cancel"
-						aria-label="Cancel"
-					>
-						<X size={15} aria-hidden="true" />
-						Cancel
+					<Dialog.Close class={buttonClass('secondary')}>
+						<X size={17} aria-hidden="true" /> Cancel
 					</Dialog.Close>
-					<button
-						type="submit"
-						disabled={submitting}
-						class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-						style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-						title={submitting ? 'Creating…' : 'Create'}
-						aria-label="Create folder"
-					>
-						<Check size={15} aria-hidden="true" />
-						{submitting ? 'Creating…' : 'Create'}
-					</button>
+					<Button type="submit" variant="primary" icon={Check} loading={submitting}>
+						{submitting ? 'Creating…' : 'Create folder'}
+					</Button>
 				</div>
 			</form>
 		</Dialog.Content>

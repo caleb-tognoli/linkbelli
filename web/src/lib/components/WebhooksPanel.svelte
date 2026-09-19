@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api, json } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -290,22 +291,18 @@
 						{/if}
 
 						<div class="mt-2 flex justify-center gap-2 text-sm">
-							<Dialog.Close
-								class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-								style="border-color: var(--color-border)"
-							>
-								<X size={15} aria-hidden="true" /> Cancel
+							<Dialog.Close class={buttonClass('secondary')}>
+								<X size={17} aria-hidden="true" /> Cancel
 							</Dialog.Close>
-							<button
-								type="button"
+							<Button
+								variant="primary"
+								icon={Check}
 								onclick={create}
-								disabled={busy || !url.trim() || chosen.size === 0}
-								class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-								style="background: var(--color-accent-solid); color: var(--color-on-solid)"
+								loading={busy}
+								disabled={!url.trim() || chosen.size === 0}
 							>
-								<Check size={15} aria-hidden="true" />
-								{busy ? 'Adding…' : 'Add'}
-							</button>
+								{busy ? 'Adding…' : 'Add webhook'}
+							</Button>
 						</div>
 					</div>
 				</Dialog.Content>
@@ -324,29 +321,10 @@
 			<p class="font-medium">Copy the signing secret now — it won't be shown again:</p>
 			<code class="mt-2 block break-all rounded p-2" style="background: var(--color-surface)">{revealed.secret}</code>
 			<div class="mt-2 flex items-center gap-3">
-				<button
-					type="button"
-					class="inline-flex items-center rounded-md p-1.5"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-					onclick={copySecret}
-					title={copied ? 'Copied!' : 'Copy secret'}
-					aria-label={copied ? 'Copied!' : 'Copy secret'}
-				>
-					{#if copied}
-						<Check size={15} aria-hidden="true" />
-					{:else}
-						<Copy size={15} aria-hidden="true" />
-					{/if}
-				</button>
-				<button
-					type="button"
-					onclick={() => (revealed = null)}
-					title="Dismiss"
-					aria-label="Dismiss"
-					class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-				>
-					<X size={15} aria-hidden="true" />
-				</button>
+				<Button variant="primary" size="sm" icon={copied ? Check : Copy} onclick={copySecret}>
+					{copied ? 'Copied' : 'Copy secret'}
+				</Button>
+				<Button variant="ghost" size="sm" icon={X} iconOnly label="Dismiss" onclick={() => (revealed = null)} />
 			</div>
 		</div>
 	{/if}

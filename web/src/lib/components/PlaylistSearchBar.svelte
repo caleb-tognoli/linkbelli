@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { Plus, Search } from '@lucide/svelte';
 	import { looksLikeUrl } from '$lib/urls';
@@ -133,17 +134,15 @@
 			/>
 		</div>
 		{#if showAdd}
-			<button
-				type="button"
+			<Button
+				variant="primary"
+				icon={Plus}
 				onclick={doAdd}
 				disabled={busy}
-				class="rounded-md p-2 disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				title={looksAlreadyHere ? 'Add it anyway' : 'Add link'}
 				aria-label={looksAlreadyHere ? 'Add it anyway' : 'Add link'}
 			>
-				<Plus size={18} aria-hidden="true" />
-			</button>
+				{looksAlreadyHere ? 'Add anyway' : 'Add'}
+			</Button>
 		{/if}
 	</div>
 

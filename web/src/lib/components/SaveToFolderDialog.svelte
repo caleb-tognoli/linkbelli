@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
@@ -82,17 +83,14 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Trigger
-		class={compact
-			? 'inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10'
-			: 'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:border-[var(--color-accent)]'}
-		style={compact ? '' : 'border-color: var(--color-border)'}
+		class={compact ? buttonClass('ghost', 'sm', true) : buttonClass('secondary', 'sm')}
 		title={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
 		aria-label={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
 	>
 		{#if compact}
 			<FolderInput size={15} aria-hidden="true" />
 		{:else}
-			<Folder size={17} aria-hidden="true" style="color: var(--color-muted)" />
+			<Folder size={15} aria-hidden="true" />
 			{#if filed}
 				<span class="max-w-[12rem] truncate">{currentFolderName}</span>
 			{:else}

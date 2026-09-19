@@ -1,6 +1,7 @@
 <svelte:head><title>Save a link - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { Check, Clock, ExternalLink } from '@lucide/svelte';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
@@ -166,13 +167,9 @@
 				<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 			{/if}
 
-			<button
-				type="button"
-				onclick={save}
-				disabled={busy || !url.trim()}
-				class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-			>{busy ? 'Saving…' : 'Save'}</button>
+			<Button variant="primary" icon={Check} onclick={save} loading={busy} disabled={!url.trim()}>
+				{busy ? 'Saving…' : 'Save'}
+			</Button>
 
 			<!-- This is the screen the share sheet lands on, and the one that promises to work
 			     without a connection. If it will not, here is where that has to be said. -->

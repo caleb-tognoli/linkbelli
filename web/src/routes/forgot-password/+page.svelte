@@ -1,6 +1,7 @@
 <svelte:head><title>Reset your password - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
 	import { Mail } from '@lucide/svelte';
 	import type { ActionData } from './$types';
@@ -58,15 +59,9 @@
 				<p class="text-sm" style="color: var(--color-danger)" role="alert">{form.error}</p>
 			{/if}
 
-			<button
-				type="submit"
-				disabled={submitting}
-				class="mt-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 font-medium disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-			>
-				<Mail size={18} aria-hidden="true" />
+			<Button type="submit" variant="primary" icon={Mail} loading={submitting} class="mt-1 w-full">
 				{submitting ? 'Sending…' : 'Send the link'}
-			</button>
+			</Button>
 		</form>
 
 		<p class="mt-4 text-sm" style="color: var(--color-muted)">

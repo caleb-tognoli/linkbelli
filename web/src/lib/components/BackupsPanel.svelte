@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
 	import Switch from '$lib/components/Switch.svelte';
@@ -9,7 +10,7 @@
 		type Backup,
 		type RestorePlan
 	} from '$lib/backups';
-	import { Download, RotateCcw, Trash2, Upload } from '@lucide/svelte';
+	import { Download, RotateCcw, Trash2, Upload, X } from '@lucide/svelte';
 
 	let { enabled: initialEnabled = true }: { enabled?: boolean } = $props();
 
@@ -233,22 +234,19 @@
 
 			{#if plan.dryRun}
 				<div class="mt-2 flex flex-wrap gap-2">
-					<button
-						type="button"
-						onclick={confirmRestore}
-						disabled={working}
-						class="rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-60"
-						style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-					>{working ? 'Restoring…' : 'Go ahead'}</button>
-					<button
-						type="button"
+					<Button variant="primary" size="sm" icon={RotateCcw} onclick={confirmRestore} loading={working}>
+						{working ? 'Restoring…' : 'Restore it'}
+					</Button>
+					<Button
+						size="sm"
+						icon={X}
 						onclick={() => {
 							plan = null;
 							pending = null;
 						}}
-						class="rounded-md border px-3 py-1.5 text-sm"
-						style="border-color: var(--color-border)"
-					>Never mind</button>
+					>
+						Cancel
+					</Button>
 				</div>
 			{/if}
 		</div>

@@ -1,6 +1,7 @@
 ﻿<svelte:head><title>Discover - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { Search, ChevronDown } from '@lucide/svelte';
 	import PublicPlaylistCard from '$lib/components/PublicPlaylistCard.svelte';
@@ -79,9 +80,7 @@
 			class="flex-1 rounded-md border px-3 py-2 text-sm"
 			style="border-color: var(--color-border-strong); background: var(--color-bg)"
 		/>
-		<button type="submit" class="rounded-md p-2" style="background: var(--color-accent-solid); color: var(--color-on-solid)" title="Search" aria-label="Search">
-			<Search size={18} aria-hidden="true" />
-		</button>
+		<Button type="submit" variant="primary" icon={Search} iconOnly label="Search" />
 	</form>
 
 	<div class="mt-4 flex flex-wrap items-center gap-2">

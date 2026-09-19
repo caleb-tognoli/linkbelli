@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { UserPlus, X } from '@lucide/svelte';
@@ -131,12 +132,8 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger
-		class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
-		style="border-color: var(--color-border); color: var(--color-muted)"
-		title="Share with specific people"
-	>
-		<UserPlus size={13} aria-hidden="true" />
+	<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Share with specific people">
+		<UserPlus size={15} aria-hidden="true" />
 		Share
 	</Dialog.Trigger>
 	<Dialog.Portal>
@@ -171,13 +168,7 @@
 						<option value={option.value}>{option.label}</option>
 					{/each}
 				</select>
-				<button
-					type="button"
-					onclick={share}
-					disabled={busy || !username.trim()}
-					class="shrink-0 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-				>Add</button>
+				<Button variant="primary" onclick={share} loading={busy} disabled={!username.trim()}>Add</Button>
 			</div>
 
 			<p class="mt-1.5 shrink-0 text-xs" style="color: var(--color-muted)">

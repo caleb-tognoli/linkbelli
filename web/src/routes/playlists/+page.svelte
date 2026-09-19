@@ -43,11 +43,7 @@
 			>
 				<Trash2 size={18} aria-hidden="true" />
 			</a>
-			<NewFolderDialog
-				label=""
-				triggerClass="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-				triggerStyle=""
-			/>
+			<NewFolderDialog variant="ghost" iconOnly />
 			<NewPlaylistDialog {form} />
 		</div>
 	</header>

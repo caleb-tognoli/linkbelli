@@ -1,6 +1,7 @@
 ﻿<svelte:head><title>Import - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { Upload, CheckCircle } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
@@ -149,15 +150,15 @@
 				{/if}
 			</div>
 
-			<button
+			<Button
 				type="submit"
-				disabled={submitting || (destination === 'existing' && data.playlists.length === 0)}
-				class="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
+				variant="primary"
+				icon={Upload}
+				loading={submitting}
+				disabled={destination === 'existing' && data.playlists.length === 0}
 			>
-				<Upload size={16} aria-hidden="true" />
 				{submitting ? 'Importing…' : 'Import'}
-			</button>
+			</Button>
 		</form>
 	{/if}
 </div>

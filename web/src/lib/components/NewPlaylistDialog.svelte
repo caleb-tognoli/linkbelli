@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
@@ -99,20 +100,12 @@
 					{/if}
 
 					<div class="mt-2 flex justify-center gap-2 text-sm">
-						<Dialog.Close
-							class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-							style="border-color: var(--color-border)"
-						>
-							<X size={15} aria-hidden="true" /> Cancel
+						<Dialog.Close class={buttonClass('secondary')}>
+							<X size={17} aria-hidden="true" /> Cancel
 						</Dialog.Close>
-						<button
-							type="submit"
-							disabled={submitting}
-							class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-							style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-						>
-							<Check size={15} aria-hidden="true" /> {submitting ? 'Creating…' : 'Create'}
-						</button>
+						<Button type="submit" variant="primary" icon={Check} loading={submitting}>
+							{submitting ? 'Creating…' : 'Create'}
+						</Button>
 					</div>
 				</form>
 			{:else}
@@ -163,20 +156,12 @@
 					{/if}
 
 					<div class="mt-2 flex justify-center gap-2 text-sm">
-						<Dialog.Close
-							class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-							style="border-color: var(--color-border)"
-						>
-							<X size={15} aria-hidden="true" /> Cancel
+						<Dialog.Close class={buttonClass('secondary')}>
+							<X size={17} aria-hidden="true" /> Cancel
 						</Dialog.Close>
-						<button
-							type="submit"
-							disabled={submitting}
-							class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-							style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-						>
-							<Check size={15} aria-hidden="true" /> {submitting ? 'Creating…' : 'Create'}
-						</button>
+						<Button type="submit" variant="primary" icon={Check} loading={submitting}>
+							{submitting ? 'Creating…' : 'Create'}
+						</Button>
 					</div>
 				</form>
 			{/if}

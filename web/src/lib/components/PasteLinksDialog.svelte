@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { ClipboardPaste, X } from '@lucide/svelte';
@@ -51,12 +52,8 @@
 </script>
 
 <Dialog.Root bind:open onOpenChange={(value) => value && reset()}>
-	<Dialog.Trigger
-		class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
-		style="border-color: var(--color-border); color: var(--color-muted)"
-		title="Paste a block of links"
-	>
-		<ClipboardPaste size={13} aria-hidden="true" />
+	<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Paste a block of links">
+		<ClipboardPaste size={15} aria-hidden="true" />
 		Paste links
 	</Dialog.Trigger>
 	<Dialog.Portal>
@@ -113,13 +110,16 @@
 				</div>
 			{/if}
 
-			<button
-				type="button"
+			<Button
+				variant="primary"
+				icon={ClipboardPaste}
+				class="mt-4"
 				onclick={paste}
-				disabled={busy || !text.trim()}
-				class="mt-4 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-			>{busy ? 'Adding…' : 'Add them'}</button>
+				loading={busy}
+				disabled={!text.trim()}
+			>
+				{busy ? 'Adding…' : 'Add them'}
+			</Button>
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>

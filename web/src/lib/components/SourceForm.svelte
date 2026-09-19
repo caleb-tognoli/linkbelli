@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -680,27 +681,11 @@
 	</fieldset>
 
 	<div class="flex items-center gap-3">
-		<button
-			type="button"
-			onclick={save}
-			disabled={busy}
-			class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-			style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-		>
-			<Save size={16} aria-hidden="true" />
+		<Button variant="primary" icon={Save} onclick={save} loading={busy}>
 			{mode === 'create' ? 'Create' : 'Save'}
-		</button>
+		</Button>
 		{#if ondelete}
-			<button
-				type="button"
-				onclick={ondelete}
-				disabled={busy}
-				class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-				style="color: var(--color-danger)"
-			>
-				<Trash2 size={16} aria-hidden="true" />
-				Delete
-			</button>
+			<Button variant="ghost-danger" icon={Trash2} onclick={ondelete} disabled={busy}>Delete</Button>
 		{/if}
 		{#if error}
 			<!-- Announced: the button that failed is right next to it, but somebody not looking at

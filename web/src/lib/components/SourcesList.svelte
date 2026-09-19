@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { AlertTriangle, ChevronDown, Globe, Lock, Play, Plus, Search } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
@@ -101,14 +102,7 @@
 			finds straight into a playlist, on a schedule you set. It is the difference between a
 			list you fill and one that fills itself.
 		</p>
-		<a
-			href="/sources/new"
-			class="mt-4 inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium"
-			style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-		>
-			<Plus size={16} aria-hidden="true" />
-			Add a source
-		</a>
+		<Button href="/sources/new" variant="primary" icon={Plus} class="mt-4">Add a source</Button>
 		<p class="mt-3 text-xs" style="color: var(--color-muted)">
 			There are ready-made ones for YouTube, Reddit, Hacker News, GitHub and podcasts.
 		</p>

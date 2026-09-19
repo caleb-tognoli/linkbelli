@@ -1,6 +1,7 @@
 <svelte:head><title>Choose a new password - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
 	import { KeyRound } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
@@ -71,15 +72,9 @@
 				<p class="text-sm" style="color: var(--color-danger)" role="alert">{form.error}</p>
 			{/if}
 
-			<button
-				type="submit"
-				disabled={submitting}
-				class="mt-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 font-medium disabled:opacity-60"
-				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
-			>
-				<KeyRound size={18} aria-hidden="true" />
+			<Button type="submit" variant="primary" icon={KeyRound} loading={submitting} class="mt-1 w-full">
 				{submitting ? 'Saving…' : 'Save it'}
-			</button>
+			</Button>
 		</form>
 	{/if}
 </div>
