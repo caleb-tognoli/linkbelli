@@ -196,3 +196,43 @@ describe('LinkTable — acting on a selection', () => {
 		await vi.waitFor(() => expect(screen.queryByText('1 selected')).not.toBeInTheDocument());
 	});
 });
+
+describe('LinkTable — moving to another playlist', () => {
+	// An open dialog makes the rest of the page inert; one left open by a test would leave the
+	// next test's table unclickable.
+	afterEach(() => {
+		document.body.style.pointerEvents = '';
+	});
+
+	const other = { id: 'p2', name: 'Other list', visibility: 'Private', tags: [], itemCount: 0 };
+
+	it('does not say "Moved" when the move was refused', async () => {
+		fakeApi({
+			'GET /playlists': json({ items: [other], nextCursor: null }),
+			'POST /items/bulk': json({}, 409)
+		});
+		setup();
+
+		await select(1);
+		await userEvent.click(screen.getByRole('button', { name: 'Move to…' }));
+		await userEvent.click(await screen.findByRole('button', { name: /Other list/ }));
+
+		expect(screen.queryByText('Moved')).not.toBeInTheDocument();
+		expect(problem()).toHaveTextContent('Somebody changed that first');
+	});
+
+	it('closes the picker once the selection has moved', async () => {
+		fakeApi({
+			'GET /playlists': json({ items: [other], nextCursor: null }),
+			'POST /items/bulk': json({ affected: 1, skipped: 0 })
+		});
+		const { onmove } = setup();
+
+		await select(1);
+		await userEvent.click(screen.getByRole('button', { name: 'Move to…' }));
+		await userEvent.click(await screen.findByRole('button', { name: /Other list/ }));
+
+		expect(onmove).toHaveBeenCalled();
+		expect(screen.queryByRole('button', { name: /Other list/ })).not.toBeInTheDocument();
+	});
+});

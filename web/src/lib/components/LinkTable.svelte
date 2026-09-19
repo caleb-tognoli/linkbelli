@@ -129,22 +129,25 @@
 		else for (const item of items) selected.add(item.id);
 	}
 
-	async function bulk(body: Record<string, unknown>) {
-		if (selected.size === 0) return;
+	/** Whether the change went through — the picker needs to know before it says "Moved". */
+	async function bulk(body: Record<string, unknown>): Promise<boolean> {
+		if (selected.size === 0) return false;
 		bulkBusy = true;
 		try {
 			const res = await api.post('/items/bulk', { itemIds: [...selected], ...body });
 			if (res.ok) {
 				selected.clear();
 				await onmove?.();
-			} else {
-				// Forty items not moving looks exactly like forty items moving and the page not
-				// refreshing. Any of these can fail for real: a 409 from the concurrency token, a
-				// 429, a 403 once a share role is revoked mid-session.
-				warn(failureMessage(res.status, 'Could not do that to the selection.'));
+				return true;
 			}
+			// Forty items not moving looks exactly like forty items moving and the page not
+			// refreshing. Any of these can fail for real: a 409 from the concurrency token, a
+			// 429, a 403 once a share role is revoked mid-session.
+			warn(failureMessage(res.status, 'Could not do that to the selection.'));
+			return false;
 		} catch {
 			warn('Could not reach the server.');
+			return false;
 		} finally {
 			bulkBusy = false;
 		}
@@ -1066,7 +1069,11 @@
 			subtitle={`${count} ${count === 1 ? 'link' : 'links'} will move out of this playlist.`}
 			excludePlaylistId={playlistId}
 			onselect={async (target) => {
-				await bulk({ action: 'Move', targetPlaylistId: target });
+				// Throwing leaves the row as it was: a move that failed, or that had nothing left
+				// to move, must not be reported as one that happened.
+				if (!(await bulk({ action: 'Move', targetPlaylistId: target }))) throw new Error();
+				// The selection has gone with it, so there is nothing more to pick a place for.
+				moveOpen = false;
 				return 'Moved';
 			}}
 		/>
@@ -1076,7 +1083,8 @@
 			subtitle={`${count} ${count === 1 ? 'link' : 'links'} will be copied, with their notes and scores.`}
 			excludePlaylistId={playlistId}
 			onselect={async (target) => {
-				await bulk({ action: 'Copy', targetPlaylistId: target });
+				if (!(await bulk({ action: 'Copy', targetPlaylistId: target }))) throw new Error();
+				copyOpen = false;
 				return 'Copied';
 			}}
 		/>
