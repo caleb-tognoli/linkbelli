@@ -10,7 +10,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { Search } from '@lucide/svelte';
-	import PublicPlaylistCard from '$lib/components/PublicPlaylistCard.svelte';
+	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';
 	import type { Paged, PublicPlaylistSummary } from '$lib/types';
 	import type { PageData } from './$types';
@@ -121,7 +121,17 @@
 	{:else}
 		<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each items as playlist (playlist.ownerUsername + '/' + playlist.slug)}
-				<PublicPlaylistCard {playlist} />
+				<PlaylistCard
+					href={`/public/${encodeURIComponent(playlist.ownerUsername)}/${encodeURIComponent(playlist.slug)}`}
+					name={playlist.name}
+					description={playlist.description}
+					tags={playlist.tags}
+					nsfw={playlist.nsfw}
+					coverLinkId={playlist.coverLinkId}
+					owner={playlist.ownerUsername}
+					itemCount={playlist.itemCount}
+					likeCount={playlist.likeCount}
+				/>
 			{/each}
 		</div>
 		{#if nextCursor}

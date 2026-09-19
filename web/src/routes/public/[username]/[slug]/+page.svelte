@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import PlaylistView from '$lib/components/PlaylistView.svelte';
-	import PublicPlaylistCard from '$lib/components/PublicPlaylistCard.svelte';
+	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -111,7 +111,17 @@
 		<h2 class="text-sm font-medium" style="color: var(--color-muted)">More like this</h2>
 		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.similar as playlist (playlist.ownerUsername + '/' + playlist.slug)}
-				<PublicPlaylistCard {playlist} />
+				<PlaylistCard
+					href={`/public/${encodeURIComponent(playlist.ownerUsername)}/${encodeURIComponent(playlist.slug)}`}
+					name={playlist.name}
+					description={playlist.description}
+					tags={playlist.tags}
+					nsfw={playlist.nsfw}
+					coverLinkId={playlist.coverLinkId}
+					owner={playlist.ownerUsername}
+					itemCount={playlist.itemCount}
+					likeCount={playlist.likeCount}
+				/>
 			{/each}
 		</div>
 	</section>

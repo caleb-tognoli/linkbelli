@@ -70,7 +70,17 @@
 		{#if data.playlists.items.length}
 			<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each data.playlists.items as playlist (playlist.id)}
-					<PlaylistCard {playlist} />
+					<PlaylistCard
+						href={`/playlists/${playlist.id}`}
+						name={playlist.name}
+						description={playlist.description}
+						tags={playlist.tags}
+						nsfw={playlist.nsfw}
+						coverLinkId={playlist.coverLinkId}
+						visibility={playlist.visibility}
+						itemCount={playlist.itemCount}
+						pendingCount={playlist.pendingCount}
+					/>
 				{/each}
 			</div>
 		{/if}
@@ -82,17 +92,13 @@
 		<h2 class="mt-10 text-sm font-medium" style="color: var(--color-muted)">Shared with you</h2>
 		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.shared as entry (entry.playlistId)}
-				<a
+				<PlaylistCard
 					href={`/playlists/${entry.playlistId}`}
-					class="flex flex-col rounded-lg border p-4 hover:border-[var(--color-accent)]"
-					style="border-color: var(--color-border); background: var(--color-surface)"
-				>
-					<span class="font-medium">{entry.name}</span>
-					<span class="mt-auto flex justify-between pt-3 text-xs" style="color: var(--color-muted)">
-						<span>@{entry.ownerUsername}</span>
-						<span>{entry.role.toLowerCase()} · {entry.itemCount} {entry.itemCount === 1 ? 'link' : 'links'}</span>
-					</span>
-				</a>
+					name={entry.name}
+					owner={entry.ownerUsername}
+					role={entry.role}
+					itemCount={entry.itemCount}
+				/>
 			{/each}
 		</div>
 	{/if}

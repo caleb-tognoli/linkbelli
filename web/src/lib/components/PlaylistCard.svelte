@@ -1,61 +1,114 @@
 <script lang="ts">
-	import Chip from '$lib/components/ui/Chip.svelte';
-	import { Lock, EyeOff, Globe } from '@lucide/svelte';
+	import { Heart } from '@lucide/svelte';
+	import type { Snippet } from 'svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
-	import type { Playlist } from '$lib/types';
+	import Chip from './ui/Chip.svelte';
+	import VisibilityBadge from './ui/VisibilityBadge.svelte';
+	import type { Visibility } from '$lib/types';
 
-	let { playlist }: { playlist: Playlist } = $props();
+	/**
+	 * A playlist as a card, wherever playlists are listed.
+	 *
+	 * There were four of these — your own, a public one, one inside a folder, and one shared with
+	 * you — each a copy of the last with a line changed, so a fix to one never reached the others.
+	 * One card now, told what it has to show. The whole card is a link (a stretched link on the
+	 * name), and `actions` sit above it, so a button on the card never nests inside the link.
+	 */
+	let {
+		href,
+		name,
+		description = null,
+		tags = [],
+		nsfw = false,
+		coverLinkId = null,
+		visibility,
+		owner,
+		role,
+		itemCount,
+		pendingCount = 0,
+		likeCount = 0,
+		actions
+	}: {
+		href: string;
+		name: string;
+		description?: string | null;
+		tags?: string[];
+		nsfw?: boolean;
+		coverLinkId?: string | null;
+		/** Shown for your own playlists. */
+		visibility?: Visibility;
+		/** Shown for somebody else's playlist. */
+		owner?: string;
+		/** What you may do on a playlist shared with you. */
+		role?: string;
+		itemCount: number;
+		/** Links still being fetched, so the count does not just creep up on its own. */
+		pendingCount?: number | null;
+		likeCount?: number | null;
+		actions?: Snippet;
+	} = $props();
 </script>
 
-<a
-	href={`/playlists/${playlist.id}`}
-	class="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:border-[var(--color-accent)]"
-	style="border-color: var(--color-border); background: var(--color-surface)"
+<div
+	class="relative flex flex-col gap-2 rounded-card border border-border bg-surface p-4 transition-colors hover:border-accent has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent"
 >
-	{#if playlist.coverLinkId}
-		<!-- Served through the same proxy every other thumbnail uses, so a cover leaks no more
-		     than the rows already do. -->
+	{#if coverLinkId}
+		<!-- Served through the same proxy every other thumbnail uses, so a cover leaks no more than
+		     the rows already do. -->
 		<img
-			src={`/api/v1/thumbnails/${playlist.coverLinkId}`}
+			src={`/api/v1/thumbnails/${coverLinkId}`}
 			alt=""
-			class="-mx-4 -mt-4 mb-1 h-28 w-[calc(100%+2rem)] rounded-t-lg object-cover"
+			class="-mx-4 -mt-4 mb-1 h-28 w-[calc(100%+2rem)] rounded-t-[inherit] object-cover"
 			loading="lazy"
 			onerror={(e) => e.currentTarget.remove()}
 		/>
 	{/if}
 
 	<div class="flex items-start justify-between gap-2">
-		<span class="font-medium">{playlist.name}</span>
-		{#if playlist.nsfw}<span class="shrink-0"><NsfwBadge /></span>{/if}
+		<a {href} class="min-w-0 font-medium after:absolute after:inset-0 after:rounded-[inherit] focus-visible:outline-none">
+			{name}
+		</a>
+		{#if nsfw || actions}
+			<span class="relative z-(--z-sticky) flex shrink-0 items-center gap-1.5">
+				{#if nsfw}<NsfwBadge />{/if}
+				{#if actions}{@render actions()}{/if}
+			</span>
+		{/if}
 	</div>
 
-	{#if playlist.description}
-		<p class="line-clamp-2 text-sm" style="color: var(--color-muted)">{playlist.description}</p>
+	{#if description}
+		<p class="line-clamp-2 text-sm text-muted">{description}</p>
 	{/if}
 
-	{#if playlist.tags.length}
+	{#if tags.length}
 		<div class="flex flex-wrap gap-1">
-			{#each playlist.tags as tag (tag)}
+			{#each tags as tag (tag)}
 				<Chip>{tag}</Chip>
 			{/each}
 		</div>
 	{/if}
 
-	<div class="mt-auto flex items-center justify-between text-xs" style="color: var(--color-muted)">
-		<span
-			class="inline-flex items-center gap-1 rounded-full border px-2 pt-0.5"
-			style="border-color: var(--color-border)"
-		>
-			{#if playlist.visibility === 'Private'}<Lock size={11} aria-hidden="true" />
-			{:else if playlist.visibility === 'Unlisted'}<EyeOff size={11} aria-hidden="true" />
-			{:else}<Globe size={11} aria-hidden="true" />{/if}{playlist.visibility}
-		</span>
-		<span>
-			{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'}
-			{#if playlist.pendingCount}
-				<!-- Without this the count just creeps upward on its own while a run lands. -->
-				<span title="Being fetched now">· +{playlist.pendingCount}</span>
+	<div class="mt-auto flex items-center justify-between gap-2 text-xs text-muted">
+		{#if visibility}
+			<VisibilityBadge {visibility} />
+		{:else if owner}
+			<span class="truncate">@{owner}</span>
+		{/if}
+		<span class="flex shrink-0 items-center gap-2">
+			{#if likeCount}
+				<span class="inline-flex items-center gap-1">
+					<Heart size={11} aria-hidden="true" />
+					{likeCount}
+					<span class="sr-only">{likeCount === 1 ? 'like' : 'likes'}</span>
+				</span>
 			{/if}
+			{#if role}<span>{role.toLowerCase()}</span><span aria-hidden="true">·</span>{/if}
+			<span>
+				{itemCount} {itemCount === 1 ? 'link' : 'links'}
+				{#if pendingCount}
+					<span title="Being fetched now">· +{pendingCount}</span>
+				{/if}
+			</span>
 		</span>
 	</div>
-</a>
+</div>

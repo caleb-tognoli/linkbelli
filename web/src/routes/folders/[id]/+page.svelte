@@ -4,7 +4,8 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Trash2 } from '@lucide/svelte';
 	import FolderCard from '$lib/components/FolderCard.svelte';
-	import FolderPlaylistCard from '$lib/components/FolderPlaylistCard.svelte';
+	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
+	import SaveToFolderDialog from '$lib/components/SaveToFolderDialog.svelte';
 	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
 	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
 	import MoveFolderDialog from '$lib/components/MoveFolderDialog.svelte';
@@ -98,7 +99,28 @@
 	{:else}
 		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each folder.playlists as entry (entry.playlistId)}
-				<FolderPlaylistCard {entry} folderId={folder.id} folderName={folder.name} />
+				{@const fromParams = `?from=${encodeURIComponent(`/folders/${folder.id}`)}&fromLabel=${encodeURIComponent(folder.name)}`}
+				<PlaylistCard
+					href={entry.ownedByMe
+						? `/playlists/${entry.playlistId}${fromParams}`
+						: `/public/${encodeURIComponent(entry.ownerUsername)}/${encodeURIComponent(entry.slug)}${fromParams}`}
+					name={entry.name}
+					description={entry.description}
+					tags={entry.tags}
+					nsfw={entry.nsfw}
+					visibility={entry.ownedByMe ? entry.visibility : undefined}
+					owner={entry.ownedByMe ? undefined : entry.ownerUsername}
+					itemCount={entry.itemCount}
+				>
+					{#snippet actions()}
+						<SaveToFolderDialog
+							playlistId={entry.playlistId}
+							currentFolderId={folder.id}
+							currentFolderName={folder.name}
+							compact
+						/>
+					{/snippet}
+				</PlaylistCard>
 			{/each}
 		</div>
 	{/if}
