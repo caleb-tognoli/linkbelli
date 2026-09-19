@@ -3,7 +3,7 @@
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
-	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge, Highlighter, X } from '@lucide/svelte';
+	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge, Highlighter, X, Newspaper, Tags, CopyCheck, Trash2 } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -23,28 +23,73 @@
 
 	// Top-level destinations. Home is the site introduction; Playlists and Sources are the two
 	// first-class working areas. Folders live at /folders/:id but belong to the Playlists section.
-	const NAV = [
-		{ href: '/', label: 'Home', Icon: Home, match: (p: string) => p === '/' },
+	type NavItem = {
+		href: string;
+		label: string;
+		Icon: typeof Home;
+		match: (p: string) => boolean;
+		/** A number worth a glance, shown beside the label. */
+		count?: () => number;
+	};
+
+	/**
+	 * Where things live, in groups by what they are for.
+	 *
+	 * Ten destinations used to sit in one flat list — two of them with the same feed icon, so the
+	 * collapsed rail showed Sources and Feed as the same thing — while Tags, Duplicates and
+	 * Trash were only reachable through unlabelled icons on the playlists page. Grouped now:
+	 * what you keep and read, what brings things in, what other people share, and tools.
+	 */
+	const NAV: { heading: string | null; items: NavItem[] }[] = [
 		{
-			href: '/playlists',
-			label: 'Playlists',
-			Icon: ListMusic,
-			match: (p: string) => inSection(p, '/playlists') || inSection(p, '/folders')
+			heading: null,
+			items: [{ href: '/', label: 'Home', Icon: Home, match: (p) => p === '/' }]
 		},
-		{ href: '/sources', label: 'Sources', Icon: Rss, match: (p: string) => inSection(p, '/sources') },
-		// Next to Sources deliberately: rules act on what sources bring in.
-		{ href: '/automations', label: 'Rules', Icon: Wand2, match: (p: string) => inSection(p, '/automations') },
-		{ href: '/search', label: 'Search', Icon: Search, match: (p: string) => inSection(p, '/search') },
-		{ href: '/queue', label: 'Up next', Icon: ListChecks, match: (p: string) => inSection(p, '/queue') },
 		{
-			href: '/highlights',
-			label: 'Highlights',
-			Icon: Highlighter,
-			match: (p: string) => inSection(p, '/highlights')
+			heading: 'Library',
+			items: [
+				{
+					href: '/playlists',
+					label: 'Playlists',
+					Icon: ListMusic,
+					// Folders belong to the playlists they hold.
+					match: (p) => inSection(p, '/playlists') || inSection(p, '/folders')
+				},
+				{ href: '/queue', label: 'Up next', Icon: ListChecks, match: (p) => inSection(p, '/queue') },
+				{ href: '/highlights', label: 'Highlights', Icon: Highlighter, match: (p) => inSection(p, '/highlights') },
+				{ href: '/search', label: 'Search', Icon: Search, match: (p) => inSection(p, '/search') },
+				{ href: '/tags', label: 'Tags', Icon: Tags, match: (p) => inSection(p, '/tags') }
+			]
 		},
-		{ href: '/feed', label: 'Feed', Icon: Rss, match: (p: string) => inSection(p, '/feed') },
-		{ href: '/discover', label: 'Discover', Icon: Compass, match: (p: string) => inSection(p, '/discover') },
-		{ href: '/import', label: 'Import', Icon: Upload, match: (p: string) => inSection(p, '/import') }
+		{
+			heading: 'Bringing links in',
+			items: [
+				{ href: '/sources', label: 'Sources', Icon: Rss, match: (p) => inSection(p, '/sources') },
+				// Next to Sources deliberately: rules act on what sources bring in.
+				{ href: '/automations', label: 'Rules', Icon: Wand2, match: (p) => inSection(p, '/automations') },
+				{ href: '/import', label: 'Import', Icon: Upload, match: (p) => inSection(p, '/import') }
+			]
+		},
+		{
+			heading: 'Community',
+			items: [
+				{
+					href: '/feed',
+					label: 'Feed',
+					Icon: Newspaper,
+					match: (p) => inSection(p, '/feed'),
+					count: () => data.feedNew
+				},
+				{ href: '/discover', label: 'Discover', Icon: Compass, match: (p) => inSection(p, '/discover') }
+			]
+		},
+		{
+			heading: 'Tidy up',
+			items: [
+				{ href: '/duplicates', label: 'Duplicates', Icon: CopyCheck, match: (p) => inSection(p, '/duplicates') },
+				{ href: '/trash', label: 'Trash', Icon: Trash2, match: (p) => inSection(p, '/trash') }
+			]
+		}
 	];
 
 	const onSettings = $derived(inSection(page.url.pathname, '/profile'));
@@ -92,20 +137,43 @@
 
 <!-- Shared nav body — rendered in both the desktop sidebar (collapsible) and the mobile drawer (always expanded). -->
 {#snippet navBody(showLabels = true)}
-	<nav aria-label="Main" class="flex flex-col gap-1 text-base">
-		{#each NAV as item (item.href)}
-			{@const active = item.match(page.url.pathname)}
-			<a
-				href={item.href}
-				class="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
-				class:font-medium={active}
-				style={active ? 'background: var(--color-border)' : ''}
-				aria-current={active ? 'page' : undefined}
-				title={item.label}
-			>
-				<item.Icon size={20} aria-hidden="true" />
-				{#if showLabels}<span>{item.label}</span>{/if}
-			</a>
+	<nav aria-label="Main" class="flex flex-col gap-3 text-base">
+		{#each NAV as group, g (group.heading ?? g)}
+			<div class="flex flex-col gap-0.5">
+				{#if group.heading}
+					{#if showLabels}
+						<p class="px-3 pb-0.5 text-xs font-medium text-muted">{group.heading}</p>
+					{:else}
+						<!-- In the rail, a rule stands in for the heading. -->
+						<hr class="mx-3 mb-1 border-border" />
+					{/if}
+				{/if}
+				{#each group.items as item (item.href)}
+					{@const active = item.match(page.url.pathname)}
+					{@const count = item.count?.() ?? 0}
+					<a
+						href={item.href}
+						class="relative flex items-center gap-3 rounded-md px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
+						class:font-medium={active}
+						style={active ? 'background: var(--color-border)' : ''}
+						aria-current={active ? 'page' : undefined}
+						title={item.label}
+					>
+						<item.Icon size={20} aria-hidden="true" />
+						{#if showLabels}<span class="flex-1">{item.label}</span>{/if}
+						{#if count > 0}
+							{#if showLabels}
+								<span class="rounded-full bg-accent-solid px-1.5 text-xs font-medium text-on-solid tabular-nums">
+									{count}
+								</span>
+							{:else}
+								<span class="absolute top-1.5 right-2 size-2 rounded-full bg-accent-solid" aria-hidden="true"></span>
+							{/if}
+							<span class="sr-only">({count} new)</span>
+						{/if}
+					</a>
+				{/each}
+			</div>
 		{/each}
 	</nav>
 
