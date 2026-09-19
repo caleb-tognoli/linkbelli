@@ -1,6 +1,9 @@
 <svelte:head><title>Up next - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { buttonClass } from '$lib/components/ui/Button.svelte';
+	import MenuItem from '$lib/components/ui/MenuItem.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
@@ -14,7 +17,6 @@
 
 	let busy = $state<string | null>(null);
 
-	let snoozing = $state<string | null>(null);
 
 	async function markWatched(itemId: string) {
 		busy = itemId;
@@ -30,7 +32,6 @@
 	 * knows what evening means where the reader is.
 	 */
 	async function snooze(hit: SearchHit, preset: SnoozePreset) {
-		snoozing = null;
 		busy = hit.itemId;
 		const res = await api.post(`/items/${hit.itemId}/snooze`, {
 			until: resolvePreset(preset).toISOString()
@@ -219,36 +220,16 @@
 					</div>
 
 	<div class="flex shrink-0 items-center gap-1">
-		<div class="relative">
-			<button
-				type="button"
-				onclick={() => (snoozing = snoozing === hit.itemId ? null : hit.itemId)}
-				disabled={busy !== null}
-				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-				style="border-color: var(--color-border)"
-				title="Not now"
-				aria-expanded={snoozing === hit.itemId}
-			>
-				<Clock size={14} aria-hidden="true" /> Not now
-			</button>
-
-			{#if snoozing === hit.itemId}
-				<!-- Five choices, not a date picker: "not now" is a feeling, and being made to
-				     pick a Tuesday to express it is why snooze buttons go unused. -->
-				<div
-					class="absolute right-0 z-10 mt-1 flex w-40 flex-col rounded-md border py-1 text-sm shadow-lg"
-					style="border-color: var(--color-border); background: var(--color-surface)"
-				>
-					{#each PRESETS as preset (preset)}
-						<button
-							type="button"
-							onclick={() => snooze(hit, preset)}
-							class="px-3 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
-						>{PRESET_LABELS[preset]}</button>
-					{/each}
-				</div>
-			{/if}
-		</div>
+		<!-- Five choices, not a date picker: "not now" is a feeling, and being made to pick a
+		     Tuesday to express it is why snooze buttons go unused. -->
+		<Menu triggerClass={buttonClass('secondary', 'sm')} title="Not now" align="end">
+			{#snippet trigger()}
+				<Clock size={15} aria-hidden="true" /> Not now
+			{/snippet}
+			{#each PRESETS as preset (preset)}
+				<MenuItem onselect={() => snooze(hit, preset)}>{PRESET_LABELS[preset]}</MenuItem>
+			{/each}
+		</Menu>
 
 		{#if (hit.snoozeCount ?? 0) >= 3}
 			<button
