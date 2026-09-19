@@ -14,7 +14,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus, ArrowUpToLine } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import PlaylistDropTray from './PlaylistDropTray.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
@@ -358,6 +358,36 @@
 		dndItems = e.detail.items;
 	}
 
+	/**
+	 * Reordering without a mouse.
+	 *
+	 * The drag handle was the only way to change the order, and the drag library turned the
+	 * table into a list for screen readers while it was at it. These go through the same move the
+	 * drag makes, from the row's menu.
+	 */
+	async function moveWithin(item: PlaylistItem, to: 'up' | 'down' | 'top') {
+		const order = [...dndItems];
+		const index = order.findIndex((i) => i.id === item.id);
+		if (index < 0) return;
+
+		const target = to === 'top' ? 0 : to === 'up' ? index - 1 : index + 1;
+		if (target < 0 || target >= order.length || target === index) return;
+
+		order.splice(index, 1);
+		order.splice(target, 0, item);
+		const afterItemId = target > 0 ? order[target - 1].id : null;
+
+		items = order;
+		const res = await api.post(`/items/${item.id}/move`, { afterItemId });
+		if (!res.ok) {
+			warn(failureMessage(res.status, 'Could not move that.'));
+			await onmove?.();
+			return;
+		}
+		say(to === 'top' ? 'Moved to the top.' : to === 'up' ? 'Moved up.' : 'Moved down.');
+		await onmove?.();
+	}
+
 	async function onFinalize(e: CustomEvent<{ items: PlaylistItem[]; info: { id: string } }>) {
 		dndItems = e.detail.items;
 		const movedId = e.detail.info.id;
@@ -698,6 +728,12 @@
 					>
 						{item.note ? 'Edit note and tags' : 'Add a note or tags'}
 					</MenuItem>
+					{#if useDnd}
+						<MenuSeparator />
+						<MenuItem icon={ArrowUpToLine} onselect={() => moveWithin(item, 'top')}>Move to the top</MenuItem>
+						<MenuItem icon={ArrowUp} onselect={() => moveWithin(item, 'up')}>Move up</MenuItem>
+						<MenuItem icon={ArrowDown} onselect={() => moveWithin(item, 'down')}>Move down</MenuItem>
+					{/if}
 					<MenuSeparator />
 					<MenuItem icon={ListPlus} onselect={() => { shareItem = item; shareOpen = true; }}>
 						Add to another playlist…
@@ -1149,7 +1185,7 @@
 				</thead>
 				{#if useDnd}
 					<tbody
-						use:dragHandleZone={{ items: dndItems, flipDurationMs: FLIP, dropTargetStyle: {} }}
+						use:dragHandleZone={{ items: dndItems, flipDurationMs: FLIP, dropTargetStyle: {}, autoAriaDisabled: true }}
 						onconsider={onConsider}
 						onfinalize={onFinalize}
 					>
