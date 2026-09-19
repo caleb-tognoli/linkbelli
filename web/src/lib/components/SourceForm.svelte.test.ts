@@ -192,8 +192,8 @@ describe('SourceForm — editing', () => {
 		confirmDialog.mockResolvedValue(false);
 		render(SourceForm, { mode: 'edit', source: existing({ visibility: 'Shared' }) });
 
-		await userEvent.click(screen.getByRole('button', { name: 'Visibility' }));
-		await userEvent.click(await screen.findByRole('button', { name: 'Private' }));
+		await userEvent.click(screen.getByRole('button', { name: /^Visibility/ }));
+		await userEvent.click(await screen.findByRole('menuitemradio', { name: /^Private/ }));
 		await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
 		expect(confirmDialog).toHaveBeenCalledWith(expect.stringContaining('unsubscribe it from other users'));

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { buttonClass } from '$lib/components/ui/Button.svelte';
+	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -7,8 +10,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { Popover } from 'bits-ui';
-	import { X, Plus, Save, Lock, Globe, Trash2, Info, ChevronRight } from '@lucide/svelte';
+	import { X, Plus, Save, Lock, Globe, Trash2, Info, ChevronRight, ChevronDown } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 	import type { Source, SourceFilter, SourceType, SourceVisibility } from '$lib/types';
 	import { isPreviewable, previewKey, type SourcePreview } from '$lib/sourcePreview';
@@ -205,7 +207,6 @@
 
 	let busy = $state(false);
 	let error = $state<string | null>(null);
-	let visOpen = $state(false);
 	const currentVis = $derived(visConfig[visibility] ?? visConfig.Private);
 
 	function numeric(value: number | null | undefined): string {
@@ -357,34 +358,27 @@
 		<label for="{uid}-name">Name</label>
 		<div class="flex items-center gap-2">
 			<Input id="{uid}-name" bind:value={name} class="flex-1" />
-			<Popover.Root bind:open={visOpen}>
-				<Popover.Trigger
-					class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:border-[var(--color-accent)]"
-					style="border-color: var(--color-border)"
-					title="Change visibility"
-					aria-label="Visibility"
-				>
+			<Menu
+				triggerClass={buttonClass('secondary', 'md', false, 'shrink-0')}
+				title="Change visibility"
+				align="end"
+				width="w-64"
+			>
+				{#snippet trigger()}
 					<currentVis.icon size={14} aria-hidden="true" />
+					<span class="sr-only">Visibility:</span>
 					{currentVis.label}
-				</Popover.Trigger>
-				<Popover.Content
-					class="popover-surface z-30 overflow-hidden rounded-md border shadow-md"
-					sideOffset={4}
-					align="end"
-				>
-					{#each Object.entries(visConfig) as [val, { label, icon: Icon }] (val)}
-						<button
-							type="button"
-							onclick={() => { visibility = val as SourceVisibility; visOpen = false; }}
-							class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-							class:font-medium={visibility === val}
-						>
-							<Icon size={14} aria-hidden="true" style="color: var(--color-muted)" />
-							{label}
-						</button>
-					{/each}
-				</Popover.Content>
-			</Popover.Root>
+					<ChevronDown size={13} aria-hidden="true" />
+				{/snippet}
+				<MenuRadio
+					value={visibility}
+					options={[
+						{ value: 'Private', label: 'Private', icon: Lock, description: 'Only your playlists can use it' },
+						{ value: 'Shared', label: 'Shared', icon: Globe, description: 'Anyone can find it and attach it to their playlists' }
+					]}
+					onchange={(next) => (visibility = next as SourceVisibility)}
+				/>
+			</Menu>
 		</div>
 	</div>
 

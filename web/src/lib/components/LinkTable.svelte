@@ -1,4 +1,6 @@
 <script lang="ts">
+	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
@@ -18,16 +20,7 @@
 	import { savePrefs } from '$lib/prefs';
 	import { isPlainKey, moveFocus } from '$lib/keyboard';
 	import { describeDrag, dragSet, encodePayload, ITEMS_MIME } from '$lib/dragItems';
-	import {
-		SORT_LABELS,
-		canReorder,
-		modeToServerSort,
-		nextDateSort,
-		nextScoreSort,
-		orderForDisplay,
-		serverSortToMode,
-		type SortMode
-	} from '$lib/sorting';
+	import { SORT_LABELS, canReorder, modeToServerSort, nextDateSort, nextScoreSort, orderForDisplay, serverSortToMode, type SortMode } from '$lib/sorting';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import type { AttachedSource, PlaylistItem } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
@@ -90,10 +83,6 @@
 	let forceShowScore = $state(false);
 
 	const statusOptions: StatusFilter[] = ['All', 'Unwatched', 'Watched'];
-	let sourceFilterOpen = $state(false);
-	let statusOpen = $state(false);
-	let sortOpen = $state(false);
-	let displayOpen = $state(false);
 
 	const sourceFilterLabel = $derived(
 		sourceFilter === null
@@ -468,11 +457,16 @@
 		return !item.link.enriched;
 	}
 
-	const toggleClass = 'rounded-full border px-2.5 py-0.5 text-xs transition-colors';
+	const toggleClass = 'inline-flex min-h-6 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors';
 	function toggleStyle(active: boolean) {
 		return active
 			? 'border-color: var(--color-accent); color: var(--color-accent)'
 			: 'border-color: var(--color-border); color: var(--color-muted)';
+	}
+
+	/** A filter or sort chip: accent when it narrows or reorders what is shown. */
+	function chipTrigger(active: boolean) {
+		return `${toggleClass} ${active ? 'border-accent text-accent' : 'border-border text-muted'}`;
 	}
 </script>
 
@@ -849,149 +843,90 @@
 	<div class="mb-3 flex flex-wrap items-center gap-1.5">
 		<!-- First section: source + status filters -->
 		{#if attachedSources.length > 0}
-			<Popover.Root bind:open={sourceFilterOpen}>
-				<Popover.Trigger
-					class="{toggleClass} inline-flex items-center gap-1"
-					style={toggleStyle(sourceFilter !== null)}
-				>
-					<Rss size={10} aria-hidden="true" /> {sourceFilterLabel} <ChevronDown size={10} aria-hidden="true" />
-				</Popover.Trigger>
-				<Popover.Content
-					class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
-					sideOffset={4}
-				>
-					<button
-						type="button"
-						onclick={() => { onsourcefilter?.(null); sourceFilterOpen = false; }}
-						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-						class:font-medium={sourceFilter === null}
-					>All</button>
-					<button
-						type="button"
-						onclick={() => { onsourcefilter?.('manual'); sourceFilterOpen = false; }}
-						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-						class:font-medium={sourceFilter === 'manual'}
-					>Manual</button>
-					{#each attachedSources as source (source.id)}
-						<button
-							type="button"
-							onclick={() => { onsourcefilter?.(source.id); sourceFilterOpen = false; }}
-							class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-							class:font-medium={sourceFilter === source.id}
-						>{source.name}</button>
-					{/each}
-				</Popover.Content>
-			</Popover.Root>
+			<Menu triggerClass={chipTrigger(sourceFilter !== null)} title="Filter by source">
+				{#snippet trigger()}
+					<Rss size={12} aria-hidden="true" />
+					<span class="sr-only">Source:</span>
+					{sourceFilterLabel}
+					<ChevronDown size={12} aria-hidden="true" />
+				{/snippet}
+				<MenuRadio
+					value={sourceFilter ?? ''}
+					options={[
+						{ value: '', label: 'All sources' },
+						{ value: 'manual', label: 'Added by hand' },
+						...attachedSources.map((source) => ({ value: source.id, label: source.name }))
+					]}
+					onchange={(value) => onsourcefilter?.(value === '' ? null : value)}
+				/>
+			</Menu>
 		{/if}
 		{#if !readonly}
-			<Popover.Root bind:open={statusOpen}>
-				<Popover.Trigger
-					class="{toggleClass} inline-flex items-center gap-1"
-					style={toggleStyle(statusFilter !== 'Unwatched')}
-				>
-					<Eye size={10} aria-hidden="true" /> {statusFilter} <ChevronDown size={10} aria-hidden="true" />
-				</Popover.Trigger>
-				<Popover.Content
-					class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
-					sideOffset={4}
-				>
-					{#each statusOptions as f (f)}
-						<button
-							type="button"
-							onclick={() => { onstatusfilter?.(f); statusOpen = false; }}
-							class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-							class:font-medium={statusFilter === f}
-						>{f}</button>
-					{/each}
-				</Popover.Content>
-			</Popover.Root>
+			<Menu triggerClass={chipTrigger(statusFilter !== 'Unwatched')} title="Filter by status">
+				{#snippet trigger()}
+					<Eye size={12} aria-hidden="true" />
+					<span class="sr-only">Status:</span>
+					{statusFilter}
+					<ChevronDown size={12} aria-hidden="true" />
+				{/snippet}
+				<MenuRadio
+					value={statusFilter}
+					options={statusOptions.map((status) => ({ value: status, label: status }))}
+					onchange={(status) => onstatusfilter?.(status)}
+				/>
+			</Menu>
 		{/if}
 		{#if attachedSources.length > 0 || !readonly}
 			<span class="text-xs" style="color: var(--color-border)">|</span>
 		{/if}
 
 		<!-- Second section: sort + display options -->
-		<Popover.Root bind:open={sortOpen}>
-			<Popover.Trigger
-				class="{toggleClass} inline-flex items-center gap-1"
-				style={toggleStyle(sortMode !== (readonly ? 'date-desc' : 'manual'))}
-			>
-				<ArrowUpDown size={10} aria-hidden="true" /> {SORT_LABELS[sortMode]} <ChevronDown size={10} aria-hidden="true" />
-			</Popover.Trigger>
-			<Popover.Content
-				class="popover-surface z-30 min-w-28 overflow-hidden rounded-md border shadow-md"
-				sideOffset={4}
-			>
-				{#if !readonly}
-					<button
-						type="button"
-						onclick={() => { setSort('manual'); sortOpen = false; }}
-						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-						class:font-medium={sortMode === 'manual'}
-					>Manual</button>
-				{/if}
-				<button
-					type="button"
-					onclick={() => { setSort('date-asc'); sortOpen = false; }}
-					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-					class:font-medium={sortMode === 'date-asc'}
-				>Oldest</button>
-				<button
-					type="button"
-					onclick={() => { setSort('date-desc'); sortOpen = false; }}
-					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-					class:font-medium={sortMode === 'date-desc'}
-				>Newest</button>
-				<button
-					type="button"
-					onclick={() => { setSort('shuffle'); sortOpen = false; }}
-					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-					class:font-medium={sortMode === 'shuffle'}
-				>Shuffle</button>
-				{#if showScoreCol}
-					<button
-						type="button"
-						onclick={() => { setSort('score-desc'); sortOpen = false; }}
-						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-						class:font-medium={sortMode === 'score-desc'}
-					>Score ↓</button>
-					<button
-						type="button"
-						onclick={() => { setSort('score-asc'); sortOpen = false; }}
-						class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-						class:font-medium={sortMode === 'score-asc'}
-					>Score ↑</button>
-				{/if}
-			</Popover.Content>
-		</Popover.Root>
+		<Menu triggerClass={chipTrigger(sortMode !== (readonly ? 'date-desc' : 'manual'))} title="Sort">
+			{#snippet trigger()}
+				<ArrowUpDown size={12} aria-hidden="true" />
+				<span class="sr-only">Sort:</span>
+				{SORT_LABELS[sortMode]}
+				<ChevronDown size={12} aria-hidden="true" />
+			{/snippet}
+			<MenuRadio
+				value={sortMode}
+				options={[
+					...(readonly ? [] : [{ value: 'manual' as SortMode, label: 'Manual' }]),
+					{ value: 'date-asc' as SortMode, label: 'Oldest first' },
+					{ value: 'date-desc' as SortMode, label: 'Newest first' },
+					{ value: 'shuffle' as SortMode, label: 'Shuffle' },
+					...(showScoreCol
+						? [
+								{ value: 'score-desc' as SortMode, label: 'Highest score' },
+								{ value: 'score-asc' as SortMode, label: 'Lowest score' }
+							]
+						: [])
+				]}
+				onchange={setSort}
+			/>
+		</Menu>
 
 		<span class="text-xs" style="color: var(--color-border)">|</span>
 
-		<Popover.Root bind:open={displayOpen}>
-			<Popover.Trigger
-				class="{toggleClass} inline-flex items-center gap-1"
-				style={toggleStyle(showUrls)}
-			>
-				<Type size={10} aria-hidden="true" /> {showUrls ? 'URL' : 'Title'} <ChevronDown size={10} aria-hidden="true" />
-			</Popover.Trigger>
-			<Popover.Content
-				class="popover-surface z-30 min-w-24 overflow-hidden rounded-md border shadow-md"
-				sideOffset={4}
-			>
-				<button
-					type="button"
-					onclick={() => { showUrls = false; displayOpen = false; if (playlistId) savePrefs(playlistId, { showUrls: false }); }}
-					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-					class:font-medium={!showUrls}
-				>Title</button>
-				<button
-					type="button"
-					onclick={() => { showUrls = true; displayOpen = false; if (playlistId) savePrefs(playlistId, { showUrls: true }); }}
-					class="flex w-full items-center px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-					class:font-medium={showUrls}
-				>URL</button>
-			</Popover.Content>
-		</Popover.Root>
+		<Menu triggerClass={chipTrigger(showUrls)} title="Show titles or addresses">
+			{#snippet trigger()}
+				<Type size={12} aria-hidden="true" />
+				<span class="sr-only">Show:</span>
+				{showUrls ? 'URL' : 'Title'}
+				<ChevronDown size={12} aria-hidden="true" />
+			{/snippet}
+			<MenuRadio
+				value={showUrls ? 'url' : 'title'}
+				options={[
+					{ value: 'title', label: 'Titles' },
+					{ value: 'url', label: 'Addresses' }
+				]}
+				onchange={(value) => {
+					showUrls = value === 'url';
+					if (playlistId) savePrefs(playlistId, { showUrls });
+				}}
+			/>
+		</Menu>
 
 		<!-- Layout switch. A reading queue reads best as a list; a list of videos does not. -->
 		<SegmentedControl

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
+	import MenuItem from '$lib/components/ui/MenuItem.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import PlaylistSearchBar from './PlaylistSearchBar.svelte';
 	import LinkTable from './LinkTable.svelte';
@@ -8,7 +11,6 @@
 	import ShareWithDialog from './ShareWithDialog.svelte';
 	import PasteLinksDialog from './PasteLinksDialog.svelte';
 	import ReportDialog from './ReportDialog.svelte';
-	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -19,6 +21,13 @@
 	import type { PlaylistPrefs } from '$lib/prefs';
 
 	type VisOption = { label: string; icon: typeof Lock };
+	/** What each visibility means, said where it is chosen. */
+	const VIS_HINTS: Record<Visibility, string> = {
+		Private: 'Only you, and anyone you share it with',
+		Unlisted: 'Anyone with the link',
+		Public: 'Listed on Discover and your profile'
+	};
+
 	const visConfig: Record<Visibility, VisOption> = {
 		Private: { label: 'Private', icon: Lock },
 		Unlisted: { label: 'Unlisted', icon: EyeOff },
@@ -177,9 +186,6 @@
 	let attached = $state(attachedSources);
 	let loadingMore = $state(false);
 	let visibility = $state(playlist.visibility);
-	let visOpen = $state(false);
-	let exportOpen = $state(false);
-	let nsfwOpen = $state(false);
 
 	// Adult detection reads a meta tag the site declares about itself, so it gets false
 	// positives — and a wrongly flagged playlist is hidden from everyone who hasn't opted in.
@@ -195,7 +201,6 @@
 	async function setNsfw(next: NsfwSetting) {
 		const previous = nsfwSetting;
 		nsfwSetting = next;
-		nsfwOpen = false;
 
 		const res = await api.patch(`/playlists/${playlist.id}`, { nsfw: next });
 		if (res.ok) {
@@ -359,31 +364,24 @@
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
 			{#if isOwner}
-				<Popover.Root bind:open={visOpen}>
-					<Popover.Trigger class={buttonClass('secondary', 'sm')} title="Change visibility">
+				<Menu triggerClass={buttonClass('secondary', 'sm')} title="Change visibility" align="end">
+					{#snippet trigger()}
 						<currentVis.icon size={15} aria-hidden="true" />
 						<span class="sr-only">Visibility:</span>
 						{currentVis.label}
 						<ChevronDown size={13} aria-hidden="true" />
-					</Popover.Trigger>
-					<Popover.Content
-						class="popover-surface z-30 rounded-md border shadow-md overflow-hidden"
-						sideOffset={4}
-						align="end"
-					>
-						{#each Object.entries(visConfig) as [val, { label, icon: Icon }] (val)}
-							<button
-								type="button"
-								onclick={() => { setVisibility(val as Visibility); visOpen = false; }}
-								class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-								class:font-medium={visibility === val}
-							>
-								<Icon size={15} aria-hidden="true" style="color: var(--color-muted)" />
-								{label}
-							</button>
-						{/each}
-					</Popover.Content>
-				</Popover.Root>
+					{/snippet}
+					<MenuRadio
+						value={visibility}
+						options={(Object.entries(visConfig) as [Visibility, VisOption][]).map(([value, option]) => ({
+							value,
+							label: option.label,
+							description: VIS_HINTS[value],
+							icon: option.icon
+						}))}
+						onchange={setVisibility}
+					/>
+				</Menu>
 				{#if publicPreviewHref}
 					<!-- The obvious thing to want straight after publishing, and previously
 					     impossible: your own public address redirected you back to this editor. -->
@@ -490,62 +488,43 @@
 				/>
 			{/if}
 			{#if isOwner && (isNsfw || nsfwSetting !== 'Auto')}
-				<Popover.Root bind:open={nsfwOpen}>
-					<Popover.Trigger
-						class={buttonClass('secondary', 'sm', false, isNsfw ? 'border-danger text-danger' : '')}
-						title="Adult content"
-					>
+				<Menu
+					triggerClass={buttonClass('secondary', 'sm', false, isNsfw ? 'border-danger text-danger' : '')}
+					title="Adult content"
+					align="end"
+					width="w-60"
+				>
+					{#snippet trigger()}
 						{isNsfw ? 'Adult' : 'Not adult'}
 						<ChevronDown size={13} aria-hidden="true" />
-					</Popover.Trigger>
-					<Popover.Content
-						class="popover-surface z-30 w-56 overflow-hidden rounded-md border shadow-md"
-						sideOffset={4}
-						align="end"
-					>
-						{#each ['Auto', 'No', 'Yes'] as const as option (option)}
-							<button
-								type="button"
-								onclick={() => setNsfw(option)}
-								class="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10"
-								class:font-medium={nsfwSetting === option}
-							>
-								{NSFW_LABELS[option]}
-								{#if option === 'Auto'}
-									<span class="text-xs" style="color: var(--color-muted)">Go by what the sites declare</span>
-								{/if}
-							</button>
-						{/each}
-					</Popover.Content>
-				</Popover.Root>
+					{/snippet}
+					<MenuRadio
+						value={nsfwSetting}
+						options={(['Auto', 'No', 'Yes'] as const).map((option) => ({
+							value: option,
+							label: NSFW_LABELS[option],
+							description: option === 'Auto' ? 'Go by what the sites declare' : undefined
+						}))}
+						onchange={setNsfw}
+					/>
+				</Menu>
 			{/if}
 			{#if isOwner}
-				<Popover.Root bind:open={exportOpen}>
-					<Popover.Trigger
-						class={buttonClass('ghost', 'md', true)}
-						title="Export this playlist"
-						aria-label="Export this playlist"
-					>
+				<Menu
+					triggerClass={buttonClass('ghost', 'md', true)}
+					title="Export this playlist"
+					label="Export this playlist"
+					align="end"
+				>
+					{#snippet trigger()}
 						<Download size={17} aria-hidden="true" />
-					</Popover.Trigger>
-					<Popover.Content
-						class="popover-surface z-30 overflow-hidden rounded-md border shadow-md"
-						sideOffset={4}
-						align="end"
-					>
-						{#each PLAYLIST_EXPORTS as fmt (fmt.format)}
-							<a
-								href={`/api/v1/export/playlists/${playlist.id}?format=${fmt.format}`}
-								download
-								onclick={() => (exportOpen = false)}
-								class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-							>
-								<Download size={14} aria-hidden="true" style="color: var(--color-muted)" />
-								{fmt.label}
-							</a>
-						{/each}
-					</Popover.Content>
-				</Popover.Root>
+					{/snippet}
+					{#each PLAYLIST_EXPORTS as fmt (fmt.format)}
+						<MenuItem icon={Download} href={`/api/v1/export/playlists/${playlist.id}?format=${fmt.format}`} download>
+							{fmt.label}
+						</MenuItem>
+					{/each}
+				</Menu>
 				<Button variant="ghost-danger" icon={Trash2} iconOnly label="Delete playlist" onclick={deletePlaylist} />
 			{/if}
 		</div>
