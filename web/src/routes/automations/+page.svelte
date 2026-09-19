@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import { toast } from '$lib/toast.svelte';
@@ -209,6 +210,7 @@
 	async function toggle(rule: AutomationRule, enabled: boolean) {
 		const res = await api.patch(`/automations/${rule.id}`, { enabled });
 		if (res.ok) await invalidateAll();
+		else toast.error(failureMessage(res.status, enabled ? 'Could not turn that rule on.' : 'Could not turn that rule off.'));
 	}
 
 	/** The rule currently being run over the backlog, so its button can say so. */
@@ -262,6 +264,7 @@
 
 		const res = await api.del(`/automations/${rule.id}`);
 		if (res.ok || res.status === 204) await invalidateAll();
+		else toast.error(failureMessage(res.status, 'Could not delete that rule.'));
 	}
 
 </script>

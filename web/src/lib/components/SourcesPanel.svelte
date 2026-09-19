@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
@@ -87,10 +89,13 @@
 						{ confirmLabel: 'Add all' }
 					);
 					if (backfill) {
-						await api.post(`/playlists/${playlistId}/sources/${sourceId}/backfill`);
+						const filled = await api.post(`/playlists/${playlistId}/sources/${sourceId}/backfill`);
+						if (!filled.ok) toast.error(failureMessage(filled.status, 'Could not add those links.'));
 						await onreloaditems?.();
 					}
 				}
+			} else {
+				toast.error(failureMessage(res.status, 'Could not attach that source.'));
 			}
 		} finally {
 			busy = false;
@@ -98,7 +103,9 @@
 	}
 
 	async function run(sourceId: string) {
-		await api.post(`/sources/${sourceId}/run`);
+		const res = await api.post(`/sources/${sourceId}/run`);
+		if (res.status === 429) toast.error('Daily run limit reached — try again later.');
+		else if (!res.ok) toast.error(failureMessage(res.status, 'Could not start a run.'));
 	}
 
 	async function detach(sourceId: string) {
@@ -106,6 +113,7 @@
 		try {
 			const res = await api.del(`/playlists/${playlistId}/sources/${sourceId}`);
 			if (res.ok || res.status === 204) attached = attached.filter((s) => s.id !== sourceId);
+			else toast.error(failureMessage(res.status, 'Could not detach that source.'));
 		} finally {
 			busy = false;
 		}

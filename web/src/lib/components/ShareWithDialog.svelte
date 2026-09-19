@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
 	import CopyField from '$lib/components/ui/CopyField.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -34,6 +36,7 @@
 	async function load() {
 		const res = await api.get(`/playlists/${playlistId}/members`);
 		if (res.ok) members = (await res.json()) as PlaylistMember[];
+		else error = 'Could not load who this is shared with.';
 	}
 
 	/** The server's own words when it has any — "no such user" is worth saying exactly. */
@@ -111,11 +114,13 @@
 			{ role: value }
 		);
 		if (res.ok) await load();
+		else toast.error(failureMessage(res.status, `Could not change ${member.username}'s role.`));
 	}
 
 	async function remove(member: PlaylistMember) {
 		const res = await api.del(`/playlists/${playlistId}/members/${encodeURIComponent(member.username)}`);
 		if (res.ok || res.status === 204) await load();
+		else toast.error(failureMessage(res.status, `Could not remove ${member.username}.`));
 	}
 
 </script>

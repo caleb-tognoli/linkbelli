@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
@@ -143,6 +145,8 @@
 				const state = (await res.json()) as { following: boolean; followerCount: number };
 				followedByMe = state.following;
 				followerCount = state.followerCount;
+			} else {
+				toast.error(failureMessage(res.status, followedByMe ? 'Could not unfollow this.' : 'Could not follow this.'));
 			}
 		} finally {
 			following = false;
@@ -164,6 +168,8 @@
 				const state = (await res.json()) as { likeCount: number; likedByMe: boolean };
 				likeCount = state.likeCount;
 				likedByMe = state.likedByMe;
+			} else {
+				toast.error(failureMessage(res.status, 'Could not change your like.'));
 			}
 		} finally {
 			liking = false;
@@ -209,6 +215,7 @@
 			isNsfw = ((await res.json()) as Playlist).nsfw;
 		} else {
 			nsfwSetting = previous;
+			toast.error(failureMessage(res.status, 'Could not change the adult-content setting.'));
 		}
 	}
 
@@ -225,21 +232,29 @@
 		if (!name) { el.value = playlistName; return; }
 		if (name === playlistName) return;
 		const res = await api.patch(`/playlists/${playlist.id}`, { name });
-		if (res.ok) playlistName = name;
-		else el.value = playlistName;
+		if (res.ok) {
+			playlistName = name;
+		} else {
+			el.value = playlistName;
+			toast.error(failureMessage(res.status, 'Could not rename the playlist.'));
+		}
 	}
 
 	async function deletePlaylist() {
 		if (!(await confirmDialog(`Delete "${playlistName}"? This cannot be undone.`, { danger: true, confirmLabel: 'Delete' }))) return;
 		const res = await api.del(`/playlists/${playlist.id}`);
 		if (res.ok || res.status === 204) goto(resolvedBackHref);
+		else toast.error(failureMessage(res.status, 'Could not delete the playlist.'));
 	}
 
 	async function setVisibility(next: Visibility) {
 		const prev = visibility;
 		visibility = next;
 		const res = await api.patch(`/playlists/${playlist.id}`, { visibility: next });
-		if (!res.ok) visibility = prev;
+		if (!res.ok) {
+			visibility = prev;
+			toast.error(failureMessage(res.status, 'Could not change who can see this.'));
+		}
 	}
 
 	function onAdded(item: PlaylistItem) {

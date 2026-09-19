@@ -1,6 +1,8 @@
 <svelte:head><title>Up next - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
@@ -25,6 +27,7 @@
 		const res = await api.patch(`/items/${itemId}`, { status: 'Watched' });
 		busy = null;
 		if (res.ok) await invalidateAll();
+		else toast.error(failureMessage(res.status, 'Could not mark that done.'));
 	}
 
 	/**
@@ -40,6 +43,7 @@
 		});
 		busy = null;
 		if (res.ok) await invalidateAll();
+		else toast.error(failureMessage(res.status, 'Could not put that aside.'));
 	}
 
 	/**
@@ -53,6 +57,7 @@
 		const res = await api.del(`/items/${itemId}/snooze`);
 		busy = null;
 		if (res.ok) await invalidateAll();
+		else toast.error(failureMessage(res.status, 'Could not bring that back.'));
 	}
 
 	async function letGo(hit: SearchHit) {
@@ -66,6 +71,7 @@
 		const res = await api.del(`/items/${hit.itemId}`);
 		busy = null;
 		if (res.ok) await invalidateAll();
+		else toast.error(failureMessage(res.status, 'Could not move that to the trash.'));
 	}
 
 	/**

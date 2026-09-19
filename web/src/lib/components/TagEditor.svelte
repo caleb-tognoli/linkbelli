@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import { api } from '$lib/api/client';
 	import { Tag } from '@lucide/svelte';
@@ -18,6 +20,7 @@
 		try {
 			const res = await api.patch(`/playlists/${playlistId}`, { tags: next });
 			if (res.ok) tags = ((await res.json()) as Playlist).tags;
+			else toast.error(failureMessage(res.status, 'Could not save the tags.'));
 		} finally {
 			busy = false;
 		}

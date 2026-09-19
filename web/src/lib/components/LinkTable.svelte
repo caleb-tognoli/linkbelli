@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import MenuSeparator from '$lib/components/ui/MenuSeparator.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
@@ -148,21 +149,6 @@
 		} finally {
 			bulkBusy = false;
 		}
-	}
-
-	/**
-	 * What to tell somebody about a write that did not happen.
-	 *
-	 * The statuses worth naming are the ones with a different next step: reload for a conflict,
-	 * wait for a rate limit, sign in again for a lapsed session. Everything else gets the
-	 * caller's own sentence, because a number is not an explanation.
-	 */
-	function failureMessage(status: number, fallback: string): string {
-		if (status === 409) return 'Somebody changed that first. Reload and try again.';
-		if (status === 429) return 'Too many changes at once. Try again in a moment.';
-		if (status === 401) return 'You have been signed out. Sign in and try again.';
-		if (status === 403) return 'You do not have access to do that any more.';
-		return fallback;
 	}
 
 	/**

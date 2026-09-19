@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { toast } from '$lib/toast.svelte';
@@ -116,8 +117,12 @@
 		if (!(await confirmDialog('Delete this source? Playlists keep their existing links.', { danger: true, confirmLabel: 'Delete' }))) return;
 		busy = true;
 		const res = await api.del(`/sources/${data.source.id}`);
-		if (res.ok || res.status === 204) await goto('/sources');
-		else busy = false;
+		if (res.ok || res.status === 204) {
+			await goto('/sources');
+		} else {
+			busy = false;
+			toast.error(failureMessage(res.status, 'Could not delete the source.'));
+		}
 	}
 
 	let attachedPlaylists = $derived(data.playlists.filter(p => data.source.playlistIds.includes(p.id)));
@@ -174,6 +179,7 @@
 		});
 		mutingQuiet = false;
 		if (res.ok) await invalidateAll();
+		else toast.error(failureMessage(res.status, 'Could not change that.'));
 	}
 
 	async function linkPlaylist(playlistId: string) {
@@ -181,12 +187,15 @@
 		if (res.ok) {
 			linkResults = linkResults.filter(p => p.id !== playlistId);
 			await invalidateAll();
+		} else {
+			toast.error(failureMessage(res.status, 'Could not link that playlist.'));
 		}
 	}
 
 	async function unlinkPlaylist(playlistId: string) {
 		const res = await api.patch(`/sources/${data.source.id}`, { playlistIds: data.source.playlistIds.filter(id => id !== playlistId) });
 		if (res.ok) await invalidateAll();
+		else toast.error(failureMessage(res.status, 'Could not unlink that playlist.'));
 	}
 
 	function fmt(iso: string | null) {

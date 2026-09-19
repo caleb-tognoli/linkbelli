@@ -1,4 +1,6 @@
 ﻿<script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -23,8 +25,13 @@
 		if (!name) { el.value = folderName; return; }
 		if (name === folderName) return;
 		const res = await api.patch(`/folders/${folder.id}`, { name });
-		if (res.ok) { folderName = name; await invalidateAll(); }
-		else el.value = folderName;
+		if (res.ok) {
+			folderName = name;
+			await invalidateAll();
+		} else {
+			el.value = folderName;
+			toast.error(failureMessage(res.status, 'Could not rename the folder.'));
+		}
 	}
 
 	async function remove() {
@@ -40,9 +47,11 @@
 				await goto(folder.parentId ? `/folders/${folder.parentId}` : '/');
 			} else {
 				busy = false;
+				toast.error(failureMessage(res.status, 'Could not delete the folder.'));
 			}
 		} catch {
 			busy = false;
+			toast.error('Could not reach the server.');
 		}
 	}
 </script>

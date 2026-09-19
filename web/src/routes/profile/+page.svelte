@@ -1,6 +1,8 @@
 <svelte:head><title>Profile - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -67,18 +69,21 @@
 	let archiveLinks = $state(data.user?.archiveLinks ?? false);
 
 	// Both go in one request, so sending only the one that changed would reset the other.
-	async function savePreferences() {
-		await api.put('/me/preferences', { showNsfw, archiveLinks });
+	/** Whether the server took it. On a refusal the switch goes back to where it was. */
+	async function savePreferences(): Promise<boolean> {
+		const res = await api.put('/me/preferences', { showNsfw, archiveLinks });
+		if (!res.ok) toast.error(failureMessage(res.status, 'Could not save that setting.'));
+		return res.ok;
 	}
 
 	async function setNsfw(value: boolean) {
 		showNsfw = value;
-		await savePreferences();
+		if (!(await savePreferences())) showNsfw = !value;
 	}
 
 	async function setArchive(value: boolean) {
 		archiveLinks = value;
-		await savePreferences();
+		if (!(await savePreferences())) archiveLinks = !value;
 	}
 
 	// Counts worth a number, and where a number that isn't zero is worth acting on.
