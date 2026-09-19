@@ -1,8 +1,9 @@
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { api } from '$lib/api/client';
 	import type { HighlightWithSource } from '$lib/highlights';
 	import type { Paged } from '$lib/types';
-	import { ChevronDown, Highlighter } from '@lucide/svelte';
+	import { Highlighter } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -84,18 +85,7 @@
 		</ul>
 
 		{#if nextCursor}
-			<div class="mt-6 flex justify-center">
-				<button
-					type="button"
-					onclick={loadMore}
-					disabled={loadingMore}
-					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-					title="Load more"
-					aria-label="Load more"
-				>
-					<ChevronDown size={18} aria-hidden="true" />
-				</button>
-			</div>
+			<LoadMore onclick={loadMore} loading={loadingMore} />
 		{/if}
 	{/if}
 </section>

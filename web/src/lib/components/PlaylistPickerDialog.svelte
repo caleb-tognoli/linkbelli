@@ -1,7 +1,8 @@
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import { ChevronDown, EyeOff, Globe, Lock } from '@lucide/svelte';
+	import { EyeOff, Globe, Lock } from '@lucide/svelte';
 	import { api, json } from '$lib/api/client';
 	import type { Paged, Playlist } from '$lib/types';
 
@@ -112,17 +113,7 @@
 				{/each}
 			</ul>
 			{#if nextCursor}
-				<button
-					type="button"
-					onclick={() => fetchPage(false, nextCursor ?? undefined)}
-					disabled={loading}
-					class="mt-1 flex w-full items-center justify-center rounded-md py-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
-					style="color: var(--color-muted)"
-					title="Show more"
-					aria-label="Show more"
-				>
-					<ChevronDown size={16} aria-hidden="true" />
-				</button>
+				<LoadMore onclick={() => fetchPage(false, nextCursor ?? undefined)} {loading} />
 			{/if}
 		{/if}
 	</div>

@@ -1,12 +1,13 @@
 ﻿<svelte:head><title>Discover - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
-	import { Search, ChevronDown } from '@lucide/svelte';
+	import { Search } from '@lucide/svelte';
 	import PublicPlaylistCard from '$lib/components/PublicPlaylistCard.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';
 	import type { Paged, PublicPlaylistSummary } from '$lib/types';
@@ -122,11 +123,7 @@
 			{/each}
 		</div>
 		{#if nextCursor}
-			<div class="mt-4 text-center">
-				<button type="button" onclick={loadMore} disabled={loadingMore} class="rounded-md border p-1.5 disabled:opacity-60" style="border-color: var(--color-border)" title="Load more" aria-label="Load more">
-					<ChevronDown size={18} aria-hidden="true" />
-				</button>
-			</div>
+			<LoadMore onclick={loadMore} loading={loadingMore} />
 		{/if}
 	{/if}
 </section>

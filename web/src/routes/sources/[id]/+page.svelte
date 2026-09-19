@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -6,7 +7,7 @@
 	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { Play, RotateCcw, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe, ChevronDown } from '@lucide/svelte';
+	import { Play, RotateCcw, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe } from '@lucide/svelte';
 
 	const visIcons = { Private: Lock, Unlisted: EyeOff, Public: Globe } as const;
 	import SourceForm from '$lib/components/SourceForm.svelte';
@@ -22,9 +23,8 @@
 	const backLabel = $derived(routePage.url.searchParams.get('fromLabel') ?? 'Sources');
 
 	const pageSize = 10;
-	let page = $state(0);
-	let totalPages = $derived(Math.max(1, Math.ceil(data.runs.length / pageSize)));
-	let pagedRuns = $derived(data.runs.slice(page * pageSize, page * pageSize + pageSize));
+	let shownRuns = $state(pageSize);
+	let pagedRuns = $derived(data.runs.slice(0, shownRuns));
 
 	let historyOpen = $state(false);
 
@@ -403,26 +403,8 @@
 				</tbody>
 			</table>
 			</div>
-			{#if totalPages > 1}
-				<div class="mt-2 flex items-center justify-center gap-3 text-sm" style="color: var(--color-muted)">
-					<button
-						type="button"
-						onclick={() => (page = Math.max(0, page - 1))}
-						disabled={page === 0}
-						class="rounded px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
-					>
-						Prev
-					</button>
-					<span>Page {page + 1} of {totalPages}</span>
-					<button
-						type="button"
-						onclick={() => (page = Math.min(totalPages - 1, page + 1))}
-						disabled={page >= totalPages - 1}
-						class="rounded px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
-					>
-						Next
-					</button>
-				</div>
+			{#if data.runs.length > shownRuns}
+				<LoadMore onclick={() => (shownRuns += pageSize)} remaining={data.runs.length - shownRuns} />
 			{/if}
 		{/if}
 		{/if}
@@ -459,17 +441,7 @@
 				{/each}
 			</ul>
 			{#if linkCursor}
-				<button
-					type="button"
-					onclick={() => doLinkSearch(linkSearch, false, linkCursor ?? undefined)}
-					disabled={linkLoading}
-					class="mt-1 flex w-full items-center justify-center rounded-md py-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
-					style="color: var(--color-muted)"
-					title="Show more"
-					aria-label="Show more"
-				>
-					<ChevronDown size={16} aria-hidden="true" />
-				</button>
+				<LoadMore onclick={() => doLinkSearch(linkSearch, false, linkCursor ?? undefined)} loading={linkLoading} />
 			{/if}
 		{/if}
 	</div>

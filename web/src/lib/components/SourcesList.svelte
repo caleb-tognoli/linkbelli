@@ -1,9 +1,10 @@
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
-	import { AlertTriangle, ChevronDown, Globe, Lock, Play, Plus, Search } from '@lucide/svelte';
+	import { AlertTriangle, Globe, Lock, Play, Plus, Search } from '@lucide/svelte';
 	import SourceListItem from './SourceListItem.svelte';
 	import type { Source } from '$lib/types';
 
@@ -174,15 +175,7 @@
 			{/each}
 		</ul>
 		{#if hasMore}
-			<button
-				type="button"
-				onclick={loadMore}
-				class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border p-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-				style="border-color: var(--color-border); color: var(--color-muted)"
-			>
-				Load more
-				<ChevronDown size={15} aria-hidden="true" />
-			</button>
+			<LoadMore onclick={loadMore} remaining={filtered.length - visibleCount} />
 		{/if}
 	{/if}
 {/if}

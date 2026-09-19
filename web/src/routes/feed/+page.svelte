@@ -1,10 +1,11 @@
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import KindBadge from '$lib/components/KindBadge.svelte';
 	import { readingLabel } from '$lib/reading';
-	import { Check, ChevronDown, Rss } from '@lucide/svelte';
+	import { Check, Rss } from '@lucide/svelte';
 	import type { Feed, FeedItem } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -147,19 +148,7 @@
 		</ul>
 
 		{#if nextCursor}
-			<div class="mt-4 text-center">
-				<button
-					type="button"
-					onclick={loadMore}
-					disabled={loadingMore}
-					class="rounded-md border p-1.5 disabled:opacity-60"
-					style="border-color: var(--color-border)"
-					title="Load more"
-					aria-label="Load more"
-				>
-					<ChevronDown size={18} aria-hidden="true" />
-				</button>
-			</div>
+			<LoadMore onclick={loadMore} loading={loadingMore} />
 		{/if}
 	{/if}
 

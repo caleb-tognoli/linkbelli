@@ -1,6 +1,7 @@
 <svelte:head><title>Search - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -466,15 +467,7 @@
 		</ul>
 
 		{#if nextCursor}
-			<button
-				type="button"
-				onclick={loadMore}
-				disabled={loadingMore}
-				class="mt-3 w-full rounded-md border py-2 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-				style="border-color: var(--color-border)"
-			>
-				{loadingMore ? 'Loading…' : 'Load more'}
-			</button>
+			<LoadMore onclick={loadMore} loading={loadingMore} remaining={total === null ? null : total - hits.length} />
 		{/if}
 	{/if}
 </section>

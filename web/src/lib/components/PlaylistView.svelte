@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
@@ -593,19 +594,7 @@
 			bind:total
 		/>
 		{#if nextCursor}
-			<div class="mt-3 text-center">
-				<button
-					type="button"
-					onclick={loadMore}
-					disabled={loadingMore}
-					class="rounded-md border p-1.5 disabled:opacity-60"
-					style="border-color: var(--color-border)"
-					title="Load more"
-					aria-label="Load more"
-				>
-					<ChevronDown size={18} aria-hidden="true" />
-				</button>
-			</div>
+			<LoadMore onclick={loadMore} loading={loadingMore} remaining={total === null ? null : total - items.length} />
 		{/if}
 	</div>
 </section>
