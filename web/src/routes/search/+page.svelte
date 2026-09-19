@@ -11,7 +11,7 @@
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
-	import { resultsPath, type SearchFilters } from '$lib/searchParams';
+	import { activeFilterCount, resultsPath, type SearchFilters } from '$lib/searchParams';
 
 	let { data }: { data: PageData } = $props();
 
@@ -55,9 +55,25 @@
 		goto(`/search?${params}`, { keepFocus: true, noScroll: true });
 	}
 
-	const hasFilters = $derived(
-		!!(data.q || data.host || data.status || data.broken || data.sort || data.kind || data.maxMinutes)
-	);
+	/** The filters this page was loaded with — what "Load more" has to keep asking for. */
+	const filters = $derived<SearchFilters>({
+		q: data.q,
+		host: data.host,
+		status: data.status,
+		finished: data.finished,
+		broken: data.broken,
+		sort: data.sort,
+		kind: data.kind,
+		maxMinutes: data.maxMinutes,
+		itemTags: data.itemTags
+	});
+
+	// One answer to "is anything narrowing this?", counted from the same filters the query is
+	// built from. The save button and the empty state each used to keep their own list, and
+	// both had gaps: a tag or "finished this week" hid the save button, and "videos only" with
+	// no hits was greeted as though nothing had been asked yet.
+	const canSave = $derived(activeFilterCount(filters) > 0);
+	const hasFilters = $derived(canSave || !!data.savedId);
 
 	/** The kinds worth offering as a filter. Image and Social exist but are rarely what is sought. */
 	const kinds = [
@@ -145,19 +161,6 @@
 		clearTimeout(debounce);
 		debounce = setTimeout(() => navigate({ q: term }), 300);
 	}
-
-	/** The filters this page was loaded with — what "Load more" has to keep asking for. */
-	const filters = $derived<SearchFilters>({
-		q: data.q,
-		host: data.host,
-		status: data.status,
-		finished: data.finished,
-		broken: data.broken,
-		sort: data.sort,
-		kind: data.kind,
-		maxMinutes: data.maxMinutes,
-		itemTags: data.itemTags
-	});
 
 	async function loadMore() {
 		if (!nextCursor || loadingMore) return;
@@ -314,7 +317,7 @@
 		{/if}
 	</div>
 
-	{#if data.saved.length || hasFilters}
+	{#if data.saved.length || canSave}
 		<div class="mt-3 flex flex-wrap items-center gap-1.5">
 			{#if pinError}
 				<span class="text-xs" style="color: var(--color-danger)" role="alert">{pinError}</span>
@@ -353,7 +356,7 @@
 				</span>
 			{/each}
 
-			{#if hasFilters}
+			{#if canSave}
 				<button
 					type="button"
 					onclick={saveSearch}
@@ -384,13 +387,22 @@
 	{#if hits.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">
-				{data.q || data.host || data.status || data.finished || data.broken ? 'Nothing matched.' : 'Search across everything you have saved.'}
+				{hasFilters ? 'Nothing matched.' : 'Search across everything you have saved.'}
 			</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				{data.q || data.host || data.status || data.finished || data.broken
+				{hasFilters
 					? 'Try fewer words, or a different filter.'
 					: 'Type above, or pick a site to browse what you saved from it.'}
 			</p>
+			{#if hasFilters}
+				<a
+					href="/search"
+					class="mt-4 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+					style="border-color: var(--color-border)"
+				>
+					<X size={14} aria-hidden="true" /> Clear filters
+				</a>
+			{/if}
 		</div>
 	{:else}
 		<ul class="mt-5 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
