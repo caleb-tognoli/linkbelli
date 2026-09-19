@@ -1,37 +1,11 @@
 import type { HostFacet, Paged, SavedSearch, SearchHit } from '$lib/types';
 import type { PageServerLoad } from './$types';
+import { filtersFrom, resultsPath } from '$lib/searchParams';
 
 const EMPTY: Paged<SearchHit> = { items: [], nextCursor: null, total: 0 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	const q = url.searchParams.get('q') ?? '';
-	const host = url.searchParams.get('host') ?? '';
-	const status = url.searchParams.get('status') ?? '';
-	const finished = url.searchParams.get('finished') ?? '';
-	const broken = url.searchParams.get('broken') ?? '';
-	const sort = url.searchParams.get('sort') ?? '';
-	const kind = url.searchParams.get('kind') ?? '';
-	const maxMinutes = url.searchParams.get('maxMinutes') ?? '';
-	const itemTags = url.searchParams.getAll('itemTag');
-
-	const params = new URLSearchParams();
-	if (q) params.set('q', q);
-	if (host) params.set('host', host);
-	if (status) params.set('status', status);
-	// "finished" is a plain day count in the URL so the link stays readable and shareable; the
-	// API takes the instant it resolves to.
-	if (finished) {
-		const days = Number(finished);
-		if (Number.isFinite(days) && days > 0) {
-			params.set('finishedSince', new Date(Date.now() - days * 86_400_000).toISOString());
-		}
-	}
-	if (broken) params.set('broken', 'true');
-	if (kind) params.set('kind', kind);
-	if (maxMinutes) params.set('maxMinutes', maxMinutes);
-	if (sort) params.set('sort', sort);
-	for (const tag of itemTags) params.append('itemTag', tag);
-	params.set('limit', '25');
+	const filters = filtersFrom(url.searchParams);
 
 	// Opened from the sidebar. The saved search is run by id rather than unpacked into query
 	// parameters, so what runs is exactly what was saved — including anything added to saved
@@ -40,22 +14,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	// Tolerant of transient failures (e.g. rate limiting) — degrade rather than 500 the page.
 	const [resultsRes, hostsRes, savedRes] = await Promise.all([
-		locals.api(savedId ? `/api/v1/search/saved/${savedId}?limit=25` : `/api/v1/search?${params}`),
+		locals.api(`/api/v1${resultsPath(filters, savedId)}`),
 		locals.api('/api/v1/search/hosts'),
 		locals.api('/api/v1/search/saved')
 	]);
 
 	return {
 		savedId,
-		q,
-		host,
-		status,
-		finished,
-		broken,
-		sort,
-		kind,
-		maxMinutes,
-		itemTags,
+		...filters,
 		results: resultsRes.ok ? ((await resultsRes.json()) as Paged<SearchHit>) : EMPTY,
 		hosts: hostsRes.ok ? ((await hostsRes.json()) as HostFacet[]) : [],
 		saved: savedRes.ok ? ((await savedRes.json()) as SavedSearch[]) : []

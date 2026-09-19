@@ -11,6 +11,7 @@
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
+	import { resultsPath, type SearchFilters } from '$lib/searchParams';
 
 	let { data }: { data: PageData } = $props();
 
@@ -145,24 +146,26 @@
 		debounce = setTimeout(() => navigate({ q: term }), 300);
 	}
 
+	/** The filters this page was loaded with — what "Load more" has to keep asking for. */
+	const filters = $derived<SearchFilters>({
+		q: data.q,
+		host: data.host,
+		status: data.status,
+		finished: data.finished,
+		broken: data.broken,
+		sort: data.sort,
+		kind: data.kind,
+		maxMinutes: data.maxMinutes,
+		itemTags: data.itemTags
+	});
+
 	async function loadMore() {
 		if (!nextCursor || loadingMore) return;
 		loadingMore = true;
 		try {
-			const params = new URLSearchParams({ limit: '25', cursor: nextCursor });
-			if (data.q) params.set('q', data.q);
-			if (data.host) params.set('host', data.host);
-			if (data.status) params.set('status', data.status);
-			if (data.broken) params.set('broken', 'true');
-			if (data.sort) params.set('sort', data.sort);
-			if (data.finished) {
-				params.set(
-					'finishedSince',
-					new Date(Date.now() - Number(data.finished) * 86_400_000).toISOString()
-				);
-			}
-
-			const res = await api.get(`/search?${params}`);
+			// The same query the first page was asked with. A saved search pages by its id;
+			// everything else carries every filter, not just the ones this used to remember.
+			const res = await api.get(resultsPath(filters, data.savedId, { cursor: nextCursor }));
 			if (res.ok) {
 				const page = (await res.json()) as Paged<SearchHit>;
 				hits = [...hits, ...page.items];
