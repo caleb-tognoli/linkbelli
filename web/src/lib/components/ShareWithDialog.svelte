@@ -119,8 +119,24 @@
 
 	async function remove(member: PlaylistMember) {
 		const res = await api.del(`/playlists/${playlistId}/members/${encodeURIComponent(member.username)}`);
-		if (res.ok || res.status === 204) await load();
-		else toast.error(failureMessage(res.status, `Could not remove ${member.username}.`));
+		if (res.ok || res.status === 204) {
+			await load();
+			toast.success(`${member.username} no longer has access.`, {
+				action: {
+					label: 'Undo',
+					run: async () => {
+						const again = await api.put(
+							`/playlists/${playlistId}/members/${encodeURIComponent(member.username)}`,
+							{ role: member.role }
+						);
+						if (again.ok) await load();
+						else toast.error(failureMessage(again.status, `Could not give ${member.username} access again.`));
+					}
+				}
+			});
+		} else {
+			toast.error(failureMessage(res.status, `Could not remove ${member.username}.`));
+		}
 	}
 
 </script>

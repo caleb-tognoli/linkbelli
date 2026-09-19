@@ -163,6 +163,32 @@
 		moveOpen = true;
 	}
 
+	/** Marks the selection, and offers to put each back the way it was. */
+	async function bulkStatus(status: 'Watched' | 'Added') {
+		const before = items.filter((i) => selected.has(i.id)).map((i) => ({ id: i.id, status: i.status }));
+		if (!(await bulk({ action: 'SetStatus', status }))) return;
+
+		const changed = before.filter((b) => b.status !== status);
+		if (changed.length === 0) return;
+		toast.success(
+			`Marked ${changed.length} ${changed.length === 1 ? 'link' : 'links'} ${status === 'Watched' ? 'watched' : 'unwatched'}.`,
+			{
+				action: {
+					label: 'Undo',
+					run: async () => {
+						const res = await api.post('/items/bulk', {
+							itemIds: changed.map((c) => c.id),
+							action: 'SetStatus',
+							status: status === 'Watched' ? 'Added' : 'Watched'
+						});
+						if (!res.ok) warn(failureMessage(res.status, 'Could not undo that.'));
+						await onmove?.();
+					}
+				}
+			}
+		);
+	}
+
 	async function bulkDelete() {
 		const count = selected.size;
 		const ok = await confirmDialog(
@@ -1000,7 +1026,7 @@
 			<button
 				type="button"
 				disabled={bulkBusy}
-				onclick={() => bulk({ action: 'SetStatus', status: 'Watched' })}
+				onclick={() => bulkStatus('Watched')}
 				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 				style="border-color: var(--color-border)"
 			>
@@ -1010,7 +1036,7 @@
 			<button
 				type="button"
 				disabled={bulkBusy}
-				onclick={() => bulk({ action: 'SetStatus', status: 'Added' })}
+				onclick={() => bulkStatus('Added')}
 				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 				style="border-color: var(--color-border)"
 			>

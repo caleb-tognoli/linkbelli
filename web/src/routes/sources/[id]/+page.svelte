@@ -245,9 +245,24 @@
 	}
 
 	async function unlinkPlaylist(playlistId: string) {
-		const res = await api.patch(`/sources/${data.source.id}`, { playlistIds: data.source.playlistIds.filter(id => id !== playlistId) });
-		if (res.ok) await invalidateAll();
-		else toast.error(failureMessage(res.status, 'Could not unlink that playlist.'));
+		const before = [...data.source.playlistIds];
+		const name = data.playlists.find((p) => p.id === playlistId)?.name ?? 'That playlist';
+		const res = await api.patch(`/sources/${data.source.id}`, { playlistIds: before.filter((id) => id !== playlistId) });
+		if (!res.ok) {
+			toast.error(failureMessage(res.status, 'Could not unlink that playlist.'));
+			return;
+		}
+		await invalidateAll();
+		toast.success(`${name} is no longer fed by this source.`, {
+			action: {
+				label: 'Undo',
+				run: async () => {
+					const again = await api.patch(`/sources/${data.source.id}`, { playlistIds: before });
+					if (again.ok) await invalidateAll();
+					else toast.error(failureMessage(again.status, 'Could not link it again.'));
+				}
+			}
+		});
 	}
 
 	function fmt(iso: string | null) {

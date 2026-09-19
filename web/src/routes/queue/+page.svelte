@@ -26,8 +26,21 @@
 		busy = itemId;
 		const res = await api.patch(`/items/${itemId}`, { status: 'Watched' });
 		busy = null;
-		if (res.ok) await invalidateAll();
-		else toast.error(failureMessage(res.status, 'Could not mark that done.'));
+		if (res.ok) {
+			await invalidateAll();
+			toast.success('Marked done.', {
+				action: {
+					label: 'Undo',
+					run: async () => {
+						const again = await api.patch(`/items/${itemId}`, { status: 'Added' });
+						if (again.ok) await invalidateAll();
+						else toast.error(failureMessage(again.status, 'Could not undo that.'));
+					}
+				}
+			});
+		} else {
+			toast.error(failureMessage(res.status, 'Could not mark that done.'));
+		}
 	}
 
 	/**

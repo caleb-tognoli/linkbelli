@@ -273,6 +273,17 @@
 	}
 
 	async function setVisibility(next: Visibility) {
+		// Going public is the one change here other people see, and it cannot be taken back from
+		// anyone who has already looked — so it is asked, not assumed.
+		if (next === 'Public' && visibility !== 'Public') {
+			const ok = await confirmDialog(`Make "${playlistName}" public?`, {
+				description:
+					'Anyone can find it on Discover and on your profile, and read every link and note in it.',
+				confirmLabel: 'Make public'
+			});
+			if (!ok) return;
+		}
+
 		const prev = visibility;
 		visibility = next;
 		const res = await api.patch(`/playlists/${playlist.id}`, { visibility: next });

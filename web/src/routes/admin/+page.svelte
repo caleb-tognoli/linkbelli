@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -43,10 +46,24 @@
 	let busy = $state<string | null>(null);
 
 	async function resolve(id: string, action: { dismiss?: boolean; takeDown?: boolean }) {
+		if (action.takeDown) {
+			const report = data.reports.find((r) => r.id === id);
+			const ok = await confirmDialog(`Take down "${report?.playlistName ?? 'this playlist'}"?`, {
+				description: 'It becomes private. Its owner keeps it and is not told why.',
+				danger: true,
+				confirmLabel: 'Take it down'
+			});
+			if (!ok) return;
+		}
+
 		busy = id;
 		try {
-			if ((await api.post(`/admin/reports/${id}/resolve`, action)).ok) {
+			const res = await api.post(`/admin/reports/${id}/resolve`, action);
+			if (res.ok) {
+				toast.success(action.takeDown ? 'Taken down: it is private now.' : 'Report dismissed.');
 				await invalidateAll();
+			} else {
+				toast.error(failureMessage(res.status, 'Could not resolve that report.'));
 			}
 		} finally {
 			busy = null;

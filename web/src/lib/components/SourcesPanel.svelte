@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -113,8 +114,22 @@
 		busy = true;
 		try {
 			const res = await api.del(`/playlists/${playlistId}/sources/${sourceId}`);
-			if (res.ok || res.status === 204) attached = attached.filter((s) => s.id !== sourceId);
-			else toast.error(failureMessage(res.status, 'Could not detach that source.'));
+			if (res.ok || res.status === 204) {
+				const source = attached.find((s) => s.id === sourceId);
+				attached = attached.filter((s) => s.id !== sourceId);
+				toast.success(`${source?.name ?? 'The source'} no longer feeds this playlist.`, {
+					action: {
+						label: 'Undo',
+						run: async () => {
+							const again = await api.post(`/playlists/${playlistId}/sources`, { sourceId });
+							if (again.ok) await refresh();
+							else toast.error(failureMessage(again.status, 'Could not attach it again.'));
+						}
+					}
+				});
+			} else {
+				toast.error(failureMessage(res.status, 'Could not detach that source.'));
+			}
 		} finally {
 			busy = false;
 		}
@@ -247,9 +262,16 @@
 									<Play size={15} aria-hidden="true" />
 								</button>
 							{/if}
-							<button type="button" onclick={() => detach(src.id)} disabled={busy} title="Unsubscribe" aria-label="Unsubscribe" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-danger)">
-								<Unlink size={15} aria-hidden="true" />
-							</button>
+							<!-- Your own source is detached; somebody else's shared one is unsubscribed from. -->
+							<Button
+								variant="ghost-danger"
+								size="sm"
+								icon={Unlink}
+								iconOnly
+								label={src.ownedByMe ? `Stop ${src.name} feeding this playlist` : `Unsubscribe from ${src.name}`}
+								onclick={() => detach(src.id)}
+								disabled={busy}
+							/>
 						{:else if isLoggedIn}
 							<button
 								type="button"
