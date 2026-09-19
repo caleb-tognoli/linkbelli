@@ -256,7 +256,7 @@
 				</fieldset>
 
 				{#if formError}
-					<p class="text-sm" style="color: var(--color-danger)">{formError}</p>
+					<p class="text-sm" style="color: var(--color-danger)" role="alert">{formError}</p>
 				{/if}
 
 				<div class={MODAL_FOOTER}>
@@ -293,7 +293,7 @@
 	{/if}
 
 	{#if error}
-		<p class="text-sm" style="color: var(--color-danger)">{error}</p>
+		<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 	{/if}
 
 	{#if loading}

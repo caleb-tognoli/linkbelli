@@ -549,7 +549,7 @@
 				<Button icon={Wand2} onclick={tryIt} disabled={busy}>Try it on what I have</Button>
 
 				{#if error}
-					<p class="text-sm" style="color: var(--color-danger)">{error}</p>
+					<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 				{/if}
 			</div>
 

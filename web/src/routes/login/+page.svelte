@@ -68,7 +68,7 @@
 		</Field>
 
 		{#if form?.error}
-			<p class="text-sm" style="color: var(--color-danger)">{form.error}</p>
+			<p class="text-sm" style="color: var(--color-danger)" role="alert">{form.error}</p>
 		{/if}
 
 		<Button type="submit" variant="primary" icon={LogIn} loading={submitting} class="mt-1 w-full">

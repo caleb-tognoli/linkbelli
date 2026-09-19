@@ -61,7 +61,7 @@
 		</Field>
 
 		{#if error}
-			<p class="text-sm" style="color: var(--color-danger)">{error}</p>
+			<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 		{/if}
 
 		<div class={MODAL_FOOTER}>

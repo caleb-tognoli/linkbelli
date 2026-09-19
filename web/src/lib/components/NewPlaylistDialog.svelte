@@ -127,7 +127,7 @@
 			{@render fields(null)}
 
 			{#if inlineError}
-				<p class="text-sm" style="color: var(--color-danger)">{inlineError}</p>
+				<p class="text-sm" style="color: var(--color-danger)" role="alert">{inlineError}</p>
 			{/if}
 
 			{@render actions()}
@@ -148,7 +148,7 @@
 			{@render fields(form)}
 
 			{#if form?.error}
-				<p class="text-sm" style="color: var(--color-danger)">{form.error}</p>
+				<p class="text-sm" style="color: var(--color-danger)" role="alert">{form.error}</p>
 			{/if}
 
 			{@render actions()}

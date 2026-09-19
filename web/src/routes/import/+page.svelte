@@ -83,7 +83,11 @@
 			class="space-y-7"
 		>
 			{#if form && 'error' in form && form.error}
-				<p class="rounded-md border px-3 py-2 text-sm" style="border-color: var(--color-danger); color: var(--color-danger)">
+				<p
+					class="rounded-md border px-3 py-2 text-sm"
+					style="border-color: var(--color-danger); color: var(--color-danger)"
+					role="alert"
+				>
 					{form.error}
 				</p>
 			{/if}

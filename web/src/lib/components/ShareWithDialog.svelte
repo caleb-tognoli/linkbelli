@@ -182,7 +182,7 @@
 	{/if}
 
 	{#if error}
-		<p class="mt-2 shrink-0 text-sm" style="color: var(--color-danger)">{error}</p>
+		<p class="mt-2 shrink-0 text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 	{/if}
 
 	<div class="mt-3 flex-1 overflow-y-auto">

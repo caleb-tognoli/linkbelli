@@ -117,6 +117,6 @@
 	</div>
 
 	{#if error}
-		<p class="mt-3 text-sm" style="color: var(--color-danger)">{error}</p>
+		<p class="mt-3 text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 	{/if}
 </Modal>
