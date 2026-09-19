@@ -244,10 +244,32 @@
 	}
 
 	async function deletePlaylist() {
-		if (!(await confirmDialog(`Delete "${playlistName}"? This cannot be undone.`, { danger: true, confirmLabel: 'Delete' }))) return;
-		const res = await api.del(`/playlists/${playlist.id}`);
-		if (res.ok || res.status === 204) goto(resolvedBackHref);
-		else toast.error(failureMessage(res.status, 'Could not delete the playlist.'));
+		// It goes to the trash, and the question used to say "This cannot be undone" — which was
+		// not true, and made a recoverable step sound final.
+		const ok = await confirmDialog(`Move "${playlistName}" to the trash?`, {
+			description: 'You can restore it from the trash for 30 days.',
+			danger: true,
+			confirmLabel: 'Move to trash'
+		});
+		if (!ok) return;
+
+		const id = playlist.id;
+		const res = await api.del(`/playlists/${id}`);
+		if (res.ok || res.status === 204) {
+			await goto(resolvedBackHref);
+			toast.success(`"${playlistName}" moved to the trash.`, {
+				action: {
+					label: 'Undo',
+					run: async () => {
+						const restored = await api.post(`/trash/playlists/${id}/restore`);
+						if (restored.ok) await goto(`/playlists/${id}`);
+						else toast.error(failureMessage(restored.status, 'Could not restore it. It is still in the trash.'));
+					}
+				}
+			});
+		} else {
+			toast.error(failureMessage(res.status, 'Could not delete the playlist.'));
+		}
 	}
 
 	async function setVisibility(next: Visibility) {
