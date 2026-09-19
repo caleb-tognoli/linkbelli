@@ -1,6 +1,7 @@
 <svelte:head><title>Search - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { goto } from '$app/navigation';
@@ -224,17 +225,12 @@
 	</details>
 
 	<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
-		<div class="inline-flex divide-x overflow-hidden rounded-md border" style="border-color: var(--color-border)">
-			{#each statuses as option (option.value)}
-				<button
-					type="button"
-					onclick={() => navigate({ status: option.value })}
-					class="px-3 py-1.5"
-					class:font-medium={data.status === option.value}
-					style={data.status === option.value ? 'background: var(--color-selected); color: var(--color-accent)' : 'background: var(--color-bg)'}
-				>{option.label}</button>
-			{/each}
-		</div>
+		<SegmentedControl
+			label="Status"
+			options={statuses}
+			value={data.status}
+			onchange={(status) => navigate({ status })}
+		/>
 
 		<button
 			type="button"

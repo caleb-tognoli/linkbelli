@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
@@ -993,23 +994,16 @@
 		</Popover.Root>
 
 		<!-- Layout switch. A reading queue reads best as a list; a list of videos does not. -->
-		<div class="inline-flex divide-x overflow-hidden rounded-full border" style="border-color: var(--color-border)">
-			{#each [['table', 'List', Rows3], ['grid', 'Grid', LayoutGrid]] as const as [mode, label, Icon] (mode)}
-				<button
-					type="button"
-					onclick={() => { viewMode = mode; if (playlistId) savePrefs(playlistId, { viewMode: mode }); }}
-					class="px-2.5 py-0.5"
-					style={viewMode === mode
-						? 'background: var(--color-selected); color: var(--color-accent)'
-						: 'color: var(--color-muted)'}
-					title={`${label} view`}
-					aria-label={`${label} view`}
-					aria-pressed={viewMode === mode}
-				>
-					<Icon size={13} aria-hidden="true" />
-				</button>
-			{/each}
-		</div>
+		<SegmentedControl
+			label="Layout"
+			size="sm"
+			options={[
+				{ value: 'table', label: 'List view', icon: Rows3, iconOnly: true },
+				{ value: 'grid', label: 'Grid view', icon: LayoutGrid, iconOnly: true }
+			]}
+			bind:value={viewMode}
+			onchange={(mode) => { if (playlistId) savePrefs(playlistId, { viewMode: mode }); }}
+		/>
 
 		<button
 			type="button"

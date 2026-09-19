@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
@@ -547,48 +548,25 @@
 		{#if showSettings}
 			<div class="mt-3 flex flex-col gap-2 rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
 				<!-- Per device, on purpose: the right size on a phone is the wrong one on a desktop. -->
-				<div class="flex flex-wrap items-center gap-2">
-					<span class="w-16 shrink-0" style="color: var(--color-muted)">Size</span>
-					{#each SIZES as size (size)}
-						<button
-							type="button"
-							onclick={() => readerSettings.set('size', size)}
-							class="rounded border px-2 py-1 capitalize"
-							class:font-medium={readerSettings.size === size}
-							style="border-color: {readerSettings.size === size
-								? 'var(--color-accent)'
-								: 'var(--color-border)'}"
-						>{size}</button>
-					{/each}
-				</div>
-				<div class="flex flex-wrap items-center gap-2">
-					<span class="w-16 shrink-0" style="color: var(--color-muted)">Width</span>
-					{#each WIDTHS as width (width)}
-						<button
-							type="button"
-							onclick={() => readerSettings.set('width', width)}
-							class="rounded border px-2 py-1 capitalize"
-							class:font-medium={readerSettings.width === width}
-							style="border-color: {readerSettings.width === width
-								? 'var(--color-accent)'
-								: 'var(--color-border)'}"
-						>{width}</button>
-					{/each}
-				</div>
-				<div class="flex flex-wrap items-center gap-2">
-					<span class="w-16 shrink-0" style="color: var(--color-muted)">Face</span>
-					{#each FONTS as font (font)}
-						<button
-							type="button"
-							onclick={() => readerSettings.set('font', font)}
-							class="rounded border px-2 py-1 capitalize"
-							class:font-medium={readerSettings.font === font}
-							style="border-color: {readerSettings.font === font
-								? 'var(--color-accent)'
-								: 'var(--color-border)'}; font-family: {FONT_CSS[font]}"
-						>{font}</button>
-					{/each}
-				</div>
+				{#each [
+					{ key: 'size', label: 'Size', values: SIZES },
+					{ key: 'width', label: 'Width', values: WIDTHS },
+					{ key: 'font', label: 'Face', values: FONTS }
+				] as const as setting (setting.key)}
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="w-16 shrink-0" style="color: var(--color-muted)">{setting.label}</span>
+						<SegmentedControl
+							label={setting.label}
+							size="sm"
+							options={setting.values.map((value) => ({
+								value,
+								label: value.charAt(0).toUpperCase() + value.slice(1)
+							}))}
+							value={readerSettings[setting.key]}
+							onchange={(value) => readerSettings.set(setting.key, value as never)}
+						/>
+					</div>
+				{/each}
 				<p class="text-xs" style="color: var(--color-muted)">
 					Kept on this device. <kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>n</kbd>/<kbd>p</kbd> for the
 					next and previous in the playlist, <kbd>e</kbd> to mark finished, <kbd>h</kbd> to

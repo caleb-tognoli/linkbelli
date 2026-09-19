@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -408,22 +409,20 @@
 						style="background: var(--color-bg)"
 					>+</button>
 				</div>
-				<div class="inline-flex divide-x overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border)">
-					{#each [['minutes', 'min'], ['hours', 'hr'], ['days', 'day']] as [val, lbl] (val)}
-						<button
-							type="button"
-							onclick={() => {
-								scheduleUnit = val as 'minutes' | 'hours' | 'days';
-								if (val === 'minutes' && scheduleCount < 5) scheduleCount = 5;
-								if (val === 'hours' && scheduleCount > 23) scheduleCount = 23;
-								if (val === 'days' && scheduleCount > 30) scheduleCount = 30;
-							}}
-							class="px-3 py-2 disabled:cursor-default"
-							class:font-medium={scheduleUnit === val}
-							style={scheduleUnit === val ? 'background: var(--color-selected); color: var(--color-accent)' : 'background: var(--color-bg)'}
-						>{lbl}</button>
-					{/each}
-				</div>
+				<SegmentedControl
+					label="Unit"
+					options={[
+						{ value: 'minutes', label: 'min' },
+						{ value: 'hours', label: 'hr' },
+						{ value: 'days', label: 'day' }
+					]}
+					bind:value={scheduleUnit}
+					onchange={(unit) => {
+						if (unit === 'minutes' && scheduleCount < 5) scheduleCount = 5;
+						if (unit === 'hours' && scheduleCount > 23) scheduleCount = 23;
+						if (unit === 'days' && scheduleCount > 30) scheduleCount = 30;
+					}}
+				/>
 			</div>
 		</div>
 
@@ -533,19 +532,15 @@
 				<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
 					<div class="flex items-center justify-between gap-4">
 						<span class="text-sm font-medium">Authentication</span>
-						<div class="inline-flex overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border)">
-							{#each [{ value: 'none', label: 'None' }, { value: 'loginUrl', label: 'Login URL' }] as opt (opt.value)}
-								<button
-									type="button"
-									onclick={() => setAuthMode(opt.value as 'none' | 'loginUrl')}
-									class="px-3 py-1.5"
-									style={authMode === opt.value
-										? 'background: var(--color-accent-solid); color: var(--color-on-solid)'
-										: 'background: var(--color-bg)'}
-									aria-pressed={authMode === opt.value}
-								>{opt.label}</button>
-							{/each}
-						</div>
+						<SegmentedControl
+							label="Authentication"
+							options={[
+								{ value: 'none', label: 'None' },
+								{ value: 'loginUrl', label: 'Login URL' }
+							]}
+							value={authMode}
+							onchange={setAuthMode}
+						/>
 					</div>
 					{#if authMode === 'loginUrl'}
 						<Field label="Login URL">

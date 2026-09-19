@@ -1,6 +1,7 @@
 ﻿<svelte:head><title>Discover - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -85,17 +86,11 @@
 	</form>
 
 	<div class="mt-4 flex flex-wrap items-center gap-2">
-		<div class="inline-flex divide-x overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border)">
-			{#each sorts as option (option.value)}
-				<a
-					href={withParam('sort', option.value)}
-					class="px-3 py-1.5"
-					class:font-medium={data.sort === option.value}
-					style={data.sort === option.value ? 'background: var(--color-selected); color: var(--color-accent)' : 'background: var(--color-bg)'}
-					aria-current={data.sort === option.value ? 'page' : undefined}
-				>{option.label}</a>
-			{/each}
-		</div>
+		<SegmentedControl
+			label="Sort"
+			options={sorts.map((option) => ({ ...option, href: withParam('sort', option.value) }))}
+			value={data.sort}
+		/>
 	</div>
 
 	<div class="mt-4">

@@ -1,6 +1,7 @@
 ﻿<svelte:head><title>Import - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -107,19 +108,15 @@
 				<p class="text-sm font-medium">Add to</p>
 
 				<input type="hidden" name="destination" value={destination} />
-				<div class="inline-flex overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border)">
-					{#each [{ value: 'none', label: 'None' }, { value: 'existing', label: 'Existing playlist' }, { value: 'new', label: 'New playlist' }] as opt (opt.value)}
-						<button
-							type="button"
-							onclick={() => (destination = opt.value)}
-							class="px-3 py-1.5"
-							style={destination === opt.value
-								? 'background: var(--color-accent-solid); color: var(--color-on-solid)'
-								: 'color: var(--color-muted)'}
-							aria-pressed={destination === opt.value}
-						>{opt.label}</button>
-					{/each}
-				</div>
+				<SegmentedControl
+					label="Add to"
+					options={[
+						{ value: 'none', label: 'None' },
+						{ value: 'existing', label: 'Existing playlist' },
+						{ value: 'new', label: 'New playlist' }
+					]}
+					bind:value={destination}
+				/>
 
 				{#if destination === 'existing'}
 					<div>
