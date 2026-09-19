@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
@@ -210,7 +211,7 @@
 <svelte:head><title>{data.source.name} - linkbelli</title></svelte:head>
 
 <section class="mx-auto max-w-4xl">
-	<a href={backHref} class="text-sm" style="color: var(--color-muted)">← {backLabel}</a>
+	<BackLink href={backHref} label={backLabel} />
 
 	<header class="mt-3 flex items-center justify-between gap-3">
 		<h1 class="text-2xl font-semibold">{data.source.name}</h1>

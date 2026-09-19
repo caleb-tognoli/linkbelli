@@ -1,6 +1,7 @@
 <svelte:head><title>New source - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import SourceForm from '$lib/components/SourceForm.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 
@@ -10,7 +11,7 @@
 </script>
 
 <section class="mx-auto max-w-4xl">
-	<a href="/sources" class="text-sm" style="color: var(--color-muted)">← Sources</a>
+	<BackLink href="/sources" label="Sources" />
 	<h1 class="mt-3 text-2xl font-semibold">New source</h1>
 	<div class="mt-5">
 		{#if byHand}

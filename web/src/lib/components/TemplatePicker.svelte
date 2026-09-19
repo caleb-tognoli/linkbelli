@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -110,12 +111,7 @@
 {:else}
 	<div class="flex flex-col gap-3">
 		<div>
-			<button
-				type="button"
-				onclick={() => (chosen = null)}
-				class="text-sm"
-				style="color: var(--color-muted)"
-			>← All templates</button>
+			<BackLink onclick={() => (chosen = null)} label="All templates" />
 			<h2 class="mt-2 font-medium">{chosen.name}</h2>
 			<p class="text-sm" style="color: var(--color-muted)">{chosen.description}</p>
 		</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import { page } from '$app/state';
 	import { api } from '$lib/api/client';
 	import { Rss } from '@lucide/svelte';
@@ -59,9 +60,7 @@
 </svelte:head>
 
 <section class="mx-auto max-w-5xl">
-	<a href="/discover" class="inline-flex items-center gap-1.5 text-sm" style="color: var(--color-muted)">
-		← Discover
-	</a>
+	<BackLink href="/discover" label="Discover" />
 
 	<header class="mt-3 flex items-start justify-between gap-4">
 		<div>

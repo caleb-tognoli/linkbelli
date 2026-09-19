@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
@@ -326,13 +327,7 @@
 </script>
 
 <section class="mx-auto max-w-5xl">
-	<a
-		href={resolvedBackHref}
-		class="inline-flex items-center gap-1.5 text-sm"
-		style="color: var(--color-muted)"
-	>
-		← {resolvedBackLabel}
-	</a>
+	<BackLink href={resolvedBackHref} label={resolvedBackLabel} />
 
 	<header class="mt-3 flex flex-wrap items-start justify-between gap-3">
 		<div class="min-w-0 flex-1 basis-full sm:basis-auto">
