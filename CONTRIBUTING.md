@@ -33,6 +33,14 @@ The API integration suite uses Testcontainers and takes about three minutes. It 
 database across the whole run and does not parallelise, so a test that asserts on a global count
 will be flaky — scope assertions to rows your test created, usually with a unique name or host.
 
+The web tests run as two Vitest projects. Plain `*.test.ts` files are logic and server code.
+`*.svelte.test.ts` files mount components with Testing Library: query the way somebody using the
+page would (by role and accessible name — if a control cannot be found that way, that is usually
+a bug in the component, not the test), and stand in for the API with `fakeApi` from
+`$lib/testing/fakeApi`, which fails loudly on any route the test did not expect. A small Vite
+plugin (`web/vite-plugins/deep-imports.ts`) rewrites icon and bits-ui imports to per-file ones in
+that project only; without it every component test compiles several thousand Svelte files.
+
 ## Conventions
 
 ### Every change comes with a test that would have failed before it

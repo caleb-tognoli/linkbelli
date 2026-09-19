@@ -20,6 +20,9 @@
 		ondelete
 	}: { mode: 'create' | 'edit'; source?: Source; ondelete?: () => void } = $props();
 
+	// Unique per form, so the name field's label can point at it even with two forms on a page.
+	const uid = $props.id();
+
 	interface FieldDef {
 		key: string;
 		label: string;
@@ -346,9 +349,11 @@
 
 <div class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1 text-sm">
-		<span>Name</span>
+		<!-- A label rather than a caption: the field used to have no name of its own, so a screen
+		     reader announced it as nothing more than "edit text". -->
+		<label for="{uid}-name">Name</label>
 		<div class="flex items-center gap-2">
-			<input bind:value={name} class="{fieldClass} flex-1" style={fieldStyle} />
+			<input id="{uid}-name" bind:value={name} class="{fieldClass} flex-1" style={fieldStyle} />
 			<Popover.Root bind:open={visOpen}>
 				<Popover.Trigger
 					class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:border-[var(--color-accent)]"
@@ -594,7 +599,7 @@
 			</div>
 
 			{#if previewError}
-				<p class="mt-2 text-sm" style="color: var(--color-danger)">{previewError}</p>
+				<p class="mt-2 text-sm" style="color: var(--color-danger)" role="alert">{previewError}</p>
 			{:else if preview && preview.links.length === 0}
 				<!-- The failure that looks like success: the fetch worked and matched nothing. -->
 				<p class="mt-2 text-sm" style="color: var(--color-warning)">
@@ -698,7 +703,9 @@
 			</button>
 		{/if}
 		{#if error}
-			<p class="text-sm" style="color: var(--color-danger)">{error}</p>
+			<!-- Announced: the button that failed is right next to it, but somebody not looking at
+			     the screen had no way to know the save did not happen. -->
+			<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 		{/if}
 	</div>
 </div>
