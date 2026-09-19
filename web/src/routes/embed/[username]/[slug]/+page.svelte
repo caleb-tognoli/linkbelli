@@ -71,25 +71,22 @@
 </div>
 
 <style>
-	/* Scoped to the embed and driven by its own attribute rather than the app's theme cookie:
-	   the host page decides which one fits, and has no way to set our cookie. */
+	/* Driven by its own attribute rather than the app's theme cookie: the host page decides which
+	   one fits, and has no way to set our cookie. The colours are the app's own tokens, each
+	   written once as light-dark(); setting color-scheme here picks which half applies inside
+	   the card, whatever the page around it is using. */
 	.embed {
-		--embed-bg: #ffffff;
-		--embed-surface: #f7f7f5;
-		--embed-border: #e8e8e6;
-		--embed-text: #1f1f1f;
-		--embed-muted: #6b6b6b;
-		--embed-accent: #2563eb;
+		color-scheme: light;
 
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 		padding: 0.9rem;
-		border: 1px solid var(--embed-border);
+		border: 1px solid var(--color-border);
 		border-radius: 8px;
-		background: var(--embed-bg);
-		color: var(--embed-text);
+		background: var(--color-bg);
+		color: var(--color-text);
 		font:
 			14px/1.5 ui-sans-serif,
 			system-ui,
@@ -100,12 +97,7 @@
 	}
 
 	.embed[data-embed-theme='dark'] {
-		--embed-bg: #191919;
-		--embed-surface: #202020;
-		--embed-border: #2f2f2f;
-		--embed-text: #ededed;
-		--embed-muted: #9a9a9a;
-		--embed-accent: #3b82f6;
+		color-scheme: dark;
 	}
 
 	header {
@@ -129,7 +121,7 @@
 	.host,
 	.description,
 	.empty {
-		color: var(--embed-muted);
+		color: var(--color-muted);
 		font-size: 12px;
 	}
 
@@ -150,7 +142,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.35rem 0;
-		border-top: 1px solid var(--embed-border);
+		border-top: 1px solid var(--color-border);
 		min-width: 0;
 	}
 
@@ -181,7 +173,7 @@
 
 	.placeholder {
 		border-radius: 2px;
-		background: var(--embed-border);
+		background: var(--color-border);
 	}
 
 	.host {
@@ -192,7 +184,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.25rem;
-		color: var(--embed-accent);
+		color: var(--color-accent);
 		font-size: 12px;
 		text-decoration: none;
 	}

@@ -15,58 +15,38 @@
 	}
 }
 
-/* Notion-ish, minimal design tokens. Light by default; dark via the [data-theme] attribute
-   (set server-side from the lb_theme cookie). `system` follows the OS preference.
+/* Notion-ish, minimal design tokens. Each colour is written once, as light-dark(light, dark):
+   which half applies follows the element's color-scheme, and that is set from the theme chosen
+   in the app (the lb_theme cookie, injected server-side as data-theme). `system` leaves both
+   schemes open, so the OS decides. The dark palette used to be spelled out three times — for
+   Dark, for System-on-a-dark-OS, and again for the embed — and the copies could drift apart.
    Referenced directly as var(--color-*) (not generated Tailwind utilities). */
 :root {
-	--color-bg: #ffffff;
-	--color-surface: #f7f7f5;
-	--color-border: #e8e8e6;
-	--color-text: #1f1f1f;
-	--color-muted: #6b6b6b;
-	--color-accent: #2563eb;
+	color-scheme: light dark;
+
+	--color-bg: light-dark(#ffffff, #191919);
+	--color-surface: light-dark(#f7f7f5, #202020);
+	--color-border: light-dark(#e8e8e6, #2f2f2f);
+	--color-text: light-dark(#1f1f1f, #ededed);
+	--color-muted: light-dark(#6b6b6b, #9a9a9a);
+	--color-accent: light-dark(#2563eb, #3b82f6);
 	--color-accent-contrast: #ffffff;
-	--color-danger: #dc2626;
-	--color-success: #15803d;
-	--color-warning: #b45309;
+	--color-danger: light-dark(#dc2626, #ef4444);
+	--color-success: light-dark(#15803d, #4ade80);
+	--color-warning: light-dark(#b45309, #fbbf24);
 	/* Marked text in the reader. A wash rather than a fluorescent block: the words underneath
-	   still have to be the easiest thing on the page to read. */
-	--color-highlight: #fdf0b8;
-	--color-highlight-strong: #f7dd72;
+	   still have to be the easiest thing on the page to read. On a dark page a yellow wash would
+	   be the brightest thing on it, so the mark is carried by a dim amber behind unchanged text. */
+	--color-highlight: light-dark(#fdf0b8, #4a3d18);
+	--color-highlight-strong: light-dark(#f7dd72, #6b5720);
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-	--color-bg: #191919;
-	--color-surface: #202020;
-	--color-border: #2f2f2f;
-	--color-text: #ededed;
-	--color-muted: #9a9a9a;
-	--color-accent: #3b82f6;
-	--color-accent-contrast: #ffffff;
-	--color-danger: #ef4444;
-	--color-success: #4ade80;
-	--color-warning: #fbbf24;
-	/* On a dark page a yellow wash would be the brightest thing on it, so the mark is carried
-	   by a dim amber behind unchanged text instead. */
-	--color-highlight: #4a3d18;
-	--color-highlight-strong: #6b5720;
-}
-
-@media (prefers-color-scheme: dark) {
-	:root[data-theme='system'] {
-		--color-bg: #191919;
-		--color-surface: #202020;
-		--color-border: #2f2f2f;
-		--color-text: #ededed;
-		--color-muted: #9a9a9a;
-		--color-accent: #3b82f6;
-		--color-accent-contrast: #ffffff;
-		--color-danger: #ef4444;
-		--color-success: #4ade80;
-		--color-warning: #fbbf24;
-		--color-highlight: #4a3d18;
-		--color-highlight-strong: #6b5720;
-	}
+	color-scheme: dark;
 }
 
 html {
