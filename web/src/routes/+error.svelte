@@ -43,13 +43,15 @@
 	<h1 class="mt-3 text-xl font-semibold">{heading}</h1>
 	<p class="mt-2 text-sm" style="color: var(--color-muted)">{detail}</p>
 
-	<!-- Anywhere is better than a dead end. Both are safe for a signed-out visitor: the home
-	     page is the public introduction, and /playlists bounces to sign-in if it has to. -->
+	<!-- Anywhere is better than a dead end — but somewhere the visitor can actually go. A
+	     signed-out visitor offered "Your playlists" was only bounced to the sign-in page. -->
 	<div class="mt-6 flex flex-wrap justify-center gap-3 text-sm">
 		{#if status === 401}
 			<Button href={signIn} variant="primary">Sign in</Button>
-		{:else}
+		{:else if page.data.user}
 			<Button href="/playlists" variant="primary">Your playlists</Button>
+		{:else}
+			<Button href="/discover" variant="primary">Discover playlists</Button>
 		{/if}
 		<Button href="/">Home</Button>
 	</div>
