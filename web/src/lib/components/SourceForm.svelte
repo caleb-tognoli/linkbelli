@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CopyField from '$lib/components/ui/CopyField.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
@@ -139,18 +140,7 @@
 			: null
 	);
 
-	let copied = $state(false);
 
-	async function copyWebhookUrl() {
-		if (!webhookUrl) return;
-		try {
-			await navigator.clipboard.writeText(webhookUrl);
-			copied = true;
-			setTimeout(() => (copied = false), 2000);
-		} catch {
-			// The URL is on screen either way.
-		}
-	}
 
 	// A dry run of the config as it stands. Until now the only way to find out whether a selector
 	// matched anything was to save the source, wait for its first run, and read the history.
@@ -459,15 +449,7 @@
 					<div class="rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
 						{#if webhookUrl}
 							<p>Push links here:</p>
-							<div class="mt-2 flex items-center gap-2">
-								<code class="min-w-0 flex-1 truncate rounded px-2 py-1 text-xs" style="background: var(--color-bg)">{webhookUrl}</code>
-								<button
-									type="button"
-									onclick={copyWebhookUrl}
-									class="shrink-0 rounded-md border px-2.5 py-1 text-xs"
-									style="border-color: var(--color-border)"
-								>{copied ? 'Copied' : 'Copy'}</button>
-							</div>
+							<CopyField value={webhookUrl} label="Webhook address" class="mt-2" />
 							<p class="mt-2 text-xs" style="color: var(--color-muted)">
 								<code>POST</code> it <code>{'{ "links": [{ "url": "…", "title": "…" }] }'}</code>.
 								The URL is the whole credential — treat it like a password.

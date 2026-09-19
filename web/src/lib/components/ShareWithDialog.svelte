@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CopyField from '$lib/components/ui/CopyField.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -68,7 +69,6 @@
 	let inviteLink = $state<string | null>(null);
 	let inviteEmailed = $state(false);
 	let inviting = $state(false);
-	let copied = $state(false);
 
 	/**
 	 * A link for somebody who is not here yet.
@@ -81,7 +81,6 @@
 	async function invite() {
 		inviting = true;
 		error = null;
-		copied = false;
 		try {
 			const address = username.trim();
 			const res = await api.post(`/playlists/${playlistId}/invites`, {
@@ -105,18 +104,6 @@
 		}
 	}
 
-	async function copyInvite() {
-		if (!inviteLink) return;
-
-		try {
-			await navigator.clipboard.writeText(inviteLink);
-			copied = true;
-		} catch {
-			// Clipboard refused — a permissions prompt declined, or an insecure origin. The link
-			// is on screen and selectable, which is the fallback anyway.
-			copied = false;
-		}
-	}
 
 	async function setRole(member: PlaylistMember, value: PlaylistRole) {
 		const res = await api.put(
@@ -190,22 +177,7 @@
 					? 'Sent. The link also works if you would rather pass it on yourself:'
 					: 'Copy this and send it however you like. It works once, and lasts two weeks.'}
 			</p>
-			<div class="mt-1.5 flex items-center gap-2">
-				<Input
-					readonly
-					value={inviteLink}
-					onfocus={(e) => e.currentTarget.select()}
-					aria-label="Invitation link"
-					size="sm"
-					class="min-w-0 flex-1 font-mono"
-				/>
-				<button
-					type="button"
-					onclick={copyInvite}
-					class="shrink-0 rounded-md border px-2 py-1"
-					style="border-color: var(--color-border)"
-				>{copied ? 'Copied' : 'Copy'}</button>
-			</div>
+			<CopyField value={inviteLink} label="Invitation link" class="mt-1.5" />
 		</div>
 	{/if}
 

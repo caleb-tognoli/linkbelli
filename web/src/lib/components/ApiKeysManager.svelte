@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SecretReveal from '$lib/components/ui/SecretReveal.svelte';
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -6,7 +7,7 @@
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { Copy, Check, X, Plus, Ban } from '@lucide/svelte';
+	import { Check, X, Plus, Ban } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 	import type { ApiKey, ApiKeyCreated } from '$lib/types';
 
@@ -28,18 +29,7 @@
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 	let createdToken = $state<ApiKeyCreated | null>(null);
-	let copied = $state(false);
 
-	async function copyToken() {
-		if (!createdToken) return;
-		try {
-			await navigator.clipboard.writeText(createdToken.token);
-			copied = true;
-			setTimeout(() => (copied = false), 2000);
-		} catch {
-			/* clipboard blocked */
-		}
-	}
 
 	function toggleScope(scope: string, checked: boolean) {
 		const next = new Set(selectedScopes);
@@ -167,16 +157,12 @@
 	</div>
 
 	{#if createdToken}
-		<div class="rounded-md border p-3 text-sm" style="border-color: var(--color-accent)">
-			<p class="font-medium">Copy your new key now — it won't be shown again:</p>
-			<code class="mt-2 block break-all rounded p-2" style="background: var(--color-surface)">{createdToken.token}</code>
-			<div class="mt-2 flex items-center gap-3">
-				<Button variant="primary" size="sm" icon={copied ? Check : Copy} onclick={copyToken}>
-					{copied ? 'Copied' : 'Copy key'}
-				</Button>
-				<Button variant="ghost" size="sm" icon={X} iconOnly label="Dismiss" onclick={() => (createdToken = null)} />
-			</div>
-		</div>
+		<SecretReveal
+			title="Copy your new key now — it won't be shown again."
+			value={createdToken.token}
+			label="New API key"
+			ondismiss={() => (createdToken = null)}
+		/>
 	{/if}
 
 	{#if keys.length === 0}

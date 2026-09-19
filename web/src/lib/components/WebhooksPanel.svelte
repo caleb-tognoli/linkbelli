@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SecretReveal from '$lib/components/ui/SecretReveal.svelte';
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -6,27 +7,8 @@
 	import { Dialog } from 'bits-ui';
 	import { api, json } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import {
-		canRedeliver,
-		describeDelivery,
-		shortUrl,
-		type Webhook,
-		type WebhookDelivery,
-		type WebhookEventInfo,
-		type WebhookWithSecret
-	} from '$lib/webhooks';
-	import {
-		Check,
-		CircleAlert,
-		Copy,
-		History,
-		KeyRound,
-		Plus,
-		RotateCcw,
-		Send,
-		Trash2,
-		X
-	} from '@lucide/svelte';
+	import { canRedeliver, describeDelivery, shortUrl, type Webhook, type WebhookDelivery, type WebhookEventInfo, type WebhookWithSecret } from '$lib/webhooks';
+	import { Check, CircleAlert, History, KeyRound, Plus, RotateCcw, Send, Trash2, X } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 
 	let hooks = $state<Webhook[]>([]);
@@ -37,7 +19,6 @@
 	// The secret, for the one moment it can be seen: straight after a webhook is made or its
 	// secret replaced. Like an API key, there is no way to read it back.
 	let revealed = $state<{ hookId: string; secret: string } | null>(null);
-	let copied = $state(false);
 
 	let dialogOpen = $state(false);
 	let url = $state('');
@@ -199,16 +180,6 @@
 		}
 	}
 
-	async function copySecret() {
-		if (!revealed) return;
-		try {
-			await navigator.clipboard.writeText(revealed.secret);
-			copied = true;
-			setTimeout(() => (copied = false), 2000);
-		} catch {
-			/* clipboard blocked — the secret is still on screen to select */
-		}
-	}
 
 	function when(iso: string | null): string {
 		return iso
@@ -313,16 +284,12 @@
 	</p>
 
 	{#if revealed}
-		<div class="rounded-md border p-3 text-sm" style="border-color: var(--color-accent)">
-			<p class="font-medium">Copy the signing secret now — it won't be shown again:</p>
-			<code class="mt-2 block break-all rounded p-2" style="background: var(--color-surface)">{revealed.secret}</code>
-			<div class="mt-2 flex items-center gap-3">
-				<Button variant="primary" size="sm" icon={copied ? Check : Copy} onclick={copySecret}>
-					{copied ? 'Copied' : 'Copy secret'}
-				</Button>
-				<Button variant="ghost" size="sm" icon={X} iconOnly label="Dismiss" onclick={() => (revealed = null)} />
-			</div>
-		</div>
+		<SecretReveal
+			title="Copy the signing secret now — it won't be shown again."
+			value={revealed.secret}
+			label="Webhook signing secret"
+			ondismiss={() => (revealed = null)}
+		/>
 	{/if}
 
 	{#if error}
