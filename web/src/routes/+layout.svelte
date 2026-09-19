@@ -344,7 +344,7 @@
 					</Dialog.Content>
 				</Dialog.Portal>
 			</Dialog.Root>
-			<span class="text-lg font-semibold">Linkbelli</span>
+			<a href="/" class="text-lg font-semibold">Linkbelli</a>
 		</header>
 
 		<aside
@@ -352,7 +352,7 @@
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<div class="flex items-center gap-2 px-2 pb-4">
-				{#if !collapsed}<span class="flex-1 truncate text-lg font-semibold">Linkbelli</span>{/if}
+				{#if !collapsed}<a href="/" class="flex-1 truncate text-lg font-semibold">Linkbelli</a>{/if}
 				<button
 					type="button"
 					onclick={toggleSidebar}
