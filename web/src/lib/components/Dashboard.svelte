@@ -1,4 +1,5 @@
 <script lang="ts">
+	import OnboardingChecklist from './OnboardingChecklist.svelte';
 	import { ArrowRight, BookOpen, Link2, ListMusic, Rss } from '@lucide/svelte';
 	import Button from './ui/Button.svelte';
 	import PageHeader from './ui/PageHeader.svelte';
@@ -15,13 +16,15 @@
 		upNext,
 		recent,
 		feedNew,
-		usage
+		usage,
+		onboardingDismissed = false
 	}: {
 		username: string | null;
 		upNext: Paged<SearchHit>;
 		recent: Playlist[];
 		feedNew: number;
 		usage: Usage | null;
+		onboardingDismissed?: boolean;
 	} = $props();
 </script>
 
@@ -32,6 +35,10 @@
 			<Button href="/playlists" variant="primary" icon={ListMusic}>Your playlists</Button>
 		{/snippet}
 	</PageHeader>
+
+	<!-- First, for a new account: this is the screen it lands on after signing up, so the
+	     first steps belong here rather than one click away on the playlists page. -->
+	<OnboardingChecklist {usage} dismissed={onboardingDismissed} />
 
 	{#if feedNew > 0}
 		<a

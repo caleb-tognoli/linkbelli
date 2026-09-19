@@ -35,7 +35,7 @@
 
 {#if visible}
 	<section
-		class="mt-6 rounded-lg border p-5"
+		class="rounded-lg border p-5"
 		style="border-color: var(--color-border); background: var(--color-surface)"
 		aria-label="Getting started"
 	>

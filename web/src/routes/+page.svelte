@@ -51,6 +51,7 @@
 			recent={data.dashboard.recent}
 			feedNew={data.dashboard.feedNew}
 			usage={data.dashboard.usage}
+			onboardingDismissed={data.user?.onboardingDismissed ?? false}
 		/>
 	</Page>
 {:else}

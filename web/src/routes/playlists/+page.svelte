@@ -49,7 +49,9 @@
 		{/snippet}
 	</PageHeader>
 
-	<OnboardingChecklist usage={data.usage} dismissed={data.onboardingDismissed} />
+	<div class="mt-6 empty:hidden">
+		<OnboardingChecklist usage={data.usage} dismissed={data.onboardingDismissed} />
+	</div>
 
 	{#if isEmpty}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
