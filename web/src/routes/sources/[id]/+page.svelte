@@ -64,8 +64,20 @@
 		}
 	}
 
+	/**
+	 * Makes another source like this one.
+	 *
+	 * Everything that shapes what it finds comes along — filters and time zone included, which
+	 * the copy used to lose — and a paused or muted original gives a paused or muted copy.
+	 * Secrets cannot: the API only ever hands them back redacted, so the copy has to be told
+	 * them again, and that is said before rather than discovered on its first failed run.
+	 */
 	async function duplicate() {
-		if (!(await confirmDialog(`Duplicate "${data.source.name}"?`, { confirmLabel: 'Duplicate' }))) return;
+		const hasSecrets = Object.values(data.source.config).some((value) => value === '***');
+		const message = hasSecrets
+			? `Duplicate "${data.source.name}"? Its passwords and secret headers are not copied — type them into the copy before it runs.`
+			: `Duplicate "${data.source.name}"?`;
+		if (!(await confirmDialog(message, { confirmLabel: 'Duplicate' }))) return;
 		busy = true;
 		try {
 			const res = await api.post('/sources', {
@@ -75,13 +87,24 @@
 				schedule: data.source.schedule,
 				visibility: data.source.visibility,
 				playlistIds: data.source.playlistIds,
+				timeZone: data.source.timeZone,
+				filter: data.source.filter ?? undefined
 			});
-			if (res.ok) {
-				const created = (await res.json()) as Source;
-				await goto(`/sources/${created.id}`);
-			} else {
+			if (!res.ok) {
 				toast = 'Could not duplicate source.';
+				return;
 			}
+
+			const created = (await res.json()) as Source;
+			// Not settable at creation: a new source always starts active and unmuted.
+			const paused = data.source.status !== 'Active';
+			if (paused || data.source.muteQuietAlerts) {
+				await api.patch(`/sources/${created.id}`, {
+					...(paused ? { status: 'Paused' } : {}),
+					...(data.source.muteQuietAlerts ? { muteQuietAlerts: true } : {})
+				});
+			}
+			await goto(`/sources/${created.id}`);
 		} finally {
 			busy = false;
 		}
