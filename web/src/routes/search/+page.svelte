@@ -1,6 +1,7 @@
 <svelte:head><title>Search - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
@@ -18,7 +19,7 @@
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
-	import { activeFilterCount, resultsPath, type SearchFilters } from '$lib/searchParams';
+	import { activeFilterCount, pageQuery, resultsPath, type SearchFilters } from '$lib/searchParams';
 
 	let { data }: { data: PageData } = $props();
 
@@ -42,23 +43,15 @@
 		{ value: 'watched', label: 'Watched' }
 	];
 
-	/** The search state lives in the URL, so a result list is a link someone can keep. */
-	function navigate(changes: Record<string, string>) {
-		const params = new URLSearchParams();
-		const next = {
-			q: term,
-			host: data.host,
-			status: data.status,
-			finished: data.finished,
-			broken: data.broken,
-			sort: data.sort,
-			kind: data.kind,
-			maxMinutes: data.maxMinutes,
-			...changes
-		};
-		for (const [key, value] of Object.entries(next)) {
-			if (value) params.set(key, value);
-		}
+	/**
+	 * The search state lives in the URL, so a result list is a link someone can keep.
+	 *
+	 * Built from the same filters the query is, tags included: it used to spell the list out
+	 * again and leave the tags off, so following a tag and then choosing "Unwatched" quietly
+	 * dropped the tag.
+	 */
+	function navigate(changes: Partial<SearchFilters>) {
+		const params = pageQuery({ ...filters, q: term, ...changes });
 		goto(`/search?${params}`, { keepFocus: true, noScroll: true });
 	}
 
@@ -286,16 +279,21 @@
 		>Broken</button>
 
 		{#if data.host}
-			<button
-				type="button"
-				onclick={() => navigate({ host: '' })}
-				class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5"
-				style="border-color: var(--color-accent); color: var(--color-accent)"
-			>
+			<Chip tone="accent" onremove={() => navigate({ host: '' })} removeLabel={`Stop filtering to ${data.host}`}>
 				{data.host}
-				<X size={13} aria-hidden="true" />
-			</button>
+			</Chip>
 		{/if}
+		<!-- Arrived at by following a tag on a link, and invisible until now: the filter applied
+		     and nothing on the page said so, or offered a way to take it off. -->
+		{#each data.itemTags as tag (tag)}
+			<Chip
+				tone="accent"
+				onremove={() => navigate({ itemTags: data.itemTags.filter((t) => t !== tag) })}
+				removeLabel={`Stop filtering by tag ${tag}`}
+			>
+				<span class="text-muted">Tag:</span> {tag}
+			</Chip>
+		{/each}
 
 		{#if total !== null}
 			<span class="ml-auto tabular-nums" style="color: var(--color-muted)">
