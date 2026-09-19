@@ -1,5 +1,20 @@
 @import 'tailwindcss';
 
+/* `dark:` follows the theme chosen in the app, not the operating system's. Tailwind's default is
+   the prefers-color-scheme media query alone, so with the app set to Dark on a light OS — or the
+   other way round — every `dark:hover:` background landed on the wrong page colour and hover
+   feedback vanished. `system` still defers to the OS, as the colour tokens below do. */
+@custom-variant dark {
+	&:where([data-theme='dark'], [data-theme='dark'] *) {
+		@slot;
+	}
+	@media (prefers-color-scheme: dark) {
+		&:where([data-theme='system'], [data-theme='system'] *) {
+			@slot;
+		}
+	}
+}
+
 /* Notion-ish, minimal design tokens. Light by default; dark via the [data-theme] attribute
    (set server-side from the lb_theme cookie). `system` follows the OS preference.
    Referenced directly as var(--color-*) (not generated Tailwind utilities). */
