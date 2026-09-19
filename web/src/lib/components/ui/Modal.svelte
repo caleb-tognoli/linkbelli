@@ -38,7 +38,8 @@
 		size?: 'sm' | 'md' | 'lg';
 		onOpenChange?: (open: boolean) => void;
 		trigger?: Snippet;
-		children: Snippet;
+		/** The body. A confirmation can be its title and footer alone. */
+		children?: Snippet;
 		footer?: Snippet;
 	} = $props();
 
@@ -63,11 +64,13 @@
 					<X size={17} aria-hidden="true" />
 				</Dialog.Close>
 			</div>
-			<!-- A little inset, so the focus ring of a field at the edge is not cut off by the
-			     scrolling box. -->
-			<div class="-mx-1 mt-4 min-h-0 flex-1 overflow-y-auto px-1 pb-1">
-				{@render children()}
-			</div>
+			{#if children}
+				<!-- A little inset, so the focus ring of a field at the edge is not cut off by the
+				     scrolling box. -->
+				<div class="-mx-1 mt-4 min-h-0 flex-1 overflow-y-auto px-1 pb-1">
+					{@render children()}
+				</div>
+			{/if}
 			{#if footer}
 				<div class={MODAL_FOOTER}>{@render footer()}</div>
 			{/if}

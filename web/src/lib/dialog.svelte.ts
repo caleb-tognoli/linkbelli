@@ -5,6 +5,8 @@
 type ConfirmState = {
 	kind: 'confirm';
 	message: string;
+	/** A sentence under the question, for what happens next. */
+	description?: string;
 	danger?: boolean;
 	confirmLabel?: string;
 	resolve: (value: boolean) => void;
@@ -28,10 +30,17 @@ export function getDialogState() {
 
 export function confirmDialog(
 	message: string,
-	opts?: { danger?: boolean; confirmLabel?: string }
+	opts?: { danger?: boolean; confirmLabel?: string; description?: string }
 ): Promise<boolean> {
 	return new Promise((resolve) => {
-		state = { kind: 'confirm', message, danger: opts?.danger, confirmLabel: opts?.confirmLabel, resolve };
+		state = {
+			kind: 'confirm',
+			message,
+			description: opts?.description,
+			danger: opts?.danger,
+			confirmLabel: opts?.confirmLabel,
+			resolve
+		};
 	});
 }
 

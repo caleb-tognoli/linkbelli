@@ -1,17 +1,29 @@
 <script lang="ts">
-	import Input from '$lib/components/ui/Input.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import { Check, X } from '@lucide/svelte';
-	import { Dialog } from 'bits-ui';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import { getDialogState, resolveDialog } from '$lib/dialog.svelte';
 
+	/**
+	 * The app's confirm and prompt, drawn in the shared Modal.
+	 *
+	 * The question used to be a paragraph inside an unnamed dialog, so a screen reader opened it
+	 * announcing nothing but "dialog", and a prompt's field had no name at all. The question is
+	 * the dialog's title now, and a prompt's field is named by it.
+	 */
 	const dlg = $derived(getDialogState());
 	const open = $derived(dlg !== null);
 
 	let promptValue = $state('');
+	let field: HTMLInputElement | undefined = $state();
 
 	$effect(() => {
-		if (dlg?.kind === 'prompt') promptValue = dlg.defaultValue;
+		if (dlg?.kind === 'prompt') {
+			promptValue = dlg.defaultValue;
+			// Selected, so typing replaces what was suggested and an edit starts at once.
+			queueMicrotask(() => field?.select());
+		}
 	});
 
 	function cancel() {
@@ -28,36 +40,30 @@
 	}
 </script>
 
-<Dialog.Root {open} {onOpenChange}>
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border p-5 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
+<Modal
+	{open}
+	{onOpenChange}
+	title={dlg?.message ?? ''}
+	description={dlg?.kind === 'confirm' ? dlg.description : undefined}
+	size="sm"
+>
+	{#if dlg?.kind === 'prompt'}
+		<Input
+			bind:element={field}
+			bind:value={promptValue}
+			aria-label={dlg.message}
+			onkeydown={(e) => e.key === 'Enter' && confirm()}
+		/>
+	{/if}
+
+	{#snippet footer()}
+		<Button icon={X} onclick={cancel}>Cancel</Button>
+		<Button
+			variant={dlg?.kind === 'confirm' && dlg.danger ? 'danger' : 'primary'}
+			icon={Check}
+			onclick={confirm}
 		>
-			{#if dlg}
-				<p class="font-medium">{dlg.message}</p>
-
-				{#if dlg.kind === 'prompt'}
-					<Input
-						type="text"
-						bind:value={promptValue}
-						onkeydown={(e) => e.key === 'Enter' && confirm()}
-						class="mt-3 w-full"
-					/>
-				{/if}
-
-				<div class="mt-4 flex justify-center gap-2 text-sm">
-					<Button icon={X} onclick={cancel}>Cancel</Button>
-					<Button
-						variant={dlg.kind === 'confirm' && dlg.danger ? 'danger' : 'primary'}
-						icon={Check}
-						onclick={confirm}
-					>
-						{dlg.confirmLabel ?? (dlg.kind === 'prompt' ? 'Save' : 'Confirm')}
-					</Button>
-				</div>
-			{/if}
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+			{dlg?.confirmLabel ?? (dlg?.kind === 'prompt' ? 'Save' : 'Confirm')}
+		</Button>
+	{/snippet}
+</Modal>
