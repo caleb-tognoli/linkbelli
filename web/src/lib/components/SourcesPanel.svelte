@@ -104,7 +104,8 @@
 
 	async function run(sourceId: string) {
 		const res = await api.post(`/sources/${sourceId}/run`);
-		if (res.status === 429) toast.error('Daily run limit reached — try again later.');
+		if (res.status === 202) toast.success('Run queued. New links arrive as it finds them.');
+		else if (res.status === 429) toast.error('Daily run limit reached — try again later.');
 		else if (!res.ok) toast.error(failureMessage(res.status, 'Could not start a run.'));
 	}
 

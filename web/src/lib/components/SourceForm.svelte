@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/toast.svelte';
 	import CopyField from '$lib/components/ui/CopyField.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
@@ -312,6 +313,7 @@
 				await goto(`/sources/${created.id}`);
 			} else {
 				await invalidateAll();
+				toast.success('Saved.');
 			}
 		} finally {
 			busy = false;

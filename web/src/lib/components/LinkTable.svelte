@@ -474,6 +474,7 @@
 	<tr
 		class="border-t align-middle"
 		data-item-focused={focusedItem?.id === item.id}
+		data-item-id={item.id}
 		data-watched={item.status === 'Watched'}
 		style="border-color: var(--color-border);{focusedItem?.id === item.id ? ' box-shadow: inset 3px 0 0 var(--color-accent)' : ''}"
 	>
@@ -1037,6 +1038,7 @@
 					draggable={!readonly && playlistId ? 'true' : 'false'}
 					ondragstart={(e) => onRowDragStart(e, item)}
 					data-item-focused={focusedItem?.id === item.id}
+					data-item-id={item.id}
 					style="border-color: {focusedItem?.id === item.id ? 'var(--color-accent)' : 'var(--color-border)'}; background: var(--color-surface)"
 				>
 					<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="block">

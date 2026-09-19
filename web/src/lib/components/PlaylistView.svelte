@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { scrollBehavior } from '$lib/motion';
+	import { tick } from 'svelte';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
@@ -234,6 +236,7 @@
 		const res = await api.patch(`/playlists/${playlist.id}`, { name });
 		if (res.ok) {
 			playlistName = name;
+			toast.success('Renamed.');
 		} else {
 			el.value = playlistName;
 			toast.error(failureMessage(res.status, 'Could not rename the playlist.'));
@@ -251,15 +254,36 @@
 		const prev = visibility;
 		visibility = next;
 		const res = await api.patch(`/playlists/${playlist.id}`, { visibility: next });
+		if (res.ok) toast.success(`${visConfig[next].label}: ${VIS_HINTS[next].toLowerCase()}.`);
 		if (!res.ok) {
 			visibility = prev;
 			toast.error(failureMessage(res.status, 'Could not change who can see this.'));
 		}
 	}
 
-	function onAdded(item: PlaylistItem) {
-		items = [...items, item];
+	/**
+	 * A link just added from the box at the top.
+	 *
+	 * It used to go on the end of whatever was loaded, which on a list sorted newest-first — or
+	 * one long enough to have more pages — put it somewhere nobody was looking, with nothing to
+	 * say it had landed. It goes where the current order puts it, is scrolled to, and is said.
+	 */
+	async function onAdded(item: PlaylistItem) {
 		if (total !== null) total = total + 1;
+
+		if (statusFilter === 'Watched') {
+			toast.success('Added. It is not shown while the list is filtered to watched links.');
+			return;
+		}
+
+		const newestFirst = serverSort === 'date-desc' || serverSort.startsWith('score') || serverSort === 'shuffle';
+		items = newestFirst ? [item, ...items] : [...items, item];
+		toast.success('Added.');
+
+		await tick();
+		document
+			.querySelector(`[data-item-id="${item.id}"]`)
+			?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
 	}
 
 	function itemsEndpoint() {

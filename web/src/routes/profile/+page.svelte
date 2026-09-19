@@ -72,7 +72,8 @@
 	/** Whether the server took it. On a refusal the switch goes back to where it was. */
 	async function savePreferences(): Promise<boolean> {
 		const res = await api.put('/me/preferences', { showNsfw, archiveLinks });
-		if (!res.ok) toast.error(failureMessage(res.status, 'Could not save that setting.'));
+		if (res.ok) toast.success('Saved.');
+		else toast.error(failureMessage(res.status, 'Could not save that setting.'));
 		return res.ok;
 	}
 

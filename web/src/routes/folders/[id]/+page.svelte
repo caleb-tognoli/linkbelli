@@ -27,6 +27,7 @@
 		const res = await api.patch(`/folders/${folder.id}`, { name });
 		if (res.ok) {
 			folderName = name;
+			toast.success('Renamed.');
 			await invalidateAll();
 		} else {
 			el.value = folderName;
