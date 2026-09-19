@@ -1,6 +1,8 @@
 <svelte:head><title>Up next - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
@@ -87,14 +89,11 @@
 	}
 </script>
 
-<section class="mx-auto max-w-3xl">
-	<header>
-		<h1 class="text-2xl font-semibold">Up next</h1>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			Everything you have not got to yet, across every playlist — what you started first, then
-			what you rated highly, then whatever you have been carrying longest.
-		</p>
-	</header>
+<Page width="narrow">
+	<PageHeader
+		title="Up next"
+		description="Everything you have not got to yet, across every playlist — what you started first, then what you rated highly, then whatever you have been carrying longest."
+	/>
 
 	{#if data.queue.items.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
@@ -165,7 +164,7 @@
 			</ul>
 		</details>
 	{/if}
-</section>
+</Page>
 
 {#snippet row(hit: SearchHit)}
 	<li class="flex items-start gap-3 p-3" style="border-color: var(--color-border)">

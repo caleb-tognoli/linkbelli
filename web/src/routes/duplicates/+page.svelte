@@ -1,6 +1,8 @@
 <svelte:head><title>Duplicates - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { invalidateAll } from '$app/navigation';
@@ -52,14 +54,11 @@
 	}
 </script>
 
-<section class="mx-auto max-w-4xl">
-	<header>
-		<h1 class="text-2xl font-semibold">Duplicates</h1>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			The same thing saved more than once — the identical link in several playlists, one page
-			reached by different addresses, or several addresses that all redirect to one page.
-		</p>
-	</header>
+<Page width="medium">
+	<PageHeader
+		title="Duplicates"
+		description="The same thing saved more than once — the identical link in several playlists, one page reached by different addresses, or several addresses that all redirect to one page."
+	/>
 
 
 	{#if data.groups.length === 0}
@@ -125,4 +124,4 @@
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Page>

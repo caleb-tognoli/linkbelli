@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
@@ -54,11 +56,8 @@
 
 <svelte:head><title>Admin - linkbelli</title></svelte:head>
 
-<section class="mx-auto max-w-4xl">
-	<h1 class="text-2xl font-semibold">Instance</h1>
-	<p class="mt-1 text-sm" style="color: var(--color-muted)">
-		Everything below was already being recorded. This is where it can be seen.
-	</p>
+<Page width="medium">
+	<PageHeader title="Instance" description="Everything below was already being recorded. This is where it can be seen." />
 
 	<dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
 		{#each totals as stat (stat.label)}
@@ -272,4 +271,4 @@
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Page>

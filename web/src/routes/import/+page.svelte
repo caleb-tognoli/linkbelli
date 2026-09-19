@@ -1,6 +1,8 @@
 ﻿<svelte:head><title>Import - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -15,8 +17,8 @@
 	let submitting = $state(false);
 </script>
 
-<div class="max-w-4xl">
-	<h1 class="mb-8 text-2xl font-semibold">Import links</h1>
+<Page width="form">
+	<PageHeader title="Import links" class="mb-6" />
 
 	{#if form && 'success' in form && form.success}
 		<!-- Result display -->
@@ -156,4 +158,4 @@
 			</Button>
 		</form>
 	{/if}
-</div>
+</Page>

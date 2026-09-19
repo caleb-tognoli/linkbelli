@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import { invalidateAll } from '$app/navigation';
@@ -62,31 +65,21 @@
 
 <svelte:head><title>Feed - linkbelli</title></svelte:head>
 
-<section class="mx-auto max-w-3xl">
-	<header class="flex items-start justify-between gap-4">
-		<div>
-			<h1 class="text-2xl font-semibold">Feed</h1>
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				{#if followCount === 0}
-					Follow a playlist or a person and new links will turn up here.
-				{:else}
-					New links from {followCount} {followCount === 1 ? 'thing' : 'things'} you follow.
-				{/if}
-			</p>
-		</div>
-		{#if newCount > 0}
-			<button
-				type="button"
-				onclick={markSeen}
-				disabled={marking}
-				class="inline-flex shrink-0 items-center gap-2 rounded-md border px-3 py-2 text-sm disabled:opacity-60"
-				style="border-color: var(--color-border)"
-			>
-				<Check size={15} aria-hidden="true" />
-				Mark {newCount} seen
-			</button>
-		{/if}
-	</header>
+<Page width="narrow">
+	<PageHeader title="Feed">
+		{#snippet details()}
+			{#if followCount === 0}
+				Follow a playlist or a person and new links will turn up here.
+			{:else}
+				New links from {followCount} {followCount === 1 ? 'thing' : 'things'} you follow.
+			{/if}
+		{/snippet}
+		{#snippet actions()}
+			{#if newCount > 0}
+				<Button icon={Check} onclick={markSeen} loading={marking}>Mark {newCount} seen</Button>
+			{/if}
+		{/snippet}
+	</PageHeader>
 
 	{#if items.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
@@ -167,4 +160,4 @@
 			</div>
 		</div>
 	{/if}
-</section>
+</Page>

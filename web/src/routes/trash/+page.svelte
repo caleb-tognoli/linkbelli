@@ -1,6 +1,9 @@
 <svelte:head><title>Trash - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
@@ -51,26 +54,19 @@
 	}
 </script>
 
-<section class="mx-auto max-w-4xl">
-	<header class="flex flex-wrap items-center justify-between gap-2">
-		<div>
-			<h1 class="text-2xl font-semibold">Trash</h1>
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				Deleted playlists and links stay here for {data.trash.retentionDays} days, then go for good.
-			</p>
-		</div>
-		{#if total > 0}
-			<button
-				type="button"
-				onclick={empty}
-				disabled={busy !== null}
-				class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium disabled:opacity-60"
-				style="border-color: var(--color-border); color: var(--color-danger)"
-			>
-				<Trash2 size={16} aria-hidden="true" /> Empty trash
-			</button>
-		{/if}
-	</header>
+<Page width="medium">
+	<PageHeader
+		title="Trash"
+		description={`Deleted playlists and links stay here for ${data.trash.retentionDays} days, then go for good.`}
+	>
+		{#snippet actions()}
+			{#if total > 0}
+				<Button variant="danger-outline" icon={Trash2} onclick={empty} disabled={busy !== null}>
+					Empty trash
+				</Button>
+			{/if}
+		{/snippet}
+	</PageHeader>
 
 
 	{#if total === 0}
@@ -134,4 +130,4 @@
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Page>

@@ -1,6 +1,8 @@
 <svelte:head><title>Profile - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import { api } from '$lib/api/client';
@@ -108,8 +110,8 @@
 	}
 </script>
 
-<section class="mx-auto flex max-w-4xl flex-col gap-10">
-	<h1 class="text-2xl font-semibold">Profile</h1>
+<Page width="medium" class="flex flex-col gap-10">
+	<PageHeader title="Profile" />
 
 	<div>
 		<h2 class="font-medium">Theme</h2>
@@ -325,4 +327,4 @@
 			{/if}
 		{/if}
 	</div>
-</section>
+</Page>

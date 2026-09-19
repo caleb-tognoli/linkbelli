@@ -1,6 +1,8 @@
 <svelte:head><title>Search - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -184,17 +186,18 @@
 	}
 </script>
 
-<section class="mx-auto max-w-4xl">
-	<h1 class="text-2xl font-semibold">{openedSaved?.name ?? 'Search'}</h1>
-	<p class="mt-1 text-sm" style="color: var(--color-muted)">
-		{#if openedSaved}
-			<!-- Said plainly, because the boxes and chips below show the empty search rather than
-			     this one — the saved search is run by id, not unpacked into them. -->
-			A saved search, run just now. <a href="/search" class="underline underline-offset-2">Start a new one</a>
-		{:else}
-			Across every playlist you own — titles, descriptions, notes, addresses and the article text.
-		{/if}
-	</p>
+<Page width="medium">
+	<PageHeader title={openedSaved?.name ?? 'Search'}>
+		{#snippet details()}
+			{#if openedSaved}
+				<!-- Said plainly, because the boxes and chips below show the empty search rather
+				     than this one — the saved search is run by id, not unpacked into them. -->
+				A saved search, run just now. <a href="/search" class="underline underline-offset-2">Start a new one</a>
+			{:else}
+				Across every playlist you own — titles, descriptions, notes, addresses and the article text.
+			{/if}
+		{/snippet}
+	</PageHeader>
 
 	<Input
 		icon={Search}
@@ -470,4 +473,4 @@
 			<LoadMore onclick={loadMore} loading={loadingMore} remaining={total === null ? null : total - hits.length} />
 		{/if}
 	{/if}
-</section>
+</Page>

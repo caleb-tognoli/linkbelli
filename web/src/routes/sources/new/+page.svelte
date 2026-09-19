@@ -1,6 +1,8 @@
 <svelte:head><title>New source - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import SourceForm from '$lib/components/SourceForm.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
@@ -10,9 +12,9 @@
 	let byHand = $state(false);
 </script>
 
-<section class="mx-auto max-w-4xl">
+<Page width="medium">
 	<BackLink href="/sources" label="Sources" />
-	<h1 class="mt-3 text-2xl font-semibold">New source</h1>
+	<PageHeader title="New source" class="mt-3" />
 	<div class="mt-5">
 		{#if byHand}
 			<SourceForm mode="create" />
@@ -20,4 +22,4 @@
 			<TemplatePicker onskip={() => (byHand = true)} />
 		{/if}
 	</div>
-</section>
+</Page>

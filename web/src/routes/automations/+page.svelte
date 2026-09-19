@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
@@ -266,18 +268,15 @@
 
 <svelte:head><title>Rules - linkbelli</title></svelte:head>
 
-<section class="mx-auto max-w-3xl">
-	<header class="flex items-start justify-between gap-4">
-		<div>
-			<h1 class="text-2xl font-semibold">Rules</h1>
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				What should happen to a link when it arrives. Rules run in order, top first, on
-				everything that arrives from now on — and you can run one over the links you already
-				have.
-			</p>
-		</div>
-		<Button variant="primary" icon={Plus} onclick={startNew}>New rule</Button>
-	</header>
+<Page width="narrow">
+	<PageHeader
+		title="Rules"
+		description="What should happen to a link when it arrives. Rules run in order, top first, on everything that arrives from now on — and you can run one over the links you already have."
+	>
+		{#snippet actions()}
+			<Button variant="primary" icon={Plus} onclick={startNew}>New rule</Button>
+		{/snippet}
+	</PageHeader>
 
 
 	{#if data.rules.length === 0}
@@ -571,4 +570,4 @@
 			{/if}
 		</div>
 	{/if}
-</section>
+</Page>

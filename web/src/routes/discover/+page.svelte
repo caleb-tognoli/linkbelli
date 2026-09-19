@@ -1,6 +1,8 @@
 ﻿<svelte:head><title>Discover - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
@@ -72,8 +74,8 @@
 	}
 </script>
 
-<section class="mx-auto max-w-5xl">
-	<h1 class="text-2xl font-semibold">Discover</h1>
+<Page>
+	<PageHeader title="Discover" description="Public playlists other people keep. Search them, filter by tag, and follow the ones worth following." />
 
 	<form method="get" class="mt-4 flex gap-2">
 		<Input
@@ -126,4 +128,4 @@
 			<LoadMore onclick={loadMore} loading={loadingMore} />
 		{/if}
 	{/if}
-</section>
+</Page>

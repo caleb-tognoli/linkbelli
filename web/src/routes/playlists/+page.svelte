@@ -1,6 +1,8 @@
 <svelte:head><title>Playlists - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import FolderCard from '$lib/components/FolderCard.svelte';
 	import NewFolderDialog from '$lib/components/NewFolderDialog.svelte';
 	import NewPlaylistDialog from '$lib/components/NewPlaylistDialog.svelte';
@@ -15,10 +17,9 @@
 	const isEmpty = $derived(data.playlists.items.length === 0 && !showFolders);
 </script>
 
-<section class="mx-auto max-w-5xl">
-	<header class="flex items-center justify-between gap-2">
-		<h1 class="text-2xl font-semibold">Playlists</h1>
-		<div class="flex shrink-0 items-center gap-1">
+<Page>
+	<PageHeader title="Playlists">
+		{#snippet actions()}
 			<a
 				href="/duplicates"
 				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
@@ -45,8 +46,8 @@
 			</a>
 			<NewFolderDialog variant="ghost" iconOnly />
 			<NewPlaylistDialog {form} />
-		</div>
-	</header>
+		{/snippet}
+	</PageHeader>
 
 	<OnboardingChecklist usage={data.usage} dismissed={data.onboardingDismissed} />
 
@@ -95,4 +96,4 @@
 			{/each}
 		</div>
 	{/if}
-</section>
+</Page>

@@ -1,12 +1,14 @@
 <svelte:head><title>Tags - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
-	import { Merge, Pencil, Tags, Trash2 } from '@lucide/svelte';
+	import { Merge, Pencil, Trash2 } from '@lucide/svelte';
 	import type { TagChange, TagUsage } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -158,15 +160,11 @@
 	}
 </script>
 
-<section class="mx-auto max-w-3xl">
-	<header>
-		<h1 class="flex items-center gap-2 text-2xl font-semibold">
-			<Tags size={24} aria-hidden="true" /> Tags
-		</h1>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			Every tag across your playlists and links. Renaming one onto another merges them.
-		</p>
-	</header>
+<Page width="narrow">
+	<PageHeader
+		title="Tags"
+		description="Every tag across your playlists and links. Renaming one onto another merges them."
+	/>
 
 
 
@@ -258,4 +256,4 @@
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Page>

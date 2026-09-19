@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { api } from '$lib/api/client';
 	import type { HighlightWithSource } from '$lib/highlights';
@@ -41,13 +43,8 @@
 
 <!-- Everything marked, across the whole library. The highest-signal text somebody has: it is the
      part they stopped at and chose, and until now it had nowhere to be read back together. -->
-<section class="mx-auto max-w-3xl">
-	<header>
-		<h1 class="text-2xl font-semibold">Highlights</h1>
-		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			Everything you have marked in the articles you saved, newest first.
-		</p>
-	</header>
+<Page width="narrow">
+	<PageHeader title="Highlights" description="Everything you have marked in the articles you saved, newest first." />
 
 	{#if items.length === 0}
 		<div
@@ -88,4 +85,4 @@
 			<LoadMore onclick={loadMore} loading={loadingMore} />
 		{/if}
 	{/if}
-</section>
+</Page>
