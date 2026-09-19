@@ -11,7 +11,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { X, Plus, Save, Lock, Globe, Trash2, Info, ChevronRight, ChevronDown } from '@lucide/svelte';
+	import { X, Plus, Save, Lock, Globe, Trash2, ChevronRight, ChevronDown } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 	import type { Source, SourceFilter, SourceType, SourceVisibility } from '$lib/types';
 	import { isPreviewable, previewKey, type SourcePreview } from '$lib/sourcePreview';
@@ -334,13 +334,6 @@
 
 </script>
 
-{#snippet infoTip(text: string)}
-	<span class="group relative inline-flex cursor-default">
-		<Info size={12} aria-hidden="true" style="color: var(--color-muted)" />
-		<span class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100" style="border-color: var(--color-border); background: var(--color-surface); color: var(--color-muted)">{text}</span>
-	</span>
-{/snippet}
-
 <div class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1 text-sm">
 		<!-- A label rather than a caption: the field used to have no name of its own, so a screen
@@ -471,15 +464,17 @@
 				{/each}
 
 				{#if type === 'Scraper'}
-					<div class="flex gap-2">
-						<label class="flex flex-1 flex-col gap-1 text-sm">
-							<span class="inline-flex items-center gap-1">Link selector {@render infoTip('Selector is relative to the item selector')}</span>
-							<Input bind:value={values['linkSelector']} />
-						</label>
-						<label class="flex flex-1 flex-col gap-1 text-sm">
-							<span class="inline-flex items-center gap-1">Link attribute {@render infoTip('Leave blank to read text content')}</span>
-							<Input bind:value={values['linkAttribute']} />
-						</label>
+					<div class="grid gap-3 sm:grid-cols-2">
+						<Field label="Link selector" hint="Inside each item. Leave blank to use the item itself.">
+							{#snippet children(f)}
+								<Input id={f.id} aria-describedby={f.describedby} bind:value={values['linkSelector']} />
+							{/snippet}
+						</Field>
+						<Field label="Link attribute" hint="Leave blank to read the element's text.">
+							{#snippet children(f)}
+								<Input id={f.id} aria-describedby={f.describedby} bind:value={values['linkAttribute']} />
+							{/snippet}
+						</Field>
 					</div>
 				{/if}
 			</div>
@@ -558,10 +553,10 @@
 						<span class="text-sm font-medium">Metadata</span>
 						<div class="grid grid-cols-[4.5rem_1.4fr_0.8fr_1.4fr_1fr] items-center gap-x-2 gap-y-2 text-sm">
 							<span class="text-xs font-medium" style="color: var(--color-muted)">Field</span>
-							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Selector {@render infoTip('Selector is relative to the item selector')}</span>
-							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Attribute {@render infoTip('Leave blank to read text content')}</span>
-							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Pattern {@render infoTip('Regex — every match in the value is replaced')}</span>
-							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Replacement {@render infoTip('Blank deletes the match; $1 inserts a capture group')}</span>
+							<span class="text-xs font-medium" style="color: var(--color-muted)">Selector</span>
+							<span class="text-xs font-medium" style="color: var(--color-muted)">Attribute</span>
+							<span class="text-xs font-medium" style="color: var(--color-muted)">Pattern</span>
+							<span class="text-xs font-medium" style="color: var(--color-muted)">Replacement</span>
 							{#each META_FIELD_NAMES as name (name)}
 								<span class="capitalize" style="color: var(--color-muted)">{name}</span>
 								<Input bind:value={values[`meta.${name}`]} />
@@ -570,9 +565,15 @@
 								<Input bind:value={values[`meta.${name}.replacement`]} spellcheck="false" class="font-mono" />
 							{/each}
 						</div>
-						<span class="text-xs" style="color: var(--color-muted)">
-							Pattern and replacement clean up the extracted value — e.g. <code>\s*\|\s*Site Name$</code> with a blank replacement strips a trailing “ | Site Name” from a title.
-						</span>
+						<!-- What used to hide in hover-only tips beside each column heading, where a
+						     keyboard, a phone or a screen reader could never reach it. -->
+						<p class="text-xs" style="color: var(--color-muted)">
+							Selectors are looked for inside each item. Leave Attribute blank to read the element's
+							text. Pattern is a regular expression, and every match in the value is replaced with
+							Replacement — blank deletes it, <code>$1</code> puts back a captured group. For example
+							<code>\s*\|\s*Site Name$</code> with a blank replacement strips a trailing
+							“ | Site Name” from a title.
+						</p>
 					</div>
 				{/if}
 			{/if}
@@ -637,10 +638,11 @@
 				</p>
 
 				<div class="grid gap-3 sm:grid-cols-2">
-					<label class="flex flex-col gap-1 text-sm">
-						<span class="inline-flex items-center gap-1">Title must match {@render infoTip('Links whose title does not match are skipped')}</span>
-						<Input bind:value={filter.titleInclude} spellcheck="false" class="font-mono" />
-					</label>
+					<Field label="Title must match" hint="Links whose title does not match are skipped.">
+						{#snippet children(f)}
+							<Input id={f.id} aria-describedby={f.describedby} bind:value={filter.titleInclude} spellcheck="false" class="font-mono" />
+						{/snippet}
+					</Field>
 					<Field label="Title must not match">
 						{#snippet children(f)}
 							<Input
@@ -679,18 +681,21 @@
 				</div>
 
 				<div class="grid gap-3 sm:grid-cols-3">
-					<label class="flex flex-col gap-1 text-sm">
-						<span class="inline-flex items-center gap-1">Minimum age {@render infoTip('Hours. Only applies when the source reports a date')}</span>
-						<Input bind:value={filter.minAgeHours} type="number" min={0} max={720} placeholder="any" />
-					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span class="inline-flex items-center gap-1">Most items a run {@render infoTip('Applied after the patterns, so the cap keeps what matched')}</span>
-						<Input bind:value={filter.maxItems} type="number" min={1} placeholder="no limit" />
-					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span class="inline-flex items-center gap-1">Don't re-add for {@render infoTip('Days. Deleting something this source found otherwise lasts until its next run')}</span>
-						<Input bind:value={filter.dedupeWindowDays} type="number" min={0} max={30} placeholder="never" />
-					</label>
+					<Field label="Minimum age (hours)" hint="Only where the source says when a link was published.">
+						{#snippet children(f)}
+							<Input id={f.id} aria-describedby={f.describedby} bind:value={filter.minAgeHours} type="number" min={0} max={720} placeholder="any" />
+						{/snippet}
+					</Field>
+					<Field label="Most links a run" hint="Counted after the patterns, so the cap keeps what matched.">
+						{#snippet children(f)}
+							<Input id={f.id} aria-describedby={f.describedby} bind:value={filter.maxItems} type="number" min={1} placeholder="no limit" />
+						{/snippet}
+					</Field>
+					<Field label="Don't re-add for (days)" hint="Otherwise a link you delete comes back on the next run.">
+						{#snippet children(f)}
+							<Input id={f.id} aria-describedby={f.describedby} bind:value={filter.dedupeWindowDays} type="number" min={0} max={30} placeholder="never" />
+						{/snippet}
+					</Field>
 				</div>
 			</div>
 		{/if}
