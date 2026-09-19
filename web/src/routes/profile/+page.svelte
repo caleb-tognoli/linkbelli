@@ -142,14 +142,17 @@
 	<div>
 		<h2 class="font-medium">Profile</h2>
 		{#if data.user}
+			<!-- minmax(0, 1fr) and wrapping anywhere: an email address is one unbreakable word, and
+			     a plain 1fr column refuses to be narrower than it — which made the whole page scroll
+			     sideways on a phone. -->
 			<dl
-				class="mt-3 grid grid-cols-[8rem_1fr] gap-y-2 rounded-lg border p-4 text-sm"
+				class="mt-3 grid grid-cols-[8rem_minmax(0,1fr)] gap-y-2 rounded-lg border p-4 text-sm"
 				style="border-color: var(--color-border); background: var(--color-surface)"
 			>
 				<dt style="color: var(--color-muted)">Username</dt>
-				<dd>{data.user.username ?? '—'}</dd>
+				<dd class="[overflow-wrap:anywhere]">{data.user.username ?? '—'}</dd>
 				<dt style="color: var(--color-muted)">Email</dt>
-				<dd>{data.user.email ?? '—'}</dd>
+				<dd class="[overflow-wrap:anywhere]">{data.user.email ?? '—'}</dd>
 			</dl>
 		{/if}
 	</div>

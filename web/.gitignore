@@ -6,3 +6,8 @@ node_modules/
 .env.*
 !.env.example
 vite.config.ts.timestamp-*
+
+# What a Playwright run leaves behind: traces, screenshots and the HTML report.
+/test-results
+/playwright-report
+/blob-report

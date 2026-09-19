@@ -74,7 +74,8 @@ dotnet test tests/Linkbelli.IntegrationTests/Linkbelli.IntegrationTests.csproj  
 
 cd web
 npm run check   # svelte-check / type-check
-npm test        # Vitest unit suite
+npm test        # Vitest: unit and component tests
+npm run test:e2e  # Playwright, against the running stack (docker compose up --build -d --wait)
 
 cd extension
 npm test        # Vitest unit suite (chrome.* is stubbed; no browser needed)

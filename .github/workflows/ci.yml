@@ -115,11 +115,54 @@ jobs:
       - name: Type-check
         run: npm run check
 
-      - name: Unit tests
+      - name: Unit and component tests
         run: npm test
 
       - name: Build
         run: npm run build
+
+  # A real browser against the real stack. The API's integration tests and the web's unit and
+  # component tests each stop at the seam between them; this is the only job that crosses it.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the stack
+        run: docker compose up --build -d --wait
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        working-directory: web
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        working-directory: web
+        run: npm run test:e2e
+
+      - name: Stack logs
+        if: failure()
+        run: docker compose logs --no-color > compose.log
+
+      - name: Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            web/playwright-report
+            web/test-results
+            compose.log
 
   extension:
     runs-on: ubuntu-latest

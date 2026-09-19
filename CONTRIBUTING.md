@@ -41,6 +41,14 @@ a bug in the component, not the test), and stand in for the API with `fakeApi` f
 plugin (`web/vite-plugins/deep-imports.ts`) rewrites icon and bits-ui imports to per-file ones in
 that project only; without it every component test compiles several thousand Svelte files.
 
+The end-to-end suite (`web/e2e`, `npm run test:e2e`) drives a real browser through a few whole
+journeys against the `docker compose` stack, which has to be running. Locally it uses the Chrome
+you have installed; set `E2E_CHANNEL` to use another, or run `npx playwright install chromium`
+for Playwright's own. Only the step a journey is about goes through the browser — accounts,
+playlists and links it merely needs are made through the API (`e2e/support/app.ts`), so a
+journey about exporting does not break when the playlist screen changes. Some journeys reach the
+public internet (example.com, wikipedia.org) because enrichment and thumbnails do.
+
 ## Conventions
 
 ### Every change comes with a test that would have failed before it
