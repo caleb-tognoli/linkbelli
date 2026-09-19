@@ -474,7 +474,8 @@
 	<tr
 		class="border-t align-middle"
 		data-item-focused={focusedItem?.id === item.id}
-		style="border-color: var(--color-border); {item.status === 'Watched' ? 'opacity: 0.45' : ''}{focusedItem?.id === item.id ? '; box-shadow: inset 3px 0 0 var(--color-accent)' : ''}"
+		data-watched={item.status === 'Watched'}
+		style="border-color: var(--color-border);{focusedItem?.id === item.id ? ' box-shadow: inset 3px 0 0 var(--color-accent)' : ''}"
 	>
 		{#if !readonly}
 			<td class="pr-1">
@@ -533,7 +534,7 @@
 							src={`/api/v1/thumbnails/${item.link.id}`}
 							alt=""
 							class="shrink-0 rounded object-cover"
-							style="height: 5em; width: auto"
+							style="height: 5em; width: auto{item.status === 'Watched' ? '; opacity: 0.6' : ''}"
 							loading="lazy"
 							onerror={() => thumbnailFailed.add(item.link.id)}
 						/>
@@ -560,9 +561,20 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						class="break-words hover:underline"
+						style={item.status === 'Watched' ? 'color: var(--color-muted)' : ''}
 					>
 						{showUrls ? item.link.url : (item.metadata?.title ?? item.link.title ?? item.link.url)}
 					</a>
+					{#if item.status === 'Watched'}
+						<!-- Said, not faded: the whole row used to go to 45% opacity, which took its
+						     text — the muted metadata most of all — well under a readable contrast. -->
+						<span
+							class="ml-1.5 inline-flex items-center gap-0.5 align-middle text-xs"
+							style="color: var(--color-muted)"
+						>
+							<Check size={12} aria-hidden="true" /> Watched
+						</span>
+					{/if}
 					{#if item.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
 					<KindBadge kind={item.link.kind} />
 					{#if item.link.wordCount}
@@ -1172,7 +1184,7 @@
 					draggable={!readonly && playlistId ? 'true' : 'false'}
 					ondragstart={(e) => onRowDragStart(e, item)}
 					data-item-focused={focusedItem?.id === item.id}
-					style="border-color: {focusedItem?.id === item.id ? 'var(--color-accent)' : 'var(--color-border)'}; background: var(--color-surface); {item.status === 'Watched' ? 'opacity: 0.5' : ''}"
+					style="border-color: {focusedItem?.id === item.id ? 'var(--color-accent)' : 'var(--color-border)'}; background: var(--color-surface)"
 				>
 					<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="block">
 						{#if thumb}
@@ -1180,6 +1192,7 @@
 								src={`/api/v1/thumbnails/${item.link.id}`}
 								alt=""
 								class="aspect-video w-full object-cover"
+								style={item.status === 'Watched' ? 'opacity: 0.6' : ''}
 								loading="lazy"
 								onerror={() => thumbnailFailed.add(item.link.id)}
 							/>
@@ -1201,9 +1214,15 @@
 							target="_blank"
 							rel="noopener noreferrer"
 							class="line-clamp-2 text-sm font-medium hover:underline"
+							style={item.status === 'Watched' ? 'color: var(--color-muted)' : ''}
 						>
 							{item.metadata?.title ?? item.link.title ?? item.link.url}
 						</a>
+						{#if item.status === 'Watched'}
+							<span class="inline-flex items-center gap-0.5 text-xs" style="color: var(--color-muted)">
+								<Check size={12} aria-hidden="true" /> Watched
+							</span>
+						{/if}
 
 						{#if item.link.nsfw}<span><NsfwBadge /></span>{/if}
 
