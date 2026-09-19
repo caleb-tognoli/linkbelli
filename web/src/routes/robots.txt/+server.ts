@@ -16,6 +16,7 @@ Disallow: /folders
 Disallow: /sources
 Disallow: /import
 Disallow: /profile
+Disallow: /settings
 Disallow: /trash
 Disallow: /login
 Disallow: /register

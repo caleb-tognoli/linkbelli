@@ -92,7 +92,7 @@
 		}
 	];
 
-	const onSettings = $derived(inSection(page.url.pathname, '/profile'));
+	const onSettings = $derived(inSection(page.url.pathname, '/settings'));
 	const onAdmin = $derived(inSection(page.url.pathname, '/admin'));
 	const isAdmin = $derived(data.user?.roles?.includes('Admin') ?? false);
 	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
@@ -262,12 +262,13 @@
 
 	<div class="mt-auto flex {showLabels ? 'items-center gap-1' : 'flex-col gap-1'} border-t pt-3" style="border-color: var(--color-border)">
 		<a
-			href="/profile"
+			href="/settings"
 			class="flex min-w-0 items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 {showLabels ? 'flex-1' : 'justify-center'}"
 			class:font-medium={onSettings}
 			style={onSettings ? 'background: var(--color-border)' : ''}
 			aria-current={onSettings ? 'page' : undefined}
-			title={data.user?.username ?? 'Account settings'}
+			title="Account settings"
+			aria-label={`Account settings for ${data.user?.username ?? 'you'}`}
 		>
 			<User size={20} aria-hidden="true" />
 			{#if showLabels}<span class="truncate" style="color: var(--color-muted)">{data.user?.username}</span>{/if}

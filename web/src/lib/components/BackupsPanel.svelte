@@ -183,7 +183,7 @@
 </script>
 
 <div>
-	<h2 class="font-medium">Backups</h2>
+	<h3 class="font-medium">Backups</h3>
 	<p class="mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
 		A copy of everything you have here, taken weekly and kept for the last five. Nothing leaves
 		this server, and an unchanged library is not copied again.

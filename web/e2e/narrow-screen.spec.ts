@@ -23,7 +23,7 @@ test('no page is wider than a phone screen', async ({ page }) => {
 		'/queue',
 		'/highlights',
 		'/sources',
-		'/profile',
+		'/settings',
 		'/save'
 	];
 

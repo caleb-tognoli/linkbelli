@@ -20,19 +20,19 @@
 		</p>
 		<p class="mt-4 text-sm" style="color: var(--color-muted)">
 			Everything else is unchanged. You can adjust the rest in
-			<a href="/profile" class="underline underline-offset-2" style="color: var(--color-accent)">
-				your profile
+			<a href="/settings#email" class="underline underline-offset-2" style="color: var(--color-accent)">
+				your email settings
 			</a>.
 		</p>
 	{:else}
 		<X size={28} aria-hidden="true" class="mx-auto" style="color: var(--color-muted)" />
 		<h1 class="mt-2 text-xl font-semibold">That link did not work</h1>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">
-			Mail clients sometimes break long links. You can turn these off in your profile instead.
+			Mail clients sometimes break long links. You can turn these off in your email settings instead.
 		</p>
 		<p class="mt-4 text-sm">
-			<a href="/profile" class="underline underline-offset-2" style="color: var(--color-accent)">
-				Open your profile
+			<a href="/settings#email" class="underline underline-offset-2" style="color: var(--color-accent)">
+				Open email settings
 			</a>
 		</p>
 	{/if}

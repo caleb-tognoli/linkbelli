@@ -12,7 +12,7 @@ test('an export downloads as a dated file that holds the library', async ({ page
 	await addLink(account, playlist.id, 'https://example.com/');
 	await signIn(page, account);
 
-	await page.goto('/profile');
+	await page.goto('/settings');
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
 		page.getByRole('link', { name: 'Everything (JSON)' }).click()

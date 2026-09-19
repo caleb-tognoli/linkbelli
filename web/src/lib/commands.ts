@@ -26,7 +26,7 @@ export const PLACES: Command[] = [
 	{ id: 'go-trash', label: 'Trash', kind: 'Go', href: '/trash', keywords: 'deleted restore' },
 	{ id: 'go-import', label: 'Import', kind: 'Go', href: '/import', keywords: 'csv bookmarks' },
 	{ id: 'go-save', label: 'Save a link', kind: 'Go', href: '/save', keywords: 'add new url' },
-	{ id: 'go-profile', label: 'Profile', kind: 'Go', href: '/profile', keywords: 'settings account keys' }
+	{ id: 'go-settings', label: 'Settings', kind: 'Go', href: '/settings', keywords: 'profile account password theme email keys webhooks export backups' }
 ];
 
 /**
