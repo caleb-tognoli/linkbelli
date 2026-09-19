@@ -100,12 +100,12 @@
 								onclick={() => run(command.href)}
 								onmouseenter={() => (selected = index)}
 								class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
-								style={active?.id === command.id ? 'background: var(--color-bg)' : ''}
+								style={active?.id === command.id ? 'background: var(--color-selected)' : ''}
 							>
 								<span class="min-w-0 flex-1 truncate">{command.label}</span>
 								<span
 									class="shrink-0 rounded px-1.5 py-0.5 text-xs"
-									style="background: var(--color-bg); color: var(--color-muted)"
+									style="background: var(--color-chip); color: var(--color-text)"
 								>{command.kind}</span>
 							</button>
 						</li>

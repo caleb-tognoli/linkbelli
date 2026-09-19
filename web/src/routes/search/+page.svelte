@@ -236,7 +236,7 @@
 					onclick={() => navigate({ status: option.value })}
 					class="px-3 py-1.5"
 					class:font-medium={data.status === option.value}
-					style="background: {data.status === option.value ? 'var(--color-surface)' : 'var(--color-bg)'}"
+					style={data.status === option.value ? 'background: var(--color-selected); color: var(--color-accent)' : 'background: var(--color-bg)'}
 				>{option.label}</button>
 			{/each}
 		</div>

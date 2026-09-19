@@ -91,7 +91,7 @@
 					href={withParam('sort', option.value)}
 					class="px-3 py-1.5"
 					class:font-medium={data.sort === option.value}
-					style="background: {data.sort === option.value ? 'var(--color-surface)' : 'var(--color-bg)'}"
+					style={data.sort === option.value ? 'background: var(--color-selected); color: var(--color-accent)' : 'background: var(--color-bg)'}
 					aria-current={data.sort === option.value ? 'page' : undefined}
 				>{option.label}</a>
 			{/each}

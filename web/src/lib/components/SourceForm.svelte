@@ -418,7 +418,7 @@
 							}}
 							class="px-3 py-2 disabled:cursor-default"
 							class:font-medium={scheduleUnit === val}
-							style="background: {scheduleUnit === val ? 'var(--color-surface)' : 'var(--color-bg)'}"
+							style={scheduleUnit === val ? 'background: var(--color-selected); color: var(--color-accent)' : 'background: var(--color-bg)'}
 						>{lbl}</button>
 					{/each}
 				</div>

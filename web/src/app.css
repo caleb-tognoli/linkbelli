@@ -55,6 +55,13 @@
 	--color-highlight: light-dark(#fdf0b8, #4a3d18);
 	--color-highlight-strong: light-dark(#f7dd72, #6b5720);
 
+	/* The chosen option in a set, and the row the keyboard is on: an accent wash, with the
+	   option's text in --color-accent. Selection used to be the page colour against the
+	   surface colour — 1.07:1, which nobody can see. */
+	--color-selected: color-mix(in srgb, var(--color-accent) 10%, transparent);
+	/* A tag or label chip. Carries --color-text: muted text on a tinted chip falls under 4.5:1. */
+	--color-chip: color-mix(in srgb, var(--color-text) 9%, transparent);
+
 	/* Corners by what they belong to, rather than picked per file: rounded-control for inputs,
 	   buttons and chips; rounded-card for cards, panels and popovers; rounded-dialog for dialogs. */
 	--radius-control: 0.375rem;

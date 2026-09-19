@@ -44,7 +44,7 @@
 	{#if entry.tags.length}
 		<div class="flex flex-wrap gap-1">
 			{#each entry.tags as tag (tag)}
-				<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-bg); color: var(--color-muted)">{tag}</span>
+				<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-chip); color: var(--color-text)">{tag}</span>
 			{/each}
 		</div>
 	{/if}

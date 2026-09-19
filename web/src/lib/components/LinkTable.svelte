@@ -598,7 +598,7 @@
 								<a
 									href={`/search?itemTag=${encodeURIComponent(tag)}`}
 									class="rounded px-1.5 py-0.5 text-xs hover:underline"
-									style="background: var(--color-bg); color: var(--color-muted)"
+									style="background: var(--color-chip); color: var(--color-text)"
 									title={`Find everything tagged ${tag}`}
 								>{tag}</a>
 							{/each}
@@ -1000,7 +1000,7 @@
 					onclick={() => { viewMode = mode; if (playlistId) savePrefs(playlistId, { viewMode: mode }); }}
 					class="px-2.5 py-0.5"
 					style={viewMode === mode
-						? 'background: var(--color-surface); color: var(--color-accent)'
+						? 'background: var(--color-selected); color: var(--color-accent)'
 						: 'color: var(--color-muted)'}
 					title={`${label} view`}
 					aria-label={`${label} view`}

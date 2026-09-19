@@ -37,7 +37,7 @@
 	{#each tags as tag (tag)}
 		<span
 			class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
-			style="background: var(--color-surface); color: var(--color-muted)"
+			style="background: var(--color-chip); color: var(--color-text)"
 		>
 			{tag}
 			{#if !readonly}
