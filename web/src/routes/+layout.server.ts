@@ -1,10 +1,14 @@
 import type { LayoutServerLoad } from './$types';
 import type { Feed, Folder, PinnedSearch, User } from '$lib/types';
 
-export const load: LayoutServerLoad = async ({ locals, url }) => {
+export const load: LayoutServerLoad = async ({ locals, url, cookies }) => {
+	// Read here, like the theme, so a collapsed sidebar is collapsed in the first paint rather
+	// than springing shut once the page has loaded.
+	const sidebarCollapsed = cookies.get('lb_sidebar') === 'collapsed';
+
 	// An embed renders none of the chrome these feed, so it does not pay for them either.
 	if (!locals.authenticated || url.pathname.startsWith('/embed/')) {
-		return { user: null, folders: [] as Folder[], pinned: [] as PinnedSearch[], feedNew: 0 };
+		return { user: null, folders: [] as Folder[], pinned: [] as PinnedSearch[], feedNew: 0, sidebarCollapsed };
 	}
 
 	// Folders come along with the layout so the sidebar can show the whole tree. They are a flat
@@ -22,7 +26,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	]);
 
 	if (!meRes.ok) {
-		return { user: null, folders: [] as Folder[], pinned: [] as PinnedSearch[], feedNew: 0 };
+		return { user: null, folders: [] as Folder[], pinned: [] as PinnedSearch[], feedNew: 0, sidebarCollapsed };
 	}
 
 	const user = (await meRes.json()) as User;
@@ -30,5 +34,5 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	const pinned = pinnedRes.ok ? ((await pinnedRes.json()) as PinnedSearch[]) : [];
 	const feedNew = feedRes.ok ? ((await feedRes.json()) as Feed).newCount : 0;
 
-	return { user, folders, pinned, feedNew };
+	return { user, folders, pinned, feedNew, sidebarCollapsed };
 };

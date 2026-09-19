@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { Dialog, Popover } from 'bits-ui';
 	import NavigationProgress from '$lib/components/NavigationProgress.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import '../app.css';
-	import { Dialog } from 'bits-ui';
-	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge, Highlighter, X, Newspaper, Tags, CopyCheck, Trash2 } from '@lucide/svelte';
+		import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge, Highlighter, X, Newspaper, Tags, CopyCheck, Trash2, Folder as FolderIcon } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -132,7 +132,13 @@
 	});
 
 	// Desktop sidebar can be minimized to an icon-only rail.
-	let collapsed = $state(false);
+	// Remembered across visits, in a cookie the server reads so the first paint is right.
+	let collapsed = $state(data.sidebarCollapsed ?? false);
+
+	function toggleSidebar() {
+		collapsed = !collapsed;
+		document.cookie = `lb_sidebar=${collapsed ? 'collapsed' : 'expanded'}; path=/; max-age=31536000; samesite=lax`;
+	}
 </script>
 
 <!-- Shared nav body — rendered in both the desktop sidebar (collapsible) and the mobile drawer (always expanded). -->
@@ -176,6 +182,51 @@
 			</div>
 		{/each}
 	</nav>
+
+	{#if !showLabels && (data.pinned.length > 0 || data.folders.length > 0)}
+		<!-- Collapsed to a rail, the saved searches and the folder tree used to disappear
+		     altogether. Each is one button away instead. -->
+		<div class="mt-3 flex flex-col gap-0.5 border-t border-border pt-3">
+			{#if data.pinned.length > 0}
+				<Popover.Root>
+					<Popover.Trigger
+						class="flex items-center justify-center rounded-md px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
+						title="Saved searches"
+						aria-label="Saved searches"
+					>
+						<Bookmark size={20} aria-hidden="true" />
+					</Popover.Trigger>
+					<Popover.Content side="right" sideOffset={8} class="popover-surface z-(--z-popover) w-64 rounded-card border p-2 shadow-popover">
+						<p class="px-2 pb-1.5 text-xs font-medium text-muted">Saved searches</p>
+						{#each data.pinned as saved (saved.id)}
+							<a
+								href={`/search?saved=${saved.id}`}
+								class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+							>
+								<span class="min-w-0 flex-1 truncate">{saved.name}</span>
+								<span class="shrink-0 text-xs text-muted tabular-nums">{saved.count}</span>
+							</a>
+						{/each}
+					</Popover.Content>
+				</Popover.Root>
+			{/if}
+			{#if data.folders.length > 0}
+				<Popover.Root>
+					<Popover.Trigger
+						class="flex items-center justify-center rounded-md px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
+						title="Folders"
+						aria-label="Folders"
+					>
+						<FolderIcon size={20} aria-hidden="true" />
+					</Popover.Trigger>
+					<Popover.Content side="right" sideOffset={8} class="popover-surface z-(--z-popover) max-h-[70vh] w-64 overflow-y-auto rounded-card border p-2 shadow-popover">
+						<p class="px-2 pb-1.5 text-xs font-medium text-muted">Folders</p>
+						<FolderTree folders={data.folders} />
+					</Popover.Content>
+				</Popover.Root>
+			{/if}
+		</div>
+	{/if}
 
 	{#if showLabels && data.pinned.length > 0}
 		<!-- A saved search was a question you re-asked by hand from the search page, so
@@ -303,7 +354,7 @@
 				{#if !collapsed}<span class="flex-1 truncate text-lg font-semibold">Linkbelli</span>{/if}
 				<button
 					type="button"
-					onclick={() => (collapsed = !collapsed)}
+					onclick={toggleSidebar}
 					class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 					title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 					aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
