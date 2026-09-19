@@ -1,6 +1,7 @@
 ﻿<svelte:head><title>Discover - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
@@ -107,11 +108,7 @@
 		<div class="mt-4 flex flex-wrap items-center gap-1.5 text-xs">
 			<span style="color: var(--color-muted)">Trending</span>
 			{#each data.trending as tag (tag.name)}
-				<a
-					href={withParam('tag', tag.name)}
-					class="rounded-full border px-2 py-0.5 hover:border-[var(--color-accent)]"
-					style="border-color: var(--color-border); color: var(--color-muted)"
-				>{tag.name}</a>
+				<Chip href={withParam('tag', tag.name)}>{tag.name}</Chip>
 			{/each}
 		</div>
 	{/if}

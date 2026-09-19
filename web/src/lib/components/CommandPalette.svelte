@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { Dialog } from 'bits-ui';
 	import { goto } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
@@ -103,10 +104,7 @@
 								style={active?.id === command.id ? 'background: var(--color-selected)' : ''}
 							>
 								<span class="min-w-0 flex-1 truncate">{command.label}</span>
-								<span
-									class="shrink-0 rounded px-1.5 py-0.5 text-xs"
-									style="background: var(--color-chip); color: var(--color-text)"
-								>{command.kind}</span>
+								<Badge>{command.kind}</Badge>
 							</button>
 						</li>
 					{/each}

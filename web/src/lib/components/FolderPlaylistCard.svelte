@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import { EyeOff, Globe, Lock } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import SaveToFolderDialog from './SaveToFolderDialog.svelte';
@@ -44,7 +45,7 @@
 	{#if entry.tags.length}
 		<div class="flex flex-wrap gap-1">
 			{#each entry.tags as tag (tag)}
-				<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-chip); color: var(--color-text)">{tag}</span>
+				<Chip>{tag}</Chip>
 			{/each}
 		</div>
 	{/if}

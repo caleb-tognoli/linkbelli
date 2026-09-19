@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import { Heart } from '@lucide/svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import type { PublicPlaylistSummary } from '$lib/types';
@@ -35,7 +36,7 @@
 	{#if playlist.tags.length}
 		<div class="flex flex-wrap gap-1">
 			{#each playlist.tags as tag (tag)}
-				<span class="rounded px-1.5 py-0.5 text-xs" style="background: var(--color-chip); color: var(--color-text)">{tag}</span>
+				<Chip>{tag}</Chip>
 			{/each}
 		</div>
 	{/if}

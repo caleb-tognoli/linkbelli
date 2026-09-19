@@ -1,6 +1,7 @@
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import { api } from '$lib/api/client';
-	import { Tag, X } from '@lucide/svelte';
+	import { Tag } from '@lucide/svelte';
 	import type { Playlist } from '$lib/types';
 
 	let {
@@ -35,24 +36,13 @@
 
 <div class="flex flex-wrap items-center gap-1.5">
 	{#each tags as tag (tag)}
-		<span
-			class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
-			style="background: var(--color-chip); color: var(--color-text)"
+		<Chip
+			onremove={readonly ? undefined : () => removeTag(tag)}
+			removeLabel={`Remove tag ${tag}`}
+			disabled={busy}
 		>
 			{tag}
-			{#if !readonly}
-				<button
-					type="button"
-					onclick={() => removeTag(tag)}
-					title={`Remove tag ${tag}`}
-					aria-label={`Remove tag ${tag}`}
-					disabled={busy}
-					class="inline-flex items-center rounded p-0.5 hover:bg-black/10 dark:hover:bg-white/20"
-				>
-					<X size={12} aria-hidden="true" />
-				</button>
-			{/if}
-		</span>
+		</Chip>
 	{/each}
 	{#if !readonly}
 		<span class="inline-flex items-center gap-1" style="color: var(--color-muted)">

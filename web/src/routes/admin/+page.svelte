@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { AlertCircle, ExternalLink } from '@lucide/svelte';
@@ -225,10 +226,7 @@
 						<span class="font-medium">@{entry.actorName}</span>
 						{#if entry.asAdmin}
 							<!-- Reaching into other people's data is the part worth marking. -->
-							<span
-								class="rounded px-1.5 py-0.5 text-xs"
-								style="background: var(--color-bg); color: var(--color-danger)"
-							>admin</span>
+							<Badge tone="danger">admin</Badge>
 						{/if}
 						<span style="color: var(--color-muted)">{entry.summary ?? entry.action}</span>
 					</div>

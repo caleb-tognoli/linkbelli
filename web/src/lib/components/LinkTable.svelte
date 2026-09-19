@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -610,12 +611,9 @@
 					{#if item.tags?.length}
 						<span class="mt-1 flex flex-wrap gap-1">
 							{#each item.tags as tag (tag)}
-								<a
-									href={`/search?itemTag=${encodeURIComponent(tag)}`}
-									class="rounded px-1.5 py-0.5 text-xs hover:underline"
-									style="background: var(--color-chip); color: var(--color-text)"
-									title={`Find everything tagged ${tag}`}
-								>{tag}</a>
+								<Chip href={`/search?itemTag=${encodeURIComponent(tag)}`} title={`Find everything tagged ${tag}`}>
+									{tag}
+								</Chip>
 							{/each}
 						</span>
 					{/if}

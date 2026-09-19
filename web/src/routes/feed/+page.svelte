@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import KindBadge from '$lib/components/KindBadge.svelte';
@@ -167,18 +168,12 @@
 			<h2 class="text-sm font-medium" style="color: var(--color-muted)">Following</h2>
 			<div class="mt-2 flex flex-wrap gap-1.5 text-xs">
 				{#each data.following.playlists as playlist (playlist.playlistId)}
-					<a
-						href={`/public/${encodeURIComponent(playlist.ownerUsername)}/${encodeURIComponent(playlist.slug)}`}
-						class="rounded-full border px-2 py-0.5 hover:border-[var(--color-accent)]"
-						style="border-color: var(--color-border)"
-					>{playlist.name}</a>
+					<Chip href={`/public/${encodeURIComponent(playlist.ownerUsername)}/${encodeURIComponent(playlist.slug)}`}>
+						{playlist.name}
+					</Chip>
 				{/each}
 				{#each data.following.users as user (user.username)}
-					<a
-						href={`/public/${encodeURIComponent(user.username)}`}
-						class="rounded-full border px-2 py-0.5 hover:border-[var(--color-accent)]"
-						style="border-color: var(--color-border)"
-					>@{user.username}</a>
+					<Chip href={`/public/${encodeURIComponent(user.username)}`}>@{user.username}</Chip>
 				{/each}
 			</div>
 		</div>

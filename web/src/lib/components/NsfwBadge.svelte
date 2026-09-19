@@ -1,7 +1,5 @@
-<span
-	class="shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold"
-	style="background: var(--color-danger-solid); color: var(--color-on-solid)"
-	title="Adult content"
->
-	NSFW
-</span>
+<script lang="ts">
+	import Badge from '$lib/components/ui/Badge.svelte';
+</script>
+
+<Badge tone="solid-danger" title="Adult content">NSFW</Badge>

@@ -1,6 +1,7 @@
 <svelte:head><title>Duplicates - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -94,10 +95,7 @@
 							<p class="text-sm font-medium">
 								{describe(group)}
 								{#if isSuggestion(group)}
-									<span
-										class="ml-1.5 rounded px-1.5 py-0.5 align-middle text-xs font-normal"
-										style="background: var(--color-border); color: var(--color-muted)"
-									>worth checking</span>
+									<Badge tone="warning" class="ml-1.5">worth checking</Badge>
 								{/if}
 							</p>
 							<p class="truncate text-xs" style="color: var(--color-muted)">{group.key}</p>

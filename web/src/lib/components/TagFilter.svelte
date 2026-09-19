@@ -1,9 +1,10 @@
 <script lang="ts">
+	import Chip from '$lib/components/ui/Chip.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { Popover } from 'bits-ui';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
-	import { X, Tag } from '@lucide/svelte';
+	import { Tag } from '@lucide/svelte';
 	import type { TagSummary } from '$lib/types';
 
 	let {
@@ -65,15 +66,7 @@
 
 <div class="flex flex-wrap items-center gap-2 text-sm">
 	{#each active as tag (tag)}
-		<span
-			class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1"
-			style="border-color: var(--color-accent); color: var(--color-accent)"
-		>
-			{tag}
-			<button type="button" onclick={() => remove(tag)} aria-label={`Remove ${tag} filter`} title={`Remove ${tag} filter`} class="inline-flex items-center rounded p-0.5 hover:bg-black/10 dark:hover:bg-white/20">
-				<X size={13} aria-hidden="true" />
-			</button>
-		</span>
+		<Chip tone="accent" onremove={() => remove(tag)} removeLabel={`Remove ${tag} filter`}>{tag}</Chip>
 	{/each}
 
 	<Popover.Root bind:open>
