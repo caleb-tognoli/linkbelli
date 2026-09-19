@@ -169,7 +169,28 @@
 			`Delete ${count} ${count === 1 ? 'link' : 'links'}? You can put them back from the trash.`,
 			{ danger: true, confirmLabel: 'Delete' }
 		);
-		if (ok) await bulk({ action: 'Delete' });
+		if (!ok) return;
+
+		const ids = [...selected];
+		if (await bulk({ action: 'Delete' })) {
+			toast.success(`Moved ${count} ${count === 1 ? 'link' : 'links'} to the trash.`, {
+				action: { label: 'Undo', run: () => restoreFromTrash(ids) }
+			});
+		}
+	}
+
+	/**
+	 * Puts removed links back.
+	 *
+	 * Removing was instant and final-looking even though the links only went to the trash for
+	 * thirty days — nothing said so, and getting one back meant finding the trash page.
+	 */
+	async function restoreFromTrash(ids: string[]) {
+		const results = await Promise.all(ids.map((id) => api.post(`/trash/items/${id}/restore`).catch(() => null)));
+		const failed = results.filter((res) => !res || (!res.ok && res.status !== 409)).length;
+		await onmove?.();
+		if (failed === 0) say(ids.length === 1 ? 'Put back.' : `Put ${ids.length} links back.`);
+		else warn(`Could not put ${failed === 1 ? 'one of them' : `${failed} of them`} back. They are still in the trash.`);
 	}
 
 	// Links being re-fetched right now, so the button can say so rather than looking inert.
@@ -436,6 +457,7 @@
 		if (res.ok || res.status === 204) {
 			items = items.filter((i) => i.id !== item.id);
 			if (total !== null) total = Math.max(0, total - 1);
+			toast.success('Moved to the trash.', { action: { label: 'Undo', run: () => restoreFromTrash([item.id]) } });
 		} else {
 			warn(failureMessage(res.status, 'Could not remove that link.'));
 		}

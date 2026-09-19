@@ -184,6 +184,26 @@ describe('LinkTable — acting on a selection', () => {
 		expect(onmove).toHaveBeenCalledOnce();
 	});
 
+	/** The links went to the trash, not away for good, and getting them back is one press. */
+	it('offers to undo a delete, and puts the links back', async () => {
+		const { calls } = fakeApi({
+			'POST /items/bulk': json({ affected: 2, skipped: 0 }),
+			'POST /trash/items/item-1/restore': new Response(null, { status: 204 }),
+			'POST /trash/items/item-2/restore': new Response(null, { status: 204 })
+		});
+		confirmDialog.mockResolvedValue(true);
+		const { onmove } = setup();
+
+		await select(1);
+		await select(2);
+		await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+		await userEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+
+		const restored = calls.filter((c) => c.path.startsWith('/trash/items/')).map((c) => c.path);
+		expect(restored.sort()).toEqual(['/trash/items/item-1/restore', '/trash/items/item-2/restore']);
+		expect(onmove).toHaveBeenCalledTimes(2);
+	});
+
 	/** Nothing in flight twice: the buttons stand still while a bulk change is on its way. */
 	it('will not start a second change while one is still going', async () => {
 		let answer!: (res: Response) => void;
