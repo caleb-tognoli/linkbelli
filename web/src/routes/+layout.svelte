@@ -71,7 +71,18 @@
 
 	// Mobile nav drawer (below md the sidebar is hidden). Close it after navigating.
 	let drawerOpen = $state(false);
-	afterNavigate(() => (drawerOpen = false));
+	afterNavigate((navigation) => {
+		drawerOpen = false;
+
+		// A new page moves focus to its content, so a keyboard or screen-reader user lands on
+		// what they asked for rather than back at the top of the sidebar. Only between pages: a
+		// filter or search that changes just the query keeps focus where the typing is.
+		const from = navigation.from?.url.pathname;
+		const to = navigation.to?.url.pathname;
+		if (navigation.type !== 'enter' && from && to && from !== to) {
+			document.getElementById('main')?.focus({ preventScroll: true });
+		}
+	});
 
 	// Desktop sidebar can be minimized to an icon-only rail.
 	let collapsed = $state(false);
@@ -79,7 +90,7 @@
 
 <!-- Shared nav body — rendered in both the desktop sidebar (collapsible) and the mobile drawer (always expanded). -->
 {#snippet navBody(showLabels = true)}
-	<nav class="flex flex-col gap-1 text-base">
+	<nav aria-label="Main" class="flex flex-col gap-1 text-base">
 		{#each NAV as item (item.href)}
 			{@const active = item.match(page.url.pathname)}
 			<a
@@ -102,7 +113,7 @@
 		     had. With a number beside it, it is a thing you look at. -->
 		<div class="mt-4 border-t pt-3" style="border-color: var(--color-border)">
 			<p class="px-3 pb-1.5 text-xs font-medium" style="color: var(--color-muted)">Searches</p>
-			<nav class="flex flex-col gap-0.5 text-sm">
+			<nav aria-label="Saved searches" class="flex flex-col gap-0.5 text-sm">
 				{#each data.pinned as saved (saved.id)}
 					<a
 						href={`/search?saved=${saved.id}`}
@@ -167,6 +178,16 @@
 	</div>
 {/snippet}
 
+{#if !isEmbed}
+	<!-- The first stop for the keyboard: straight past the navigation to the page itself. -->
+	<a
+		href="#main"
+		class="sr-only rounded-control border border-accent bg-surface px-3 py-2 text-sm font-medium focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-(--z-toast)"
+	>
+		Skip to content
+	</a>
+{/if}
+
 {#if isEmbed}
 	{@render children()}
 {:else if data.user}
@@ -220,13 +241,13 @@
 			{@render navBody(!collapsed)}
 		</aside>
 
-		<main class="flex-1 p-4 md:p-8">
+		<main id="main" tabindex="-1" class="min-w-0 flex-1 p-4 outline-none md:p-8">
 			<OfflineQueueBanner />
 			{@render children()}
 		</main>
 	</div>
 {:else if isAuthPage}
-	<main class="flex min-h-screen items-center justify-center p-6">
+	<main id="main" tabindex="-1" class="flex min-h-screen items-center justify-center p-6 outline-none">
 		{@render children()}
 	</main>
 {:else}
@@ -235,7 +256,7 @@
 			<a href="/" class="text-lg font-semibold">Linkbelli</a>
 			<a href="/login" class="text-sm font-medium" style="color: var(--color-accent)">Sign in</a>
 		</header>
-		<main class="mx-auto w-full max-w-5xl flex-1 p-6">
+		<main id="main" tabindex="-1" class="mx-auto w-full max-w-5xl flex-1 p-6 outline-none">
 			{@render children()}
 		</main>
 	</div>
