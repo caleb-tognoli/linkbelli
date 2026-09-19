@@ -109,7 +109,7 @@
 							type="submit"
 							disabled={submitting}
 							class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-							style="background: var(--color-accent); color: var(--color-accent-contrast)"
+							style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 						>
 							<Check size={15} aria-hidden="true" /> {submitting ? 'Creating…' : 'Create'}
 						</button>
@@ -173,7 +173,7 @@
 							type="submit"
 							disabled={submitting}
 							class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-							style="background: var(--color-accent); color: var(--color-accent-contrast)"
+							style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 						>
 							<Check size={15} aria-hidden="true" /> {submitting ? 'Creating…' : 'Create'}
 						</button>

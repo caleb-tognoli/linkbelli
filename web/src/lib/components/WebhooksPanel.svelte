@@ -301,7 +301,7 @@
 								onclick={create}
 								disabled={busy || !url.trim() || chosen.size === 0}
 								class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-								style="background: var(--color-accent); color: var(--color-accent-contrast)"
+								style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 							>
 								<Check size={15} aria-hidden="true" />
 								{busy ? 'Adding…' : 'Add'}
@@ -327,7 +327,7 @@
 				<button
 					type="button"
 					class="inline-flex items-center rounded-md p-1.5"
-					style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 					onclick={copySecret}
 					title={copied ? 'Copied!' : 'Copy secret'}
 					aria-label={copied ? 'Copied!' : 'Copy secret'}

@@ -776,7 +776,7 @@
 				onclick={saveNote}
 				disabled={(activeHighlight.note ?? '') === draft.trim()}
 				class="inline-flex items-center rounded-md p-1.5 disabled:opacity-60"
-				style="background: var(--color-accent); color: var(--color-accent-contrast)"
+				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 				title="Save the note (Ctrl+Enter)"
 				aria-label="Save the note"
 			>

@@ -819,7 +819,7 @@
 							type="button"
 							onclick={() => { saveNote(item); noteEditId = null; }}
 							class="inline-flex items-center rounded p-1.5"
-							style="background: var(--color-accent); color: var(--color-accent-contrast)"
+							style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 							title="Save note"
 							aria-label="Save note"
 						>

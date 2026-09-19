@@ -168,7 +168,7 @@
 								onclick={create}
 								disabled={busy || !name.trim()}
 								class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-								style="background: var(--color-accent); color: var(--color-accent-contrast)"
+								style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 							>
 								<Check size={15} aria-hidden="true" />
 								{busy ? 'Creating…' : 'Create'}
@@ -188,7 +188,7 @@
 				<button
 					type="button"
 					class="inline-flex items-center rounded-md p-1.5"
-					style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 					onclick={copyToken}
 					title={copied ? 'Copied!' : 'Copy key'}
 					aria-label={copied ? 'Copied!' : 'Copy key'}

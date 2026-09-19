@@ -138,7 +138,7 @@
 				onclick={doAdd}
 				disabled={busy}
 				class="rounded-md p-2 disabled:opacity-60"
-				style="background: var(--color-accent); color: var(--color-accent-contrast)"
+				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 				title={looksAlreadyHere ? 'Add it anyway' : 'Add link'}
 				aria-label={looksAlreadyHere ? 'Add it anyway' : 'Add link'}
 			>

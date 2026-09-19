@@ -277,7 +277,7 @@
 			type="button"
 			onclick={startNew}
 			class="inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
-			style="background: var(--color-accent); color: var(--color-accent-contrast)"
+			style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 		>
 			<Plus size={16} aria-hidden="true" />
 			New rule
@@ -533,7 +533,7 @@
 					onclick={save}
 					disabled={busy}
 					class="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-					style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 				>{editing ? 'Save' : 'Create'}</button>
 
 				<!-- A rule only ever acts on what arrives next, so this is the only way to find out

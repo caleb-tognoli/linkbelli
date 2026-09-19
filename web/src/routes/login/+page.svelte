@@ -70,7 +70,7 @@
 			type="submit"
 			disabled={submitting}
 			class="mt-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 font-medium disabled:opacity-60"
-			style="background: var(--color-accent); color: var(--color-accent-contrast)"
+			style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 		>
 			<LogIn size={18} aria-hidden="true" />
 			{submitting ? 'Signing in…' : 'Sign in'}

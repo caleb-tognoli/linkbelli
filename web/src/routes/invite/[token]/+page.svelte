@@ -53,7 +53,7 @@
 				<button
 					type="submit"
 					class="w-full rounded-md px-3 py-2 text-sm font-medium"
-					style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 				>Join this playlist</button>
 			</form>
 		{:else}
@@ -66,7 +66,7 @@
 				<a
 					href={`/register?redirectTo=${here}`}
 					class="flex-1 rounded-md px-3 py-2 text-center text-sm font-medium"
-					style="background: var(--color-accent); color: var(--color-accent-contrast)"
+					style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 				>Make an account</a>
 				<a
 					href={`/login?redirectTo=${here}`}

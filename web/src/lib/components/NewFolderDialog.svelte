@@ -8,7 +8,7 @@
 		parentId = null,
 		label = 'New folder',
 		triggerClass = 'rounded-md px-3 py-2 text-sm font-medium',
-		triggerStyle = 'background: var(--color-accent); color: var(--color-accent-contrast)'
+		triggerStyle = 'background: var(--color-accent-solid); color: var(--color-on-solid)'
 	}: { parentId?: string | null; label?: string; triggerClass?: string; triggerStyle?: string } = $props();
 
 	let open = $state(false);
@@ -80,7 +80,7 @@
 						type="submit"
 						disabled={submitting}
 						class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium disabled:opacity-60"
-						style="background: var(--color-accent); color: var(--color-accent-contrast)"
+						style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 						title={submitting ? 'Creating…' : 'Create'}
 						aria-label="Create folder"
 					>

@@ -533,7 +533,7 @@
 									onclick={() => setAuthMode(opt.value as 'none' | 'loginUrl')}
 									class="px-3 py-1.5"
 									style={authMode === opt.value
-										? 'background: var(--color-accent); color: var(--color-accent-contrast)'
+										? 'background: var(--color-accent-solid); color: var(--color-on-solid)'
 										: 'background: var(--color-bg)'}
 									aria-pressed={authMode === opt.value}
 								>{opt.label}</button>
@@ -685,7 +685,7 @@
 			onclick={save}
 			disabled={busy}
 			class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-			style="background: var(--color-accent); color: var(--color-accent-contrast)"
+			style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 		>
 			<Save size={16} aria-hidden="true" />
 			{mode === 'create' ? 'Create' : 'Save'}

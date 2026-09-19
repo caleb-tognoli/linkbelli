@@ -101,7 +101,7 @@
 		<a
 			href="/sources/new"
 			class="mt-4 inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium"
-			style="background: var(--color-accent); color: var(--color-accent-contrast)"
+			style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 		>
 			<Plus size={16} aria-hidden="true" />
 			Add a source

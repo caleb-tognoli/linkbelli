@@ -44,7 +44,7 @@
 			<a
 				href="/login"
 				class="rounded-md px-3 py-2 font-medium"
-				style="background: var(--color-accent); color: var(--color-accent-contrast)"
+				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 			>
 				Sign in
 			</a>
@@ -52,7 +52,7 @@
 			<a
 				href="/playlists"
 				class="rounded-md px-3 py-2 font-medium"
-				style="background: var(--color-accent); color: var(--color-accent-contrast)"
+				style="background: var(--color-accent-solid); color: var(--color-on-solid)"
 			>
 				Your playlists
 			</a>

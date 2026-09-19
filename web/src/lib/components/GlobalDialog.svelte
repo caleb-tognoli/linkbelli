@@ -59,8 +59,8 @@
 						onclick={confirm}
 						class="rounded-md px-3 py-1.5 font-medium"
 						style={dlg.kind === 'confirm' && dlg.danger
-							? 'background: var(--color-danger); color: var(--color-accent-contrast)'
-							: 'background: var(--color-accent); color: var(--color-accent-contrast)'}
+							? 'background: var(--color-danger-solid); color: var(--color-on-solid)'
+							: 'background: var(--color-accent-solid); color: var(--color-on-solid)'}
 					>
 						{dlg.confirmLabel ?? (dlg.kind === 'prompt' ? 'Save' : 'Confirm')}
 					</button>

@@ -79,7 +79,7 @@
 			class="flex-1 rounded-md border px-3 py-2 text-sm"
 			style="border-color: var(--color-border); background: var(--color-bg)"
 		/>
-		<button type="submit" class="rounded-md p-2" style="background: var(--color-accent); color: var(--color-accent-contrast)" title="Search" aria-label="Search">
+		<button type="submit" class="rounded-md p-2" style="background: var(--color-accent-solid); color: var(--color-on-solid)" title="Search" aria-label="Search">
 			<Search size={18} aria-hidden="true" />
 		</button>
 	</form>

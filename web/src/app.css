@@ -31,10 +31,19 @@
 	--color-border: light-dark(#e8e8e6, #2f2f2f);
 	--color-text: light-dark(#1f1f1f, #ededed);
 	--color-muted: light-dark(#6b6b6b, #9a9a9a);
-	--color-accent: light-dark(#2563eb, #3b82f6);
+	/* Two of each: the plain token is for text, borders and small marks, and is light enough
+	   in dark mode to read on the page; -solid is for a filled button or badge with
+	   --color-on-solid text on it. One colour could not be both — the old dark accent and
+	   danger fills put white text at 3.7:1, under the 4.5:1 that small text needs. */
+	--color-accent: light-dark(#2563eb, #60a5fa);
+	--color-accent-solid: #2563eb;
+	--color-danger: light-dark(#dc2626, #f87171);
+	--color-danger-solid: #dc2626;
+	--color-on-solid: #ffffff;
+	/* Older name for --color-on-solid, still read by a few inline styles. */
 	--color-accent-contrast: #ffffff;
-	--color-danger: light-dark(#dc2626, #ef4444);
 	--color-success: light-dark(#15803d, #4ade80);
+	--color-success-solid: #15803d;
 	--color-warning: light-dark(#b45309, #fbbf24);
 	/* Marked text in the reader. A wash rather than a fluorescent block: the words underneath
 	   still have to be the easiest thing on the page to read. On a dark page a yellow wash would
