@@ -175,14 +175,25 @@
 	// Links being re-fetched right now, so the button can say so rather than looking inert.
 	let rechecking = new SvelteSet<string>();
 
+	/** How long to give a recheck before looking at the link again. */
+	const RECHECK_LOOK_AGAIN_MS = 6000;
+
 	async function recheck(item: PlaylistItem) {
 		rechecking.add(item.link.id);
 		const res = await api.post(`/links/${item.link.id}/recheck`);
 		if (!res.ok) {
 			rechecking.delete(item.link.id);
+			warn(failureMessage(res.status, 'Could not check that page again.'));
+			return;
 		}
-		// On success the row stays marked until the page is reloaded: enrichment is asynchronous,
-		// so there is nothing truthful to show yet.
+		// Reading the page happens in the background, so there is nothing truthful to show at
+		// once. It used to say "Trying…" until the page was reloaded by hand; now the list is
+		// fetched again after a few seconds, which shows the result if there is one by then.
+		say('Checking that page again.');
+		setTimeout(async () => {
+			rechecking.delete(item.link.id);
+			await onmove?.();
+		}, RECHECK_LOOK_AGAIN_MS);
 	}
 
 	// What the drag library reorders. A writable $derived: it follows `items`, and the reordering
