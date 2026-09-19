@@ -95,9 +95,21 @@
 	const onSettings = $derived(inSection(page.url.pathname, '/settings'));
 	const onAdmin = $derived(inSection(page.url.pathname, '/admin'));
 	const isAdmin = $derived(data.user?.roles?.includes('Admin') ?? false);
-	// Anonymous auth pages (login/register) get centered card chrome; other anonymous pages
-	// (public playlist view, discover) get a normal top-aligned container with a brand bar.
-	const isAuthPage = $derived(['/login', '/register'].includes(page.url.pathname));
+	/**
+	 * Pages that are one card: signing in and up, and the places an email link lands.
+	 *
+	 * Only sign-in and sign-up used to be centred. The rest — a password reset, a confirmed
+	 * address, an unsubscribe, an invitation — sat in the top-left corner under the brand bar, or
+	 * pressed against the sidebar for somebody signed in, and looked like a page that had not
+	 * finished loading.
+	 */
+	const CARD_PAGES = ['/login', '/register', '/forgot-password', '/reset-password', '/confirm-email', '/unsubscribe'];
+	const isCardPage = $derived(
+		CARD_PAGES.includes(page.url.pathname) || page.url.pathname.startsWith('/invite/')
+	);
+	// Anonymous card pages get the centred layout; other anonymous pages (public playlists,
+	// discover) get a normal top-aligned container with a brand bar.
+	const isAuthPage = $derived(isCardPage);
 
 	// An embed is a card inside somebody else's page. It gets none of the app around it — no
 	// brand bar, no sidebar, no dialogs or palette — whoever is looking at it.
@@ -372,11 +384,19 @@
 
 		<main id="main" tabindex="-1" class="min-w-0 flex-1 p-4 outline-none md:p-8">
 			<OfflineQueueBanner />
-			{@render children()}
+			{#if isCardPage}
+				<div class="flex min-h-[70vh] items-center justify-center">
+					{@render children()}
+				</div>
+			{:else}
+				{@render children()}
+			{/if}
 		</main>
 	</div>
 {:else if isAuthPage}
-	<main id="main" tabindex="-1" class="flex min-h-screen items-center justify-center p-6 outline-none">
+	<main id="main" tabindex="-1" class="flex min-h-screen flex-col items-center justify-center gap-6 p-6 outline-none">
+		<!-- Somebody arriving from an email has nothing else to say where they are. -->
+		<a href="/" class="text-lg font-semibold">Linkbelli</a>
 		{@render children()}
 	</main>
 {:else}
