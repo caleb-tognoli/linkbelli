@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import { onDestroy } from 'svelte';
 	import { failureMessage } from '$lib/api/errors';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
@@ -9,7 +11,7 @@
 	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { Play, RotateCcw, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe } from '@lucide/svelte';
+	import { Play, RotateCcw, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe, LoaderCircle } from '@lucide/svelte';
 
 	const visIcons = { Private: Lock, Unlisted: EyeOff, Public: Globe } as const;
 	import SourceForm from '$lib/components/SourceForm.svelte';
@@ -28,7 +30,8 @@
 	let shownRuns = $state(pageSize);
 	let pagedRuns = $derived(data.runs.slice(0, shownRuns));
 
-	let historyOpen = $state(false);
+	// Open from the start when the last run failed: that is the thing to look at.
+	let historyOpen = $state(data.runs[0]?.status === 'Failed');
 
 	// Only worth a column when something has actually been turned away; a source with no filter
 	// would otherwise carry a permanent column of dashes.
@@ -55,17 +58,66 @@
 		itemsOpen = true;
 	}
 
+	/** A run asked for from this page, being watched until it finishes. */
+	let waitingSince = $state<number | null>(null);
+
+	/**
+	 * Runs the source now, and watches for the result.
+	 *
+	 * It used to say "Refresh history in a moment" and leave the refreshing to you, with the
+	 * history folded away. Now the history opens and is re-read every few seconds until a run
+	 * that started after the click has finished, and the outcome is said.
+	 */
 	async function runNow() {
 		busy = true;
 		try {
 			const res = await api.post(`/sources/${data.source.id}/run`);
-			if (res.status === 202) toast.success('Run queued. Refresh history in a moment.');
-			else if (res.status === 429) toast.error('Daily run limit reached — try again later.');
-			else toast.error('Could not queue a run.');
+			if (res.status === 202) {
+				toast.info('Run started.');
+				historyOpen = true;
+				void watchForRun(Date.now());
+			} else if (res.status === 429) {
+				toast.error('Daily run limit reached — try again later.');
+			} else {
+				toast.error(failureMessage(res.status, 'Could not start a run.'));
+			}
 		} finally {
 			busy = false;
 		}
 	}
+
+	const POLL_MS = 3000;
+	const GIVE_UP_MS = 90_000;
+
+	async function watchForRun(since: number) {
+		waitingSince = since;
+		// A little slack for clocks: the run's start is stamped by the server.
+		const after = since - 5000;
+		while (waitingSince === since && Date.now() - since < GIVE_UP_MS) {
+			await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+			if (waitingSince !== since) return;
+			await invalidateAll();
+
+			const run = data.runs.find((r) => new Date(r.startedAt).getTime() >= after && r.finishedAt);
+			if (run) {
+				waitingSince = null;
+				if (run.status === 'Succeeded') {
+					toast.success(
+						`Run finished: found ${run.foundCount}, added ${run.addedCount}${run.skippedCount ? `, skipped ${run.skippedCount}` : ''}.`
+					);
+				} else {
+					toast.error(`The run ${run.status.toLowerCase()}${run.error ? `: ${run.error}` : '.'}`);
+				}
+				return;
+			}
+		}
+		if (waitingSince === since) {
+			waitingSince = null;
+			toast.info('The run is taking a while. Its result will be in the history when it finishes.');
+		}
+	}
+
+	onDestroy(() => (waitingSince = null));
 
 	/**
 	 * Makes another source like this one.
@@ -330,10 +382,12 @@
 				/>
 				Run history
 			</button>
-			{#if historyOpen}
-				<button type="button" onclick={() => invalidateAll()} class="inline-flex items-center rounded p-1" style="color: var(--color-muted)" title="Refresh" aria-label="Refresh run history">
-					<RotateCcw size={15} aria-hidden="true" />
-				</button>
+			{#if waitingSince !== null}
+				<span class="inline-flex items-center gap-1.5 text-sm text-muted" role="status">
+					<LoaderCircle size={14} aria-hidden="true" class="animate-spin" /> Running now…
+				</span>
+			{:else if historyOpen}
+				<Button variant="ghost" size="sm" icon={RotateCcw} iconOnly label="Refresh run history" onclick={() => invalidateAll()} />
 			{/if}
 		</div>
 		{#if historyOpen}
