@@ -30,6 +30,22 @@ const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml', '/manifest.webmanifest'];
 const startsWithSegment = (path: string, prefix: string) =>
 	path === prefix || path.startsWith(prefix + '/');
 
+/** The browser bar's colour for each theme: the surface colour the app's chrome is drawn in. */
+const BAR = { light: '#f7f7f5', dark: '#202020' } as const;
+
+/**
+ * Pins the browser bar to the chosen theme.
+ *
+ * app.html offers one colour per OS scheme, which is right for "system". A theme picked in the
+ * app overrides the OS, so both entries get that theme's colour.
+ */
+function themeColor(html: string, theme: string): string {
+	if (theme !== 'light' && theme !== 'dark') return html;
+	return html
+		.replace(`content="${BAR.light}" media`, `content="${BAR[theme]}" media`)
+		.replace(`content="${BAR.dark}" media`, `content="${BAR[theme]}" media`);
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	const { cookies, fetch } = event;
 
@@ -108,7 +124,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// server-rendered markup matches the client (no flash of the wrong theme).
 	const theme = cookies.get('lb_theme') ?? 'system';
 	const response = await resolve(event, {
-		transformPageChunk: ({ html }) => html.replace('__THEME__', theme)
+		transformPageChunk: ({ html }) => themeColor(html.replace('__THEME__', theme), theme)
 	});
 
 	// Only the embed is meant to be framed. Everything else refuses, which it previously did not:

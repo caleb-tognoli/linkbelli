@@ -65,7 +65,7 @@
 					<span
 						class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-xs tabular-nums"
 						style={step.done
-							? 'border-color: var(--color-success); background: var(--color-success); color: white'
+							? 'border-color: var(--color-success-solid); background: var(--color-success-solid); color: var(--color-on-solid)'
 							: 'border-color: var(--color-border); color: var(--color-muted)'}
 						aria-hidden="true"
 					>

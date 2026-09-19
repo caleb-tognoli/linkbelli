@@ -174,7 +174,7 @@
 							ondrop={(e) => onRowDrop(e, playlist)}
 							class="flex items-center gap-2 px-3 py-2 text-sm"
 							style={over === playlist.id
-								? 'background: var(--color-accent); color: white'
+								? 'background: var(--color-accent-solid); color: var(--color-on-solid)'
 								: ''}
 						>
 							<Icon size={13} aria-hidden="true" style="opacity: 0.6" />

@@ -56,11 +56,14 @@
 		return months < 12 ? `${months}mo ago` : `${Math.floor(months / 12)}y ago`;
 	}
 
+	// Theme tokens rather than fixed hex: the old greys, reds and greens were the same in both
+	// themes and between 2.0:1 and 2.4:1 against a card — too faint for a dot that carries
+	// meaning, which needs 3:1.
 	function statusColor(src: Source): string {
-		if (!src.lastRunStatus) return '#9ca3af';
-		if (src.lastRunStatus === 'Failed') return '#ef4444';
-		if (src.lastRunStatus === 'Running') return '#f59e0b';
-		return '#22c55e';
+		if (!src.lastRunStatus) return 'var(--color-muted)';
+		if (src.lastRunStatus === 'Failed') return 'var(--color-danger)';
+		if (src.lastRunStatus === 'Running') return 'var(--color-warning)';
+		return 'var(--color-success)';
 	}
 
 	function statusLabel(src: Source): string {
@@ -77,7 +80,7 @@
 	const failing = (src: Source) => src.status === 'Failing';
 
 	function dotStyle(src: Source): string {
-		const base = 'width: 8px; height: 8px; border-radius: 50%; display: block; flex-shrink: 0;';
+		const base = 'width: 10px; height: 10px; border-radius: 50%; display: block; flex-shrink: 0;';
 		if (failing(src)) return `${base} border: 1.5px solid var(--color-danger);`;
 		if (stopped(src)) return `${base} border: 1.5px solid var(--color-muted);`;
 		return `${base} background: ${statusColor(src)};`;

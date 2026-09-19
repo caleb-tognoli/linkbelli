@@ -11,7 +11,10 @@
 		     Android will not offer to install without a raster icon of at least 192px, so the
 		     manifest listing only an SVG meant the share target could never be reached. -->
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
-		<meta name="theme-color" content="#2563eb" />
+		<!-- The browser's own bar matches the page, and follows the theme: the server rewrites
+		     these when a theme is chosen rather than left to the system (see hooks.server.ts). -->
+		<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#202020" media="(prefers-color-scheme: dark)" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="color-scheme" content="light dark" />
 		%sveltekit.head%

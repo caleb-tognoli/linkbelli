@@ -16,6 +16,13 @@
 		theme = value;
 		document.cookie = `lb_theme=${value}; path=/; max-age=31536000; samesite=lax`;
 		document.documentElement.dataset.theme = value;
+
+		// The browser bar follows, as the server would have set it on the next page load.
+		const bar = { light: '#f7f7f5', dark: '#202020' };
+		document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
+			const scheme = meta.media.includes('dark') ? 'dark' : 'light';
+			meta.content = value === 'system' ? bar[scheme] : bar[value];
+		});
 	}
 </script>
 
