@@ -22,6 +22,8 @@
 		'links:write'
 	];
 
+	const uid = $props.id();
+
 	let dialogOpen = $state(false);
 	let name = $state('');
 	let fullAccess = $state(true);
@@ -121,8 +123,8 @@
 				</Field>
 
 				<label class="flex items-center gap-2 text-sm">
-					<Switch checked={fullAccess} onchange={(v) => (fullAccess = v)} label="Full access" />
-					Full Access
+					<Switch checked={fullAccess} onchange={(v) => (fullAccess = v)} labelledby="{uid}-full-access" />
+					<span id="{uid}-full-access">Full access</span>
 				</label>
 
 				{#if !fullAccess}

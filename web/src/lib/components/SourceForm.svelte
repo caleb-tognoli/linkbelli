@@ -404,8 +404,8 @@
 		</div>
 
 		<div class="flex flex-col gap-2 text-sm">
-			<span>Enabled</span>
-			<Switch bind:checked={enabled} label="Run this source on its schedule" />
+			<span id="{uid}-enabled">Run on its schedule</span>
+			<Switch bind:checked={enabled} labelledby="{uid}-enabled" />
 			{#if wasFailing && enabled}
 				<span class="text-xs" style="color: var(--color-muted)">
 					Saving clears the {source!.consecutiveFailures} failures and puts it back on schedule.

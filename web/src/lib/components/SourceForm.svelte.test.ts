@@ -204,7 +204,7 @@ describe('SourceForm — editing', () => {
 		fakeApi({});
 		render(SourceForm, { mode: 'edit', source: existing({ status: 'Failing', consecutiveFailures: 5 }) });
 
-		expect(screen.getByRole('switch', { name: 'Run this source on its schedule' })).not.toBeChecked();
+		expect(screen.getByRole('switch', { name: 'Run on its schedule' })).not.toBeChecked();
 		expect(screen.getByText(/Paused — runs only when you trigger one/)).toBeInTheDocument();
 	});
 });
