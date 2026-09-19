@@ -649,7 +649,9 @@
 					max="100"
 					value={item.score ?? ''}
 					placeholder="—"
-					class="w-10 border-none bg-transparent text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus-visible:!outline-none"
+					aria-label={`Score for ${item.metadata?.title ?? item.link.title ?? item.link.url}, 0 to 100`}
+					title="Score, 0 to 100"
+					class="w-10 rounded-control border border-transparent bg-transparent text-center text-sm [appearance:textfield] hover:border-border-strong focus:border-accent focus:bg-bg [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 					style="color: inherit"
 					oninput={(e) => {
 						const v = e.currentTarget.value;

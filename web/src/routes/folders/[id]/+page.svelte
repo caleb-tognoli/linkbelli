@@ -63,10 +63,15 @@
 
 	<header class="mt-3 flex flex-wrap items-center justify-between gap-3">
 		<div class="min-w-0 flex-1">
+			<!-- The heading carries the name for the page outline; the field carries the editing.
+			     A field alone has no accessible name and leaves the page without an h1. -->
+			<h1 class="sr-only">{folderName}</h1>
 			<input
 				type="text"
 				value={folderName}
-				class="w-full bg-transparent text-2xl font-semibold outline-none focus-visible:!outline-none"
+				aria-label="Folder name"
+				title="Rename this folder"
+				class="-mx-1 w-full min-w-0 rounded-control border border-transparent bg-transparent px-1 py-0.5 text-2xl font-semibold hover:border-border-strong focus:border-accent"
 				onblur={(e) => saveName(e.currentTarget)}
 				onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = folderName; e.currentTarget.blur(); } }}
 			/>

@@ -341,8 +341,8 @@
 					type="text"
 					value={playlistName}
 					aria-label="Playlist name"
-					class="-mx-1 w-full rounded-sm border border-transparent bg-transparent px-1 py-0.5 text-2xl font-semibold outline-none hover:border-[var(--color-border)] focus-visible:border-[var(--color-accent)] focus-visible:!outline-none"
-					style="min-width: 0"
+					title="Rename this playlist"
+					class="-mx-1 w-full min-w-0 rounded-control border border-transparent bg-transparent px-1 py-0.5 text-2xl font-semibold hover:border-border-strong focus:border-accent"
 					onblur={(e) => saveName(e.currentTarget)}
 					onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = playlistName; e.currentTarget.blur(); } }}
 				/>
