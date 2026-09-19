@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -542,22 +543,10 @@
 				</div>
 
 				<div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-					<label class="flex items-center gap-2">
-						<input type="checkbox" bind:checked={draft.markWatched} />
-						Mark it watched
-					</label>
-					<label class="flex items-center gap-2">
-						<input type="checkbox" bind:checked={draft.archive} />
-						Keep a public snapshot
-					</label>
-					<label class="flex items-center gap-2">
-						<input type="checkbox" bind:checked={draft.trash} />
-						Send it to the trash
-					</label>
-					<label class="flex items-center gap-2">
-						<input type="checkbox" bind:checked={draft.stopOnMatch} />
-						Stop here
-					</label>
+					<Checkbox bind:checked={draft.markWatched}>Mark it watched</Checkbox>
+					<Checkbox bind:checked={draft.archive}>Keep a public snapshot</Checkbox>
+					<Checkbox bind:checked={draft.trash}>Send it to the trash</Checkbox>
+					<Checkbox bind:checked={draft.stopOnMatch}>Stop here</Checkbox>
 				</div>
 				<p class="mt-2 text-xs" style="color: var(--color-muted)">
 					"Stop here" keeps the rules below from seeing the item — which is how a specific rule

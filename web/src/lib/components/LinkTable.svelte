@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -482,11 +483,10 @@
 	>
 		{#if !readonly}
 			<td class="pr-1">
-				<input
-					type="checkbox"
+				<Checkbox
 					checked={selected.has(item.id)}
 					onchange={() => toggleSelected(item.id)}
-					aria-label={`Select ${item.link.title ?? item.link.url}`}
+					label={`Select ${item.link.title ?? item.link.url}`}
 				/>
 			</td>
 			<!-- Two grips, because they are two different things and sharing one gesture between
@@ -1255,12 +1255,11 @@
 					<tr class="text-left" style="color: var(--color-muted)">
 						{#if !readonly}
 							<th class="w-6">
-								<input
-									type="checkbox"
+								<Checkbox
 									checked={allSelected}
 									indeterminate={selected.size > 0 && !allSelected}
 									onchange={toggleSelectAll}
-									aria-label="Select all"
+									label="Select all"
 								/>
 							</th>
 							<th class="w-6"></th>
