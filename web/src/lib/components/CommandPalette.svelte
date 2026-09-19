@@ -59,6 +59,18 @@
 		}
 	}
 
+	// Ids for the combobox wiring: which list it controls, and which option is the active one.
+	const uid = $props.id();
+	const listId = `${uid}-list`;
+	const optionId = (index: number) => `${uid}-option-${index}`;
+	const activeIndex = $derived(Math.min(selected, Math.max(0, commands.length - 1)));
+
+	// The list is taller than it shows; arrowing past the edge brings the active option into view.
+	$effect(() => {
+		if (!open || commands.length === 0) return;
+		document.getElementById(optionId(activeIndex))?.scrollIntoView({ block: 'nearest' });
+	});
+
 	function run(href: string) {
 		open = false;
 		goto(href);
@@ -86,6 +98,11 @@
 					onkeydown={onInputKeydown}
 					placeholder="Jump to a playlist, search, or paste a link…"
 					aria-label="Jump to a playlist, search, or paste a link"
+					role="combobox"
+					aria-expanded={commands.length > 0}
+					aria-controls={listId}
+					aria-autocomplete="list"
+					aria-activedescendant={commands.length > 0 ? optionId(activeIndex) : undefined}
 					class="w-full bg-transparent py-3 outline-none focus-visible:!outline-none"
 				/>
 			</div>
@@ -93,19 +110,22 @@
 			{#if commands.length === 0}
 				<p class="px-4 py-6 text-center text-sm" style="color: var(--color-muted)">Nothing matches.</p>
 			{:else}
-				<ul class="max-h-80 overflow-y-auto py-1">
+				<!-- A listbox the input controls: the options are chosen with the arrow keys and Enter
+				     from the input, so they are not tab stops of their own. -->
+				<ul id={listId} role="listbox" aria-label="Results" class="max-h-80 overflow-y-auto py-1">
 					{#each commands as command, index (command.id)}
-						<li>
-							<button
-								type="button"
-								onclick={() => run(command.href)}
-								onmouseenter={() => (selected = index)}
-								class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
-								style={active?.id === command.id ? 'background: var(--color-selected)' : ''}
-							>
-								<span class="min-w-0 flex-1 truncate">{command.label}</span>
-								<Badge>{command.kind}</Badge>
-							</button>
+						<!-- svelte-ignore a11y_click_events_have_key_events -- the input handles the keys -->
+						<li
+							id={optionId(index)}
+							role="option"
+							aria-selected={active?.id === command.id}
+							onclick={() => run(command.href)}
+							onmouseenter={() => (selected = index)}
+							class="flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-left text-sm"
+							style={active?.id === command.id ? 'background: var(--color-selected)' : ''}
+						>
+							<span class="min-w-0 flex-1 truncate">{command.label}</span>
+							<Badge>{command.kind}</Badge>
 						</li>
 					{/each}
 				</ul>
