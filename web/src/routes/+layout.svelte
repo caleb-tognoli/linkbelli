@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import '../app.css';
 	import { Dialog } from 'bits-ui';
-	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge, Highlighter } from '@lucide/svelte';
+	import { Bookmark, Home, ListMusic, Rss, Compass, Upload, User, LogOut, PanelLeftClose, PanelLeft, Menu, Search, ListChecks, Wand2, Gauge, Highlighter, X } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -210,7 +211,14 @@
 						class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 border-r p-4"
 						style="border-color: var(--color-border); background: var(--color-surface)"
 					>
-						<Dialog.Title class="px-2 pb-4 text-lg font-semibold">Linkbelli</Dialog.Title>
+						<div class="flex items-center justify-between gap-2 px-2 pb-4">
+							<Dialog.Title class="text-lg font-semibold">Linkbelli</Dialog.Title>
+							<!-- A visible way out: closing by Escape or a tap outside is not obvious, and
+							     not always available to a screen-reader user. -->
+							<Dialog.Close class={buttonClass('ghost', 'md', true)} title="Close menu" aria-label="Close menu">
+								<X size={20} aria-hidden="true" />
+							</Dialog.Close>
+						</div>
 						{@render navBody(true)}
 					</Dialog.Content>
 				</Dialog.Portal>
