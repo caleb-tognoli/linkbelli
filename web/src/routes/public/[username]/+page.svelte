@@ -1,4 +1,8 @@
 <script lang="ts">
+	import type { Paged, PublicPlaylistSummary } from '$lib/types';
+	import { failureMessage } from '$lib/api/errors';
+	import { toast } from '$lib/toast.svelte';
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import { page } from '$app/state';
 	import { api } from '$lib/api/client';
@@ -22,6 +26,41 @@
 	);
 
 	const description = $derived(`${data.profile.username} has published ${counts} on Linkbelli.`);
+
+	// Everything they have published, not only the first page of it.
+	let tail = $state<{ items: PublicPlaylistSummary[]; cursor: string | null } | null>(null);
+	let loadingMore = $state(false);
+	let seen = data.playlists;
+	$effect(() => {
+		if (data.playlists !== seen) {
+			seen = data.playlists;
+			tail = null;
+		}
+	});
+	const playlists = $derived.by(() => {
+		const first = data.playlists.items;
+		const slugs = new Set(first.map((p) => p.slug));
+		return [...first, ...(tail?.items ?? []).filter((p) => !slugs.has(p.slug))];
+	});
+	const nextCursor = $derived(tail ? tail.cursor : data.playlists.nextCursor);
+
+	async function loadMore() {
+		if (!nextCursor || loadingMore) return;
+		loadingMore = true;
+		try {
+			const res = await api.get(
+				`/public/users/${encodeURIComponent(data.profile.username)}/playlists?cursor=${encodeURIComponent(nextCursor)}`
+			);
+			if (!res.ok) {
+				toast.error(failureMessage(res.status, 'Could not load more playlists.'));
+				return;
+			}
+			const page = (await res.json()) as Paged<PublicPlaylistSummary>;
+			tail = { items: [...(tail?.items ?? []), ...page.items], cursor: page.nextCursor };
+		} finally {
+			loadingMore = false;
+		}
+	}
 
 	let followedByMe = $state(data.profile.followedByMe ?? false);
 	let followerCount = $state(data.profile.followerCount ?? 0);
@@ -87,7 +126,7 @@
 		{/if}
 	</header>
 
-	{#if data.playlists.items.length === 0}
+	{#if playlists.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing published yet.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
@@ -96,7 +135,7 @@
 		</div>
 	{:else}
 		<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-			{#each data.playlists.items as playlist (playlist.slug)}
+			{#each playlists as playlist (playlist.slug)}
 				<PlaylistCard
 					href={`/public/${encodeURIComponent(playlist.ownerUsername)}/${encodeURIComponent(playlist.slug)}`}
 					name={playlist.name}
@@ -110,5 +149,8 @@
 				/>
 			{/each}
 		</div>
+		{#if nextCursor}
+			<LoadMore onclick={loadMore} loading={loadingMore} remaining={data.profile.publicPlaylistCount - playlists.length} />
+		{/if}
 	{/if}
 </section>

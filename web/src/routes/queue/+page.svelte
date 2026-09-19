@@ -1,6 +1,8 @@
 <svelte:head><title>Up next - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import type { Paged, SearchHit } from '$lib/types';
+	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -14,19 +16,55 @@
 	import { BookOpen, Check, Clock, Star, Trash2 } from '@lucide/svelte';
 	import { PRESETS, PRESET_LABELS, backWhen, resolvePreset, type SnoozePreset } from '$lib/snooze';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import type { SearchHit } from '$lib/types';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	let busy = $state<string | null>(null);
 
+	/**
+	 * What has been fetched past the first twenty-five.
+	 *
+	 * The header counted everything waiting while the list stopped at twenty-five. Kept across
+	 * the reloads that follow marking something done — working down a long queue should not
+	 * throw you back to the top each time — and pruned by hand of whatever leaves it.
+	 */
+	let tail = $state<{ items: SearchHit[]; cursor: string | null } | null>(null);
+	let loadingMore = $state(false);
+
+	const queued = $derived.by(() => {
+		const first = data.queue.items;
+		const ids = new Set(first.map((h) => h.itemId));
+		return [...first, ...(tail?.items ?? []).filter((h) => !ids.has(h.itemId))];
+	});
+	const nextCursor = $derived(tail ? tail.cursor : data.queue.nextCursor);
+
+	function forget(itemId: string) {
+		if (tail) tail = { ...tail, items: tail.items.filter((h) => h.itemId !== itemId) };
+	}
+
+	async function loadMore() {
+		if (!nextCursor || loadingMore) return;
+		loadingMore = true;
+		try {
+			const res = await api.get(`/search?status=unwatched&sort=queue&limit=25&cursor=${encodeURIComponent(nextCursor)}`);
+			if (!res.ok) {
+				toast.error(failureMessage(res.status, 'Could not load more.'));
+				return;
+			}
+			const page = (await res.json()) as Paged<SearchHit>;
+			tail = { items: [...(tail?.items ?? []), ...page.items], cursor: page.nextCursor };
+		} finally {
+			loadingMore = false;
+		}
+	}
 
 	async function markWatched(itemId: string) {
 		busy = itemId;
 		const res = await api.patch(`/items/${itemId}`, { status: 'Watched' });
 		busy = null;
 		if (res.ok) {
+			forget(itemId);
 			await invalidateAll();
 			toast.success('Marked done.', {
 				action: {
@@ -55,8 +93,12 @@
 			until: resolvePreset(preset).toISOString()
 		});
 		busy = null;
-		if (res.ok) await invalidateAll();
-		else toast.error(failureMessage(res.status, 'Could not put that aside.'));
+		if (res.ok) {
+			forget(hit.itemId);
+			await invalidateAll();
+		} else {
+			toast.error(failureMessage(res.status, 'Could not put that aside.'));
+		}
 	}
 
 	/**
@@ -83,8 +125,12 @@
 		busy = hit.itemId;
 		const res = await api.del(`/items/${hit.itemId}`);
 		busy = null;
-		if (res.ok) await invalidateAll();
-		else toast.error(failureMessage(res.status, 'Could not move that to the trash.'));
+		if (res.ok) {
+			forget(hit.itemId);
+			await invalidateAll();
+		} else {
+			toast.error(failureMessage(res.status, 'Could not move that to the trash.'));
+		}
 	}
 
 	/**
@@ -94,8 +140,8 @@
 	 * recorded, a twenty-two-minute piece read half of on the train looked exactly like one
 	 * never opened, and kept being offered from the top.
 	 */
-	const started = $derived(data.queue.items.filter((h) => (h.readProgress ?? 0) > 0.02));
-	const fresh = $derived(data.queue.items.filter((h) => (h.readProgress ?? 0) <= 0.02));
+	const started = $derived(queued.filter((h) => (h.readProgress ?? 0) > 0.02));
+	const fresh = $derived(queued.filter((h) => (h.readProgress ?? 0) <= 0.02));
 
 	/** How long something has been waiting — the reason it is near the top. */
 	function waiting(iso: string): string {
@@ -114,7 +160,7 @@
 		description="Everything you have not got to yet, across every playlist — what you started first, then what you rated highly, then whatever you have been carrying longest."
 	/>
 
-	{#if data.queue.items.length === 0}
+	{#if queued.length === 0}
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing waiting.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
@@ -145,6 +191,13 @@
 				{@render row(hit)}
 			{/each}
 		</ul>
+		{#if nextCursor}
+			<LoadMore
+				onclick={loadMore}
+				loading={loadingMore}
+				remaining={data.queue.total != null ? data.queue.total - queued.length : null}
+			/>
+		{/if}
 	{/if}
 
 	{#if data.aside.items.length > 0}

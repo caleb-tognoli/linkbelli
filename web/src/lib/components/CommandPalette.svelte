@@ -13,8 +13,32 @@
 	let selected = $state(0);
 	let playlists = $state<Playlist[]>([]);
 	let loaded = false;
+	/** Whether the first hundred were not all of them. When so, typing asks the server too. */
+	let partial = false;
+	let found = $state<Playlist[]>([]);
 
-	const commands = $derived(buildCommands(query, playlists));
+	const known = $derived.by(() => {
+		const ids = new Set(playlists.map((p) => p.id));
+		return [...playlists, ...found.filter((p) => !ids.has(p.id))];
+	});
+	const commands = $derived(buildCommands(query, known));
+
+	// Past the first hundred, a playlist could only be reached by knowing where it was filed.
+	$effect(() => {
+		const term = query.trim();
+		if (!open || !partial || term.length < 2) return;
+		const timer = setTimeout(async () => {
+			try {
+				const page = await api
+					.get(`/playlists?q=${encodeURIComponent(term)}&limit=20`)
+					.then((r) => json<Paged<Playlist>>(r));
+				found = page.items;
+			} catch {
+				// The ones already known still match.
+			}
+		}, 200);
+		return () => clearTimeout(timer);
+	});
 
 	// Clamped rather than reset: as the list narrows under typing, the selection should stay on
 	// something real without jumping back to the top on every keystroke.
@@ -40,6 +64,7 @@
 		try {
 			const page = await api.get('/playlists?limit=100').then((r) => json<Paged<Playlist>>(r));
 			playlists = page.items;
+			partial = page.nextCursor !== null;
 			loaded = true;
 		} catch {
 			// Places to go still work without them.
