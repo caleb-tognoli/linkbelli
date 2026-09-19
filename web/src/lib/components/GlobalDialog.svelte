@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { Check, X } from '@lucide/svelte';
 	import { Dialog } from 'bits-ui';
@@ -38,12 +39,11 @@
 				<p class="font-medium">{dlg.message}</p>
 
 				{#if dlg.kind === 'prompt'}
-					<input
+					<Input
 						type="text"
 						bind:value={promptValue}
-						class="mt-3 w-full rounded-md border px-3 py-2 text-sm"
-						style="border-color: var(--color-border-strong); background: var(--color-bg)"
 						onkeydown={(e) => e.key === 'Enter' && confirm()}
+						class="mt-3 w-full"
 					/>
 				{/if}
 

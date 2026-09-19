@@ -1,6 +1,8 @@
 <svelte:head><title>Profile - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import { api } from '$lib/api/client';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import BackupsPanel from '$lib/components/BackupsPanel.svelte';
@@ -297,16 +299,17 @@
 			</p>
 
 			<form class="mt-3 flex flex-wrap items-end gap-2" onsubmit={leave}>
-				<label class="flex flex-col gap-1 text-sm">
-					Confirm with your password
-					<input
-						type="password"
-						bind:value={password}
-						autocomplete="current-password"
-						class="rounded-md border px-3 py-2"
-						style="border-color: var(--color-border-strong); background: var(--color-bg)"
-					/>
-				</label>
+				<Field label="Confirm with your password">
+					{#snippet children(f)}
+						<Input
+							id={f.id}
+							type="password"
+							bind:value={password}
+							autocomplete="current-password"
+							aria-describedby={f.describedby}
+						/>
+					{/snippet}
+				</Field>
 				<button
 					type="submit"
 					disabled={leaving || !password}

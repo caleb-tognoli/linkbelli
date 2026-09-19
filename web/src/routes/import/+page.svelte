@@ -1,6 +1,8 @@
 ﻿<svelte:head><title>Import - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Select from '$lib/components/ui/Select.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { Upload, CheckCircle } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
@@ -124,27 +126,23 @@
 						{#if data.playlists.length === 0}
 							<p class="text-sm" style="color: var(--color-muted)">You don't have any playlists yet.</p>
 						{:else}
-							<select
+							<Select
 								name="playlistId"
-								class="rounded-md border px-3 py-2 text-sm"
-								style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							>
 								{#each data.playlists as pl (pl.id)}
 									<option value={pl.id}>{pl.name}</option>
 								{/each}
-							</select>
+							</Select>
 						{/if}
 					</div>
 				{/if}
 
 				{#if destination === 'new'}
 					<div>
-						<input
+						<Input
 							name="newPlaylistName"
 							type="text"
 							placeholder="Playlist name"
-							class="rounded-md border px-3 py-2 text-sm"
-							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 						/>
 					</div>
 				{/if}

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Select from '$lib/components/ui/Select.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
@@ -337,8 +340,6 @@
 		}
 	}
 
-	const fieldClass = 'rounded-md border px-3 py-2 text-sm';
-	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 </script>
 
 {#snippet infoTip(text: string)}
@@ -354,7 +355,7 @@
 		     reader announced it as nothing more than "edit text". -->
 		<label for="{uid}-name">Name</label>
 		<div class="flex items-center gap-2">
-			<input id="{uid}-name" bind:value={name} class="{fieldClass} flex-1" style={fieldStyle} />
+			<Input id="{uid}-name" bind:value={name} class="flex-1" />
 			<Popover.Root bind:open={visOpen}>
 				<Popover.Trigger
 					class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:border-[var(--color-accent)]"
@@ -445,15 +446,20 @@
 		<div class="flex flex-col gap-6">
 			<!-- Type + main config fields -->
 			<div class="flex flex-col gap-4">
-				<label class="flex flex-col gap-1 text-sm">
-					<span>Type</span>
-					<select bind:value={type} class={fieldClass} style={fieldStyle}>
+				<Field label="Type">
+					{#snippet children(f)}
+						<Select
+							id={f.id}
+							bind:value={type}
+							aria-describedby={f.describedby}
+						>
 						<option value="Rss">RSS / Atom</option>
 						<option value="Scraper">Web scraper</option>
 						<option value="JsonApi">JSON API</option>
 						<option value="Webhook">Webhook (push)</option>
-					</select>
-				</label>
+						</Select>
+					{/snippet}
+				</Field>
 
 				{#if type === 'Webhook'}
 					<!-- Nothing to fill in. What this type needs is the URL, going the other way. -->
@@ -485,7 +491,7 @@
 				{#each FIELDS[type].filter(f => !SCRAPER_LINK_FIELDS.includes(f.key as typeof SCRAPER_LINK_FIELDS[number])) as f (f.key)}
 					<label class="flex flex-col gap-1 text-sm">
 						<span>{f.label}{#if !f.required && !f.hideOptional}<span style="color: var(--color-muted)"> (optional)</span>{/if}</span>
-						<input bind:value={values[f.key]} type={f.inputType ?? 'text'} placeholder={f.placeholder ?? ''} class={fieldClass} style={fieldStyle} />
+						<Input bind:value={values[f.key]} type={f.inputType ?? 'text'} placeholder={f.placeholder ?? ''} />
 					</label>
 				{/each}
 
@@ -493,11 +499,11 @@
 					<div class="flex gap-2">
 						<label class="flex flex-1 flex-col gap-1 text-sm">
 							<span class="inline-flex items-center gap-1">Link selector {@render infoTip('Selector is relative to the item selector')}</span>
-							<input bind:value={values['linkSelector']} class={fieldClass} style={fieldStyle} />
+							<Input bind:value={values['linkSelector']} />
 						</label>
 						<label class="flex flex-1 flex-col gap-1 text-sm">
 							<span class="inline-flex items-center gap-1">Link attribute {@render infoTip('Leave blank to read text content')}</span>
-							<input bind:value={values['linkAttribute']} class={fieldClass} style={fieldStyle} />
+							<Input bind:value={values['linkAttribute']} />
 						</label>
 					</div>
 				{/if}
@@ -514,8 +520,8 @@
 					</div>
 					{#each headers as header, i (i)}
 						<div class="flex gap-2">
-							<input bind:value={header.name} class="{fieldClass} flex-1" style={fieldStyle} />
-							<input bind:value={header.value} class="{fieldClass} flex-1" style={fieldStyle} />
+							<Input bind:value={header.name} class="flex-1" />
+							<Input bind:value={header.value} class="flex-1" />
 							<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
 								<X size={17} aria-hidden="true" />
 							</button>
@@ -542,19 +548,35 @@
 						</div>
 					</div>
 					{#if authMode === 'loginUrl'}
-						<label class="flex flex-col gap-1 text-sm">
-							<span>Login URL</span>
-							<input bind:value={values['auth.loginUrl']} class={fieldClass} style={fieldStyle} />
-						</label>
+						<Field label="Login URL">
+							{#snippet children(f)}
+								<Input
+									id={f.id}
+									bind:value={values['auth.loginUrl']}
+									aria-describedby={f.describedby}
+								/>
+							{/snippet}
+						</Field>
 						<div class="flex gap-2">
-							<label class="flex flex-1 flex-col gap-1 text-sm">
-								<span>Username</span>
-								<input bind:value={values['auth.username']} class={fieldClass} style={fieldStyle} />
-							</label>
-							<label class="flex flex-1 flex-col gap-1 text-sm">
-								<span>Password</span>
-								<input bind:value={values['auth.password']} type="password" class={fieldClass} style={fieldStyle} />
-							</label>
+							<Field label="Username" class="flex-1">
+								{#snippet children(f)}
+									<Input
+										id={f.id}
+										bind:value={values['auth.username']}
+										aria-describedby={f.describedby}
+									/>
+								{/snippet}
+							</Field>
+							<Field label="Password" class="flex-1">
+								{#snippet children(f)}
+									<Input
+										id={f.id}
+										bind:value={values['auth.password']}
+										type="password"
+										aria-describedby={f.describedby}
+									/>
+								{/snippet}
+							</Field>
 						</div>
 					{/if}
 				</div>
@@ -571,10 +593,10 @@
 							<span class="inline-flex items-center gap-1 text-xs font-medium" style="color: var(--color-muted)">Replacement {@render infoTip('Blank deletes the match; $1 inserts a capture group')}</span>
 							{#each META_FIELD_NAMES as name (name)}
 								<span class="capitalize" style="color: var(--color-muted)">{name}</span>
-								<input bind:value={values[`meta.${name}`]} class={fieldClass} style={fieldStyle} />
-								<input bind:value={values[`meta.${name}.attr`]} class={fieldClass} style={fieldStyle} />
-								<input bind:value={values[`meta.${name}.regex`]} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
-								<input bind:value={values[`meta.${name}.replacement`]} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
+								<Input bind:value={values[`meta.${name}`]} />
+								<Input bind:value={values[`meta.${name}.attr`]} />
+								<Input bind:value={values[`meta.${name}.regex`]} spellcheck="false" class="font-mono" />
+								<Input bind:value={values[`meta.${name}.replacement`]} spellcheck="false" class="font-mono" />
 							{/each}
 						</div>
 						<span class="text-xs" style="color: var(--color-muted)">
@@ -646,34 +668,57 @@
 				<div class="grid gap-3 sm:grid-cols-2">
 					<label class="flex flex-col gap-1 text-sm">
 						<span class="inline-flex items-center gap-1">Title must match {@render infoTip('Links whose title does not match are skipped')}</span>
-						<input bind:value={filter.titleInclude} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
+						<Input bind:value={filter.titleInclude} spellcheck="false" class="font-mono" />
 					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Title must not match</span>
-						<input bind:value={filter.titleExclude} spellcheck="false" placeholder="sponsored|advertorial" class="{fieldClass} font-mono" style={fieldStyle} />
-					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>URL must match</span>
-						<input bind:value={filter.urlInclude} spellcheck="false" class="{fieldClass} font-mono" style={fieldStyle} />
-					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>URL must not match</span>
-						<input bind:value={filter.urlExclude} spellcheck="false" placeholder="/tag/|/author/" class="{fieldClass} font-mono" style={fieldStyle} />
-					</label>
+					<Field label="Title must not match">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={filter.titleExclude}
+								spellcheck="false"
+								placeholder="sponsored|advertorial"
+								class="font-mono"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
+					<Field label="URL must match">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={filter.urlInclude}
+								spellcheck="false"
+								class="font-mono"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
+					<Field label="URL must not match">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={filter.urlExclude}
+								spellcheck="false"
+								placeholder="/tag/|/author/"
+								class="font-mono"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 				</div>
 
 				<div class="grid gap-3 sm:grid-cols-3">
 					<label class="flex flex-col gap-1 text-sm">
 						<span class="inline-flex items-center gap-1">Minimum age {@render infoTip('Hours. Only applies when the source reports a date')}</span>
-						<input bind:value={filter.minAgeHours} type="number" min="0" max="720" placeholder="any" class={fieldClass} style={fieldStyle} />
+						<Input bind:value={filter.minAgeHours} type="number" min={0} max={720} placeholder="any" />
 					</label>
 					<label class="flex flex-col gap-1 text-sm">
 						<span class="inline-flex items-center gap-1">Most items a run {@render infoTip('Applied after the patterns, so the cap keeps what matched')}</span>
-						<input bind:value={filter.maxItems} type="number" min="1" placeholder="no limit" class={fieldClass} style={fieldStyle} />
+						<Input bind:value={filter.maxItems} type="number" min={1} placeholder="no limit" />
 					</label>
 					<label class="flex flex-col gap-1 text-sm">
 						<span class="inline-flex items-center gap-1">Don't re-add for {@render infoTip('Days. Deleting something this source found otherwise lasts until its next run')}</span>
-						<input bind:value={filter.dedupeWindowDays} type="number" min="0" max="30" placeholder="never" class={fieldClass} style={fieldStyle} />
+						<Input bind:value={filter.dedupeWindowDays} type="number" min={0} max={30} placeholder="never" />
 					</label>
 				</div>
 			</div>

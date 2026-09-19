@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import { api, json } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { Search, ShieldCheck, ShieldOff, UserCheck, UserX } from '@lucide/svelte';
@@ -104,21 +105,13 @@
 		void search();
 	}}
 >
-	<div class="relative flex-1">
-		<Search
-			size={15}
-			aria-hidden="true"
-			class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
-			style="color: var(--color-muted)"
-		/>
-		<input
-			bind:value={term}
-			placeholder="Find an account by name or address"
-			aria-label="Find an account"
-			class="w-full rounded-md border py-2 pr-3 pl-9 text-sm"
-			style="border-color: var(--color-border-strong); background: var(--color-bg)"
-		/>
-	</div>
+	<Input
+		icon={Search}
+		class="flex-1"
+		bind:value={term}
+		placeholder="Find an account by name or address"
+		aria-label="Find an account"
+	/>
 	<button
 		type="submit"
 		disabled={searching}

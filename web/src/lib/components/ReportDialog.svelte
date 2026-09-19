@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
@@ -75,30 +78,21 @@
 					This goes to whoever runs this instance, not to the playlist's owner.
 				</p>
 
-				<label class="mt-4 flex flex-col gap-1 text-sm">
-					<span>What is wrong with it</span>
-					<select
-						bind:value={reason}
-						class="rounded-md border px-3 py-2 text-sm"
-						style="border-color: var(--color-border-strong); background: var(--color-bg)"
-					>
-						{#each reasons as option (option.value)}
-							<option value={option.value}>{option.label}</option>
-						{/each}
-					</select>
-				</label>
+				<Field label="What is wrong with it" class="mt-4">
+					{#snippet children(f)}
+						<Select id={f.id} bind:value={reason} aria-describedby={f.describedby}>
+							{#each reasons as option (option.value)}
+								<option value={option.value}>{option.label}</option>
+							{/each}
+						</Select>
+					{/snippet}
+				</Field>
 
-				<label class="mt-3 flex flex-col gap-1 text-sm">
-					<span>Anything else <span style="color: var(--color-muted)">(optional)</span></span>
-					<!-- Usually the only useful part of a report. -->
-					<textarea
-						bind:value={note}
-						rows="3"
-						maxlength="1000"
-						class="rounded-md border px-3 py-2 text-sm"
-						style="border-color: var(--color-border-strong); background: var(--color-bg)"
-					></textarea>
-				</label>
+				<Field label="Anything else" optional hint="Usually the most useful part of a report." class="mt-3">
+					{#snippet children(f)}
+						<Textarea id={f.id} bind:value={note} rows={3} maxlength={1000} aria-describedby={f.describedby} />
+					{/snippet}
+				</Field>
 
 				{#if error}
 					<p class="mt-2 text-sm" style="color: var(--color-danger)">{error}</p>

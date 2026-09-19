@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
@@ -124,14 +126,15 @@
 					<Dialog.Title class="text-lg font-semibold">New API key</Dialog.Title>
 
 					<div class="mt-4 flex flex-col gap-4">
-						<label class="flex flex-col gap-1 text-sm">
-							<span>Name</span>
-							<input
-								bind:value={name}
-								class="rounded-md border px-3 py-2 text-sm"
-								style="border-color: var(--color-border-strong); background: var(--color-bg)"
-							/>
-						</label>
+						<Field label="Name">
+							{#snippet children(f)}
+								<Input
+									id={f.id}
+									bind:value={name}
+									aria-describedby={f.describedby}
+								/>
+							{/snippet}
+						</Field>
 
 						<label class="flex items-center gap-2 text-sm">
 							<Switch checked={fullAccess} onchange={(v) => (fullAccess = v)} label="Full access" />

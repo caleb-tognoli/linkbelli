@@ -1,6 +1,8 @@
 ﻿<svelte:head><title>Create account - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
 	import { UserPlus } from '@lucide/svelte';
@@ -28,42 +30,45 @@
 			};
 		}}
 	>
-		<label class="flex flex-col gap-1 text-sm">
-			<span>Username</span>
-			<input
-				name="username"
-				autocomplete="username"
-				value={form?.username ?? ''}
-				required
-				class="rounded-md border px-3 py-2"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
-			/>
-		</label>
+		<Field label="Username">
+			{#snippet children(f)}
+				<Input
+					id={f.id}
+					name="username"
+					autocomplete="username"
+					value={form?.username ?? ''}
+					required
+					aria-describedby={f.describedby}
+				/>
+			{/snippet}
+		</Field>
 
-		<label class="flex flex-col gap-1 text-sm">
-			<span>Email</span>
-			<input
-				name="email"
-				type="email"
-				autocomplete="email"
-				value={form?.email ?? ''}
-				required
-				class="rounded-md border px-3 py-2"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
-			/>
-		</label>
+		<Field label="Email">
+			{#snippet children(f)}
+				<Input
+					id={f.id}
+					name="email"
+					type="email"
+					autocomplete="email"
+					value={form?.email ?? ''}
+					required
+					aria-describedby={f.describedby}
+				/>
+			{/snippet}
+		</Field>
 
-		<label class="flex flex-col gap-1 text-sm">
-			<span>Password</span>
-			<input
-				name="password"
-				type="password"
-				autocomplete="new-password"
-				required
-				class="rounded-md border px-3 py-2"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
-			/>
-		</label>
+		<Field label="Password">
+			{#snippet children(f)}
+				<Input
+					id={f.id}
+					name="password"
+					type="password"
+					autocomplete="new-password"
+					required
+					aria-describedby={f.describedby}
+				/>
+			{/snippet}
+		</Field>
 
 		{#if form?.error}
 			<p class="text-sm" style="color: var(--color-danger)">{form.error}</p>

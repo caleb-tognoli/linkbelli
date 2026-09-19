@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Select from '$lib/components/ui/Select.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
@@ -258,8 +261,6 @@
 		if (res.ok || res.status === 204) await invalidateAll();
 	}
 
-	const fieldClass = 'rounded-md border px-3 py-2 text-sm';
-	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 </script>
 
 <svelte:head><title>Rules - linkbelli</title></svelte:head>
@@ -372,73 +373,109 @@
 
 			<label class="mt-4 flex flex-col gap-1 text-sm">
 				<span>Name</span>
-				<input bind:value={draft.name} placeholder="Long reads go to Later" class={fieldClass} style={fieldStyle} />
+				<Input bind:value={draft.name} placeholder="Long reads go to Later" />
 			</label>
 
 			<fieldset class="mt-4 rounded-md border p-3" style="border-color: var(--color-border)">
 				<legend class="px-1 text-xs" style="color: var(--color-muted)">When all of these are true</legend>
 				<div class="grid gap-3 sm:grid-cols-2">
-					<label class="flex flex-col gap-1 text-sm">
-						<span>It lands in</span>
-						<select bind:value={draft.playlistId} class={fieldClass} style={fieldStyle}>
+					<Field label="It lands in">
+						{#snippet children(f)}
+							<Select
+								id={f.id}
+								bind:value={draft.playlistId}
+								aria-describedby={f.describedby}
+							>
 							<option value="">Any playlist</option>
 							{#each data.playlists as playlist (playlist.id)}
 								<option value={playlist.id}>{playlist.name}</option>
 							{/each}
-						</select>
-					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>It is</span>
-						<select bind:value={draft.kind} class={fieldClass} style={fieldStyle}>
+							</Select>
+						{/snippet}
+					</Field>
+					<Field label="It is">
+						{#snippet children(f)}
+							<Select
+								id={f.id}
+								bind:value={draft.kind}
+								aria-describedby={f.describedby}
+							>
 							{#each kinds as option (option.value)}
 								<option value={option.value}>{option.label}</option>
 							{/each}
-						</select>
-					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>From the site</span>
-						<input bind:value={draft.host} placeholder="example.com" class={fieldClass} style={fieldStyle} />
-					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Title matches</span>
-						<input bind:value={draft.titlePattern} spellcheck="false" placeholder="rust|zig" class="{fieldClass} font-mono" style={fieldStyle} />
-					</label>
-					<label class="flex flex-col gap-1 text-sm sm:col-span-2">
-						<span>Address matches</span>
-						<input bind:value={draft.urlPattern} spellcheck="false" placeholder="/blog/" class="{fieldClass} font-mono" style={fieldStyle} />
-					</label>
+							</Select>
+						{/snippet}
+					</Field>
+					<Field label="From the site">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={draft.host}
+								placeholder="example.com"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
+					<Field label="Title matches">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={draft.titlePattern}
+								spellcheck="false"
+								placeholder="rust|zig"
+								class="font-mono"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
+					<Field label="Address matches" class="sm:col-span-2">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={draft.urlPattern}
+								spellcheck="false"
+								placeholder="/blog/"
+								class="font-mono"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 					<label class="flex flex-col gap-1 text-sm">
 						<!-- Search could ask this from the day it shipped, off the same stored
 						     word count; rules could not. -->
 						<span>Takes at least (minutes)</span>
-						<input
+						<Input
 							bind:value={draft.minMinutes}
 							type="number"
-							min="1"
+							min={1}
 							placeholder="20"
-							class={fieldClass}
-							style={fieldStyle}
 						/>
 					</label>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>And at most (minutes)</span>
-						<input
-							bind:value={draft.maxMinutes}
-							type="number"
-							min="1"
-							placeholder="5"
-							class={fieldClass}
-							style={fieldStyle}
-						/>
-					</label>
-					<label class="flex flex-col gap-1 text-sm sm:col-span-2">
-						<span>The page</span>
-						<select bind:value={draft.broken} class={fieldClass} style={fieldStyle}>
+					<Field label="And at most (minutes)">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={draft.maxMinutes}
+								type="number"
+								min={1}
+								placeholder="5"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
+					<Field label="The page" class="sm:col-span-2">
+						{#snippet children(f)}
+							<Select
+								id={f.id}
+								bind:value={draft.broken}
+								aria-describedby={f.describedby}
+							>
 							<option value="">Working or not, either way</option>
 							<option value="yes">Has gone, or cannot be read</option>
 							<option value="no">Is still there</option>
-						</select>
-					</label>
+							</Select>
+						{/snippet}
+					</Field>
 				</div>
 				<p class="mt-2 text-xs" style="color: var(--color-muted)">
 					Patterns are regular expressions and ignore case. Leave a box empty to skip that condition
@@ -450,29 +487,40 @@
 			<fieldset class="mt-4 rounded-md border p-3" style="border-color: var(--color-border)">
 				<legend class="px-1 text-xs" style="color: var(--color-muted)">Then</legend>
 				<div class="grid gap-3 sm:grid-cols-2">
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Tag it</span>
-						<input bind:value={draft.addTags} placeholder="rust, later" class={fieldClass} style={fieldStyle} />
-					</label>
+					<Field label="Tag it">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={draft.addTags}
+								placeholder="rust, later"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 					<div class="flex gap-2">
-						<label class="flex flex-1 flex-col gap-1 text-sm">
-							<span>And</span>
-							<select bind:value={draft.destination} class={fieldClass} style={fieldStyle}>
+						<Field label="And" class="flex-1">
+							{#snippet children(f)}
+								<Select
+									id={f.id}
+									bind:value={draft.destination}
+									aria-describedby={f.describedby}
+								>
 								<option value="">Leave it where it is</option>
 								<option value="move">Move it to</option>
 								<option value="copy">Also put it in</option>
-							</select>
-						</label>
+								</Select>
+							{/snippet}
+						</Field>
 						{#if draft.destination}
 							<label class="flex flex-1 flex-col gap-1 text-sm">
 								<span class="sr-only">Destination playlist</span>
 								<span aria-hidden="true">&nbsp;</span>
-								<select bind:value={draft.destinationId} class={fieldClass} style={fieldStyle}>
+								<Select bind:value={draft.destinationId}>
 									<option value="">Choose…</option>
 									{#each data.playlists as playlist (playlist.id)}
 										<option value={playlist.id}>{playlist.name}</option>
 									{/each}
-								</select>
+								</Select>
 							</label>
 						{/if}
 					</div>
@@ -483,14 +531,12 @@
 						<!-- The queue sorts on score, so this is how a rule says "this source is
 						     worth my time" without rating every item by hand. -->
 						<span>Score it</span>
-						<input
+						<Input
 							bind:value={draft.setScore}
 							type="number"
-							min="0"
-							max="100"
+							min={0}
+							max={100}
 							placeholder="Leave it unrated"
-							class={fieldClass}
-							style={fieldStyle}
 						/>
 					</label>
 				</div>

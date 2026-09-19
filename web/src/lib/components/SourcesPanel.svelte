@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import { Popover } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -167,13 +168,13 @@
 					sideOffset={6}
 				>
 					<div class="flex gap-2">
-						<input
+						<Input
 							bind:value={query}
 							placeholder="Search sources..."
 							aria-label="Search sources"
-							class="flex-1 rounded border px-2 py-1 text-sm"
-							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							onkeydown={(e) => e.key === 'Enter' && searchShared()}
+							size="sm"
+							class="flex-1"
 						/>
 						<button type="button" onclick={searchShared} disabled={searching} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Search shared" aria-label="Search shared sources">
 							<Search size={16} aria-hidden="true" />

@@ -1,6 +1,8 @@
 <svelte:head><title>Reset your password - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
 	import { Mail } from '@lucide/svelte';
@@ -43,17 +45,18 @@
 				};
 			}}
 		>
-			<label class="flex flex-col gap-1 text-sm">
-				<span>Username or email</span>
-				<input
-					name="login"
-					autocomplete="username"
-					value={form?.login ?? ''}
-					required
-					class="rounded-md border px-3 py-2"
-					style="border-color: var(--color-border-strong); background: var(--color-bg)"
-				/>
-			</label>
+			<Field label="Username or email">
+				{#snippet children(f)}
+					<Input
+						id={f.id}
+						name="login"
+						autocomplete="username"
+						value={form?.login ?? ''}
+						required
+						aria-describedby={f.describedby}
+					/>
+				{/snippet}
+			</Field>
 
 			{#if form?.error}
 				<p class="text-sm" style="color: var(--color-danger)" role="alert">{form.error}</p>

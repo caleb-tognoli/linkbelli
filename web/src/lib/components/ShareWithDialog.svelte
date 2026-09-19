@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Select from '$lib/components/ui/Select.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
@@ -128,7 +130,6 @@
 		if (res.ok || res.status === 204) await load();
 	}
 
-	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 </script>
 
 <Dialog.Root bind:open>
@@ -155,19 +156,18 @@
 			</p>
 
 			<div class="mt-3 flex shrink-0 gap-2">
-				<input
+				<Input
 					bind:value={username}
 					onkeydown={(e) => e.key === 'Enter' && share()}
 					placeholder="username or email"
 					aria-label="Username or email address"
-					class="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
-					style={fieldStyle}
+					class="min-w-0 flex-1"
 				/>
-				<select bind:value={role} aria-label="Role" class="rounded-md border px-2 py-2 text-sm" style={fieldStyle}>
+				<Select bind:value={role} aria-label="Role">
 					{#each roles as option (option.value)}
 						<option value={option.value}>{option.label}</option>
 					{/each}
-				</select>
+				</Select>
 				<Button variant="primary" onclick={share} loading={busy} disabled={!username.trim()}>Add</Button>
 			</div>
 
@@ -201,13 +201,13 @@
 							: 'Copy this and send it however you like. It works once, and lasts two weeks.'}
 					</p>
 					<div class="mt-1.5 flex items-center gap-2">
-						<input
+						<Input
 							readonly
 							value={inviteLink}
 							onfocus={(e) => e.currentTarget.select()}
 							aria-label="Invitation link"
-							class="min-w-0 flex-1 rounded border px-2 py-1 font-mono"
-							style={fieldStyle}
+							size="sm"
+							class="min-w-0 flex-1 font-mono"
 						/>
 						<button
 							type="button"
@@ -231,17 +231,16 @@
 						{#each members as member (member.username)}
 							<li class="flex items-center gap-2 rounded-md px-1 py-1.5 text-sm">
 								<span class="min-w-0 flex-1 truncate">@{member.username}</span>
-								<select
+								<Select
 									value={member.role}
 									onchange={(e) => setRole(member, e.currentTarget.value as PlaylistRole)}
 									aria-label={`Role for ${member.username}`}
-									class="rounded-md border px-2 py-1 text-xs"
-									style={fieldStyle}
+									size="sm"
 								>
 									{#each roles as option (option.value)}
 										<option value={option.value}>{option.label}</option>
 									{/each}
-								</select>
+								</Select>
 								<button
 									type="button"
 									onclick={() => remove(member)}

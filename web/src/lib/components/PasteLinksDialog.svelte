@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
@@ -75,15 +76,14 @@
 			</p>
 
 			<!-- svelte-ignore a11y_autofocus -- the dialog exists to receive a paste -->
-			<textarea
+			<Textarea
 				autofocus
 				bind:value={text}
-				rows="8"
+				rows={8}
 				placeholder="https://example.com/one&#10;https://example.com/two"
 				aria-label="Text to take links from"
-				class="mt-3 w-full rounded-md border px-3 py-2 font-mono text-sm"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
-			></textarea>
+				class="mt-3 w-full font-mono"
+			/>
 
 			{#if error}
 				<p class="mt-2 text-sm" style="color: var(--color-danger)">{error}</p>

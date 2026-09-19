@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
@@ -445,12 +446,12 @@
 					<X size={17} aria-hidden="true" />
 				</Dialog.Close>
 			</div>
-			<input
+			<Input
 				bind:value={linkSearch}
 				placeholder="Search…"
 				aria-label="Search playlists"
-				class="mt-3 shrink-0 w-full rounded-md border px-3 py-1.5 text-sm"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
+				size="sm"
+				class="mt-3 shrink-0 w-full"
 			/>
 			<div class="mt-2 flex-1 overflow-y-auto">
 				{#if linkLoading && linkResults.length === 0}

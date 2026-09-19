@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api, json } from '$lib/api/client';
 	import { goto } from '$app/navigation';
@@ -118,23 +120,22 @@
 			<p class="text-sm" style="color: var(--color-muted)">{chosen.description}</p>
 		</div>
 
-		<label class="flex flex-col gap-1 text-sm">
-			Name
-			<input
-				bind:value={name}
-				class="rounded-md border px-3 py-2"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
-			/>
-		</label>
+		<Field label="Name">
+			{#snippet children(f)}
+				<Input
+					id={f.id}
+					bind:value={name}
+					aria-describedby={f.describedby}
+				/>
+			{/snippet}
+		</Field>
 
 		{#each chosen.fields as field (field.key)}
 			<label class="flex flex-col gap-1 text-sm">
 				{field.label}{#if !field.required}<span style="color: var(--color-muted)"> (optional)</span>{/if}
-				<input
+				<Input
 					bind:value={values[field.key]}
 					placeholder={field.placeholder ?? ''}
-					class="rounded-md border px-3 py-2"
-					style="border-color: var(--color-border-strong); background: var(--color-bg)"
 				/>
 				{#if field.help}
 					<span class="text-xs" style="color: var(--color-muted)">{field.help}</span>

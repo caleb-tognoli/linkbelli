@@ -1,6 +1,8 @@
 <svelte:head><title>Search - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Select from '$lib/components/ui/Select.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
@@ -192,22 +194,15 @@
 		{/if}
 	</p>
 
-	<div class="relative mt-5">
-		<Search
-			size={16}
-			aria-hidden="true"
-			class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
-			style="color: var(--color-muted)"
-		/>
-		<input
-			bind:value={term}
-			oninput={onInput}
-			placeholder="Search your links, or try site:bbc.co.uk under:10"
-			aria-label="Search your links"
-			class="w-full rounded-md border py-2.5 pr-3 pl-9"
-			style="border-color: var(--color-border-strong); background: var(--color-bg)"
-		/>
-	</div>
+	<Input
+		icon={Search}
+		class="mt-5"
+		type="search"
+		bind:value={term}
+		oninput={onInput}
+		placeholder="Search your links, or try site:bbc.co.uk under:10"
+		aria-label="Search your links"
+	/>
 
 	<details class="mt-2">
 		<summary class="cursor-pointer text-xs" style="color: var(--color-muted)">
@@ -261,20 +256,19 @@
 			title="Your highest-scored links, across every playlist"
 		>Best rated</button>
 
-		<select
+		<Select
 			value={data.kind}
 			onchange={(e) => navigate({ kind: e.currentTarget.value })}
 			aria-label="Kind"
-			class="rounded-md border px-2.5 py-1.5"
-			style="border-color: {data.kind ? 'var(--color-accent)' : 'var(--color-border)'};
-			       color: {data.kind ? 'var(--color-accent)' : 'inherit'};
-			       background: var(--color-bg)"
+			size="sm"
+			class="w-auto"
+			style={data.kind ? 'border-color: var(--color-accent); color: var(--color-accent)' : ''}
 		>
 			<option value="">Anything</option>
 			{#each kinds as option (option.value)}
 				<option value={option.value}>{option.label}</option>
 			{/each}
-		</select>
+		</Select>
 
 		<!-- The question people actually ask when picking what to open: not "what is good", but
 		     "what fits in the time I have". -->

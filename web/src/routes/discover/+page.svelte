@@ -1,6 +1,7 @@
 ﻿<svelte:head><title>Discover - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { Search, ChevronDown } from '@lucide/svelte';
@@ -72,13 +73,12 @@
 	<h1 class="text-2xl font-semibold">Discover</h1>
 
 	<form method="get" class="mt-4 flex gap-2">
-		<input
+		<Input
 			name="q"
 			value={data.q}
 			placeholder="Search public playlists…"
 			aria-label="Search public playlists"
-			class="flex-1 rounded-md border px-3 py-2 text-sm"
-			style="border-color: var(--color-border-strong); background: var(--color-bg)"
+			class="flex-1"
 		/>
 		<Button type="submit" variant="primary" icon={Search} iconOnly label="Search" />
 	</form>

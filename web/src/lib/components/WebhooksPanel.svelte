@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api, json } from '$lib/api/client';
@@ -247,27 +249,29 @@
 					<Dialog.Title class="text-lg font-semibold">New webhook</Dialog.Title>
 
 					<div class="mt-4 flex flex-col gap-4">
-						<label class="flex flex-col gap-1 text-sm">
-							<span>Address to send to</span>
-							<input
-								bind:value={url}
-								type="url"
-								placeholder="https://…"
-								class="rounded-md border px-3 py-2 text-sm"
-								style="border-color: var(--color-border-strong); background: var(--color-bg)"
-							/>
-						</label>
+						<Field label="Address to send to">
+							{#snippet children(f)}
+								<Input
+									id={f.id}
+									bind:value={url}
+									type="url"
+									placeholder="https://…"
+									aria-describedby={f.describedby}
+								/>
+							{/snippet}
+						</Field>
 
-						<label class="flex flex-col gap-1 text-sm">
-							<span>What it is for <span style="color: var(--color-muted)">(optional)</span></span>
-							<input
-								bind:value={description}
-								maxlength="200"
-								placeholder="Kitchen display, Discord #reading…"
-								class="rounded-md border px-3 py-2 text-sm"
-								style="border-color: var(--color-border-strong); background: var(--color-bg)"
-							/>
-						</label>
+						<Field label="What it is for" optional>
+							{#snippet children(f)}
+								<Input
+									id={f.id}
+									bind:value={description}
+									maxlength={200}
+									placeholder="Kitchen display, Discord #reading…"
+									aria-describedby={f.describedby}
+								/>
+							{/snippet}
+						</Field>
 
 						<fieldset class="flex flex-col gap-2.5 text-sm">
 							<legend class="mb-1">Send it</legend>

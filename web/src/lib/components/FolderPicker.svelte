@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import { api } from '$lib/api/client';
 	import { Folder as FolderIcon, House, Plus, X } from '@lucide/svelte';
 	import type { Folder } from '$lib/types';
@@ -74,15 +75,15 @@
 	{#if activeAdd && activeAdd.parentId === parentId}
 		<div class="flex items-center gap-1 py-0.5" style="padding-left: {depth * 1.25 + 0.25}rem">
 			<!-- svelte-ignore a11y_autofocus -- the field only appears because Add was pressed -->
-			<input
+			<Input
 				bind:value={newName}
 				placeholder="Folder name…"
 				aria-label="New folder name"
 				disabled={creating}
-				class="flex-1 rounded border px-2 py-0.5 text-sm"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
 				onkeydown={(e) => { if (e.key === 'Enter') doCreate(); if (e.key === 'Escape') cancelAdd(); }}
 				autofocus
+				size="sm"
+				class="flex-1"
 			/>
 			<button
 				type="button"

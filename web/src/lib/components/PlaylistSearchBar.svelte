@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { Plus, Search } from '@lucide/svelte';
@@ -25,8 +26,6 @@
 	/** Something worth saying that is not a problem. */
 	let notice = $state<string | null>(null);
 
-	const fieldClass = 'rounded-md border pl-9 pr-3 py-2 text-sm';
-	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 
 	const isUrl = $derived(looksLikeUrl(query));
 
@@ -117,22 +116,14 @@
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	<div class="flex gap-2">
-		<div class="relative flex-1 min-w-[12rem]">
-			<Search
-				size={15}
-				aria-hidden="true"
-				class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-				style="color: var(--color-muted)"
-			/>
-			<input
-				bind:value={query}
-				placeholder={isOwner ? 'Search or paste a URL…' : 'Search…'}
-				aria-label="Search or add link"
-				class="{fieldClass} w-full"
-				style={fieldStyle}
-				onkeydown={(e) => e.key === 'Enter' && showAdd && doAdd()}
-			/>
-		</div>
+		<Input
+			icon={Search}
+			class="min-w-[12rem] flex-1"
+			bind:value={query}
+			placeholder={isOwner ? 'Search or paste a URL…' : 'Search…'}
+			aria-label="Search or add link"
+			onkeydown={(e) => e.key === 'Enter' && showAdd && doAdd()}
+		/>
 		{#if showAdd}
 			<Button
 				variant="primary"

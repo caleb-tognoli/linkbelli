@@ -1,6 +1,10 @@
 <svelte:head><title>Save a link - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { Check, Clock, ExternalLink } from '@lucide/svelte';
@@ -128,40 +132,43 @@
 				<p class="text-sm" style="color: var(--color-muted)">{data.title}</p>
 			{/if}
 
-			<label class="flex flex-col gap-1 text-sm">
-				Address
-				<input
-					bind:value={url}
-					type="url"
-					placeholder="https://…"
-					class="rounded-md border px-3 py-2"
-					style="border-color: var(--color-border-strong); background: var(--color-bg)"
-				/>
-			</label>
+			<Field label="Address">
+				{#snippet children(f)}
+					<Input
+						id={f.id}
+						bind:value={url}
+						type="url"
+						placeholder="https://…"
+						aria-describedby={f.describedby}
+					/>
+				{/snippet}
+			</Field>
 
-			<label class="flex flex-col gap-1 text-sm">
-				Playlist
-				<select
-					bind:value={playlistId}
-					class="rounded-md border px-3 py-2"
-					style="border-color: var(--color-border-strong); background: var(--color-bg)"
-				>
+			<Field label="Playlist">
+				{#snippet children(f)}
+					<Select
+						id={f.id}
+						bind:value={playlistId}
+						aria-describedby={f.describedby}
+					>
 					{#each data.playlists as playlist (playlist.id)}
 						<option value={playlist.id}>{playlist.name}</option>
 					{/each}
-				</select>
-			</label>
+					</Select>
+				{/snippet}
+			</Field>
 
-			<label class="flex flex-col gap-1 text-sm">
-				Note <span style="color: var(--color-muted)">(optional)</span>
-				<textarea
-					bind:value={note}
-					rows="2"
-					placeholder="Why you saved it…"
-					class="resize-none rounded-md border px-3 py-2"
-					style="border-color: var(--color-border-strong); background: var(--color-bg)"
-				></textarea>
-			</label>
+			<Field label="Note" optional>
+				{#snippet children(f)}
+					<Textarea
+						id={f.id}
+						bind:value={note}
+						rows={2}
+						placeholder="Why you saved it…"
+						aria-describedby={f.describedby}
+					/>
+				{/snippet}
+			</Field>
 
 			{#if error}
 				<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>

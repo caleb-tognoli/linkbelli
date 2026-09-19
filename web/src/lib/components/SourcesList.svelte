@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import { AlertTriangle, ChevronDown, Globe, Lock, Play, Plus, Search } from '@lucide/svelte';
@@ -108,22 +109,13 @@
 		</p>
 	</div>
 {:else}
-	<div class="relative">
-		<Search
-			size={15}
-			aria-hidden="true"
-			class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-			style="color: var(--color-muted)"
-		/>
-		<input
-			bind:value={query}
-			oninput={() => (visibleCount = PAGE_SIZE)}
-			placeholder="Search sources…"
-			aria-label="Search sources"
-			class="w-full rounded-md border py-2 pr-3 pl-9 text-sm"
-			style="border-color: var(--color-border-strong); background: var(--color-bg)"
-		/>
-	</div>
+	<Input
+		icon={Search}
+		bind:value={query}
+		oninput={() => (visibleCount = PAGE_SIZE)}
+		placeholder="Search sources…"
+		aria-label="Search sources"
+	/>
 
 	{#if filtered.length === 0}
 		<div class="mt-3 rounded-lg border border-dashed p-8 text-center" style="border-color: var(--color-border)">

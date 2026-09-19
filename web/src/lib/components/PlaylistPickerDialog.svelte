@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import { Dialog } from 'bits-ui';
 	import { ChevronDown, EyeOff, Globe, Lock, X } from '@lucide/svelte';
 	import { api, json } from '$lib/api/client';
@@ -93,12 +94,12 @@
 			{#if subtitle}
 				<p class="mt-1 shrink-0 text-sm" style="color: var(--color-muted)">{subtitle}</p>
 			{/if}
-			<input
+			<Input
 				bind:value={search}
 				placeholder="Search…"
 				aria-label="Search playlists"
-				class="mt-3 shrink-0 w-full rounded-md border px-3 py-1.5 text-sm"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
+				size="sm"
+				class="mt-3 shrink-0 w-full"
 			/>
 
 			<div class="mt-2 flex-1 overflow-y-auto">

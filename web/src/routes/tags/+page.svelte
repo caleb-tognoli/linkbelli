@@ -1,6 +1,7 @@
 <svelte:head><title>Tags - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
@@ -224,12 +225,11 @@
 
 		<label class="mt-6 block">
 			<span class="sr-only">Filter tags</span>
-			<input
+			<Input
 				type="search"
 				bind:value={filter}
 				placeholder="Filter tags"
-				class="w-full rounded-md border px-3 py-2 text-sm"
-				style="border-color: var(--color-border-strong); background: var(--color-bg)"
+				class="w-full"
 			/>
 		</label>
 

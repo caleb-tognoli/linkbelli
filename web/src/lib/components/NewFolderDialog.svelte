@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass, type ButtonVariant } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
@@ -16,8 +18,6 @@
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
 
-	const fieldClass = 'rounded-md border px-3 py-2 text-sm';
-	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 
 	async function create(e: SubmitEvent) {
 		e.preventDefault();
@@ -58,11 +58,12 @@
 			<Dialog.Title class="text-lg font-semibold">New folder</Dialog.Title>
 
 			<form class="mt-4 flex flex-col gap-3" onsubmit={create}>
-				<label class="flex flex-col gap-1 text-sm">
-					<span>Name</span>
-					<!-- svelte-ignore a11y_autofocus -- a dialog whose only field is this one -->
-					<input bind:value={name} required autofocus class={fieldClass} style={fieldStyle} />
-				</label>
+				<Field label="Name">
+					{#snippet children(f)}
+						<!-- svelte-ignore a11y_autofocus -- a dialog whose only field is this one -->
+						<Input id={f.id} bind:value={name} required autofocus aria-describedby={f.describedby} />
+					{/snippet}
+				</Field>
 
 				{#if error}
 					<p class="text-sm" style="color: var(--color-danger)">{error}</p>

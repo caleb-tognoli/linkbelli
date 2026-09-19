@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
@@ -735,14 +736,12 @@
 		aria-label="Note on this highlight"
 	>
 		<!-- svelte-ignore a11y_autofocus -->
-		<textarea
+		<Textarea
 			bind:value={draft}
-			rows="3"
-			maxlength="1000"
+			rows={3}
+			maxlength={1000}
 			autofocus
 			placeholder="Why this mattered…"
-			class="w-full resize-y rounded-md border px-2 py-1.5"
-			style="border-color: var(--color-border-strong); background: var(--color-bg)"
 			onkeydown={(event) => {
 				if (event.key === 'Escape') {
 					event.preventDefault();
@@ -752,7 +751,9 @@
 					void saveNote();
 				}
 			}}
-		></textarea>
+			size="sm"
+			class="w-full"
+		/>
 		<div class="mt-1 flex items-center gap-0.5">
 			<Button
 				variant="ghost-danger"

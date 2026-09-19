@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Select from '$lib/components/ui/Select.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { enhance } from '$app/forms';
@@ -25,8 +28,6 @@
 		if (form?.error) open = true;
 	});
 
-	const fieldClass = 'rounded-md border px-3 py-2 text-sm';
-	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 
 	async function handleInlineCreate(e: SubmitEvent) {
 		e.preventDefault();
@@ -71,29 +72,51 @@
 
 			{#if folderId}
 				<form class="mt-4 flex flex-col gap-3" onsubmit={handleInlineCreate}>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Name</span>
-						<input name="name" required class={fieldClass} style={fieldStyle} />
-					</label>
+					<Field label="Name">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								name="name"
+								required
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Description <span style="color: var(--color-muted)">(optional)</span></span>
-						<input name="description" class={fieldClass} style={fieldStyle} />
-					</label>
+					<Field label="Description" optional>
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								name="description"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Visibility</span>
-						<select name="visibility" class={fieldClass} style={fieldStyle}>
+					<Field label="Visibility">
+						{#snippet children(f)}
+							<Select
+								id={f.id}
+								name="visibility"
+								aria-describedby={f.describedby}
+							>
 							<option value="Private">Private</option>
 							<option value="Unlisted">Unlisted</option>
 							<option value="Public">Public</option>
-						</select>
-					</label>
+							</Select>
+						{/snippet}
+					</Field>
 
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Tags <span style="color: var(--color-muted)">(comma-separated)</span></span>
-						<input name="tags" placeholder="tech, ai" class={fieldClass} style={fieldStyle} />
-					</label>
+					<Field label="Tags" hint="comma-separated">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								name="tags"
+								placeholder="tech, ai"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 
 					{#if inlineError}
 						<p class="text-sm" style="color: var(--color-danger)">{inlineError}</p>
@@ -121,35 +144,55 @@
 						};
 					}}
 				>
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Name</span>
-						<input
-							name="name"
-							required
-							value={form?.name ?? ''}
-							class={fieldClass}
-							style={fieldStyle}
-						/>
-					</label>
+					<Field label="Name">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								name="name"
+								required
+								value={form?.name ?? ''}
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Description <span style="color: var(--color-muted)">(optional)</span></span>
-						<input name="description" value={form?.description ?? ''} class={fieldClass} style={fieldStyle} />
-					</label>
+					<Field label="Description" optional>
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								name="description"
+								value={form?.description ?? ''}
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Visibility</span>
-						<select name="visibility" class={fieldClass} style={fieldStyle} value={form?.visibility ?? 'Private'}>
+					<Field label="Visibility">
+						{#snippet children(f)}
+							<Select
+								id={f.id}
+								name="visibility"
+								value={form?.visibility ?? 'Private'}
+								aria-describedby={f.describedby}
+							>
 							<option value="Private">Private</option>
 							<option value="Unlisted">Unlisted</option>
 							<option value="Public">Public</option>
-						</select>
-					</label>
+							</Select>
+						{/snippet}
+					</Field>
 
-					<label class="flex flex-col gap-1 text-sm">
-						<span>Tags <span style="color: var(--color-muted)">(comma-separated)</span></span>
-						<input name="tags" value={form?.tags ?? ''} placeholder="tech, ai" class={fieldClass} style={fieldStyle} />
-					</label>
+					<Field label="Tags" hint="comma-separated">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								name="tags"
+								value={form?.tags ?? ''}
+								placeholder="tech, ai"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 
 					{#if form?.error}
 						<p class="text-sm" style="color: var(--color-danger)">{form.error}</p>

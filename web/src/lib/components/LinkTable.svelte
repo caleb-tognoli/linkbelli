@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { Popover } from 'bits-ui';
 	import { dragHandle, dragHandleZone } from 'svelte-dnd-action';
@@ -804,27 +806,25 @@
 			<td colspan={colCount} class="px-2 py-2">
 				<div class="flex items-start gap-2">
 					<div class="flex flex-1 flex-col gap-1.5">
-						<textarea
+						<Textarea
 							bind:value={draftNote}
 							placeholder="Add note…"
 							rows={3}
-							class="resize-none rounded border px-2 py-1 text-sm"
-							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							onkeydown={(e) => {
 								if (e.key === 'Enter' && e.ctrlKey) { saveNote(item); noteEditId = null; }
 								if (e.key === 'Escape') { noteEditId = null; }
 							}}
-						></textarea>
-						<input
+							size="sm"
+						/>
+						<Input
 							bind:value={draftTags}
 							placeholder="Tags, comma separated…"
 							aria-label="Tags for this link"
-							class="rounded border px-2 py-1 text-sm"
-							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							onkeydown={(e) => {
 								if (e.key === 'Enter') { saveNote(item); noteEditId = null; }
 								if (e.key === 'Escape') { noteEditId = null; }
 							}}
+							size="sm"
 						/>
 					</div>
 					<div class="flex flex-col gap-1">
