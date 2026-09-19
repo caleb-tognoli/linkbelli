@@ -140,7 +140,7 @@
 			aria-label="Username or email address"
 			class="min-w-0 flex-1"
 		/>
-		<Select bind:value={role} aria-label="Role">
+		<Select bind:value={role} aria-label="Role" class="w-auto shrink-0">
 			{#each roles as option (option.value)}
 				<option value={option.value}>{option.label}</option>
 			{/each}
@@ -198,6 +198,7 @@
 							onchange={(e) => setRole(member, e.currentTarget.value as PlaylistRole)}
 							aria-label={`Role for ${member.username}`}
 							size="sm"
+							class="w-auto shrink-0"
 						>
 							{#each roles as option (option.value)}
 								<option value={option.value}>{option.label}</option>
