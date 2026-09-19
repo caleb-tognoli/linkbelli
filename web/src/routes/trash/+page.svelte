@@ -1,6 +1,7 @@
 <svelte:head><title>Trash - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { failureMessage } from '$lib/api/errors';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
@@ -22,6 +23,45 @@
 		const days = Math.ceil((new Date(purgeAfter).getTime() - Date.now()) / 86_400_000);
 		if (days <= 0) return 'purges today';
 		return days === 1 ? 'purges tomorrow' : `purges in ${days} days`;
+	}
+
+	/** Removes one thing for good, when the whole trash is not what should go. */
+	async function purge(kind: 'playlists' | 'items', id: string, name: string) {
+		const ok = await confirmDialog(`Delete "${name}" for good?`, {
+			description: 'It will not be recoverable from the trash any more.',
+			danger: true,
+			confirmLabel: 'Delete for good'
+		});
+		if (!ok) return;
+
+		busy = id;
+		const res = await api.del(`/trash/${kind}/${id}`);
+		busy = null;
+		if (res.ok || res.status === 204) {
+			toast.success(`"${name}" deleted for good.`);
+			await invalidateAll();
+		} else {
+			toast.error(failureMessage(res.status, 'Could not delete that.'));
+		}
+	}
+
+	/** Puts back everything, playlists first so their links have somewhere to go. */
+	async function restoreAll() {
+		busy = 'all';
+		let failed = 0;
+		for (const playlist of data.trash.playlists) {
+			const res = await api.post(`/trash/playlists/${playlist.id}/restore`).catch(() => null);
+			if (!res?.ok) failed++;
+		}
+		for (const item of data.trash.items) {
+			const res = await api.post(`/trash/items/${item.id}/restore`).catch(() => null);
+			// Already back in its playlist counts as restored.
+			if (!res?.ok && res?.status !== 409) failed++;
+		}
+		busy = null;
+		await invalidateAll();
+		if (failed === 0) toast.success('Everything is back.');
+		else toast.error(`Could not restore ${failed} of them. They are still in the trash.`);
 	}
 
 	async function restore(kind: 'playlists' | 'items', id: string) {
@@ -61,6 +101,9 @@
 	>
 		{#snippet actions()}
 			{#if total > 0}
+				<Button icon={RotateCcw} onclick={restoreAll} loading={busy === 'all'} disabled={busy !== null}>
+					Restore all
+				</Button>
 				<Button variant="danger-outline" icon={Trash2} onclick={empty} disabled={busy !== null}>
 					Empty trash
 				</Button>
@@ -90,15 +133,18 @@
 							{playlist.itemCount} {playlist.itemCount === 1 ? 'link' : 'links'} · {purgesIn(playlist.purgeAfter)}
 						</p>
 					</div>
-					<button
-						type="button"
-						onclick={() => restore('playlists', playlist.id)}
+					<Button size="sm" icon={RotateCcw} onclick={() => restore('playlists', playlist.id)} disabled={busy !== null}>
+						Restore
+					</Button>
+					<Button
+						variant="ghost-danger"
+						size="sm"
+						icon={Trash2}
+						iconOnly
+						label={`Delete ${playlist.name} for good`}
+						onclick={() => purge('playlists', playlist.id, playlist.name)}
 						disabled={busy !== null}
-						class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-					>
-						<RotateCcw size={15} aria-hidden="true" /> Restore
-					</button>
+					/>
 				</li>
 			{/each}
 		</ul>
@@ -111,21 +157,30 @@
 				<li class="flex items-center gap-3 p-3" style="border-color: var(--color-border)">
 					<Link2 size={18} aria-hidden="true" style="color: var(--color-muted)" class="shrink-0" />
 					<div class="min-w-0 flex-1">
-						<p class="truncate">{item.title ?? item.url}</p>
+						<a
+							href={item.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="block truncate hover:underline"
+							title={item.url}
+						>{item.title ?? item.url}</a>
 						<p class="truncate text-xs" style="color: var(--color-muted)">
 							from <a href={`/playlists/${item.playlistId}`} class="hover:underline">{item.playlistName}</a>
 							· {purgesIn(item.purgeAfter)}
 						</p>
 					</div>
-					<button
-						type="button"
-						onclick={() => restore('items', item.id)}
+					<Button size="sm" icon={RotateCcw} onclick={() => restore('items', item.id)} disabled={busy !== null}>
+						Restore
+					</Button>
+					<Button
+						variant="ghost-danger"
+						size="sm"
+						icon={Trash2}
+						iconOnly
+						label={`Delete ${item.title ?? item.url} for good`}
+						onclick={() => purge('items', item.id, item.title ?? item.url)}
 						disabled={busy !== null}
-						class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-					>
-						<RotateCcw size={15} aria-hidden="true" /> Restore
-					</button>
+					/>
 				</li>
 			{/each}
 		</ul>

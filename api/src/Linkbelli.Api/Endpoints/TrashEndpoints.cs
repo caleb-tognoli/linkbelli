@@ -47,5 +47,23 @@ public static class TrashEndpoints
         })
             .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
             .WithName("RestoreItem");
+
+        group.MapDelete("/playlists/{id:guid}", async (
+            Guid id, ClaimsPrincipal user, ITrashService svc, CancellationToken ct) =>
+        {
+            await svc.PurgePlaylistAsync(user.GetUserId(), id, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("PurgeTrashedPlaylist");
+
+        group.MapDelete("/items/{id:guid}", async (
+            Guid id, ClaimsPrincipal user, ITrashService svc, CancellationToken ct) =>
+        {
+            await svc.PurgeItemAsync(user.GetUserId(), id, ct);
+            return Results.NoContent();
+        })
+            .RequireAuthorization(Scopes.Policy(Scopes.PlaylistsWrite))
+            .WithName("PurgeTrashedItem");
     }
 }

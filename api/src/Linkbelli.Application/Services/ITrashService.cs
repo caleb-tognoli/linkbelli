@@ -20,6 +20,12 @@ public interface ITrashService
     /// <summary>Permanently removes everything currently in the caller's trash.</summary>
     Task<int> EmptyAsync(Guid ownerId, CancellationToken ct = default);
 
+    /// <summary>Permanently removes one deleted playlist, with everything that hangs off it.</summary>
+    Task PurgePlaylistAsync(Guid ownerId, Guid playlistId, CancellationToken ct = default);
+
+    /// <summary>Permanently removes one deleted item.</summary>
+    Task PurgeItemAsync(Guid ownerId, Guid itemId, CancellationToken ct = default);
+
     /// <summary>
     /// Permanently removes rows soft-deleted longer ago than the retention window, across all
     /// users. Run on a schedule; returns how many rows were removed.

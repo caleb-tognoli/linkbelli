@@ -127,6 +127,44 @@ public class TrashService(IAppDbContext db, IAuditLog audit, ILogger<TrashServic
         return removed;
     }
 
+    // One thing at a time, for when the whole trash is not what somebody wants gone: "Empty trash"
+    // was the only way to be rid of anything before its thirty days were up.
+    public async Task PurgePlaylistAsync(Guid ownerId, Guid playlistId, CancellationToken ct = default)
+    {
+        var removed = await PurgeAsync(
+            p => p.Id == playlistId && p.OwnerId == ownerId && p.DeletionTime != null,
+            i => false,
+            ct);
+
+        if (removed == 0)
+        {
+            throw new NotFoundException("No deleted playlist with that id.");
+        }
+
+        await audit.RecordAsync(
+            ownerId, "trash.purge", summary: $"Permanently removed a playlist from the trash ({removed} rows).",
+            details: new { playlistId, removed }, ct: ct);
+    }
+
+    public async Task PurgeItemAsync(Guid ownerId, Guid itemId, CancellationToken ct = default)
+    {
+        var removed = await PurgeAsync(
+            p => false,
+            i => i.Id == itemId
+                && i.DeletionTime != null
+                && db.Playlists.IgnoreQueryFilters().Any(p => p.Id == i.PlaylistId && p.OwnerId == ownerId),
+            ct);
+
+        if (removed == 0)
+        {
+            throw new NotFoundException("No deleted item with that id.");
+        }
+
+        await audit.RecordAsync(
+            ownerId, "trash.purge", summary: "Permanently removed a link from the trash.",
+            details: new { itemId }, ct: ct);
+    }
+
     public async Task<int> PurgeExpiredAsync(CancellationToken ct = default)
     {
         var cutoff = DateTimeOffset.UtcNow.AddDays(-RetentionDays);

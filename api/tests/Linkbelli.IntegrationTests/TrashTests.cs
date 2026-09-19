@@ -176,6 +176,51 @@ public class TrashTests(PostgresApiFactory factory)
     }
 
     [Fact]
+    public async Task One_deleted_playlist_can_be_removed_for_good_and_the_rest_stay()
+    {
+        var client = await NewUserAsync();
+        var doomed = await NewPlaylistAsync(client, "Gone for good");
+        var kept = await NewPlaylistAsync(client, "Still recoverable");
+        await factory.SeedEnrichedItemsAsync(doomed.Id, 2);
+
+        (await client.DeleteAsync($"/api/v1/playlists/{doomed.Id}")).EnsureSuccessStatusCode();
+        (await client.DeleteAsync($"/api/v1/playlists/{kept.Id}")).EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/v1/trash/playlists/{doomed.Id}")).StatusCode);
+
+        var trash = await TrashAsync(client);
+        Assert.DoesNotContain(trash.Playlists, p => p.Id == doomed.Id);
+        Assert.Contains(trash.Playlists, p => p.Id == kept.Id);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+        Assert.False(await db.PlaylistItems.IgnoreQueryFilters().AnyAsync(i => i.PlaylistId == doomed.Id));
+    }
+
+    [Fact]
+    public async Task One_deleted_item_can_be_removed_for_good_but_not_a_live_one_or_a_strangers()
+    {
+        var client = await NewUserAsync();
+        var stranger = await NewUserAsync();
+        var playlist = await NewPlaylistAsync(client, "Mostly kept");
+        var seeded = await factory.SeedEnrichedItemsAsync(playlist.Id, 2);
+
+        (await client.DeleteAsync($"/api/v1/items/{seeded[0]}")).EnsureSuccessStatusCode();
+
+        // A live item is not the trash's to remove, and nobody else's trash is yours.
+        Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync($"/api/v1/trash/items/{seeded[1]}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await stranger.DeleteAsync($"/api/v1/trash/items/{seeded[0]}")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/v1/trash/items/{seeded[0]}")).StatusCode);
+        Assert.DoesNotContain((await TrashAsync(client)).Items, i => i.Id == seeded[0]);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinkbelliDbContext>();
+        Assert.False(await db.PlaylistItems.IgnoreQueryFilters().AnyAsync(i => i.Id == seeded[0]));
+        Assert.True(await db.PlaylistItems.AnyAsync(i => i.Id == seeded[1]));
+    }
+
+    [Fact]
     public async Task The_purge_job_only_takes_rows_past_the_retention_window()
     {
         var client = await NewUserAsync();
