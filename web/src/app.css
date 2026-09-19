@@ -72,6 +72,21 @@
 	color-scheme: dark;
 }
 
+/* Every border's colour, unless something says otherwise. Tailwind v4's preflight leaves it at
+   currentColor, which is harmless where a style sets the colour — nearly everywhere — and loud
+   where nothing can: the dividers divide-x and divide-y draw between children. Those came out
+   in the text colour (white lines between search's status buttons in dark mode) or, beside an
+   active segment, in the accent. */
+@layer base {
+	*,
+	::before,
+	::after,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-border);
+	}
+}
+
 html {
 	font-size: 18px;
 }
