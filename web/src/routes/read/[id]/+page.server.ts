@@ -26,15 +26,23 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	if (!res.ok) throw error(res.status, 'Failed to load the article');
 
 	const content = (await res.json()) as LinkContent;
+	const from = url.searchParams.get('from');
+
+	const [highlights, neighbours, fromName] = await Promise.all([
+		highlightsAsync(locals.api, params.id),
+		neighboursAsync(locals.api, from, params.id),
+		playlistNameAsync(locals.api, from)
+	]);
 
 	return {
 		content,
 		// Marks have to be on the page when it paints, not a moment later: text that changes
 		// colour after you have started reading it is worse than text that never did.
-		highlights: await highlightsAsync(locals.api, params.id),
-		// Where the reader came from, so Esc has somewhere to go back to.
-		from: url.searchParams.get('from'),
-		...(await neighboursAsync(locals.api, url.searchParams.get('from'), params.id))
+		highlights,
+		// Where the reader came from, so there is somewhere to go back to — and a name to say.
+		from,
+		fromName,
+		...neighbours
 	};
 };
 
@@ -49,6 +57,15 @@ async function highlightsAsync(api: App.Locals['api'], linkId: string): Promise<
 	if (!res?.ok) return [];
 
 	return (await res.json()) as Highlight[];
+}
+
+/** The name of the playlist the reader was opened from, for the way back to it. */
+async function playlistNameAsync(api: App.Locals['api'], playlistId: string | null): Promise<string | null> {
+	if (!playlistId) return null;
+	const res = await api(`/api/v1/playlists/${playlistId}`).catch(() => null);
+	if (!res?.ok) return null;
+
+	return ((await res.json()) as { name: string }).name;
 }
 
 interface Neighbour {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
@@ -170,8 +171,11 @@
 		void goto(`/read/${linkId}${suffix}`);
 	}
 
+	const backHref = $derived(data.from ? `/playlists/${data.from}` : '/queue');
+	const backLabel = $derived(data.from ? (data.fromName ?? 'Back to the playlist') : 'Up next');
+
 	function back() {
-		void goto(data.from ? `/playlists/${data.from}` : '/queue');
+		void goto(backHref);
 	}
 
 	/** The paragraph a DOM node sits in, if it is in one. */
@@ -380,12 +384,15 @@
 				void highlight(false);
 				break;
 			case 'Escape':
-				// Closes whatever is open before it leaves the article.
+				// Closes whatever is open before it leaves the article — and leaves only when
+				// nothing has focus, so a second press to dismiss something already gone does not
+				// throw away the page.
 				if (active) closePanel();
 				else if (selection) {
 					selection = null;
 					window.getSelection()?.removeAllRanges();
-				} else back();
+				} else if (document.activeElement === document.body || document.activeElement === null) back();
+				else (document.activeElement as HTMLElement).blur();
 				break;
 			default:
 				return;
@@ -463,6 +470,9 @@
 	class="mx-auto pb-16"
 	style="max-width: {WIDTH_CSS[readerSettings.width]}"
 >
+	<!-- A way out that does not need a keyboard: on a phone the browser's own back button was the
+	     only one. -->
+	<BackLink href={backHref} label={backLabel} class="mb-3" />
 	<header class="border-b pb-4" style="border-color: var(--color-border)">
 		<h1 class="text-2xl font-semibold leading-tight">{data.content.title ?? data.content.url}</h1>
 		<p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm" style="color: var(--color-muted)">
@@ -563,7 +573,7 @@
 				<p class="text-xs" style="color: var(--color-muted)">
 					Kept on this device. <kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>n</kbd>/<kbd>p</kbd> for the
 					next and previous in the playlist, <kbd>e</kbd> to mark finished, <kbd>h</kbd> to
-					highlight what is selected, <kbd>Esc</kbd> to go back.
+					highlight what is selected, <kbd>Esc</kbd> to go back (once nothing else is open).
 				</p>
 			</div>
 		{/if}
