@@ -45,7 +45,9 @@
 		try {
 			const res = await api.del(`/folders/${folder.id}`);
 			if (res.ok || res.status === 204) {
-				await goto(folder.parentId ? `/folders/${folder.parentId}` : '/');
+				// Back to where it was filed: its parent, or the playlists page a top-level folder
+				// sits on.
+				await goto(folder.parentId ? `/folders/${folder.parentId}` : '/playlists');
 			} else {
 				busy = false;
 				toast.error(failureMessage(res.status, 'Could not delete the folder.'));

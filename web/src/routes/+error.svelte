@@ -11,6 +11,11 @@
 	 */
 	const status = $derived(page.status);
 
+	// Signing in from here should come back here, not start over from the home page.
+	const signIn = $derived(
+		`/login?redirectTo=${encodeURIComponent(page.url.pathname + page.url.search)}`
+	);
+
 	/** Said in terms of what happened to the person, not what happened to the server. */
 	const heading = $derived.by(() => {
 		if (status === 404) return 'There is nothing here';
@@ -42,7 +47,7 @@
 	     page is the public introduction, and /playlists bounces to sign-in if it has to. -->
 	<div class="mt-6 flex flex-wrap justify-center gap-3 text-sm">
 		{#if status === 401}
-			<Button href="/login" variant="primary">Sign in</Button>
+			<Button href={signIn} variant="primary">Sign in</Button>
 		{:else}
 			<Button href="/playlists" variant="primary">Your playlists</Button>
 		{/if}

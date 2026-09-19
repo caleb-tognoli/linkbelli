@@ -47,7 +47,7 @@
 			{data.email} is yours. Digests and notifications can reach you now.
 		</p>
 		<p class="mt-4 text-sm">
-			<a href="/" class="underline underline-offset-2" style="color: var(--color-accent)">
+			<a href="/playlists" class="underline underline-offset-2" style="color: var(--color-accent)">
 				Go to your playlists
 			</a>
 		</p>

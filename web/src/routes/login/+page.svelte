@@ -15,6 +15,13 @@
 	// Set by the reset flow, which deliberately does not sign anybody in — so this is the one
 	// place that can confirm the new password took.
 	const justReset = $derived(page.url.searchParams.get('reset') === '1');
+
+	// Carried across to the other form, so whichever one somebody ends up using still takes them
+	// where they were going.
+	function withRedirect(path: string) {
+		const next = page.url.searchParams.get('redirectTo');
+		return next ? `${path}?redirectTo=${encodeURIComponent(next)}` : path;
+	}
 </script>
 
 <div
@@ -77,7 +84,7 @@
 	</form>
 
 	<p class="mt-4 text-sm" style="color: var(--color-muted)">
-		No account? <a href="/register" class="underline">Create one</a>
+		No account? <a href={withRedirect('/register')} class="underline">Create one</a>
 		· <a href="/forgot-password" class="underline">Forgotten your password?</a>
 	</p>
 </div>

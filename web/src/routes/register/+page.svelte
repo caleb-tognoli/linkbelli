@@ -1,6 +1,7 @@
 ﻿<svelte:head><title>Create account - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { page } from '$app/state';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -10,6 +11,13 @@
 
 	let { form }: { form: ActionData } = $props();
 	let submitting = $state(false);
+
+	// Carried across to the other form, so whichever one somebody ends up using still takes them
+	// where they were going.
+	function withRedirect(path: string) {
+		const next = page.url.searchParams.get('redirectTo');
+		return next ? `${path}?redirectTo=${encodeURIComponent(next)}` : path;
+	}
 </script>
 
 <div
@@ -80,6 +88,6 @@
 	</form>
 
 	<p class="mt-4 text-sm" style="color: var(--color-muted)">
-		Already have an account? <a href="/login" class="underline">Sign in</a>
+		Already have an account? <a href={withRedirect('/login')} class="underline">Sign in</a>
 	</p>
 </div>
