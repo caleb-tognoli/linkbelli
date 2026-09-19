@@ -116,7 +116,7 @@
 			placeholder="Find an account by name or address"
 			aria-label="Find an account"
 			class="w-full rounded-md border py-2 pr-3 pl-9 text-sm"
-			style="border-color: var(--color-border); background: var(--color-bg)"
+			style="border-color: var(--color-border-strong); background: var(--color-bg)"
 		/>
 	</div>
 	<button

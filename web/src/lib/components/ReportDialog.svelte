@@ -83,7 +83,7 @@
 					<select
 						bind:value={reason}
 						class="rounded-md border px-3 py-2 text-sm"
-						style="border-color: var(--color-border); background: var(--color-bg)"
+						style="border-color: var(--color-border-strong); background: var(--color-bg)"
 					>
 						{#each reasons as option (option.value)}
 							<option value={option.value}>{option.label}</option>
@@ -99,7 +99,7 @@
 						rows="3"
 						maxlength="1000"
 						class="rounded-md border px-3 py-2 text-sm"
-						style="border-color: var(--color-border); background: var(--color-bg)"
+						style="border-color: var(--color-border-strong); background: var(--color-bg)"
 					></textarea>
 				</label>
 

@@ -77,7 +77,7 @@
 			placeholder="Search public playlists…"
 			aria-label="Search public playlists"
 			class="flex-1 rounded-md border px-3 py-2 text-sm"
-			style="border-color: var(--color-border); background: var(--color-bg)"
+			style="border-color: var(--color-border-strong); background: var(--color-bg)"
 		/>
 		<button type="submit" class="rounded-md p-2" style="background: var(--color-accent-solid); color: var(--color-on-solid)" title="Search" aria-label="Search">
 			<Search size={18} aria-hidden="true" />

@@ -92,7 +92,7 @@
 					accept=".csv,text/csv"
 					required
 					class="block w-full rounded-md border px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
-					style="border-color: var(--color-border); background: var(--color-bg)"
+					style="border-color: var(--color-border-strong); background: var(--color-bg)"
 				/>
 				<p class="text-xs" style="color: var(--color-muted)">
 					Expected format: <code>url,note</code> — one link per row, header row required.
@@ -126,7 +126,7 @@
 							<select
 								name="playlistId"
 								class="rounded-md border px-3 py-2 text-sm"
-								style="border-color: var(--color-border); background: var(--color-bg)"
+								style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							>
 								{#each data.playlists as pl (pl.id)}
 									<option value={pl.id}>{pl.name}</option>
@@ -143,7 +143,7 @@
 							type="text"
 							placeholder="Playlist name"
 							class="rounded-md border px-3 py-2 text-sm"
-							style="border-color: var(--color-border); background: var(--color-bg)"
+							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 						/>
 					</div>
 				{/if}

@@ -229,7 +229,7 @@
 				bind:value={filter}
 				placeholder="Filter tags"
 				class="w-full rounded-md border px-3 py-2 text-sm"
-				style="border-color: var(--color-border); background: var(--color-bg)"
+				style="border-color: var(--color-border-strong); background: var(--color-bg)"
 			/>
 		</label>
 

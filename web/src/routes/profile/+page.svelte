@@ -304,7 +304,7 @@
 						bind:value={password}
 						autocomplete="current-password"
 						class="rounded-md border px-3 py-2"
-						style="border-color: var(--color-border); background: var(--color-bg)"
+						style="border-color: var(--color-border-strong); background: var(--color-bg)"
 					/>
 				</label>
 				<button

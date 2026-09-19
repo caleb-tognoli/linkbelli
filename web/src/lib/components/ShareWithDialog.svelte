@@ -127,7 +127,7 @@
 		if (res.ok || res.status === 204) await load();
 	}
 
-	const fieldStyle = 'border-color: var(--color-border); background: var(--color-bg)';
+	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 </script>
 
 <Dialog.Root bind:open>

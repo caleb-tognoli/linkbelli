@@ -80,7 +80,7 @@
 				aria-label="New folder name"
 				disabled={creating}
 				class="flex-1 rounded border px-2 py-0.5 text-sm"
-				style="border-color: var(--color-border); background: var(--color-bg)"
+				style="border-color: var(--color-border-strong); background: var(--color-bg)"
 				onkeydown={(e) => { if (e.key === 'Enter') doCreate(); if (e.key === 'Escape') cancelAdd(); }}
 				autofocus
 			/>

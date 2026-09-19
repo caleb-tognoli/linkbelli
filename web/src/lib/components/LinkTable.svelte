@@ -796,7 +796,7 @@
 							placeholder="Add note…"
 							rows={3}
 							class="resize-none rounded border px-2 py-1 text-sm"
-							style="border-color: var(--color-border); background: var(--color-bg)"
+							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							onkeydown={(e) => {
 								if (e.key === 'Enter' && e.ctrlKey) { saveNote(item); noteEditId = null; }
 								if (e.key === 'Escape') { noteEditId = null; }
@@ -807,7 +807,7 @@
 							placeholder="Tags, comma separated…"
 							aria-label="Tags for this link"
 							class="rounded border px-2 py-1 text-sm"
-							style="border-color: var(--color-border); background: var(--color-bg)"
+							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							onkeydown={(e) => {
 								if (e.key === 'Enter') { saveNote(item); noteEditId = null; }
 								if (e.key === 'Escape') { noteEditId = null; }

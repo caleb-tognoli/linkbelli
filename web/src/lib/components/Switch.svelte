@@ -33,7 +33,7 @@
 	class="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 	style={checked
 		? 'background: var(--color-accent-solid); outline-color: var(--color-accent)'
-		: 'background: var(--color-border)'}
+		: 'background: var(--color-border-strong)'}
 >
 	<span
 		class="my-0.5 inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200"

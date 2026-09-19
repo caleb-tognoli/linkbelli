@@ -172,7 +172,7 @@
 							placeholder="Search sources..."
 							aria-label="Search sources"
 							class="flex-1 rounded border px-2 py-1 text-sm"
-							style="border-color: var(--color-border); background: var(--color-bg)"
+							style="border-color: var(--color-border-strong); background: var(--color-bg)"
 							onkeydown={(e) => e.key === 'Enter' && searchShared()}
 						/>
 						<button type="button" onclick={searchShared} disabled={searching} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Search shared" aria-label="Search shared sources">

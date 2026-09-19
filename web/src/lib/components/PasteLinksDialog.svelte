@@ -85,7 +85,7 @@
 				placeholder="https://example.com/one&#10;https://example.com/two"
 				aria-label="Text to take links from"
 				class="mt-3 w-full rounded-md border px-3 py-2 font-mono text-sm"
-				style="border-color: var(--color-border); background: var(--color-bg)"
+				style="border-color: var(--color-border-strong); background: var(--color-bg)"
 			></textarea>
 
 			{#if error}

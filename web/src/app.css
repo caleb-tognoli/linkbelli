@@ -29,6 +29,10 @@
 	--color-bg: light-dark(#ffffff, #191919);
 	--color-surface: light-dark(#f7f7f5, #202020);
 	--color-border: light-dark(#e8e8e6, #2f2f2f);
+	/* The edge of something you type into or switch. --color-border is for dividers and cards,
+	   and at 1.2:1 it left inputs, selects and an off switch nearly invisible; a control's
+	   boundary needs 3:1 against whatever sits around it (WCAG 1.4.11). */
+	--color-border-strong: light-dark(#8c8c8a, #6e6e6e);
 	--color-text: light-dark(#1f1f1f, #ededed);
 	--color-muted: light-dark(#6b6b6b, #9a9a9a);
 	/* Two of each: the plain token is for text, borders and small marks, and is light enough

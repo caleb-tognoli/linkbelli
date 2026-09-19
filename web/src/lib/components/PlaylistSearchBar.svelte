@@ -25,7 +25,7 @@
 	let notice = $state<string | null>(null);
 
 	const fieldClass = 'rounded-md border pl-9 pr-3 py-2 text-sm';
-	const fieldStyle = 'border-color: var(--color-border); background: var(--color-bg)';
+	const fieldStyle = 'border-color: var(--color-border-strong); background: var(--color-bg)';
 
 	const isUrl = $derived(looksLikeUrl(query));
 

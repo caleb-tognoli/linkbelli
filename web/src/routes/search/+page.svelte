@@ -205,7 +205,7 @@
 			placeholder="Search your links, or try site:bbc.co.uk under:10"
 			aria-label="Search your links"
 			class="w-full rounded-md border py-2.5 pr-3 pl-9"
-			style="border-color: var(--color-border); background: var(--color-bg)"
+			style="border-color: var(--color-border-strong); background: var(--color-bg)"
 		/>
 	</div>
 

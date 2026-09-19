@@ -98,7 +98,7 @@
 				placeholder="Search…"
 				aria-label="Search playlists"
 				class="mt-3 shrink-0 w-full rounded-md border px-3 py-1.5 text-sm"
-				style="border-color: var(--color-border); background: var(--color-bg)"
+				style="border-color: var(--color-border-strong); background: var(--color-bg)"
 			/>
 
 			<div class="mt-2 flex-1 overflow-y-auto">
