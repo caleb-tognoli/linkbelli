@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
+	import MenuSeparator from '$lib/components/ui/MenuSeparator.svelte';
+	import MenuItem from '$lib/components/ui/MenuItem.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
@@ -7,13 +10,11 @@
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
-	import { Popover } from 'bits-ui';
 	import { dragHandle, dragHandleZone } from 'svelte-dnd-action';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Share2, Star, StickyNote, Trash2, Type, X } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import PlaylistDropTray from './PlaylistDropTray.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
@@ -273,7 +274,6 @@
 	let noteEditId = $state<string | null>(null);
 	let draftNote = $state('');
 	let draftTags = $state('');
-	let actionFlyoutId = $state<string | null>(null);
 	/**
 	 * Feedback about the last thing that happened, through the app's toasts.
 	 *
@@ -286,8 +286,6 @@
 	const warn = (text: string) => toast.error(text);
 
 	async function setCover(item: PlaylistItem) {
-		actionFlyoutId = null;
-
 		const res = await api.patch(`/playlists/${playlistId}`, { coverLinkId: item.link.id });
 		if (res.ok) say('Cover set.');
 		else warn(failureMessage(res.status, 'Could not set the cover.'));
@@ -307,8 +305,6 @@
 	}
 
 	async function copyShareLink(item: PlaylistItem) {
-		actionFlyoutId = null;
-
 		// Already shared: the existing link is handed back rather than rotated, so anything
 		// already sent keeps working.
 		const res = await api.post(`/items/${item.id}/share`);
@@ -667,119 +663,64 @@
 		{/if}
 		{#if !readonly}
 			<td class="w-8 text-right">
-				<Popover.Root
-					open={actionFlyoutId === item.id}
-					onOpenChange={(o) => { actionFlyoutId = o ? item.id : (actionFlyoutId === item.id ? null : actionFlyoutId); }}
+				<!-- A menu of labelled actions rather than a strip of seven bare icons: on a phone
+				     there are no tooltips, and an icon for "add to another playlist" that looked like
+				     "share" was a guess every time. -->
+				<Menu
+					triggerClass={buttonClass('ghost', 'sm', true, 'text-muted')}
+					label={`Actions for ${item.metadata?.title ?? item.link.title ?? item.link.url}`}
+					title="Actions"
+					align="end"
+					width="w-60"
 				>
-					<Popover.Trigger
-						class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-						style="color: var(--color-muted)"
-						title="Actions"
-						aria-label="Actions"
-					>
+					{#snippet trigger()}
 						<MoreVertical size={16} aria-hidden="true" />
-					</Popover.Trigger>
-					<Popover.Content
-						class="popover-surface z-30 rounded-lg border shadow-md"
-						side="top"
-						sideOffset={4}
+					{/snippet}
+					<MenuItem icon={item.status === 'Watched' ? EyeOff : Eye} onselect={() => toggleWatched(item)}>
+						{item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
+					</MenuItem>
+					{#if item.link.wordCount}
+						<MenuItem icon={BookOpen} href={`/read/${item.link.id}${playlistId ? `?from=${playlistId}` : ''}`}>
+							Open in the reader
+						</MenuItem>
+					{/if}
+					<MenuItem
+						icon={isPending(item) ? Clock : StickyNote}
+						onselect={() => {
+							if (noteEditId === item.id) {
+								noteEditId = null;
+							} else {
+								noteEditId = item.id;
+								draftNote = item.note ?? '';
+								draftTags = (item.tags ?? []).join(', ');
+							}
+						}}
 					>
-						<div class="flex items-center gap-0.5 px-1.5 py-1.5">
-							<button
-								type="button"
-								onclick={() => { toggleWatched(item); actionFlyoutId = null; }}
-								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-								style="color: var(--color-muted)"
-								title={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
-								aria-label={item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
-							>
-								{#if item.status === 'Watched'}
-									<EyeOff size={16} aria-hidden="true" />
-								{:else}
-									<Eye size={16} aria-hidden="true" />
-								{/if}
-							</button>
-							<button
-								type="button"
-								onclick={() => { actionFlyoutId = null; shareItem = item; shareOpen = true; }}
-								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-								style="color: var(--color-muted)"
-								title="Add to another playlist"
-								aria-label="Add to another playlist"
-							>
-								<Share2 size={16} aria-hidden="true" />
-							</button>
-							{#if !readonly && playlistId && item.link.thumbnailUrl}
-								<!-- Only offered for a link that has an image: the cover is one of the
-								     playlist's own pictures, not a placeholder. -->
-								<button
-									type="button"
-									onclick={() => setCover(item)}
-									class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-									style="color: var(--color-muted)"
-									title="Use as the playlist cover"
-									aria-label="Use as the playlist cover"
-								>
-									<Image size={16} aria-hidden="true" />
-								</button>
-							{/if}
-							{#if !readonly}
-								<!-- A link someone else can open, carrying the note with it. Sharing one
-								     link otherwise meant making the whole playlist public. -->
-								<button
-									type="button"
-									onclick={() => copyShareLink(item)}
-									class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-									style={item.shareToken ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
-									title={item.shareToken ? 'Copy the share link' : 'Create a link to send'}
-									aria-label={item.shareToken ? 'Copy the share link' : 'Create a link to send'}
-								>
-									<Link2 size={16} aria-hidden="true" />
-								</button>
-							{/if}
-							{#if !showScoreCol}
-								<button
-									type="button"
-									onclick={() => { forceShowScore = true; actionFlyoutId = null; }}
-									class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-									style="color: var(--color-muted)"
-									title="Show score column"
-									aria-label="Show score column"
-								>
-									<Star size={16} aria-hidden="true" />
-								</button>
-							{/if}
-							<button
-								type="button"
-								onclick={() => {
-									actionFlyoutId = null;
-									if (noteEditId === item.id) { noteEditId = null; }
-									else { noteEditId = item.id; draftNote = item.note ?? ''; draftTags = (item.tags ?? []).join(', '); }
-								}}
-								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-								style={isPending(item) ? 'color: var(--color-muted)' : item.note ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
-								title={item.note ? 'Edit note' : 'Add note'}
-								aria-label={item.note ? 'Edit note' : 'Add note'}
-							>
-								{#if isPending(item)}
-									<Clock size={16} aria-hidden="true" />
-								{:else}
-									<StickyNote size={16} aria-hidden="true" />
-								{/if}
-							</button>
-							<button
-								type="button"
-								onclick={() => { remove(item); actionFlyoutId = null; }}
-								class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-								style="color: var(--color-danger)"
-								title="Remove link"
-								aria-label="Remove link"
-							>
-								<Trash2 size={16} aria-hidden="true" />
-							</button>
-						</div>
-					</Popover.Content>
-				</Popover.Root>
+						{item.note ? 'Edit note and tags' : 'Add a note or tags'}
+					</MenuItem>
+					<MenuSeparator />
+					<MenuItem icon={ListPlus} onselect={() => { shareItem = item; shareOpen = true; }}>
+						Add to another playlist…
+					</MenuItem>
+					{#if playlistId}
+						<MenuItem icon={FolderInput} onselect={() => moveOne(item)}>Move to another playlist…</MenuItem>
+					{/if}
+					<!-- A link someone else can open, carrying the note with it. Sharing one link
+					     otherwise meant making the whole playlist public. -->
+					<MenuItem icon={Link2} onselect={() => copyShareLink(item)}>
+						{item.shareToken ? 'Copy its share link' : 'Create a link to send'}
+					</MenuItem>
+					{#if playlistId && item.link.thumbnailUrl}
+						<!-- Only offered for a link that has an image: the cover is one of the
+						     playlist's own pictures, not a placeholder. -->
+						<MenuItem icon={Image} onselect={() => setCover(item)}>Use as the playlist cover</MenuItem>
+					{/if}
+					{#if !showScoreCol}
+						<MenuItem icon={Star} onselect={() => (forceShowScore = true)}>Show the score column</MenuItem>
+					{/if}
+					<MenuSeparator />
+					<MenuItem icon={Trash2} danger onselect={() => remove(item)}>Remove from this playlist</MenuItem>
+				</Menu>
 			</td>
 		{/if}
 	</tr>
