@@ -125,9 +125,7 @@
 						{#if data.playlists.length === 0}
 							<p class="text-sm" style="color: var(--color-muted)">You don't have any playlists yet.</p>
 						{:else}
-							<Select
-								name="playlistId"
-							>
+							<Select name="playlistId" aria-label="Playlist to import into">
 								{#each data.playlists as pl (pl.id)}
 									<option value={pl.id}>{pl.name}</option>
 								{/each}
@@ -142,6 +140,7 @@
 							name="newPlaylistName"
 							type="text"
 							placeholder="Playlist name"
+							aria-label="Name of the new playlist"
 						/>
 					</div>
 				{/if}

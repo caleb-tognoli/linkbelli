@@ -333,6 +333,7 @@
 							? 'var(--color-accent)'
 							: 'var(--color-muted)'}"
 						title={saved.pinned ? `Take ${saved.name} out of the sidebar` : `Keep ${saved.name} in the sidebar`}
+						aria-label={`Keep ${saved.name} in the sidebar`}
 						aria-pressed={saved.pinned ?? false}
 					>
 						<Pin size={11} aria-hidden="true" />

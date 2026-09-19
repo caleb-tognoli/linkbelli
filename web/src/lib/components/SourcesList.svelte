@@ -143,6 +143,7 @@
 						<span
 							style={dotStyle(src)}
 							title={dotLabel(src)}
+							role="img"
 							aria-label={dotLabel(src)}
 						></span>
 					{/snippet}
@@ -160,7 +161,7 @@
 								<AlertTriangle size={15} aria-hidden="true" />
 							</a>
 						{/if}
-						<span title={src.visibility} aria-label={src.visibility} style="color: var(--color-muted)">
+						<span title={src.visibility} role="img" aria-label={src.visibility} style="color: var(--color-muted)">
 							{#if src.visibility === 'Private'}
 								<Lock size={15} aria-hidden="true" />
 							{:else}

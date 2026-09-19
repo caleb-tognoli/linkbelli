@@ -490,8 +490,8 @@
 					</div>
 					{#each headers as header, i (i)}
 						<div class="flex gap-2">
-							<Input bind:value={header.name} class="flex-1" />
-							<Input bind:value={header.value} class="flex-1" />
+							<Input bind:value={header.name} placeholder="Name" aria-label="Header name" class="flex-1" />
+							<Input bind:value={header.value} placeholder="Value" aria-label="Header value" class="flex-1" />
 							<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
 								<X size={17} aria-hidden="true" />
 							</button>
@@ -559,10 +559,20 @@
 							<span class="text-xs font-medium" style="color: var(--color-muted)">Replacement</span>
 							{#each META_FIELD_NAMES as name (name)}
 								<span class="capitalize" style="color: var(--color-muted)">{name}</span>
-								<Input bind:value={values[`meta.${name}`]} />
-								<Input bind:value={values[`meta.${name}.attr`]} />
-								<Input bind:value={values[`meta.${name}.regex`]} spellcheck="false" class="font-mono" />
-								<Input bind:value={values[`meta.${name}.replacement`]} spellcheck="false" class="font-mono" />
+								<Input bind:value={values[`meta.${name}`]} aria-label={`${name} selector`} />
+								<Input bind:value={values[`meta.${name}.attr`]} aria-label={`${name} attribute`} />
+								<Input
+									bind:value={values[`meta.${name}.regex`]}
+									aria-label={`${name} pattern`}
+									spellcheck="false"
+									class="font-mono"
+								/>
+								<Input
+									bind:value={values[`meta.${name}.replacement`]}
+									aria-label={`${name} replacement`}
+									spellcheck="false"
+									class="font-mono"
+								/>
 							{/each}
 						</div>
 						<!-- What used to hide in hover-only tips beside each column heading, where a
