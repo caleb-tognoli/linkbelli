@@ -24,7 +24,11 @@
 	</div>
 
 	<p class="mt-1 flex items-start gap-2 text-sm">
-		<span class="mt-1.5 inline-block size-2 shrink-0 rounded-full" style={`background: ${color}`}
+		<!-- The colour repeats what the sentence beside it says; it is not the only place it is said. -->
+		<span
+			class="mt-1.5 inline-block size-2 shrink-0 rounded-full"
+			style={`background: ${color}`}
+			aria-hidden="true"
 		></span>
 		<span>{summary.message}</span>
 	</p>

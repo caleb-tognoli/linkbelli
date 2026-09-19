@@ -137,7 +137,11 @@
 							? `paused · last run ${lastRun(src.lastRunAt)}`
 							: src.quiet
 								? `running, but found nothing this week · last run ${lastRun(src.lastRunAt)}`
-								: `last run ${lastRun(src.lastRunAt)}`}
+								: src.lastRunStatus === 'Failed'
+									? `last run failed · ${lastRun(src.lastRunAt)}`
+									: src.lastRunStatus === 'Running'
+										? 'running now'
+										: `last run ${lastRun(src.lastRunAt)}`}
 				>
 					{#snippet leading()}
 						<span

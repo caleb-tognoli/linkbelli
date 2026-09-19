@@ -108,7 +108,9 @@
 								class="mt-1 inline-block size-1.5 shrink-0 rounded-full"
 								style="background: var(--color-accent)"
 								title="New since you last looked"
+								aria-hidden="true"
 							></span>
+							<span class="sr-only">New:</span>
 						{/if}
 						<div class="min-w-0 flex-1">
 							<a href={item.url} target="_blank" rel="noreferrer" class="break-words hover:underline">
