@@ -368,15 +368,7 @@
 	<div class="mt-8 rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
 		<div class="flex items-center justify-between">
 			<h2 class="font-medium">Playlists</h2>
-			<button
-				type="button"
-				onclick={openLinkDialog}
-				class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-				title="Link playlist"
-				aria-label="Link playlist"
-			>
-				<Plus size={16} aria-hidden="true" />
-			</button>
+			<Button size="sm" icon={Plus} onclick={openLinkDialog}>Link playlist</Button>
 		</div>
 		{#if attachedPlaylists.length}
 			<ul class="mt-2 flex flex-col gap-2">

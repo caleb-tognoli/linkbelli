@@ -1,6 +1,7 @@
 <svelte:head><title>Sources - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import { Plus } from '@lucide/svelte';
@@ -13,14 +14,7 @@
 <Page>
 	<PageHeader title="Sources">
 		{#snippet actions()}
-			<a
-				href="/sources/new"
-				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-				title="New source"
-				aria-label="New source"
-			>
-				<Plus size={18} aria-hidden="true" />
-			</a>
+			<Button href="/sources/new" variant="primary" icon={Plus}>New source</Button>
 		{/snippet}
 	</PageHeader>
 

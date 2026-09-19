@@ -95,8 +95,8 @@
 			/>
 		</div>
 		<div class="flex shrink-0 flex-wrap gap-2 text-sm">
+			<NewFolderDialog parentId={folder.id} />
 			<NewPlaylistDialog folderId={folder.id} />
-			<NewFolderDialog parentId={folder.id} variant="ghost" iconOnly />
 			<MoveFolderDialog folderId={folder.id} currentParentId={folder.parentId} />
 			<button type="button" onclick={remove} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" style="color: var(--color-danger)" title="Delete folder" aria-label="Delete folder">
 				<Trash2 size={17} aria-hidden="true" />

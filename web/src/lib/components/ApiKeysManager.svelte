@@ -5,7 +5,7 @@
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
-	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
+	import Button, { buttonClass, iconSize } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -105,12 +105,9 @@
 		<h3 class="font-medium">API keys</h3>
 		<Modal bind:open={dialogOpen} onOpenChange={resetOnClose} title="New API key">
 			{#snippet trigger()}
-				<Dialog.Trigger
-					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-					title="New API key"
-					aria-label="New API key"
-				>
-					<Plus size={18} aria-hidden="true" />
+				<Dialog.Trigger class={buttonClass('secondary', 'sm')}>
+					<Plus size={iconSize('sm')} aria-hidden="true" />
+					New API key
 				</Dialog.Trigger>
 			{/snippet}
 

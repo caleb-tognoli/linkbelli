@@ -73,7 +73,7 @@
 <Page>
 	<PageHeader title="Playlists">
 		{#snippet actions()}
-			<NewFolderDialog variant="ghost" iconOnly />
+			<NewFolderDialog />
 			<NewPlaylistDialog {form} />
 		{/snippet}
 	</PageHeader>

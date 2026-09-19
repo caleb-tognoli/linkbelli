@@ -2,7 +2,7 @@
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
-	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
+	import Button, { buttonClass, iconSize } from '$lib/components/ui/Button.svelte';
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import { Dialog } from 'bits-ui';
 	import { enhance } from '$app/forms';
@@ -113,12 +113,11 @@
 
 <Modal bind:open title="New playlist">
 	{#snippet trigger()}
-		<Dialog.Trigger
-			class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-			title="New playlist"
-			aria-label="New playlist"
-		>
-			<Plus size={18} aria-hidden="true" />
+		<!-- The page's main action, so it says what it does: it was a bare plus among the utility
+		     icons, the same size and weight as Trash. -->
+		<Dialog.Trigger class={buttonClass('primary')}>
+			<Plus size={iconSize()} aria-hidden="true" />
+			New playlist
 		</Dialog.Trigger>
 	{/snippet}
 

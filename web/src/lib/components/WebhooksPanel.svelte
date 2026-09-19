@@ -3,7 +3,7 @@
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
-	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
+	import Button, { buttonClass, iconSize } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api, json } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -204,12 +204,9 @@
 		<h3 class="font-medium">Webhooks</h3>
 		<Modal bind:open={dialogOpen} onOpenChange={resetOnClose} title="New webhook" size="lg">
 			{#snippet trigger()}
-				<Dialog.Trigger
-					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-					title="New webhook"
-					aria-label="New webhook"
-				>
-					<Plus size={18} aria-hidden="true" />
+				<Dialog.Trigger class={buttonClass('secondary', 'sm')}>
+					<Plus size={iconSize('sm')} aria-hidden="true" />
+					New webhook
 				</Dialog.Trigger>
 			{/snippet}
 
