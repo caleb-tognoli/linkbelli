@@ -143,3 +143,16 @@ button,
 	outline-offset: 2px;
 	border-radius: 2px;
 }
+
+/* Less motion, for anyone whose system asks for it: transitions and animations finish at once and
+   scrolling jumps rather than glides. Script-driven scrolling asks lib/motion.ts the same question. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	::before,
+	::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

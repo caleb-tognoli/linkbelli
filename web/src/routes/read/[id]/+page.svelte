@@ -5,6 +5,7 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { offsetIn, tidy, toSegments, type Highlight } from '$lib/highlights';
 	import { readingMinutes } from '$lib/reading';
+	import { scrollBehavior } from '$lib/motion';
 	import {
 		FONTS,
 		FONT_CSS,
@@ -319,7 +320,7 @@
 
 	function jumpTo(target: Highlight) {
 		const mark = body?.querySelector(`[data-highlight="${target.id}"]`);
-		mark?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		mark?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
 	}
 
 	let problemTimer: ReturnType<typeof setTimeout> | null = null;
@@ -360,10 +361,10 @@
 
 		switch (event.key) {
 			case 'j':
-				window.scrollBy({ top: window.innerHeight * 0.4, behavior: 'smooth' });
+				window.scrollBy({ top: window.innerHeight * 0.4, behavior: scrollBehavior() });
 				break;
 			case 'k':
-				window.scrollBy({ top: -window.innerHeight * 0.4, behavior: 'smooth' });
+				window.scrollBy({ top: -window.innerHeight * 0.4, behavior: scrollBehavior() });
 				break;
 			case 'n':
 				if (data.next) open(data.next.linkId);
