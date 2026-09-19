@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
@@ -164,9 +165,12 @@
 	}
 
 	async function remove(backup: Backup) {
-		if (!confirm(`Delete the backup from ${formatAge(backup.takenAt)}? This cannot be undone.`)) {
-			return;
-		}
+		const ok = await confirmDialog(`Delete the backup from ${formatAge(backup.takenAt)}?`, {
+			description: 'This cannot be undone.',
+			danger: true,
+			confirmLabel: 'Delete backup'
+		});
+		if (!ok) return;
 
 		const res = await api.del(`/backups/${backup.id}`);
 		if (res.ok) {
@@ -325,37 +329,29 @@
 							{describeContents(backup)} · {formatSize(backup.sizeBytes)}
 						</div>
 					</div>
-					<button
-						type="button"
+					<Button
+						variant="ghost"
+						icon={RotateCcw}
+						iconOnly
+						label="See what restoring this would do"
 						onclick={() => preview({ id: backup.id })}
 						disabled={working}
-						title="See what restoring this would do"
-						class="rounded-md border p-2 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-					>
-						<RotateCcw size={15} aria-hidden="true" />
-						<span class="sr-only">Restore</span>
-					</button>
-					<a
+					/>
+					<Button
+						variant="ghost"
+						icon={Download}
+						iconOnly
+						label="Download this backup"
 						href={`/api/v1/backups/${backup.id}`}
 						download
-						title="Download this backup"
-						class="rounded-md border p-2 hover:bg-black/5 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-					>
-						<Download size={15} aria-hidden="true" />
-						<span class="sr-only">Download</span>
-					</a>
-					<button
-						type="button"
+					/>
+					<Button
+						variant="ghost-danger"
+						icon={Trash2}
+						iconOnly
+						label="Delete this backup"
 						onclick={() => remove(backup)}
-						title="Delete this backup"
-						class="rounded-md border p-2 hover:bg-black/5 dark:hover:bg-white/10"
-						style="border-color: var(--color-border)"
-					>
-						<Trash2 size={15} aria-hidden="true" />
-						<span class="sr-only">Delete</span>
-					</button>
+					/>
 				</li>
 			{/each}
 		</ul>
