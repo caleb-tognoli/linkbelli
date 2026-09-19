@@ -1,6 +1,7 @@
 <svelte:head><title>Duplicates - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import { toast } from '$lib/toast.svelte';
@@ -8,7 +9,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { CopyCheck, Trash2 } from '@lucide/svelte';
+	import { CopyCheck, Check } from '@lucide/svelte';
 	import type { DuplicateCopy, DuplicateGroup } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -107,16 +108,15 @@
 										in <a href={`/playlists/${copy.playlistId}`} class="hover:underline">{copy.playlistName}</a>
 									</p>
 								</div>
-								<button
-									type="button"
+								<Button
+									size="sm"
+									icon={Check}
 									onclick={() => keepOnly(group, copy)}
 									disabled={busy !== null}
-									class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-									style="border-color: var(--color-border)"
-									title="Keep this one and remove the others"
+									title="Keep this copy and move the others to the trash"
 								>
-									<Trash2 size={14} aria-hidden="true" /> Keep this
-								</button>
+									Keep only this
+								</Button>
 							</li>
 						{/each}
 					</ul>
