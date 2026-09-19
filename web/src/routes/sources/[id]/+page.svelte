@@ -1,11 +1,11 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { Dialog } from 'bits-ui';
-	import { Play, RotateCcw, X, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe, ChevronDown } from '@lucide/svelte';
+	import { Play, RotateCcw, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe, ChevronDown } from '@lucide/svelte';
 
 	const visIcons = { Private: Lock, Unlisted: EyeOff, Public: Globe } as const;
 	import SourceForm from '$lib/components/SourceForm.svelte';
@@ -433,118 +433,73 @@
 	</div>
 </section>
 
-<Dialog.Root bind:open={linkOpen}>
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 flex max-h-[70vh] w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border p-5 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
-		>
-			<div class="flex shrink-0 items-center justify-between">
-				<Dialog.Title class="font-semibold">Link playlist</Dialog.Title>
-				<Dialog.Close class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Close" aria-label="Close">
-					<X size={17} aria-hidden="true" />
-				</Dialog.Close>
-			</div>
-			<Input
-				bind:value={linkSearch}
-				placeholder="Search…"
-				aria-label="Search playlists"
-				size="sm"
-				class="mt-3 shrink-0 w-full"
-			/>
-			<div class="mt-2 flex-1 overflow-y-auto">
-				{#if linkLoading && linkResults.length === 0}
-					<p class="py-2 text-sm" style="color: var(--color-muted)">Loading…</p>
-				{:else if linkResults.length === 0}
-					<p class="py-2 text-sm" style="color: var(--color-muted)">{linkSearch.trim() ? 'No matches.' : 'No playlists to link.'}</p>
-				{:else}
-					<ul class="flex flex-col gap-1">
-						{#each linkResults as pl (pl.id)}
-							{@const VisIcon = visIcons[pl.visibility] ?? Lock}
-							<li>
-								<button
-									type="button"
-									onclick={() => linkPlaylist(pl.id)}
-									class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-								>
-									<span class="truncate">{pl.name}</span>
-									<VisIcon size={13} aria-label={pl.visibility} class="ml-2 shrink-0" style="color: var(--color-muted)" />
-								</button>
-							</li>
-						{/each}
-					</ul>
-					{#if linkCursor}
+<Modal bind:open={linkOpen} title="Link playlist" size="sm">
+	<Input
+		bind:value={linkSearch}
+		placeholder="Search…"
+		aria-label="Search playlists"
+		size="sm"
+		class="w-full"
+	/>
+	<div class="mt-2 flex-1 overflow-y-auto">
+		{#if linkLoading && linkResults.length === 0}
+			<p class="py-2 text-sm" style="color: var(--color-muted)">Loading…</p>
+		{:else if linkResults.length === 0}
+			<p class="py-2 text-sm" style="color: var(--color-muted)">{linkSearch.trim() ? 'No matches.' : 'No playlists to link.'}</p>
+		{:else}
+			<ul class="flex flex-col gap-1">
+				{#each linkResults as pl (pl.id)}
+					{@const VisIcon = visIcons[pl.visibility] ?? Lock}
+					<li>
 						<button
 							type="button"
-							onclick={() => doLinkSearch(linkSearch, false, linkCursor ?? undefined)}
-							disabled={linkLoading}
-							class="mt-1 flex w-full items-center justify-center rounded-md py-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
-							style="color: var(--color-muted)"
-							title="Show more"
-							aria-label="Show more"
+							onclick={() => linkPlaylist(pl.id)}
+							class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
 						>
-							<ChevronDown size={16} aria-hidden="true" />
+							<span class="truncate">{pl.name}</span>
+							<VisIcon size={13} aria-label={pl.visibility} class="ml-2 shrink-0" style="color: var(--color-muted)" />
 						</button>
-					{/if}
-				{/if}
-			</div>
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+					</li>
+				{/each}
+			</ul>
+			{#if linkCursor}
+				<button
+					type="button"
+					onclick={() => doLinkSearch(linkSearch, false, linkCursor ?? undefined)}
+					disabled={linkLoading}
+					class="mt-1 flex w-full items-center justify-center rounded-md py-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
+					style="color: var(--color-muted)"
+					title="Show more"
+					aria-label="Show more"
+				>
+					<ChevronDown size={16} aria-hidden="true" />
+				</button>
+			{/if}
+		{/if}
+	</div>
+</Modal>
 
-<Dialog.Root bind:open={errorOpen}>
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border p-6 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
-		>
-			<div class="flex items-start justify-between gap-4">
-				<Dialog.Title class="text-lg font-semibold">Run failed</Dialog.Title>
-				<Dialog.Close class="shrink-0 inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Close" aria-label="Close">
-					<X size={17} aria-hidden="true" />
-				</Dialog.Close>
-			</div>
-			<div class="mt-4 max-h-96 overflow-y-auto text-sm">
-				<pre class="whitespace-pre-wrap break-words rounded p-3 text-xs" style="background: var(--color-surface); color: var(--color-danger)">{errorRun?.error ?? ''}</pre>
-			</div>
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+<Modal bind:open={errorOpen} title="Run failed" size="lg">
+	<pre
+		class="whitespace-pre-wrap break-words rounded p-3 text-xs"
+		style="background: var(--color-bg); color: var(--color-danger)">{errorRun?.error ?? ''}</pre>
+</Modal>
 
-<Dialog.Root bind:open={itemsOpen}>
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border p-6 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
-		>
-			<div class="flex items-start justify-between gap-4">
-				<div class="min-w-0">
-					<Dialog.Title class="text-lg font-semibold">
-						{itemsMode === 'added' ? 'Added' : 'Found'} {itemsTotal} {itemsTotal === 1 ? 'item' : 'items'}
-					</Dialog.Title>
-					{#if itemsTruncated}
-						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
-							Showing the first {itemsList.length}. Run history keeps a sample, not every address.
-						</p>
-					{/if}
-				</div>
-				<Dialog.Close class="shrink-0 inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Close" aria-label="Close">
-					<X size={17} aria-hidden="true" />
-				</Dialog.Close>
-			</div>
-
-			<div class="mt-4 max-h-96 overflow-x-auto overflow-y-auto text-sm">
-				<ul class="pb-2">
-					{#each itemsList as url (url)}
-						<li class="border-t py-1.5 first:border-t-0" style="border-color: var(--color-border)">
-							<span class="whitespace-nowrap">{url}</span>
-						</li>
-					{/each}
-				</ul>
-			</div>
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+<Modal
+	bind:open={itemsOpen}
+	title={`${itemsMode === 'added' ? 'Added' : 'Found'} ${itemsTotal} ${itemsTotal === 1 ? 'item' : 'items'}`}
+	description={itemsTruncated
+		? `Showing the first ${itemsList.length}. Run history keeps a sample, not every address.`
+		: undefined}
+	size="lg"
+>
+	<div class="overflow-x-auto text-sm">
+		<ul class="pb-2">
+			{#each itemsList as url (url)}
+				<li class="border-t py-1.5 first:border-t-0" style="border-color: var(--color-border)">
+					<span class="whitespace-nowrap">{url}</span>
+				</li>
+			{/each}
+		</ul>
+	</div>
+</Modal>

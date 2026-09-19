@@ -1,9 +1,10 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
-	import { Folder, FolderInput, X } from '@lucide/svelte';
+	import { Folder, FolderInput } from '@lucide/svelte';
 	import FolderPicker from './FolderPicker.svelte';
 	import type { Folder as FolderType } from '$lib/types';
 
@@ -81,58 +82,41 @@
 	}
 </script>
 
-<Dialog.Root bind:open>
-	<Dialog.Trigger
-		class={compact ? buttonClass('ghost', 'sm', true) : buttonClass('secondary', 'sm')}
-		title={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
-		aria-label={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
-	>
-		{#if compact}
-			<FolderInput size={15} aria-hidden="true" />
-		{:else}
-			<Folder size={15} aria-hidden="true" />
-			{#if filed}
-				<span class="max-w-[12rem] truncate">{currentFolderName}</span>
-			{:else}
-				<span>Add to folder</span>
-			{/if}
-		{/if}
-	</Dialog.Trigger>
-
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border p-5 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
+<Modal bind:open title={filed ? 'Move to folder' : 'Save to folder'} size="sm">
+	{#snippet trigger()}
+		<Dialog.Trigger
+			class={compact ? buttonClass('ghost', 'sm', true) : buttonClass('secondary', 'sm')}
+			title={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
+			aria-label={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
 		>
-			<div class="flex items-center justify-between">
-				<Dialog.Title class="font-semibold">{filed ? 'Move to folder' : 'Save to folder'}</Dialog.Title>
-				<Dialog.Close
-					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-					title="Close"
-					aria-label="Close"
-				>
-					<X size={17} aria-hidden="true" />
-				</Dialog.Close>
-			</div>
-
-			<div class="mt-4 flex-1 overflow-y-auto">
-				{#if loading}
-					<p class="text-sm" style="color: var(--color-muted)">Loading…</p>
+			{#if compact}
+				<FolderInput size={15} aria-hidden="true" />
+			{:else}
+				<Folder size={15} aria-hidden="true" />
+				{#if filed}
+					<span class="max-w-[12rem] truncate">{currentFolderName}</span>
 				{:else}
-					<FolderPicker
-						{folders}
-						selectedId={currentFolderId}
-						onSelect={handleSelect}
-						{busy}
-						rootLabel="No folder"
-					/>
+					<span>Add to folder</span>
 				{/if}
-			</div>
-
-			{#if error}
-				<p class="mt-3 text-sm" style="color: var(--color-danger)">{error}</p>
 			{/if}
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+		</Dialog.Trigger>
+	{/snippet}
+
+	<div class="flex-1 overflow-y-auto">
+		{#if loading}
+			<p class="text-sm" style="color: var(--color-muted)">Loading…</p>
+		{:else}
+			<FolderPicker
+				{folders}
+				selectedId={currentFolderId}
+				onSelect={handleSelect}
+				{busy}
+				rootLabel="No folder"
+			/>
+		{/if}
+	</div>
+
+	{#if error}
+		<p class="mt-3 text-sm" style="color: var(--color-danger)">{error}</p>
+	{/if}
+</Modal>

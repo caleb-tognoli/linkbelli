@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
@@ -54,6 +55,10 @@
 		error = null;
 	}
 
+	function resetOnClose(o: boolean) {
+		if (!o) resetDialog();
+	}
+
 	async function create() {
 		if (!name.trim() || busy) return;
 		busy = true;
@@ -103,75 +108,62 @@
 <div class="flex flex-col gap-4">
 	<div class="flex items-center justify-between">
 		<h2 class="font-medium">API keys</h2>
-		<Dialog.Root
-			bind:open={dialogOpen}
-			onOpenChange={(o) => {
-				if (!o) resetDialog();
-			}}
-		>
-			<Dialog.Trigger
-				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-				title="New API key"
-				aria-label="New API key"
-			>
-				<Plus size={18} aria-hidden="true" />
-			</Dialog.Trigger>
-
-			<Dialog.Portal>
-				<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-				<Dialog.Content
-					class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border p-6 shadow-xl"
-					style="border-color: var(--color-border); background: var(--color-surface)"
+		<Modal bind:open={dialogOpen} onOpenChange={resetOnClose} title="New API key">
+			{#snippet trigger()}
+				<Dialog.Trigger
+					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+					title="New API key"
+					aria-label="New API key"
 				>
-					<Dialog.Title class="text-lg font-semibold">New API key</Dialog.Title>
+					<Plus size={18} aria-hidden="true" />
+				</Dialog.Trigger>
+			{/snippet}
 
-					<div class="mt-4 flex flex-col gap-4">
-						<Field label="Name">
-							{#snippet children(f)}
-								<Input
-									id={f.id}
-									bind:value={name}
-									aria-describedby={f.describedby}
+			<div class="flex flex-col gap-4">
+				<Field label="Name">
+					{#snippet children(f)}
+						<Input
+							id={f.id}
+							bind:value={name}
+							aria-describedby={f.describedby}
+						/>
+					{/snippet}
+				</Field>
+
+				<label class="flex items-center gap-2 text-sm">
+					<Switch checked={fullAccess} onchange={(v) => (fullAccess = v)} label="Full access" />
+					Full Access
+				</label>
+
+				{#if !fullAccess}
+					<div class="grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
+						{#each ALL_SCOPES as scope (scope)}
+							<label class="flex items-center gap-1.5">
+								<Switch
+									checked={selectedScopes.has(scope)}
+									onchange={(v) => toggleScope(scope, v)}
+									label={scope}
 								/>
-							{/snippet}
-						</Field>
-
-						<label class="flex items-center gap-2 text-sm">
-							<Switch checked={fullAccess} onchange={(v) => (fullAccess = v)} label="Full access" />
-							Full Access
-						</label>
-
-						{#if !fullAccess}
-							<div class="grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
-								{#each ALL_SCOPES as scope (scope)}
-									<label class="flex items-center gap-1.5">
-										<Switch
-											checked={selectedScopes.has(scope)}
-											onchange={(v) => toggleScope(scope, v)}
-											label={scope}
-										/>
-										<code>{scope}</code>
-									</label>
-								{/each}
-							</div>
-						{/if}
-
-						{#if error}
-							<p class="text-sm" style="color: var(--color-danger)">{error}</p>
-						{/if}
-
-						<div class="mt-2 flex justify-center gap-2 text-sm">
-							<Dialog.Close class={buttonClass('secondary')}>
-								<X size={17} aria-hidden="true" /> Cancel
-							</Dialog.Close>
-							<Button variant="primary" icon={Check} onclick={create} loading={busy} disabled={!name.trim()}>
-								{busy ? 'Creating…' : 'Create key'}
-							</Button>
-						</div>
+								<code>{scope}</code>
+							</label>
+						{/each}
 					</div>
-				</Dialog.Content>
-			</Dialog.Portal>
-		</Dialog.Root>
+				{/if}
+
+				{#if error}
+					<p class="text-sm" style="color: var(--color-danger)">{error}</p>
+				{/if}
+
+				<div class={MODAL_FOOTER}>
+					<Dialog.Close class={buttonClass('secondary')}>
+						<X size={17} aria-hidden="true" /> Cancel
+					</Dialog.Close>
+					<Button variant="primary" icon={Check} onclick={create} loading={busy} disabled={!name.trim()}>
+						{busy ? 'Creating…' : 'Create key'}
+					</Button>
+				</div>
+			</div>
+		</Modal>
 	</div>
 
 	{#if createdToken}

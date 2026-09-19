@@ -1,9 +1,10 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
-	import { ClipboardPaste, X } from '@lucide/svelte';
+	import { ClipboardPaste } from '@lucide/svelte';
 
 	let {
 		playlistId,
@@ -29,6 +30,11 @@
 		error = null;
 	}
 
+	/** A fresh box every time it opens, rather than last time's text and result. */
+	function resetOnOpen(value: boolean) {
+		if (value) reset();
+	}
+
 	async function paste() {
 		busy = true;
 		error = null;
@@ -52,74 +58,63 @@
 	}
 </script>
 
-<Dialog.Root bind:open onOpenChange={(value) => value && reset()}>
-	<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Paste a block of links">
-		<ClipboardPaste size={15} aria-hidden="true" />
-		Paste links
-	</Dialog.Trigger>
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border p-5 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
-		>
-			<div class="flex items-center justify-between">
-				<Dialog.Title class="font-semibold">Paste links</Dialog.Title>
-				<Dialog.Close class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" title="Close" aria-label="Close">
-					<X size={17} aria-hidden="true" />
-				</Dialog.Close>
-			</div>
+<Modal
+	bind:open
+	onOpenChange={resetOnOpen}
+	title="Paste links"
+	description="A chat log, a list of tabs, an email — anything with addresses in it. The rest of the text is ignored."
+	size="lg"
+>
+	{#snippet trigger()}
+		<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Paste a block of links">
+			<ClipboardPaste size={15} aria-hidden="true" />
+			Paste links
+		</Dialog.Trigger>
+	{/snippet}
 
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				A chat log, a list of tabs, an email — anything with addresses in it. The rest of the
-				text is ignored.
+	<!-- svelte-ignore a11y_autofocus -- the dialog exists to receive a paste -->
+	<Textarea
+		autofocus
+		bind:value={text}
+		rows={8}
+		placeholder="https://example.com/one&#10;https://example.com/two"
+		aria-label="Text to take links from"
+		class="w-full font-mono"
+	/>
+
+	{#if error}
+		<p class="mt-2 text-sm" style="color: var(--color-danger)">{error}</p>
+	{/if}
+
+	{#if result}
+		<div class="mt-2 text-sm">
+			<p>
+				Added {result.added} of {result.found}.
+				{#if result.alreadyThere}
+					{result.alreadyThere} {result.alreadyThere === 1 ? 'was' : 'were'} already here.
+				{/if}
 			</p>
-
-			<!-- svelte-ignore a11y_autofocus -- the dialog exists to receive a paste -->
-			<Textarea
-				autofocus
-				bind:value={text}
-				rows={8}
-				placeholder="https://example.com/one&#10;https://example.com/two"
-				aria-label="Text to take links from"
-				class="mt-3 w-full font-mono"
-			/>
-
-			{#if error}
-				<p class="mt-2 text-sm" style="color: var(--color-danger)">{error}</p>
+			{#if result.rejected.length}
+				<!-- Named rather than dropped: a paste that quietly loses two of forty is worse
+				     than one that says which two. -->
+				<p class="mt-1" style="color: var(--color-danger)">Could not read:</p>
+				<ul class="mt-0.5" style="color: var(--color-muted)">
+					{#each result.rejected as url (url)}
+						<li class="truncate text-xs">{url}</li>
+					{/each}
+				</ul>
 			{/if}
+		</div>
+	{/if}
 
-			{#if result}
-				<div class="mt-2 text-sm">
-					<p>
-						Added {result.added} of {result.found}.
-						{#if result.alreadyThere}
-							{result.alreadyThere} {result.alreadyThere === 1 ? 'was' : 'were'} already here.
-						{/if}
-					</p>
-					{#if result.rejected.length}
-						<!-- Named rather than dropped: a paste that quietly loses two of forty is worse
-						     than one that says which two. -->
-						<p class="mt-1" style="color: var(--color-danger)">Could not read:</p>
-						<ul class="mt-0.5" style="color: var(--color-muted)">
-							{#each result.rejected as url (url)}
-								<li class="truncate text-xs">{url}</li>
-							{/each}
-						</ul>
-					{/if}
-				</div>
-			{/if}
-
-			<Button
-				variant="primary"
-				icon={ClipboardPaste}
-				class="mt-4"
-				onclick={paste}
-				loading={busy}
-				disabled={!text.trim()}
-			>
-				{busy ? 'Adding…' : 'Add them'}
-			</Button>
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+	<Button
+		variant="primary"
+		icon={ClipboardPaste}
+		class="mt-4"
+		onclick={paste}
+		loading={busy}
+		disabled={!text.trim()}
+	>
+		{busy ? 'Adding…' : 'Add them'}
+	</Button>
+</Modal>

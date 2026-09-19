@@ -1,8 +1,9 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
 	import { api, json } from '$lib/api/client';
-	import { FolderInput, X } from '@lucide/svelte';
+	import { FolderInput } from '@lucide/svelte';
 	import FolderPicker from './FolderPicker.svelte';
 	import type { Folder } from '$lib/types';
 
@@ -68,50 +69,33 @@
 	}
 </script>
 
-<Dialog.Root bind:open>
-	<Dialog.Trigger
-		class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-		title="Move folder"
-		aria-label="Move folder"
-	>
-		<FolderInput size={17} aria-hidden="true" />
-	</Dialog.Trigger>
-
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border p-5 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
+<Modal bind:open title="Move folder" size="sm">
+	{#snippet trigger()}
+		<Dialog.Trigger
+			class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+			title="Move folder"
+			aria-label="Move folder"
 		>
-			<div class="flex items-center justify-between">
-				<Dialog.Title class="font-semibold">Move folder</Dialog.Title>
-				<Dialog.Close
-					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-					title="Cancel"
-					aria-label="Cancel"
-				>
-					<X size={17} aria-hidden="true" />
-				</Dialog.Close>
-			</div>
+			<FolderInput size={17} aria-hidden="true" />
+		</Dialog.Trigger>
+	{/snippet}
 
-			<div class="mt-4 flex-1 overflow-y-auto">
-				{#if loading}
-					<p class="text-sm" style="color: var(--color-muted)">Loading…</p>
-				{:else}
-					<FolderPicker
-						{folders}
-						selectedId={currentParentId}
-						{excludeIds}
-						onSelect={handleSelect}
-						{busy}
-						rootLabel="Top level"
-					/>
-				{/if}
-			</div>
+	<div class="flex-1 overflow-y-auto">
+		{#if loading}
+			<p class="text-sm" style="color: var(--color-muted)">Loading…</p>
+		{:else}
+			<FolderPicker
+				{folders}
+				selectedId={currentParentId}
+				{excludeIds}
+				onSelect={handleSelect}
+				{busy}
+				rootLabel="Top level"
+			/>
+		{/if}
+	</div>
 
-			{#if error}
-				<p class="mt-3 text-sm" style="color: var(--color-danger)">{error}</p>
-			{/if}
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+	{#if error}
+		<p class="mt-3 text-sm" style="color: var(--color-danger)">{error}</p>
+	{/if}
+</Modal>

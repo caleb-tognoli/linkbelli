@@ -3,6 +3,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
+	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import { Dialog } from 'bits-ui';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
@@ -53,161 +54,104 @@
 	}
 </script>
 
-<Dialog.Root bind:open>
-	<Dialog.Trigger
-		class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-		title="New playlist"
-		aria-label="New playlist"
-	>
-		<Plus size={18} aria-hidden="true" />
-	</Dialog.Trigger>
+{#snippet fields(values: CreateForm)}
+	<Field label="Name">
+		{#snippet children(f)}
+			<Input id={f.id} name="name" required value={values?.name ?? ''} aria-describedby={f.describedby} />
+		{/snippet}
+	</Field>
 
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border p-6 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
+	<Field label="Description" optional>
+		{#snippet children(f)}
+			<Input
+				id={f.id}
+				name="description"
+				value={values?.description ?? ''}
+				aria-describedby={f.describedby}
+			/>
+		{/snippet}
+	</Field>
+
+	<Field label="Visibility">
+		{#snippet children(f)}
+			<Select
+				id={f.id}
+				name="visibility"
+				value={values?.visibility ?? 'Private'}
+				aria-describedby={f.describedby}
+			>
+				<option value="Private">Private</option>
+				<option value="Unlisted">Unlisted</option>
+				<option value="Public">Public</option>
+			</Select>
+		{/snippet}
+	</Field>
+
+	<Field label="Tags" hint="Comma-separated">
+		{#snippet children(f)}
+			<Input
+				id={f.id}
+				name="tags"
+				value={values?.tags ?? ''}
+				placeholder="tech, ai"
+				aria-describedby={f.describedby}
+			/>
+		{/snippet}
+	</Field>
+{/snippet}
+
+{#snippet actions()}
+	<div class={MODAL_FOOTER}>
+		<Dialog.Close class={buttonClass('secondary')}>
+			<X size={17} aria-hidden="true" /> Cancel
+		</Dialog.Close>
+		<Button type="submit" variant="primary" icon={Check} loading={submitting}>
+			{submitting ? 'Creating…' : 'Create'}
+		</Button>
+	</div>
+{/snippet}
+
+<Modal bind:open title="New playlist">
+	{#snippet trigger()}
+		<Dialog.Trigger
+			class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+			title="New playlist"
+			aria-label="New playlist"
 		>
-			<Dialog.Title class="text-lg font-semibold">New playlist</Dialog.Title>
+			<Plus size={18} aria-hidden="true" />
+		</Dialog.Trigger>
+	{/snippet}
 
-			{#if folderId}
-				<form class="mt-4 flex flex-col gap-3" onsubmit={handleInlineCreate}>
-					<Field label="Name">
-						{#snippet children(f)}
-							<Input
-								id={f.id}
-								name="name"
-								required
-								aria-describedby={f.describedby}
-							/>
-						{/snippet}
-					</Field>
+	{#if folderId}
+		<form class="flex flex-col gap-3" onsubmit={handleInlineCreate}>
+			{@render fields(null)}
 
-					<Field label="Description" optional>
-						{#snippet children(f)}
-							<Input
-								id={f.id}
-								name="description"
-								aria-describedby={f.describedby}
-							/>
-						{/snippet}
-					</Field>
-
-					<Field label="Visibility">
-						{#snippet children(f)}
-							<Select
-								id={f.id}
-								name="visibility"
-								aria-describedby={f.describedby}
-							>
-							<option value="Private">Private</option>
-							<option value="Unlisted">Unlisted</option>
-							<option value="Public">Public</option>
-							</Select>
-						{/snippet}
-					</Field>
-
-					<Field label="Tags" hint="comma-separated">
-						{#snippet children(f)}
-							<Input
-								id={f.id}
-								name="tags"
-								placeholder="tech, ai"
-								aria-describedby={f.describedby}
-							/>
-						{/snippet}
-					</Field>
-
-					{#if inlineError}
-						<p class="text-sm" style="color: var(--color-danger)">{inlineError}</p>
-					{/if}
-
-					<div class="mt-2 flex justify-center gap-2 text-sm">
-						<Dialog.Close class={buttonClass('secondary')}>
-							<X size={17} aria-hidden="true" /> Cancel
-						</Dialog.Close>
-						<Button type="submit" variant="primary" icon={Check} loading={submitting}>
-							{submitting ? 'Creating…' : 'Create'}
-						</Button>
-					</div>
-				</form>
-			{:else}
-				<form
-					method="post"
-					action="?/create"
-					class="mt-4 flex flex-col gap-3"
-					use:enhance={() => {
-						submitting = true;
-						return async ({ update }) => {
-							await update();
-							submitting = false;
-						};
-					}}
-				>
-					<Field label="Name">
-						{#snippet children(f)}
-							<Input
-								id={f.id}
-								name="name"
-								required
-								value={form?.name ?? ''}
-								aria-describedby={f.describedby}
-							/>
-						{/snippet}
-					</Field>
-
-					<Field label="Description" optional>
-						{#snippet children(f)}
-							<Input
-								id={f.id}
-								name="description"
-								value={form?.description ?? ''}
-								aria-describedby={f.describedby}
-							/>
-						{/snippet}
-					</Field>
-
-					<Field label="Visibility">
-						{#snippet children(f)}
-							<Select
-								id={f.id}
-								name="visibility"
-								value={form?.visibility ?? 'Private'}
-								aria-describedby={f.describedby}
-							>
-							<option value="Private">Private</option>
-							<option value="Unlisted">Unlisted</option>
-							<option value="Public">Public</option>
-							</Select>
-						{/snippet}
-					</Field>
-
-					<Field label="Tags" hint="comma-separated">
-						{#snippet children(f)}
-							<Input
-								id={f.id}
-								name="tags"
-								value={form?.tags ?? ''}
-								placeholder="tech, ai"
-								aria-describedby={f.describedby}
-							/>
-						{/snippet}
-					</Field>
-
-					{#if form?.error}
-						<p class="text-sm" style="color: var(--color-danger)">{form.error}</p>
-					{/if}
-
-					<div class="mt-2 flex justify-center gap-2 text-sm">
-						<Dialog.Close class={buttonClass('secondary')}>
-							<X size={17} aria-hidden="true" /> Cancel
-						</Dialog.Close>
-						<Button type="submit" variant="primary" icon={Check} loading={submitting}>
-							{submitting ? 'Creating…' : 'Create'}
-						</Button>
-					</div>
-				</form>
+			{#if inlineError}
+				<p class="text-sm" style="color: var(--color-danger)">{inlineError}</p>
 			{/if}
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+
+			{@render actions()}
+		</form>
+	{:else}
+		<form
+			method="post"
+			action="?/create"
+			class="flex flex-col gap-3"
+			use:enhance={() => {
+				submitting = true;
+				return async ({ update }) => {
+					await update();
+					submitting = false;
+				};
+			}}
+		>
+			{@render fields(form)}
+
+			{#if form?.error}
+				<p class="text-sm" style="color: var(--color-danger)">{form.error}</p>
+			{/if}
+
+			{@render actions()}
+		</form>
+	{/if}
+</Modal>

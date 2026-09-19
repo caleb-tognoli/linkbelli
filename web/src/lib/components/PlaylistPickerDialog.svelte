@@ -1,7 +1,7 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import { Dialog } from 'bits-ui';
-	import { ChevronDown, EyeOff, Globe, Lock, X } from '@lucide/svelte';
+	import { ChevronDown, EyeOff, Globe, Lock } from '@lucide/svelte';
 	import { api, json } from '$lib/api/client';
 	import type { Paged, Playlist } from '$lib/types';
 
@@ -74,77 +74,56 @@
 	}
 </script>
 
-<Dialog.Root bind:open>
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 flex max-h-[80vh] w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border p-5 shadow-xl"
-			style="border-color: var(--color-border); background: var(--color-surface)"
-		>
-			<div class="flex shrink-0 items-center justify-between">
-				<Dialog.Title class="font-semibold">{title}</Dialog.Title>
-				<Dialog.Close
-					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-					title="Close"
-					aria-label="Close"
-				>
-					<X size={17} aria-hidden="true" />
-				</Dialog.Close>
-			</div>
-			{#if subtitle}
-				<p class="mt-1 shrink-0 text-sm" style="color: var(--color-muted)">{subtitle}</p>
-			{/if}
-			<Input
-				bind:value={search}
-				placeholder="Search…"
-				aria-label="Search playlists"
-				size="sm"
-				class="mt-3 shrink-0 w-full"
-			/>
+<Modal bind:open {title} description={subtitle} size="sm">
+	<Input
+		bind:value={search}
+		placeholder="Search…"
+		aria-label="Search playlists"
+		size="sm"
+		class="w-full"
+	/>
 
-			<div class="mt-2 flex-1 overflow-y-auto">
-				{#if loading && playlists.length === 0}
-					<p class="py-2 text-sm" style="color: var(--color-muted)">Loading…</p>
-				{:else if playlists.length === 0}
-					<p class="py-2 text-sm" style="color: var(--color-muted)">{search.trim() ? 'No matches.' : 'No playlists found.'}</p>
-				{:else}
-					<ul class="flex flex-col gap-1">
-						{#each playlists as pl (pl.id)}
-							{@const status = rowStatus.get(pl.id)}
-							{@const VisIcon = visIcons[pl.visibility] ?? Lock}
-							<li>
-								<button
-									type="button"
-									onclick={() => pick(pl)}
-									disabled={!!status}
-									class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
-								>
-									<span class="truncate">{pl.name}</span>
-									<span class="ml-2 flex shrink-0 items-center gap-1.5">
-										{#if status}
-											<span class="text-xs font-medium" style="color: var(--color-accent)">{status}</span>
-										{/if}
-										<VisIcon size={13} aria-label={pl.visibility} style="color: var(--color-muted)" />
-									</span>
-								</button>
-							</li>
-						{/each}
-					</ul>
-					{#if nextCursor}
+	<div class="mt-2 flex-1 overflow-y-auto">
+		{#if loading && playlists.length === 0}
+			<p class="py-2 text-sm" style="color: var(--color-muted)">Loading…</p>
+		{:else if playlists.length === 0}
+			<p class="py-2 text-sm" style="color: var(--color-muted)">{search.trim() ? 'No matches.' : 'No playlists found.'}</p>
+		{:else}
+			<ul class="flex flex-col gap-1">
+				{#each playlists as pl (pl.id)}
+					{@const status = rowStatus.get(pl.id)}
+					{@const VisIcon = visIcons[pl.visibility] ?? Lock}
+					<li>
 						<button
 							type="button"
-							onclick={() => fetchPage(false, nextCursor ?? undefined)}
-							disabled={loading}
-							class="mt-1 flex w-full items-center justify-center rounded-md py-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
-							style="color: var(--color-muted)"
-							title="Show more"
-							aria-label="Show more"
+							onclick={() => pick(pl)}
+							disabled={!!status}
+							class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
 						>
-							<ChevronDown size={16} aria-hidden="true" />
+							<span class="truncate">{pl.name}</span>
+							<span class="ml-2 flex shrink-0 items-center gap-1.5">
+								{#if status}
+									<span class="text-xs font-medium" style="color: var(--color-accent)">{status}</span>
+								{/if}
+								<VisIcon size={13} aria-label={pl.visibility} style="color: var(--color-muted)" />
+							</span>
 						</button>
-					{/if}
-				{/if}
-			</div>
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+					</li>
+				{/each}
+			</ul>
+			{#if nextCursor}
+				<button
+					type="button"
+					onclick={() => fetchPage(false, nextCursor ?? undefined)}
+					disabled={loading}
+					class="mt-1 flex w-full items-center justify-center rounded-md py-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
+					style="color: var(--color-muted)"
+					title="Show more"
+					aria-label="Show more"
+				>
+					<ChevronDown size={16} aria-hidden="true" />
+				</button>
+			{/if}
+		{/if}
+	</div>
+</Modal>

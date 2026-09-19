@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
@@ -221,97 +222,88 @@
 	}
 
 	resetForm();
+
+	function resetOnClose(o: boolean) {
+		if (!o) resetForm();
+	}
 </script>
 
 <div class="flex flex-col gap-3">
 	<div class="flex items-center justify-between">
 		<h2 class="font-medium">Webhooks</h2>
-		<Dialog.Root
-			bind:open={dialogOpen}
-			onOpenChange={(o) => {
-				if (!o) resetForm();
-			}}
-		>
-			<Dialog.Trigger
-				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-				title="New webhook"
-				aria-label="New webhook"
-			>
-				<Plus size={18} aria-hidden="true" />
-			</Dialog.Trigger>
-
-			<Dialog.Portal>
-				<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
-				<Dialog.Content
-					class="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border p-6 shadow-xl"
-					style="border-color: var(--color-border); background: var(--color-surface)"
+		<Modal bind:open={dialogOpen} onOpenChange={resetOnClose} title="New webhook" size="lg">
+			{#snippet trigger()}
+				<Dialog.Trigger
+					class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+					title="New webhook"
+					aria-label="New webhook"
 				>
-					<Dialog.Title class="text-lg font-semibold">New webhook</Dialog.Title>
+					<Plus size={18} aria-hidden="true" />
+				</Dialog.Trigger>
+			{/snippet}
 
-					<div class="mt-4 flex flex-col gap-4">
-						<Field label="Address to send to">
-							{#snippet children(f)}
-								<Input
-									id={f.id}
-									bind:value={url}
-									type="url"
-									placeholder="https://…"
-									aria-describedby={f.describedby}
-								/>
-							{/snippet}
-						</Field>
+			<div class="flex flex-col gap-4">
+				<Field label="Address to send to">
+					{#snippet children(f)}
+						<Input
+							id={f.id}
+							bind:value={url}
+							type="url"
+							placeholder="https://…"
+							aria-describedby={f.describedby}
+						/>
+					{/snippet}
+				</Field>
 
-						<Field label="What it is for" optional>
-							{#snippet children(f)}
-								<Input
-									id={f.id}
-									bind:value={description}
-									maxlength={200}
-									placeholder="Kitchen display, Discord #reading…"
-									aria-describedby={f.describedby}
-								/>
-							{/snippet}
-						</Field>
+				<Field label="What it is for" optional>
+					{#snippet children(f)}
+						<Input
+							id={f.id}
+							bind:value={description}
+							maxlength={200}
+							placeholder="Kitchen display, Discord #reading…"
+							aria-describedby={f.describedby}
+						/>
+					{/snippet}
+				</Field>
 
-						<fieldset class="flex flex-col gap-2.5 text-sm">
-							<legend class="mb-1">Send it</legend>
-							{#each catalogue as event (event.name)}
-								<div class="flex items-start gap-2">
-									<Switch
-										checked={chosen.has(event.name)}
-										onchange={(v) => toggle(event.name, v)}
-										label={event.name}
-									/>
-									<div>
-										<code>{event.name}</code>
-										<p class="text-xs" style="color: var(--color-muted)">{event.description}</p>
-									</div>
-								</div>
-							{/each}
-						</fieldset>
-
-						{#if formError}
-							<p class="text-sm" style="color: var(--color-danger)">{formError}</p>
-						{/if}
-
-						<div class="mt-2 flex justify-center gap-2 text-sm">
-							<Dialog.Close class={buttonClass('secondary')}>
-								<X size={17} aria-hidden="true" /> Cancel
-							</Dialog.Close>
-							<Button
-								variant="primary"
-								icon={Check}
-								onclick={create}
-								loading={busy}
-								disabled={!url.trim() || chosen.size === 0}
-							>
-								{busy ? 'Adding…' : 'Add webhook'}
-							</Button>
+				<fieldset class="flex flex-col gap-2.5 text-sm">
+					<legend class="mb-1">Send it</legend>
+					{#each catalogue as event (event.name)}
+						<div class="flex items-start gap-2">
+							<Switch
+								checked={chosen.has(event.name)}
+								onchange={(v) => toggle(event.name, v)}
+								label={event.name}
+							/>
+							<div>
+								<code>{event.name}</code>
+								<p class="text-xs" style="color: var(--color-muted)">{event.description}</p>
+							</div>
 						</div>
-					</div>
-				</Dialog.Content>
-			</Dialog.Portal>
-		</Dialog.Root>
+					{/each}
+				</fieldset>
+
+				{#if formError}
+					<p class="text-sm" style="color: var(--color-danger)">{formError}</p>
+				{/if}
+
+				<div class={MODAL_FOOTER}>
+					<Dialog.Close class={buttonClass('secondary')}>
+						<X size={17} aria-hidden="true" /> Cancel
+					</Dialog.Close>
+					<Button
+						variant="primary"
+						icon={Check}
+						onclick={create}
+						loading={busy}
+						disabled={!url.trim() || chosen.size === 0}
+					>
+						{busy ? 'Adding…' : 'Add webhook'}
+					</Button>
+				</div>
+			</div>
+		</Modal>
 	</div>
 
 	<p class="max-w-prose text-sm" style="color: var(--color-muted)">
