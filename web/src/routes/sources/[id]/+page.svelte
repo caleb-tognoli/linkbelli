@@ -33,6 +33,23 @@
 	// Open from the start when the last run failed: that is the thing to look at.
 	let historyOpen = $state(data.runs[0]?.status === 'Failed');
 
+	// Open by default: it is still how most visits here end. Folding it away is for the visit
+	// that came to look at a run.
+	let settingsOpen = $state(true);
+
+	const TYPE_LABELS: Record<Source['type'], string> = {
+		Rss: 'RSS feed',
+		Scraper: 'Web page',
+		JsonApi: 'JSON API',
+		Webhook: 'Webhook'
+	};
+
+	const STATUS_LABELS: Record<Source['status'], string> = {
+		Active: 'Running on schedule',
+		Paused: 'Paused',
+		Failing: 'Stopped after failing'
+	};
+
 	// Only worth a column when something has actually been turned away; a source with no filter
 	// would otherwise carry a permanent column of dashes.
 	const anySkipped = $derived(data.runs.some((run) => run.skippedCount > 0));
@@ -289,26 +306,32 @@
 <section class="mx-auto max-w-4xl">
 	<BackLink href={backHref} label={backLabel} />
 
-	<header class="mt-3 flex items-center justify-between gap-3">
-		<h1 class="text-2xl font-semibold">{data.source.name}</h1>
-		<div class="flex items-center gap-1">
-			<button type="button" onclick={duplicate} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Duplicate source" aria-label="Duplicate source">
-				<Copy size={17} aria-hidden="true" />
-			</button>
-			<button type="button" onclick={runNow} disabled={busy} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Run now" aria-label="Run now">
-				<Play size={17} aria-hidden="true" />
-			</button>
+	<header class="mt-3 flex flex-wrap items-start justify-between gap-3">
+		<div class="min-w-0 flex-1 basis-64">
+			<h1 class="text-2xl font-semibold">{data.source.name}</h1>
+			<!-- Where it stands, in one line, before anything else on the page. -->
+			<p class="mt-1 text-sm text-muted">
+				{TYPE_LABELS[data.source.type]} ·
+				<span class={data.source.status === 'Failing' ? 'text-danger' : ''}>{STATUS_LABELS[data.source.status]}</span>
+				{#if data.source.lastRunAt}
+					· last ran {fmt(data.source.lastRunAt)}{#if data.source.lastRunStatus === 'Failed'},
+						<span class="text-danger">and failed</span>{/if}
+				{:else}
+					· has not run yet
+				{/if}
+			</p>
+		</div>
+		<div class="flex shrink-0 items-center gap-2">
+			<Button variant="ghost" icon={Copy} iconOnly label="Duplicate source" onclick={duplicate} disabled={busy} />
+			<Button icon={Play} onclick={runNow} disabled={busy}>Run now</Button>
 		</div>
 	</header>
 
-	{#key data.source.id}
-		<div class="mt-5">
-			<SourceForm mode="edit" source={data.source} ondelete={remove} />
-		</div>
-	{/key}
 
 	{#if data.health}
-		<SourceHealthCard health={data.health} />
+		<div class="mt-6">
+			<SourceHealthCard health={data.health} />
+		</div>
 	{/if}
 
 	{#if data.source.quiet || data.source.muteQuietAlerts}
@@ -326,7 +349,7 @@
 				</p>
 				<p class="mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
 					{data.source.quiet
-						? 'Every run this week succeeded and added nothing. Usually that means a selector or a feed address that stopped matching after the site changed — worth opening the settings above and running a preview.'
+						? 'Every run this week succeeded and added nothing. Usually that means a selector or a feed address that stopped matching after the site changed — worth opening the settings below and running a preview.'
 						: 'This one will not be mentioned in the weekly summary or badged here, however long it goes without finding anything.'}
 				</p>
 			</div>
@@ -487,6 +510,31 @@
 			{/if}
 		{/if}
 		{/if}
+	</div>
+
+	<!-- What the source is set to do. Last, because a source you open is usually one you want to
+	     check on, and the form is long enough to push everything else off the screen. -->
+	<div class="mt-8 border-t pt-6">
+		<button
+			type="button"
+			onclick={() => (settingsOpen = !settingsOpen)}
+			class="inline-flex items-center gap-1 font-medium hover:opacity-70"
+			aria-expanded={settingsOpen}
+			aria-controls="source-settings"
+		>
+			<ChevronRight
+				size={16}
+				aria-hidden="true"
+				class="transition-transform duration-150"
+				style={settingsOpen ? 'transform: rotate(90deg)' : ''}
+			/>
+			Settings
+		</button>
+		<div id="source-settings" class="mt-4" hidden={!settingsOpen}>
+			{#key data.source.id}
+				<SourceForm mode="edit" source={data.source} ondelete={remove} />
+			{/key}
+		</div>
 	</div>
 </section>
 

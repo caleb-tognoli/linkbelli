@@ -12,10 +12,7 @@
 	}
 </script>
 
-<div
-	class="mt-8 rounded-lg border px-4 py-3"
-	style="border-color: var(--color-border); background: var(--color-surface)"
->
+<div class="rounded-card border bg-surface px-4 py-3">
 	<div class="flex items-baseline justify-between gap-3">
 		<h2 class="font-medium">Health</h2>
 		<span class="text-xs" style="color: var(--color-muted)">
