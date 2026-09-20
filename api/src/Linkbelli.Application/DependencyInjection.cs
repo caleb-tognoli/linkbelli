@@ -100,6 +100,7 @@ public static class DependencyInjection
         services.AddScoped<ISourceRunner, SourceRunner>();
         services.AddScoped<ISourceRunRetention, SourceRunRetention>();
         services.AddScoped<ISourceTemplateService, SourceTemplateService>();
+        services.AddScoped<IYouTubeChannelResolver, YouTubeChannelResolver>();
         services.AddScoped<SourceConfigSecrets>();
         services.AddScoped<ISourceInterpreter, RssSourceInterpreter>();
         services.AddScoped<ISourceInterpreter, ScraperSourceInterpreter>();

@@ -24,7 +24,7 @@ public static class BuiltinSourceTemplates
         Template(
             key: "youtube-channel",
             name: "YouTube channel",
-            description: "New uploads from one channel. Find the channel id in the page source, or paste a handle URL into a converter.",
+            description: "New uploads from one channel.",
             type: SourceType.Rss,
             schedule: "0 */2 * * *",
             config: new()
@@ -33,8 +33,8 @@ public static class BuiltinSourceTemplates
             },
             fields:
             [
-                new TemplateField("channelId", "Channel ID", "UCBa659QWEk1AI4Tg--mrJ2A",
-                    "The id starting with UC, not the @handle."),
+                new TemplateField("channelId", "Channel", "@veritasium",
+                    "The @handle, the address of the channel's page, or its UC… id — whichever you have."),
             ]),
 
         Template(

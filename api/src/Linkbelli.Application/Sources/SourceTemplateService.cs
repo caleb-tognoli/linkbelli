@@ -28,7 +28,7 @@ public interface ISourceTemplateService
 }
 
 /// <inheritdoc />
-public class SourceTemplateService(IAppDbContext db) : ISourceTemplateService
+public class SourceTemplateService(IAppDbContext db, IYouTubeChannelResolver youTube) : ISourceTemplateService
 {
     public async Task<IReadOnlyList<SourceTemplateResponse>> ListAsync(CancellationToken ct = default)
     {
@@ -60,7 +60,33 @@ public class SourceTemplateService(IAppDbContext db) : ISourceTemplateService
             throw new ValidationException("variables", $"Still needed: {string.Join(", ", labels)}.");
         }
 
-        return (template.Type, TemplateRenderer.Render(baseConfig, values), template.SuggestedSchedule);
+        var resolved = await ResolveAsync(template, values, ct);
+
+        return (template.Type, TemplateRenderer.Render(baseConfig, resolved), template.SuggestedSchedule);
+    }
+
+    /// <summary>
+    /// Values a template can accept loosely and has to store exactly.
+    /// </summary>
+    /// <remarks>
+    /// A YouTube feed is addressed by a UC… id and nothing else, and the id appears nowhere a
+    /// person would look — so the template used to tell them to read a page's source or find a
+    /// converter. What they have is the address in the browser bar; this turns that into the id.
+    /// </remarks>
+    private async Task<IReadOnlyDictionary<string, string>> ResolveAsync(
+        SourceTemplate template,
+        IReadOnlyDictionary<string, string> values,
+        CancellationToken ct)
+    {
+        if (template.Key != "youtube-channel" || !values.TryGetValue("channelId", out var channel))
+        {
+            return values;
+        }
+
+        return new Dictionary<string, string>(values)
+        {
+            ["channelId"] = await youTube.ResolveAsync(channel, ct),
+        };
     }
 
     public async Task SeedBuiltinsAsync(CancellationToken ct = default)
