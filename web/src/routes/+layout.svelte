@@ -158,6 +158,13 @@
 
 <!-- Shared nav body — rendered in both the desktop sidebar (collapsible) and the mobile drawer (always expanded). -->
 {#snippet navBody(showLabels = true)}
+	<!-- Everything you can go to scrolls; the account row below stays put.
+	     The whole rail used to be one scrolling column with the footer pushed to the end of it by
+	     mt-auto, which does nothing once the content is taller than the box. At 1440x900 — with no
+	     folders and no saved searches — the rail ran 968px against 900 of screen, and the account
+	     link and Sign out sat at y=900 and y=904: entirely below the fold, with no scrollbar and
+	     nothing to say there was more. -->
+	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
 	<!-- Says the key it answers, because that is how anybody learns it. -->
 		<button
 			type="button"
@@ -292,7 +299,9 @@
 		</div>
 	{/if}
 
-	<div class="mt-auto flex {showLabels ? 'items-center gap-1' : 'flex-col gap-1'} border-t pt-3" style="border-color: var(--color-border)">
+	</div>
+
+	<div class="mt-3 flex shrink-0 {showLabels ? 'items-center gap-1' : 'flex-col gap-1'} border-t pt-3" style="border-color: var(--color-border)">
 		<a
 			href="/settings"
 			class="flex min-w-0 items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 {showLabels ? 'flex-1' : 'justify-center'}"
@@ -366,7 +375,7 @@
 					     no way to reach them at all. On a 667px screen six destinations were off the
 					     bottom. overscroll-contain keeps the swipe from chaining to that locked page. -->
 					<Dialog.Content
-						class="anim-slide-left fixed inset-y-0 left-0 z-(--z-modal) flex w-72 flex-col gap-1 overflow-y-auto overscroll-contain border-r p-4"
+						class="anim-slide-left fixed inset-y-0 left-0 z-(--z-modal) flex w-72 flex-col gap-1 overflow-hidden border-r p-4"
 						style="border-color: var(--color-border); background: var(--color-surface)"
 					>
 						<div class="flex shrink-0 items-center justify-between gap-2 px-2 pb-4">
@@ -395,10 +404,10 @@
 		</header>
 
 		<aside
-			class={`hidden shrink-0 flex-col gap-1 border-r p-4 md:flex sticky top-0 h-screen overflow-y-auto ${collapsed ? 'w-20' : 'w-72'}`}
+			class={`hidden shrink-0 flex-col gap-1 border-r p-4 md:flex sticky top-0 h-screen overflow-hidden ${collapsed ? 'w-20' : 'w-72'}`}
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
-			<div class="flex items-center gap-2 px-2 pb-4">
+			<div class="flex shrink-0 items-center gap-2 px-2 pb-4">
 				{#if !collapsed}<a href="/" class="flex-1 truncate text-lg font-semibold">Linkbelli</a>{/if}
 				<button
 					type="button"
