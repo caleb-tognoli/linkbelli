@@ -113,11 +113,15 @@
 	{/if}
 
 	{#if folder.playlists.length === 0}
-		<div class="mt-3 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-3 rounded-card border border-dashed p-10 text-center">
 			<p class="font-medium">No playlists in this folder.</p>
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				Use "Save to folder" on a playlist to file it here.
+			<!-- Named after the button it means: the dialog's own button says "Add to folder". -->
+			<p class="mt-1 text-sm text-muted">
+				Make one here, or use "Add to folder" on a playlist you already have.
 			</p>
+			<div class="mt-4 flex justify-center">
+				<NewPlaylistDialog folderId={folder.id} />
+			</div>
 		</div>
 	{:else}
 		<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

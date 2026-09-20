@@ -42,6 +42,7 @@
 		onsourcefilter,
 		statusFilter = 'All',
 		onstatusfilter,
+		onclearfilters,
 		isSearching = false,
 		shared = false,
 		total = $bindable(null)
@@ -57,6 +58,8 @@
 		onsourcefilter?: (source: string | null) => Promise<void>;
 		statusFilter?: StatusFilter;
 		onstatusfilter?: (status: StatusFilter) => Promise<void>;
+		/** Puts the list back to everything: status, source and the search box together. */
+		onclearfilters?: () => void;
 		isSearching?: boolean;
 		/** Whether this playlist has other people in it, which decides if "added by" is worth showing. */
 		shared?: boolean;
@@ -973,7 +976,14 @@
 
 {#if items.length === 0}
 	{#if sourceFilter !== null || statusFilter !== 'All' || isSearching}
-		<p class="py-6 text-center text-sm" style="color: var(--color-muted)">No matching items.</p>
+		<div class="py-6 text-center">
+			<p class="text-sm text-muted">Nothing here matches those filters.</p>
+			{#if onclearfilters}
+				<div class="mt-3 flex justify-center">
+					<Button size="sm" icon={X} onclick={onclearfilters}>Clear filters</Button>
+				</div>
+			{/if}
+		</div>
 	{:else}
 		<div
 			class="rounded-lg border border-dashed p-10 text-center"

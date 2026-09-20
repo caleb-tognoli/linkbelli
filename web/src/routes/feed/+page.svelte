@@ -8,7 +8,7 @@
 	import { api } from '$lib/api/client';
 	import KindBadge from '$lib/components/KindBadge.svelte';
 	import { readingLabel } from '$lib/reading';
-	import { Check, Rss } from '@lucide/svelte';
+	import { Check, Rss, Compass } from '@lucide/svelte';
 	import type { Feed, FeedItem } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -69,9 +69,11 @@
 	<PageHeader title="Feed">
 		{#snippet details()}
 			{#if followCount === 0}
-				Follow a playlist or a person and new links will turn up here.
+				<!-- Said once. The empty box below says the same thing, and both at once read as a
+				     page apologising twice. -->
+				What you follow turns up here.
 			{:else}
-				New links from {followCount} {followCount === 1 ? 'thing' : 'things'} you follow.
+				New links from {followCount} {followCount === 1 ? 'playlist or person' : 'playlists and people'} you follow.
 			{/if}
 		{/snippet}
 		{#snippet actions()}
@@ -85,14 +87,18 @@
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<Rss size={20} aria-hidden="true" class="mx-auto" style="color: var(--color-muted)" />
 			<p class="mt-2 font-medium">Nothing here yet.</p>
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
+			<p class="mt-1 text-sm text-muted">
 				{#if followCount === 0}
-					<a href="/discover" class="underline">Find something to follow</a> — a playlist, or
-					everything someone publishes.
+					Follow a playlist, or everything someone publishes.
 				{:else}
 					Nothing new has been added to what you follow.
 				{/if}
 			</p>
+			{#if followCount === 0}
+				<div class="mt-4 flex justify-center">
+					<Button href="/discover" variant="primary" icon={Compass}>Find something to follow</Button>
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<ul class="mt-6 flex flex-col">

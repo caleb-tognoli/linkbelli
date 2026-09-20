@@ -337,11 +337,16 @@
 
 
 	{#if data.rules.length === 0}
-		<p class="mt-8 rounded-lg border px-4 py-8 text-center text-sm"
-		   style="border-color: var(--color-border); color: var(--color-muted)">
-			No rules yet. A first one might tag everything from one site, or send anything over
-			twenty minutes to a "later" list.
-		</p>
+		<div class="mt-8 rounded-card border border-dashed px-4 py-8 text-center">
+			<p class="font-medium">No rules yet.</p>
+			<p class="mt-1 text-sm text-muted">
+				A first one might tag everything from one site, or send anything over twenty minutes
+				to a "later" list.
+			</p>
+			<div class="mt-4 flex justify-center">
+				<Button variant="primary" icon={Plus} onclick={startNew}>New rule</Button>
+			</div>
+		</div>
 	{:else}
 		<ul class="mt-6 flex flex-col gap-2">
 			{#each data.rules as rule, index (rule.id)}

@@ -96,11 +96,13 @@
 			</p>
 		</div>
 	{:else if isEmpty}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center">
 			<p class="font-medium">No folders or playlists yet.</p>
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				Create a playlist to start collecting links.
-			</p>
+			<p class="mt-1 text-sm text-muted">Create a playlist to start collecting links.</p>
+			<!-- The action itself, rather than a sentence telling somebody to find it. -->
+			<div class="mt-4 flex justify-center">
+				<NewPlaylistDialog {form} />
+			</div>
 		</div>
 	{:else}
 		{#if showFolders}

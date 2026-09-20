@@ -396,6 +396,16 @@
 		await fetchFirstPage();
 	}
 
+	/** Everything that narrows the list, undone at once. */
+	async function clearFilters() {
+		query = '';
+		sourceFilter = null;
+		statusFilter = 'All';
+		savePrefs(playlist.id, { source: null, status: 'All' });
+		nextCursor = null;
+		await fetchFirstPage();
+	}
+
 	async function loadMore() {
 		if (!nextCursor || loadingMore) return;
 		loadingMore = true;
@@ -681,6 +691,7 @@
 			onsourcefilter={applySourceFilter}
 			{statusFilter}
 			onstatusfilter={applyStatusFilter}
+			onclearfilters={clearFilters}
 			isSearching={query.trim().length > 0}
 			shared={role !== undefined}
 			bind:total

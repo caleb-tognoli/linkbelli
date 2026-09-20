@@ -7,7 +7,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
-	import { Check, Clock, ExternalLink, Search } from '@lucide/svelte';
+	import { Check, Clock, ExternalLink, Search, ListPlus } from '@lucide/svelte';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
 	import OfflineSupportNotice from '$lib/components/OfflineSupportNotice.svelte';
 	import { outcomeFor } from '$lib/offlineQueue';
@@ -134,11 +134,14 @@
 	<h1 class="text-2xl font-semibold">Save a link</h1>
 
 	{#if data.playlists.length === 0}
-		<div class="mt-6 rounded-lg border border-dashed p-8 text-center" style="border-color: var(--color-border)">
+		<div class="mt-6 rounded-card border border-dashed p-8 text-center">
 			<p class="font-medium">You need a playlist first.</p>
-			<a href="/playlists" class="mt-2 inline-block text-sm underline underline-offset-2" style="color: var(--color-accent)">
-				Make one
-			</a>
+			<p class="mt-1 text-sm text-muted">This window is small; the page that makes one is not.</p>
+			<div class="mt-4 flex justify-center">
+				<Button href="/playlists" variant="primary" icon={ListPlus} target="_blank">
+					Make one
+				</Button>
+			</div>
 		</div>
 	{:else if queued}
 		<!-- Not dressed up as a success and not reported as a failure: the link is kept, and the
