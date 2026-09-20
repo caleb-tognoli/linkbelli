@@ -12,7 +12,7 @@
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, BookOpen, Bookmark, Check, Pin, Search, Eye, SlidersHorizontal, Star, X } from '@lucide/svelte';
+	import { AlertCircle, BookOpen, Bookmark, Check, Pin, Search, Eye, SlidersHorizontal, Star, X, Plus } from '@lucide/svelte';
 	import { Dialog } from 'bits-ui';
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -387,13 +387,15 @@
 			{/each}
 
 			{#if canSave}
+				<!-- An icon rather than a literal plus typed into the label. -->
 				<button
 					type="button"
 					onclick={saveSearch}
-					class="rounded-md border border-dashed px-2 py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-					style="border-color: var(--color-border); color: var(--color-muted)"
+					class="inline-flex min-h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 py-1 text-xs text-muted hover:bg-black/5 dark:hover:bg-white/10"
 					title="Come back to this search later"
-				>+ Save this search</button>
+				>
+					<Plus size={12} aria-hidden="true" /> Save this search
+				</button>
 			{/if}
 		</div>
 	{/if}

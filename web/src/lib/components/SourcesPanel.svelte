@@ -194,7 +194,7 @@
 					<div class="flex gap-2">
 						<Input
 							bind:value={query}
-							placeholder="Search sources..."
+							placeholder="Search sources…"
 							aria-label="Search sources"
 							onkeydown={(e) => e.key === 'Enter' && searchShared()}
 							size="sm"
