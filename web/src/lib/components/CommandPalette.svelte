@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { palette } from '$lib/overlays.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { Dialog } from 'bits-ui';
 	import { goto } from '$app/navigation';
@@ -8,7 +9,8 @@
 	import { Search } from '@lucide/svelte';
 	import type { Paged, Playlist } from '$lib/types';
 
-	let open = $state(false);
+	// Held outside this component, so the sidebar's own button and the mobile header can open it.
+	const open = palette;
 	let query = $state('');
 	let selected = $state(0);
 	let playlists = $state<Playlist[]>([]);
@@ -26,7 +28,7 @@
 	// Past the first hundred, a playlist could only be reached by knowing where it was filed.
 	$effect(() => {
 		const term = query.trim();
-		if (!open || !partial || term.length < 2) return;
+		if (!open.open || !partial || term.length < 2) return;
 		const timer = setTimeout(async () => {
 			try {
 				const page = await api
@@ -55,7 +57,7 @@
 	}
 
 	async function show() {
-		open = true;
+		open.open = true;
 		query = '';
 		selected = 0;
 
@@ -92,19 +94,19 @@
 
 	// The list is taller than it shows; arrowing past the edge brings the active option into view.
 	$effect(() => {
-		if (!open || commands.length === 0) return;
+		if (!open.open || commands.length === 0) return;
 		document.getElementById(optionId(activeIndex))?.scrollIntoView({ block: 'nearest' });
 	});
 
 	function run(href: string) {
-		open = false;
+		open.open = false;
 		goto(href);
 	}
 </script>
 
 <svelte:window onkeydown={onKeydown} />
 
-<Dialog.Root bind:open>
+<Dialog.Root bind:open={open.open}>
 	<Dialog.Portal>
 		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
 		<Dialog.Content

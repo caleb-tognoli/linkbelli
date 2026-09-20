@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { shortcuts } from '$lib/overlays.svelte';
 	import { page } from '$app/state';
 	import { formatDate, formatExact } from '$lib/dates';
 	import { DONE_LABEL, STATUS_FILTERS, STATUS_LABELS, doneToggleLabel, plural, type StatusFilter as StatusFilterValue } from '$lib/labels';
@@ -1321,13 +1322,19 @@
 		</div>
 	{/if}
 
-	<p class="mt-3 hidden text-xs sm:block" style="color: var(--color-muted)">
-		<kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>o</kbd> to open{#if !readonly}, <kbd>e</kbd> to mark
-			done, <kbd>x</kbd> to select{/if}.{#if signedIn}
-			<!-- The palette is only mounted for somebody signed in, and a public playlist was
-			     advertising a key that did nothing. -->
-			<kbd>/</kbd> to jump anywhere.{/if}
-	</p>
+	{#if signedIn}
+		<!-- One link to all of them, rather than a footnote listing four and hiding below `sm`.
+		     The palette and this list are only mounted for somebody signed in. -->
+		<p class="mt-3 text-xs">
+			<button
+				type="button"
+				onclick={() => shortcuts.show()}
+				class="text-muted underline-offset-2 hover:underline"
+			>
+				Keyboard shortcuts (<kbd>?</kbd>)
+			</button>
+		</p>
+	{/if}
 {/if}
 
 {#if !readonly && playlistId}

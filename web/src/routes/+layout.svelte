@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import { palette } from '$lib/overlays.svelte';
+	import ShortcutsDialog from '$lib/components/ShortcutsDialog.svelte';
 	import { Dialog, Popover } from 'bits-ui';
 	import NavigationProgress from '$lib/components/NavigationProgress.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
@@ -155,7 +158,24 @@
 
 <!-- Shared nav body — rendered in both the desktop sidebar (collapsible) and the mobile drawer (always expanded). -->
 {#snippet navBody(showLabels = true)}
-	<nav aria-label="Main" class="flex flex-col gap-3 text-base">
+	<!-- Says the key it answers, because that is how anybody learns it. -->
+		<button
+			type="button"
+			onclick={() => palette.show()}
+			class="mb-3 flex items-center gap-2 rounded-control border border-border px-3 py-2 text-sm text-muted hover:bg-black/5 dark:hover:bg-white/10"
+			class:justify-center={collapsed}
+			title="Search, or jump to a playlist"
+		>
+			<Search size={16} aria-hidden="true" />
+			{#if !collapsed}
+				<span class="flex-1 text-left">Search or jump…</span>
+				<kbd class="rounded border border-border px-1 text-xs">Ctrl K</kbd>
+			{:else}
+				<span class="sr-only">Search, or jump to a playlist</span>
+			{/if}
+		</button>
+
+		<nav aria-label="Main" class="flex flex-col gap-3 text-base">
 		{#each NAV as group, g (group.heading ?? g)}
 			<div class="flex flex-col gap-0.5">
 				{#if group.heading}
@@ -356,7 +376,17 @@
 					</Dialog.Content>
 				</Dialog.Portal>
 			</Dialog.Root>
-			<a href="/" class="text-lg font-semibold">Linkbelli</a>
+			<a href="/" class="flex-1 truncate text-lg font-semibold">Linkbelli</a>
+			<!-- On a phone the palette answered two keys and nothing else, which is no way in
+			     at all. -->
+			<Button
+				variant="ghost"
+				size="sm"
+				icon={Search}
+				iconOnly
+				label="Search, or jump to a playlist"
+				onclick={() => palette.show()}
+			/>
 		</header>
 
 		<aside
@@ -425,7 +455,8 @@
 	<GlobalDialog />
 	<Toaster />
 	{#if data.user}
-		<!-- Signed-in only: everything it offers needs an account. -->
+		<!-- Signed-in only: everything they offer needs an account. -->
 		<CommandPalette />
+		<ShortcutsDialog />
 	{/if}
 {/if}
