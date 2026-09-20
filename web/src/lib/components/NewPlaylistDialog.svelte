@@ -57,7 +57,8 @@
 {#snippet fields(values: CreateForm)}
 	<Field label="Name">
 		{#snippet children(f)}
-			<Input id={f.id} name="name" required value={values?.name ?? ''} aria-describedby={f.describedby} />
+			<!-- svelte-ignore a11y_autofocus -- a dialog opened to be typed into -->
+			<Input id={f.id} name="name" required autofocus value={values?.name ?? ''} aria-describedby={f.describedby} />
 		{/snippet}
 	</Field>
 

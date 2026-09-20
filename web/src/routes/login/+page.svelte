@@ -51,12 +51,14 @@
 	>
 		<Field label="Username or email">
 			{#snippet children(f)}
+				<!-- svelte-ignore a11y_autofocus -- the first field of the form this page exists for -->
 				<Input
 					id={f.id}
 					name="login"
 					autocomplete="username"
 					value={form?.login ?? ''}
 					required
+					autofocus
 					aria-describedby={f.describedby}
 				/>
 			{/snippet}

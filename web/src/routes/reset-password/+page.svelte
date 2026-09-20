@@ -53,10 +53,12 @@
 
 			<Field label="New password" required>
 				{#snippet children(f)}
+				<!-- svelte-ignore a11y_autofocus -- the first field of the form this page exists for -->
 					<PasswordInput
 						id={f.id}
 						name="password"
 						autocomplete="new-password"
+						autofocus
 						bind:value={password}
 						minlength={PASSWORD_MIN}
 						required

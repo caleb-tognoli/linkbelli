@@ -51,10 +51,12 @@
 	>
 		<Field label="Username" hint={USERNAME_HINT} error={usernameError} required>
 			{#snippet children(f)}
+				<!-- svelte-ignore a11y_autofocus -- the first field of the form this page exists for -->
 				<Input
 					id={f.id}
 					name="username"
 					autocomplete="username"
+					autofocus
 					bind:value={username}
 					onblur={() => (usernameTouched = true)}
 					minlength={USERNAME_MIN}
