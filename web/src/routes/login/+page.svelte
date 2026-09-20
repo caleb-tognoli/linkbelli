@@ -1,6 +1,7 @@
 <svelte:head><title>Sign in - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -63,10 +64,9 @@
 
 		<Field label="Password">
 			{#snippet children(f)}
-				<Input
+				<PasswordInput
 					id={f.id}
 					name="password"
-					type="password"
 					autocomplete="current-password"
 					required
 					aria-describedby={f.describedby}

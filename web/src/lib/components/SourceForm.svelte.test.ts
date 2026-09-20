@@ -194,6 +194,9 @@ describe('SourceForm — editing', () => {
 
 		await userEvent.click(screen.getByRole('button', { name: /^Visibility/ }));
 		await userEvent.click(await screen.findByRole('menuitemradio', { name: /^Private/ }));
+		// The menu makes the rest of the page inert while it closes; Save is not clickable until
+		// it has let go.
+		await vi.waitFor(() => expect(document.body.style.pointerEvents).not.toBe('none'));
 		await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
 		expect(confirmDialog).toHaveBeenCalledWith(expect.stringContaining('unsubscribe it from other users'));

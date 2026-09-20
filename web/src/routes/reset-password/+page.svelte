@@ -1,7 +1,9 @@
 <svelte:head><title>Choose a new password - linkbelli</title></svelte:head>
 
 <script lang="ts">
-	import Input from '$lib/components/ui/Input.svelte';
+	import { PASSWORD_MIN, passwordAcceptable } from '$lib/accountRules';
+	import PasswordRules from '$lib/components/PasswordRules.svelte';
+	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
@@ -9,6 +11,9 @@
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	let password = $state('');
+	const rulesId = 'password-rules';
 	let submitting = $state(false);
 </script>
 
@@ -46,25 +51,26 @@
 			<input type="hidden" name="email" value={data.email} />
 			<input type="hidden" name="token" value={data.token} />
 
-			<Field label="New password">
+			<Field label="New password" required>
 				{#snippet children(f)}
-					<Input
+					<PasswordInput
 						id={f.id}
 						name="password"
-						type="password"
 						autocomplete="new-password"
+						bind:value={password}
+						minlength={PASSWORD_MIN}
 						required
-						aria-describedby={f.describedby}
+						aria-describedby={[f.describedby, rulesId].filter(Boolean).join(' ')}
 					/>
 				{/snippet}
 			</Field>
+			<PasswordRules {password} id={rulesId} />
 
-			<Field label="Again, to be sure">
+			<Field label="Again, to be sure" required>
 				{#snippet children(f)}
-					<Input
+					<PasswordInput
 						id={f.id}
 						name="confirm"
-						type="password"
 						autocomplete="new-password"
 						required
 						aria-describedby={f.describedby}
@@ -76,7 +82,14 @@
 				<p class="text-sm" style="color: var(--color-danger)" role="alert">{form.error}</p>
 			{/if}
 
-			<Button type="submit" variant="primary" icon={KeyRound} loading={submitting} class="mt-1 w-full">
+			<Button
+				type="submit"
+				variant="primary"
+				icon={KeyRound}
+				loading={submitting}
+				disabled={!passwordAcceptable(password)}
+				class="mt-1 w-full"
+			>
 				{submitting ? 'Saving…' : 'Save it'}
 			</Button>
 		</form>
