@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate, formatExact } from '$lib/dates';
 	import { average, toneColor, verdict } from '$lib/sourceHealth';
 	import type { SourceHealth } from '$lib/types';
 
@@ -8,7 +9,7 @@
 	const color = $derived(toneColor(summary.tone));
 
 	function fmt(iso: string | null) {
-		return iso ? new Date(iso).toLocaleString() : 'never';
+		return iso ? formatDate(iso) : 'never';
 	}
 </script>
 
@@ -59,7 +60,7 @@
 	</dl>
 
 	<p class="mt-3 text-xs" style="color: var(--color-muted)">
-		Last run {fmt(health.lastRunAt)}{#if health.lastRunStatus}
+		Last run <time datetime={health.lastRunAt} title={formatExact(health.lastRunAt)}>{fmt(health.lastRunAt)}</time>{#if health.lastRunStatus}
 			· {health.lastRunStatus.toLowerCase()}{/if}{#if health.emptyRuns > 0}
 			· {health.emptyRuns}
 			{health.emptyRuns === 1 ? 'run' : 'runs'} found nothing{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate, formatExact } from '$lib/dates';
 	import { plural } from '$lib/labels';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { onDestroy } from 'svelte';
@@ -283,9 +284,7 @@
 		});
 	}
 
-	function fmt(iso: string | null) {
-		return iso ? new Date(iso).toLocaleString() : '—';
-	}
+	const fmt = formatDate;
 
 	function duration(run: SourceRun) {
 		if (!run.finishedAt) return '—';
@@ -491,7 +490,9 @@
 							{#if anySkipped}
 								<td class="py-1 tabular-nums" style="color: var(--color-muted)">{run.skippedCount || '—'}</td>
 							{/if}
-							<td class="py-1" style="color: var(--color-muted)">{fmt(run.startedAt)}</td>
+							<td class="py-1" style="color: var(--color-muted)">
+								<time datetime={run.startedAt} title={formatExact(run.startedAt)}>{fmt(run.startedAt)}</time>
+							</td>
 							<td class="py-1" style="color: var(--color-muted)">{duration(run)}</td>
 						</tr>
 					{/each}

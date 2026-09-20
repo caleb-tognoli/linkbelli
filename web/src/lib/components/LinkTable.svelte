@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate, formatExact } from '$lib/dates';
 	import { DONE_LABEL, STATUS_FILTERS, STATUS_LABELS, doneToggleLabel, plural, type StatusFilter as StatusFilterValue } from '$lib/labels';
 	import { failureMessage } from '$lib/api/errors';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
@@ -519,9 +520,7 @@
 		}
 	}
 
-	function dateAdded(iso: string) {
-		return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-	}
+	const dateAdded = formatDate;
 
 	function isPending(item: PlaylistItem) {
 		return !item.link.enriched;
@@ -676,7 +675,11 @@
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.metadata.author}</p>
 					{/if}
 					<!-- Only where the column it belongs to is hidden. -->
-					<p class="mt-0.5 text-xs text-muted sm:hidden">Added {dateAdded(item.creationTime)}</p>
+					<p class="mt-0.5 text-xs text-muted sm:hidden">
+						Added <time datetime={item.creationTime} title={formatExact(item.creationTime)}>
+							{dateAdded(item.creationTime)}
+						</time>
+					</p>
 					{#if showWhoAdded && item.addedBy}
 						<!-- Only on a playlist more than one person adds to. On a list somebody keeps
 						     alone, "added by you" on every row is noise saying nothing. -->
@@ -731,7 +734,11 @@
 				</div>
 			</div>
 		</td>
-		<td class="hidden whitespace-nowrap text-center sm:table-cell" style="color: var(--color-muted)">{dateAdded(item.creationTime)}</td>
+		<td class="hidden whitespace-nowrap text-center sm:table-cell" style="color: var(--color-muted)">
+			<time datetime={item.creationTime} title={formatExact(item.creationTime)}>
+				{dateAdded(item.creationTime)}
+			</time>
+		</td>
 		{#if showScoreCol}
 			<td class="w-10 pl-6 text-center" style="color: var(--color-muted)">
 				<input

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate, formatExact } from '$lib/dates';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -38,7 +39,7 @@
 	]);
 
 	function when(iso: string | null): string {
-		return iso ? new Date(iso).toLocaleString() : 'never';
+		return iso ? formatDate(iso) : 'never';
 	}
 
 	const openReports = $derived(data.reports.filter((r) => r.status === 'Open'));
@@ -247,7 +248,7 @@
 						<span style="color: var(--color-muted)">{entry.summary ?? entry.action}</span>
 					</div>
 					<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
-						{entry.action} · {new Date(entry.at).toLocaleString()}
+						{entry.action} · <time datetime={entry.at} title={formatExact(entry.at)}>{formatDate(entry.at)}</time>
 					</p>
 					{#if entry.details}
 						<details class="mt-1">

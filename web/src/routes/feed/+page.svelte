@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate } from '$lib/dates';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
@@ -58,9 +59,7 @@
 		}
 	}
 
-	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-	}
+	const when = formatDate;
 </script>
 
 <svelte:head><title>Feed - linkbelli</title></svelte:head>
