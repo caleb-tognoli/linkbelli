@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { api } from '$lib/api/client';
 	import { Check, X } from '@lucide/svelte';
+	import Button from './ui/Button.svelte';
 	import {
+		nextStep,
 		onboardingProgress,
 		onboardingSteps,
 		shouldShowOnboarding,
@@ -27,10 +29,23 @@
 		await api.put('/me/preferences', { dismissOnboarding: true });
 	}
 
-	/** Ticked, or the step's number when it is still ahead. */
-	function marker(step: OnboardingStep, index: number) {
-		return step.done ? null : index + 1;
+	/**
+	 * Ticked, or the step's number when it is still ahead — counting only the steps the number
+	 * above counts.
+	 *
+	 * The heading said "0 of 2 done" over a list numbered 1 to 4, because the progress line counts
+	 * the two required steps and the markers used each step's place in the whole list. Two numbers
+	 * about the same list, disagreeing. The optional ones keep a dot: they are things to do, not
+	 * steps to get through.
+	 */
+	const numbered = $derived(steps.filter((s) => s.required));
+	function marker(step: OnboardingStep): number | null {
+		if (step.done || !step.required) return null;
+		return numbered.indexOf(step) + 1;
 	}
+
+	/** The first thing still to do, which is the one worth a real button. */
+	const next = $derived(nextStep(steps));
 </script>
 
 {#if visible}
@@ -60,7 +75,7 @@
 		</header>
 
 		<ol class="mt-4 flex flex-col gap-3">
-			{#each steps as step, i (step.id)}
+			{#each steps as step (step.id)}
 				<li class="flex items-start gap-3">
 					<span
 						class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-xs tabular-nums"
@@ -71,8 +86,10 @@
 					>
 						{#if step.done}
 							<Check size={12} />
+						{:else if marker(step) !== null}
+							{marker(step)}
 						{:else}
-							{marker(step, i)}
+							<span class="size-1 rounded-full bg-border-strong"></span>
 						{/if}
 					</span>
 
@@ -86,13 +103,19 @@
 						</p>
 						{#if !step.done}
 							<p class="mt-0.5 text-sm" style="color: var(--color-muted)">{step.body}</p>
-							<a
-								href={step.href}
-								class="mt-1 inline-block text-sm underline underline-offset-2"
-								style="color: var(--color-accent)"
-							>
-								{step.cta}
-							</a>
+							<!-- The step somebody is actually on gets a button. The four highest-intent
+							     actions a new account can take were four small underlined links inside
+							     body text, under a header carrying two filled buttons for lower-intent
+							     ones. -->
+							<div class="mt-2">
+								<Button
+									href={step.href}
+									size="sm"
+									variant={step.id === next?.id ? 'primary' : 'secondary'}
+								>
+									{step.cta}
+								</Button>
+							</div>
 						{/if}
 					</div>
 				</li>
