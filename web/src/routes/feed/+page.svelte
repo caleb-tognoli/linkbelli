@@ -8,6 +8,8 @@
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { toast } from '$lib/toast.svelte';
+	import { failureMessage } from '$lib/api/errors';
 	import KindBadge from '$lib/components/KindBadge.svelte';
 	import { readingLabel } from '$lib/reading';
 	import { Check, Rss, Compass } from '@lucide/svelte';
@@ -42,6 +44,8 @@
 				const page = (await res.json()) as Feed;
 				items = [...items, ...page.items];
 				nextCursor = page.nextCursor;
+			} else {
+				toast.error(failureMessage(res.status, 'Could not load any more.'));
 			}
 		} finally {
 			loadingMore = false;

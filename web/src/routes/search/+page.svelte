@@ -14,6 +14,8 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
+	import { toast } from '$lib/toast.svelte';
+	import { failureMessage } from '$lib/api/errors';
 	import { readingLabel } from '$lib/reading';
 	import { AlertCircle, BookOpen, Bookmark, Check, ChevronDown, Clock, Pin, Search, Eye, Shapes, SlidersHorizontal, Star, X, Plus } from '@lucide/svelte';
 	import { Dialog } from 'bits-ui';
@@ -183,6 +185,8 @@
 				const page = (await res.json()) as Paged<SearchHit>;
 				hits = [...hits, ...page.items];
 				nextCursor = page.nextCursor;
+			} else {
+				toast.error(failureMessage(res.status, 'Could not load any more results.'));
 			}
 		} finally {
 			loadingMore = false;

@@ -10,6 +10,8 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
+	import { toast } from '$lib/toast.svelte';
+	import { failureMessage } from '$lib/api/errors';
 	import { Search } from '@lucide/svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';
@@ -68,6 +70,8 @@
 				const page = (await res.json()) as Paged<PublicPlaylistSummary>;
 				items = [...items, ...page.items];
 				nextCursor = page.nextCursor;
+			} else {
+				toast.error(failureMessage(res.status, 'Could not load any more playlists.'));
 			}
 		} finally {
 			loadingMore = false;

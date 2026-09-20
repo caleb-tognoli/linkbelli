@@ -4,6 +4,8 @@
 	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { api } from '$lib/api/client';
+	import { toast } from '$lib/toast.svelte';
+	import { failureMessage } from '$lib/api/errors';
 	import type { HighlightWithSource } from '$lib/highlights';
 	import type { Paged } from '$lib/types';
 	import { Highlighter } from '@lucide/svelte';
@@ -25,6 +27,8 @@
 				const page = (await res.json()) as Paged<HighlightWithSource>;
 				items = [...items, ...page.items];
 				nextCursor = page.nextCursor;
+			} else {
+				toast.error(failureMessage(res.status, 'Could not load any more highlights.'));
 			}
 		} finally {
 			loadingMore = false;

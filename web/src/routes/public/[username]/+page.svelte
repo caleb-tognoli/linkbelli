@@ -79,6 +79,10 @@
 				const state = (await res.json()) as { following: boolean; followerCount: number };
 				followedByMe = state.following;
 				followerCount = state.followerCount;
+			} else {
+				toast.error(
+					failureMessage(res.status, followedByMe ? 'Could not unfollow them.' : 'Could not follow them.')
+				);
 			}
 		} finally {
 			busy = false;

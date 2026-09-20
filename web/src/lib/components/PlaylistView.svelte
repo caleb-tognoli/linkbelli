@@ -439,6 +439,9 @@
 				items = [...items, ...page.items];
 				nextCursor = page.nextCursor;
 				if (page.total !== undefined) total = page.total;
+			} else {
+				// The cursor is untouched, so pressing it again asks for the same page.
+				toast.error(failureMessage(res.status, 'Could not load any more links.'));
 			}
 		} finally {
 			loadingMore = false;
