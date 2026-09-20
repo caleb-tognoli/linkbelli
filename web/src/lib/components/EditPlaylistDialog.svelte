@@ -115,7 +115,7 @@
 	{#snippet trigger()}
 		<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Edit this playlist's details">
 			<Pencil size={15} aria-hidden="true" />
-			Edit details
+			<span class="sr-only md:not-sr-only">Edit details</span>
 		</Dialog.Trigger>
 	{/snippet}
 

@@ -94,9 +94,9 @@
 			{:else}
 				<Folder size={15} aria-hidden="true" />
 				{#if filed}
-					<span class="max-w-[12rem] truncate">{currentFolderName}</span>
+					<span class="sr-only max-w-[12rem] truncate md:not-sr-only">{currentFolderName}</span>
 				{:else}
-					<span>Add to folder</span>
+					<span class="sr-only md:not-sr-only">Add to folder</span>
 				{/if}
 			{/if}
 		</Dialog.Trigger>

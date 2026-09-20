@@ -455,13 +455,15 @@
 				<p class="mt-1" style="color: var(--color-muted)">{description}</p>
 			{/if}
 		</div>
-		<div class="flex flex-wrap items-center gap-2">
+		<div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
 			{#if isOwner}
 				<Menu triggerClass={buttonClass('secondary', 'sm')} title="Change visibility" align="end">
 					{#snippet trigger()}
 						<currentVis.icon size={15} aria-hidden="true" />
 						<span class="sr-only">Visibility:</span>
-						{currentVis.label}
+						<!-- The icon carries it on a phone — a padlock, an eye, a globe — and the word
+						     comes back as soon as there is room for it. -->
+						<span class="sr-only md:not-sr-only">{currentVis.label}</span>
 						<ChevronDown size={13} aria-hidden="true" />
 					{/snippet}
 					<MenuRadio
@@ -536,7 +538,9 @@
 					title={followedByMe ? 'New links here reach your feed' : 'Get new links from this list in your feed'}
 				>
 					<Rss size={15} aria-hidden="true" />
-					{followedByMe ? 'Following' : 'Follow'}{followerCount ? ` · ${followerCount}` : ''}
+					<span class="sr-only md:not-sr-only">{followedByMe ? 'Following' : 'Follow'}</span>{followerCount
+						? ` · ${followerCount}`
+						: ''}
 				</button>
 			{/if}
 			{#if !isOwner && isLoggedIn && ownerUsername}
@@ -547,7 +551,9 @@
 					loading={forking}
 					title="Copy these links into a playlist of your own"
 				>
-					{forking ? 'Copying…' : 'Take a copy'}{playlist.forkCount ? ` · ${playlist.forkCount}` : ''}
+					<span class="sr-only md:not-sr-only">{forking ? 'Copying…' : 'Copy to my library'}</span>{playlist.forkCount
+						? ` · ${playlist.forkCount}`
+						: ''}
 				</Button>
 			{:else if isOwner && playlist.forkCount}
 				<!-- The number worth more than the like count: somebody decided to keep this. -->
@@ -604,7 +610,7 @@
 			{/if}
 			{#if isOwner}
 				<Menu
-					triggerClass={buttonClass('ghost', 'md', true)}
+					triggerClass={buttonClass('ghost', 'sm', true)}
 					title="Export this playlist"
 					label="Export this playlist"
 					align="end"
@@ -626,7 +632,7 @@
 					bind:nsfwSetting
 					onsaved={(saved) => (isNsfw = saved.nsfw)}
 				/>
-				<Button variant="ghost-danger" icon={Trash2} iconOnly label="Delete playlist" onclick={deletePlaylist} />
+				<Button variant="ghost-danger" size="sm" icon={Trash2} iconOnly label="Delete playlist" onclick={deletePlaylist} />
 			{/if}
 		</div>
 	</header>

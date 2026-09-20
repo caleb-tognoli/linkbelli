@@ -163,7 +163,7 @@
 	{#snippet trigger()}
 		<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Share with specific people">
 			<UserPlus size={15} aria-hidden="true" />
-			Share
+			<span class="sr-only md:not-sr-only">Share</span>
 		</Dialog.Trigger>
 	{/snippet}
 

@@ -56,7 +56,7 @@
 	{#snippet trigger()}
 		<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Report this playlist">
 			<Flag size={15} aria-hidden="true" />
-			Report
+			<span class="sr-only md:not-sr-only">Report</span>
 		</Dialog.Trigger>
 	{/snippet}
 
