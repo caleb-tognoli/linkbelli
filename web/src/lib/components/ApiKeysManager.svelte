@@ -172,26 +172,24 @@
 	{:else}
 		<ul class="flex flex-col gap-2">
 			{#each keys as key (key.id)}
-				<li
-					class="flex items-center gap-4 rounded-lg border px-3 py-2.5 text-sm"
-					style="border-color: var(--color-border); background: var(--color-surface)"
-				>
-					<span class="font-medium">{key.name}</span>
-					<div class="flex-1"></div>
-					<div class="flex items-center gap-4 text-xs leading-none" style="color: var(--color-muted)">
-						<code>{key.prefix}…</code>
-						<span>Last used {fmt(key.lastUsedAt)}</span>
+				<!-- The row was one unwrapping line, so a long key name pushed its prefix and last
+				     use off the side of a phone. The metadata drops below the name instead. -->
+				<li class="flex items-center gap-3 rounded-card border bg-surface px-3 py-2.5 text-sm">
+					<div class="min-w-0 flex-1">
+						<span class="block truncate font-medium">{key.name}</span>
+						<span class="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-muted">
+							<code>{key.prefix}…</code>
+							<span>Last used {fmt(key.lastUsedAt)}</span>
+						</span>
 					</div>
-					<button
-						type="button"
+					<Button
+						variant="ghost-danger"
+						size="sm"
+						icon={Ban}
+						iconOnly
+						label={`Revoke ${key.name}`}
 						onclick={() => revoke(key)}
-						title="Revoke {key.name}"
-						aria-label="Revoke {key.name}"
-						class="inline-flex items-center rounded p-1 hover:opacity-70"
-						style="color: var(--color-danger)"
-					>
-						<Ban size={16} aria-hidden="true" />
-					</button>
+					/>
 				</li>
 			{/each}
 		</ul>

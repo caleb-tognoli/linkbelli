@@ -1,4 +1,7 @@
 <script lang="ts">
+	import MenuSeparator from '$lib/components/ui/MenuSeparator.svelte';
+	import MenuItem from '$lib/components/ui/MenuItem.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
 	import SecretReveal from '$lib/components/ui/SecretReveal.svelte';
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -8,7 +11,7 @@
 	import { api, json } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { canRedeliver, describeDelivery, shortUrl, type Webhook, type WebhookDelivery, type WebhookEventInfo, type WebhookWithSecret } from '$lib/webhooks';
-	import { Check, CircleAlert, History, KeyRound, Plus, RotateCcw, Send, Trash2, X } from '@lucide/svelte';
+	import { Check, CircleAlert, History, KeyRound, Plus, RotateCcw, Send, Trash2, X, MoreVertical } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 
 	let hooks = $state<Webhook[]>([]);
@@ -304,7 +307,7 @@
 					class="rounded-lg border px-3 py-2.5 text-sm"
 					style="border-color: var(--color-border); background: var(--color-surface)"
 				>
-					<div class="flex items-center gap-3">
+					<div class="flex items-center gap-2 sm:gap-3">
 						<Switch
 							checked={hook.status === 'Active'}
 							onchange={(v) => setActive(hook, v)}
@@ -319,44 +322,26 @@
 								{hook.events.join(', ')} · last delivered {when(hook.lastDeliveredAt)}
 							</div>
 						</div>
-						<button
-							type="button"
-							onclick={() => test(hook)}
-							title="Send a test"
-							aria-label="Send a test"
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+						<!-- Four unlabelled icons beside a flexible title left the title nothing at
+						     375px. One menu, and each action says what it is. -->
+						<Menu
+							triggerClass={buttonClass('ghost', 'sm', true)}
+							label={`Actions for ${hook.description ?? shortUrl(hook.url)}`}
+							title="Actions"
+							align="end"
+							width="w-56"
 						>
-							<Send size={16} aria-hidden="true" />
-						</button>
-						<button
-							type="button"
-							onclick={() => showLog(hook)}
-							title="Recent deliveries"
-							aria-label="Recent deliveries"
-							aria-expanded={openLog === hook.id}
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-						>
-							<History size={16} aria-hidden="true" />
-						</button>
-						<button
-							type="button"
-							onclick={() => rotate(hook)}
-							title="Replace the signing secret"
-							aria-label="Replace the signing secret"
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-						>
-							<KeyRound size={16} aria-hidden="true" />
-						</button>
-						<button
-							type="button"
-							onclick={() => remove(hook)}
-							title="Remove this webhook"
-							aria-label="Remove this webhook"
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
-							style="color: var(--color-danger)"
-						>
-							<Trash2 size={16} aria-hidden="true" />
-						</button>
+							{#snippet trigger()}
+								<MoreVertical size={16} aria-hidden="true" />
+							{/snippet}
+							<MenuItem icon={Send} onselect={() => test(hook)}>Send a test</MenuItem>
+							<MenuItem icon={History} onselect={() => showLog(hook)}>Recent deliveries</MenuItem>
+							<MenuItem icon={KeyRound} onselect={() => rotate(hook)}>
+								Replace the signing secret
+							</MenuItem>
+							<MenuSeparator />
+							<MenuItem icon={Trash2} danger onselect={() => remove(hook)}>Remove this webhook</MenuItem>
+						</Menu>
 					</div>
 
 					{#if hook.status === 'Disabled'}
