@@ -130,7 +130,7 @@
 					aria-controls={listId}
 					aria-autocomplete="list"
 					aria-activedescendant={commands.length > 0 ? optionId(activeIndex) : undefined}
-					class="w-full bg-transparent py-3 outline-none focus-visible:!outline-none"
+					class="w-full bg-transparent py-3 outline-none focus-visible:outline-offset-[-3px]"
 				/>
 			</div>
 
