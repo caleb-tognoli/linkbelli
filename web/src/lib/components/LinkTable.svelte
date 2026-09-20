@@ -966,10 +966,12 @@
 			</Menu>
 		{/if}
 		{#if attachedSources.length > 0 || !readonly}
-			<span class="text-xs" style="color: var(--color-border)" aria-hidden="true">|</span>
+			<span class="mx-1 h-4 w-px self-center bg-border-strong" aria-hidden="true"></span>
 		{/if}
 
-		<!-- Second section: sort + display options -->
+		<!-- Second section: sort + display options. The groups used to be divided by a pipe
+		     character in --color-border, which is 1.23:1 against the page — invisible as a divider,
+		     and left dangling at the end of a line whenever the row wrapped. A rule cannot. -->
 		<Menu triggerClass={chipTrigger(sortMode !== (readonly ? 'date-desc' : 'manual'))} title="Sort">
 			{#snippet trigger()}
 				<ArrowUpDown size={12} aria-hidden="true" />
@@ -995,7 +997,7 @@
 			/>
 		</Menu>
 
-		<span class="text-xs" style="color: var(--color-border)" aria-hidden="true">|</span>
+		<span class="mx-1 h-4 w-px self-center bg-border-strong" aria-hidden="true"></span>
 
 		<Menu triggerClass={chipTrigger(showUrls)} title="Show titles or addresses">
 			{#snippet trigger()}
