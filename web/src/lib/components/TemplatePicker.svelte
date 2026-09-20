@@ -160,12 +160,12 @@
 			{/each}
 		</div>
 
-		<button
-			type="button"
-			onclick={onskip}
-			class="mt-4 text-sm underline underline-offset-2"
-			style="color: var(--color-muted)"
-		>Or set one up by hand</button>
+		<!-- The same words and the same button as the one on the step after this: it used to be
+		     "Or set one up by hand" as muted underlined text here and "Set one up by hand instead"
+		     as a ghost button there, which reads as two different ways out. -->
+		<div class="mt-4">
+			<Button variant="ghost" onclick={onskip}>Set one up by hand</Button>
+		</div>
 	</div>
 {:else}
 	<div class="flex flex-col gap-3">
@@ -226,7 +226,7 @@
 			<Button variant="primary" icon={Check} onclick={create} loading={busy}>
 				{busy ? 'Creating…' : 'Create source'}
 			</Button>
-			<Button variant="ghost" onclick={onskip}>Set one up by hand instead</Button>
+			<Button variant="ghost" onclick={onskip}>Set one up by hand</Button>
 		</div>
 	</div>
 {/if}
