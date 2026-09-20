@@ -649,6 +649,11 @@
 				     whether it works without waiting to see what it does. -->
 				<Button icon={Wand2} onclick={tryIt} disabled={busy}>Try it on what I have</Button>
 
+				<!-- Beside the action it undoes. The way out of this editor was an unlabelled X at
+				     the top of a panel that is taller than the screen, so after scrolling down to
+				     fill it in, the only visible choice was to go through with it. -->
+				<Button variant="ghost" icon={X} onclick={() => (open = false)}>Cancel</Button>
+
 				{#if error}
 					<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 				{/if}
