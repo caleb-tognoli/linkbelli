@@ -30,7 +30,7 @@
 	class="w-full max-w-sm rounded-card border p-6"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
-	<h1 class="text-xl font-semibold">Sign in</h1>
+	<h1 class="t-page">Sign in</h1>
 	{#if justReset}
 		<p class="mt-1 text-sm" style="color: var(--color-success)">
 			Your password is changed. Sign in with the new one.

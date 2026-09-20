@@ -14,7 +14,7 @@
 >
 	{#if data.ok}
 		<Check size={28} aria-hidden="true" class="mx-auto" style="color: var(--color-success)" />
-		<h1 class="mt-2 text-xl font-semibold">Done</h1>
+		<h1 class="t-page mt-2">Done</h1>
 		<!-- Named, so somebody knows exactly what has stopped rather than fearing it was all of it. -->
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">
 			You will no longer be emailed {data.description ?? 'about that'}.
@@ -27,7 +27,7 @@
 		</p>
 	{:else}
 		<X size={28} aria-hidden="true" class="mx-auto" style="color: var(--color-muted)" />
-		<h1 class="mt-2 text-xl font-semibold">That link did not work</h1>
+		<h1 class="t-page mt-2">That link did not work</h1>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">
 			Mail clients sometimes break long links. You can turn these off in your email settings instead.
 		</p>

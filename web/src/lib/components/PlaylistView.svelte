@@ -467,7 +467,7 @@
 					onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = playlistName; e.currentTarget.blur(); } }}
 				/>
 			{:else}
-				<h1 class="text-2xl font-semibold">{playlistName}</h1>
+				<h1 class="t-page">{playlistName}</h1>
 			{/if}
 			{#if ownerUsername}
 				<p class="mt-0.5 text-sm" style="color: var(--color-muted)">

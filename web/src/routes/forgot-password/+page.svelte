@@ -18,7 +18,7 @@
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	{#if form?.sent}
-		<h1 class="text-xl font-semibold">Check your email</h1>
+		<h1 class="t-page">Check your email</h1>
 		<!-- Careful not to confirm the account exists: this is the same message either way. -->
 		<p class="mt-2 text-sm" style="color: var(--color-muted)">
 			If there is an account for that, a link to choose a new password is on its way. It works
@@ -30,7 +30,7 @@
 			</a>
 		</p>
 	{:else}
-		<h1 class="text-xl font-semibold">Reset your password</h1>
+		<h1 class="t-page">Reset your password</h1>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">
 			Tell us who you are and we will send a link.
 		</p>

@@ -61,7 +61,7 @@
 		     line of the page was the one thing a visitor already knew. -->
 		<section class="grid items-center gap-8 md:grid-cols-[1.1fr_1fr]">
 			<div>
-				<h1 class="text-3xl font-semibold">Collect links. Let sources fill your lists.</h1>
+				<h1 class="t-hero">Collect links. Let sources fill your lists.</h1>
 				<p class="mt-3 max-w-2xl text-lg" style="color: var(--color-muted)">
 					A home for the links you collect. Gather them into playlists, let sources keep those
 					playlists filled on their own, and publish the ones you want to share.

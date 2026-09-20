@@ -504,7 +504,7 @@
 	     only one. -->
 	<BackLink href={backHref} label={backLabel} class="mb-3" />
 	<header class="border-b pb-4" style="border-color: var(--color-border)">
-		<h1 class="text-2xl font-semibold leading-tight">{data.content.title ?? data.content.url}</h1>
+		<h1 class="t-page leading-tight">{data.content.title ?? data.content.url}</h1>
 		<!--
 			Each fact carries its own separator inside an inline-flex group, so a "·" can never
 			wrap to the start of the next line on its own.

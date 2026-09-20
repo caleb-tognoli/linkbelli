@@ -185,6 +185,15 @@ body {
    font-medium in most places and small muted text in others, for headings doing the same job.
    Four roles, named after what the heading is rather than how big it is. */
 @layer components {
+	/* The one headline on the page somebody lands on before they have an account. Bigger than a
+	   page title on purpose, and the only place that is true — so it is a role rather than a
+	   text-3xl written into one file. */
+	.t-hero {
+		font-size: var(--text-3xl);
+		line-height: var(--tw-leading, var(--text-3xl--line-height));
+		font-weight: 600;
+	}
+
 	.t-page {
 		font-size: var(--text-2xl);
 		line-height: var(--tw-leading, var(--text-2xl--line-height));

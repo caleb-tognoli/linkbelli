@@ -30,7 +30,7 @@
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	{#if !data.invite}
-		<h1 class="flex items-center gap-2 text-xl font-semibold">
+		<h1 class="t-page flex items-center gap-2">
 			<MailX size={22} aria-hidden="true" style="color: var(--color-danger)" />
 			That link has expired
 		</h1>
@@ -38,7 +38,7 @@
 			An invitation works once, and lasts two weeks. Ask whoever sent it for a new one.
 		</p>
 	{:else}
-		<h1 class="flex items-center gap-2 text-xl font-semibold">
+		<h1 class="t-page flex items-center gap-2">
 			<UserPlus size={22} aria-hidden="true" style="color: var(--color-accent)" />
 			An invitation
 		</h1>

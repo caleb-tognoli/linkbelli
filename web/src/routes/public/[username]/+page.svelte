@@ -106,7 +106,7 @@
 
 	<header class="mt-3 flex items-start justify-between gap-4">
 		<div>
-			<h1 class="text-2xl font-semibold">@{data.profile.username}</h1>
+			<h1 class="t-page">@{data.profile.username}</h1>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				{counts} · here since {joined}{followerCount ? ` · ${followerCount} ${followerCount === 1 ? 'follower' : 'followers'}` : ''}
 			</p>

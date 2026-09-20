@@ -22,7 +22,7 @@
 	class="w-full max-w-sm rounded-card border p-6"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
-	<h1 class="text-xl font-semibold">Choose a new password</h1>
+	<h1 class="t-page">Choose a new password</h1>
 
 	{#if !data.email || !data.token}
 		<!-- A truncated link, or somebody arriving here directly. Nothing useful to show. -->

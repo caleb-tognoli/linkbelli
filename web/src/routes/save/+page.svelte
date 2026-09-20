@@ -131,7 +131,7 @@
 </script>
 
 <Page width="card">
-	<h1 class="text-2xl font-semibold">Save a link</h1>
+	<h1 class="t-page">Save a link</h1>
 
 	{#if data.playlists.length === 0}
 		<div class="mt-6 rounded-card border border-dashed p-8 text-center">

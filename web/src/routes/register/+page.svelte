@@ -36,7 +36,7 @@
 	class="w-full max-w-sm rounded-card border p-6"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
-	<h1 class="text-xl font-semibold">Create account</h1>
+	<h1 class="t-page">Create account</h1>
 	<p class="mt-1 text-sm" style="color: var(--color-muted)">Start grouping links with Linkbelli.</p>
 
 	<form

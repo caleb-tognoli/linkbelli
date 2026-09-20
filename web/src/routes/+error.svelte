@@ -42,7 +42,7 @@
 
 <Page width="card" class="py-16 text-center">
 	<p class="text-5xl font-semibold" style="color: var(--color-muted)">{status}</p>
-	<h1 class="mt-3 text-xl font-semibold">{heading}</h1>
+	<h1 class="t-page mt-3">{heading}</h1>
 	<p class="mt-2 text-sm" style="color: var(--color-muted)">{detail}</p>
 
 	<!-- Anywhere is better than a dead end — but somewhere the visitor can actually go. A

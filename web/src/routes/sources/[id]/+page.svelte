@@ -310,7 +310,7 @@
 
 	<header class="mt-3 flex flex-wrap items-start justify-between gap-3">
 		<div class="min-w-0 flex-1 basis-64">
-			<h1 class="text-2xl font-semibold">{data.source.name}</h1>
+			<h1 class="t-page">{data.source.name}</h1>
 			<!-- Where it stands, in one line, before anything else on the page. -->
 			<p class="mt-1 text-sm text-muted">
 				{TYPE_LABELS[data.source.type]} ·

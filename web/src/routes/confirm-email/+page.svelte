@@ -47,7 +47,7 @@
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	{#if data.ok}
-		<h1 class="flex items-center gap-2 text-xl font-semibold">
+		<h1 class="t-page flex items-center gap-2">
 			<MailCheck size={22} aria-hidden="true" style="color: var(--color-accent)" />
 			Address confirmed
 		</h1>
@@ -60,7 +60,7 @@
 			</a>
 		</p>
 	{:else}
-		<h1 class="flex items-center gap-2 text-xl font-semibold">
+		<h1 class="t-page flex items-center gap-2">
 			<MailX size={22} aria-hidden="true" style="color: var(--color-danger)" />
 			That link did not work
 		</h1>
