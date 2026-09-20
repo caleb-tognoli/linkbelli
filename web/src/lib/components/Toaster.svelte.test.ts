@@ -32,7 +32,10 @@ describe('Toaster', () => {
 		expect(screen.getByRole('alert')).toBeInTheDocument();
 
 		await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+		// The region stays — it has to be in the tree before a message arrives, or the message is
+		// not announced — so what goes is the message.
+		expect(screen.queryByText('Could not save that.')).not.toBeInTheDocument();
+		expect(screen.getByRole('alert')).toBeInTheDocument();
 	});
 
 	it('runs its action and goes', async () => {

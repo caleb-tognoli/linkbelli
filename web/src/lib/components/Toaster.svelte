@@ -35,6 +35,23 @@
 		schedule(item);
 	}
 
+	/**
+	 * Holds the stack still while somebody is reading it, or has tabbed into it.
+	 *
+	 * On the region rather than on each card: mouseenter does not bubble, and a card with a mouse
+	 * handler and no role of its own is a card a screen reader has to be told about for no reason.
+	 * Pausing the whole stack is also the truer reading of the gesture — a pointer over one toast
+	 * means the toasts are being read.
+	 */
+	function hold(tone: 'error' | 'other', stop: boolean) {
+		for (const item of toast.list) {
+			const mine = tone === 'error' ? item.tone === 'error' : item.tone !== 'error';
+			if (!mine) continue;
+			if (stop) pause(item.id);
+			else resume(item);
+		}
+	}
+
 	$effect(() => {
 		for (const item of toast.list) schedule(item);
 		// Forget timers for toasts that are gone.
@@ -61,13 +78,44 @@
 <div
 	class="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-(--z-toast) flex flex-col items-center gap-2 px-4"
 >
-	<!-- News is a status (polite), a failure an alert (assertive), each card its own region. -->
-	<div class="flex w-full flex-col items-center gap-2">
+	<!--
+		News is a status (polite), a failure an alert (assertive) — and the region has to be here
+		before the message is.
+
+		The roles used to sit on each card, which is created at the same moment as its text. A live
+		region that arrives already holding its content is commonly not announced at all: screen
+		readers watch regions that are already in the tree for changes. Since toasts are the only
+		way this app says anything happened, that meant a whole feedback channel that a screen
+		reader could miss entirely. The two regions are always mounted now, and the cards go into
+		them.
+	-->
+	<!-- svelte-ignore a11y_mouse_events_have_key_events -- focusin/focusout are the keyboard half;
+	     the rule looks for focus/blur, which do not bubble up from the card to this region. -->
+	<div
+		class="flex w-full flex-col items-center gap-2"
+		role="status"
+		aria-live="polite"
+		aria-atomic="false"
+		onmouseover={() => hold('other', true)}
+		onmouseout={() => hold('other', false)}
+		onfocusin={() => hold('other', true)}
+		onfocusout={() => hold('other', false)}
+	>
 		{#each toast.list.filter((t) => t.tone !== 'error') as item (item.id)}
 			{@render card(item)}
 		{/each}
 	</div>
-	<div class="flex w-full flex-col items-center gap-2">
+	<!-- svelte-ignore a11y_mouse_events_have_key_events -- as above. -->
+	<div
+		class="flex w-full flex-col items-center gap-2"
+		role="alert"
+		aria-live="assertive"
+		aria-atomic="false"
+		onmouseover={() => hold('error', true)}
+		onmouseout={() => hold('error', false)}
+		onfocusin={() => hold('error', true)}
+		onfocusout={() => hold('error', false)}
+	>
 		{#each toast.list.filter((t) => t.tone === 'error') as item (item.id)}
 			{@render card(item)}
 		{/each}
@@ -81,11 +129,6 @@
 		'error'
 			? 'border-danger'
 			: 'border-border'}"
-		role={item.tone === 'error' ? 'alert' : 'status'}
-		onmouseenter={() => pause(item.id)}
-		onmouseleave={() => resume(item)}
-		onfocusin={() => pause(item.id)}
-		onfocusout={() => resume(item)}
 	>
 		<span
 			class="mt-0.5 inline-flex shrink-0 {item.tone === 'error'
