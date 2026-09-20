@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SkeletonRows from '$lib/components/ui/SkeletonRows.svelte';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -12,9 +13,12 @@
 	let {
 		onskip,
 		playlists = [],
-		preselectedPlaylistId = null
+		preselectedPlaylistId = null,
+		initial = null
 	}: {
 		onskip: () => void;
+		/** The templates the page already fetched. Null means this has to ask for them itself. */
+		initial?: SourceTemplate[] | null;
 		/** Where what it finds can go. */
 		playlists?: Playlist[];
 		/** Chosen already, when this started from a playlist's own Sources panel. */
@@ -28,19 +32,24 @@
 	);
 	let newPlaylistName = $state('');
 
-	let templates = $state<SourceTemplate[]>([]);
+	let templates = $state<SourceTemplate[]>(initial ?? []);
 	let chosen = $state<SourceTemplate | null>(null);
 	let values = $state<Record<string, string>>({});
 	let name = $state('');
 	let busy = $state(false);
 	let error = $state<string | null>(null);
-	let loading = $state(true);
+	let loading = $state(initial === null);
 
 	// Nothing to choose from — none seeded, or the list could not be fetched — means the form
 	// by hand, decided here rather than in the markup: calling back into the parent from a
 	// template expression mutates its state mid-render, which Svelte refuses outright and which
 	// left the page stuck on "Loading templates…" with no way to create a source at all.
 	$effect(() => {
+		if (initial !== null) {
+			if (initial.length === 0) onskip();
+			return;
+		}
+
 		api
 			.get('/sources/templates')
 			.then((res) => json<SourceTemplate[]>(res))
@@ -102,7 +111,7 @@
 </script>
 
 {#if loading}
-	<p class="text-sm" style="color: var(--color-muted)">Loading templates…</p>
+	<SkeletonRows rows={4} />
 {:else if templates.length === 0}
 	<!-- The effect above has already handed over to the form by hand. -->
 {:else if !chosen}

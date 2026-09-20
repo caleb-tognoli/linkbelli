@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SkeletonRows from '$lib/components/ui/SkeletonRows.svelte';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import CopyField from '$lib/components/ui/CopyField.svelte';
@@ -33,10 +34,14 @@
 		void load();
 	});
 
+	/** Whether the member list has ever arrived, so the first open shows rows rather than a gap. */
+	let loadedOnce = $state(false);
+
 	async function load() {
 		const res = await api.get(`/playlists/${playlistId}/members`);
 		if (res.ok) members = (await res.json()) as PlaylistMember[];
 		else error = 'Could not load who this is shared with.';
+		loadedOnce = true;
 	}
 
 	/** The server's own words when it has any — "no such user" is worth saying exactly. */
@@ -230,7 +235,9 @@
 	{/if}
 
 	<div class="mt-3 flex-1 overflow-y-auto">
-		{#if members.length === 0}
+		{#if !loadedOnce}
+			<SkeletonRows rows={2} class="py-2" />
+		{:else if members.length === 0}
 			<p class="py-2 text-sm" style="color: var(--color-muted)">Not shared with anyone yet.</p>
 		{:else}
 			<ul class="flex flex-col gap-1">

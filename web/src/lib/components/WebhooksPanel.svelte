@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SkeletonRows from '$lib/components/ui/SkeletonRows.svelte';
 	import MenuSeparator from '$lib/components/ui/MenuSeparator.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
@@ -14,9 +15,18 @@
 	import { Check, CircleAlert, History, KeyRound, Plus, RotateCcw, Send, Trash2, X, MoreVertical } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
 
-	let hooks = $state<Webhook[]>([]);
-	let catalogue = $state<WebhookEventInfo[]>([]);
-	let loading = $state(true);
+	let {
+		initial = null,
+		initialEvents = null
+	}: {
+		/** What the page already fetched: the hooks, and the events they can listen for. */
+		initial?: Webhook[] | null;
+		initialEvents?: WebhookEventInfo[] | null;
+	} = $props();
+
+	let hooks = $state<Webhook[]>(initial ?? []);
+	let catalogue = $state<WebhookEventInfo[]>(initialEvents ?? []);
+	let loading = $state(initial === null);
 	let error = $state<string | null>(null);
 
 	// The secret, for the one moment it can be seen: straight after a webhook is made or its
@@ -52,7 +62,7 @@
 	}
 
 	$effect(() => {
-		refresh();
+		if (initial === null) void refresh();
 	});
 
 	function resetForm() {
@@ -297,7 +307,7 @@
 	{/if}
 
 	{#if loading}
-		<p class="text-sm" style="color: var(--color-muted)">Looking…</p>
+		<SkeletonRows rows={3} />
 	{:else if hooks.length === 0}
 		<p class="text-sm" style="color: var(--color-muted)">No webhooks yet.</p>
 	{:else}

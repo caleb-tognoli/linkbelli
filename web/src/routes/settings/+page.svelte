@@ -237,7 +237,11 @@
 
 			<section id="email" aria-labelledby="email-heading" class="flex scroll-mt-20 flex-col gap-6 md:scroll-mt-8">
 				<h2 id="email-heading" class="t-group">Email</h2>
-				<NotificationsPanel email={data.user?.email} confirmed={data.user?.emailConfirmed ?? true} />
+				<NotificationsPanel
+					email={data.user?.email}
+					confirmed={data.user?.emailConfirmed ?? true}
+					initial={data.notifications}
+				/>
 			</section>
 
 			<section id="data" aria-labelledby="data-heading" class="flex scroll-mt-20 flex-col gap-8 md:scroll-mt-8">
@@ -303,7 +307,7 @@
 					</div>
 				</div>
 
-				<BackupsPanel enabled={data.user?.backupsEnabled ?? true} />
+				<BackupsPanel enabled={data.user?.backupsEnabled ?? true} initial={data.backups} />
 			</section>
 
 			<section id="integrations" aria-labelledby="integrations-heading" class="flex scroll-mt-20 flex-col gap-8 md:scroll-mt-8">
@@ -337,7 +341,7 @@
 
 				<ApiKeysManager keys={data.apiKeys} />
 
-				<WebhooksPanel />
+				<WebhooksPanel initial={data.webhooks} initialEvents={data.webhookEvents} />
 			</section>
 
 			<!-- The counterpart of the export formats. Kept apart from everything else, at the end,

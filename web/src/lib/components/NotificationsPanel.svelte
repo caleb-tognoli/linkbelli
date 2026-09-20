@@ -1,13 +1,8 @@
 <script lang="ts">
+	import SkeletonRows from '$lib/components/ui/SkeletonRows.svelte';
 	import { api, json } from '$lib/api/client';
 	import Switch from '$lib/components/Switch.svelte';
-
-	interface Prefs {
-		onShare: boolean;
-		onFollow: boolean;
-		onSourceStopped: boolean;
-		weeklyDigest: boolean;
-	}
+	import type { NotificationPrefs as Prefs } from '$lib/notifications';
 
 	/**
 	 * Described by what arrives, not by a setting name.
@@ -40,8 +35,11 @@
 
 	let {
 		email = null,
-		confirmed = true
+		confirmed = true,
+		initial = null
 	}: {
+		/** What the page already fetched, so this does not blink "Looking…" on the way in. */
+		initial?: Prefs | null;
 		/** The address all of this would go to. Shown only when it cannot be written to. */
 		email?: string | null;
 		/**
@@ -53,7 +51,7 @@
 		confirmed?: boolean;
 	} = $props();
 
-	let prefs = $state<Prefs | null>(null);
+	let prefs = $state<Prefs | null>(initial);
 	let error = $state<string | null>(null);
 
 	let resending = $state(false);
@@ -68,8 +66,9 @@
 		resent = res.ok;
 	}
 
+	// Only when the page could not get them; otherwise they are already here.
 	$effect(() => {
-		void load();
+		if (!prefs) void load();
 	});
 
 	async function load() {
@@ -176,6 +175,6 @@
 			{/each}
 		</ul>
 	{:else if !error}
-		<p class="mt-3 text-sm" style="color: var(--color-muted)">Looking…</p>
+		<SkeletonRows rows={4} class="mt-3" />
 	{/if}
 </div>

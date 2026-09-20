@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SkeletonRows from '$lib/components/ui/SkeletonRows.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import { Dialog } from 'bits-ui';
 	import { invalidateAll } from '$app/navigation';
@@ -82,7 +83,7 @@
 
 	<div class="flex-1 overflow-y-auto">
 		{#if loading}
-			<p class="text-sm" style="color: var(--color-muted)">Loading…</p>
+			<SkeletonRows rows={5} />
 		{:else}
 			<FolderPicker
 				{folders}

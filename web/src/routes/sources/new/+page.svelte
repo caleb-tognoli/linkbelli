@@ -25,6 +25,7 @@
 		{:else}
 			<TemplatePicker
 				onskip={() => (byHand = true)}
+				initial={data.templates}
 				playlists={data.playlists}
 				preselectedPlaylistId={data.preselectedPlaylistId}
 			/>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SkeletonRows from '$lib/components/ui/SkeletonRows.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -86,7 +87,7 @@
 
 	<div class="mt-2 flex-1 overflow-y-auto">
 		{#if loading && playlists.length === 0}
-			<p class="py-2 text-sm" style="color: var(--color-muted)">Loading…</p>
+			<SkeletonRows rows={6} class="py-2" />
 		{:else if playlists.length === 0}
 			<p class="py-2 text-sm" style="color: var(--color-muted)">{search.trim() ? 'No matches.' : 'No playlists found.'}</p>
 		{:else}
