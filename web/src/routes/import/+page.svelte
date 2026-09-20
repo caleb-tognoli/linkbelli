@@ -9,14 +9,84 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { Upload, CheckCircle } from '@lucide/svelte';
+	import { Upload, CheckCircle, FileText, X } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
+	import { parseRows } from '$lib/importFormats';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let destination = $state('none');
 	let submitting = $state(false);
+
+	/**
+	 * The file, once there is one, described before it is sent.
+	 *
+	 * The whole page is one file, and it was a bare file input: no way to drop anything on it, and
+	 * nothing after choosing but the browser's own filename. Somebody with a four thousand row
+	 * bookmark export pressed Import with no idea what was in it. The same parsers the server
+	 * uses run here first, so the count is the real one.
+	 */
+	let picker = $state<HTMLInputElement>();
+	let dragging = $state(false);
+	let chosen = $state<{ name: string; size: number; found: number | null } | null>(null);
+	let reading = $state(false);
+
+	const KB = 1024;
+	function fileSize(bytes: number): string {
+		if (bytes < KB) return `${bytes} bytes`;
+		if (bytes < KB * KB) return `${Math.round(bytes / KB)} KB`;
+		return `${(bytes / (KB * KB)).toFixed(1)} MB`;
+	}
+
+	async function describe(file: File | undefined) {
+		if (!file) {
+			chosen = null;
+			return;
+		}
+
+		chosen = { name: file.name, size: file.size, found: null };
+		reading = true;
+		try {
+			// Only worth reading here while it is small enough to be instant; past that the
+			// name and the size are enough to know the right file was picked.
+			if (file.size <= 4 * KB * KB) {
+				chosen = { ...chosen, found: parseRows(await file.text(), file.name).length };
+			}
+		} catch {
+			// An unreadable file is the server's to complain about, with a better message.
+		} finally {
+			reading = false;
+		}
+	}
+
+	/** "· 94 KB · 1,204 addresses", or just the size while it is still being counted. */
+	function detail(file: { size: number; found: number | null }): string {
+		const parts = [fileSize(file.size)];
+		if (reading) parts.push('reading…');
+		else if (file.found !== null) {
+			parts.push(`${file.found.toLocaleString()} ${file.found === 1 ? 'address' : 'addresses'}`);
+		}
+		return `· ${parts.join(' · ')}`;
+	}
+
+	/** Puts a dropped file into the real input, which is what the form submits. */
+	function onDrop(event: DragEvent) {
+		dragging = false;
+		const file = event.dataTransfer?.files?.[0];
+		if (!file || !picker) return;
+
+		const box = new DataTransfer();
+		box.items.add(file);
+		picker.files = box.files;
+		void describe(file);
+	}
+
+	function clearFile() {
+		if (picker) picker.value = '';
+		chosen = null;
+		picker?.focus();
+	}
 </script>
 
 <Page width="form">
@@ -96,15 +166,61 @@
 				hint="A browser's bookmark export (.html), a plain list of addresses, one per line, or a CSV with a url column and an optional note."
 			>
 				{#snippet children(f)}
-					<input
-						id={f.id}
-						name="file"
-						type="file"
-						accept=".csv,.html,.htm,.txt,text/csv,text/html,text/plain"
-						required
-						aria-describedby={f.describedby}
-						class="block w-full rounded-control border border-border-strong bg-bg px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-control file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
-					/>
+					<!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_element_interactions -->
+					<label
+						for={f.id}
+						class="flex cursor-pointer flex-col items-center gap-2 rounded-card border border-dashed px-6 py-8 text-center transition-colors {dragging
+							? 'border-accent bg-selected'
+							: 'border-border-strong'}"
+						ondragover={(e) => {
+							e.preventDefault();
+							dragging = true;
+						}}
+						ondragleave={() => (dragging = false)}
+						ondrop={(e) => {
+							e.preventDefault();
+							onDrop(e);
+						}}
+					>
+						<Upload size={20} aria-hidden="true" class="text-muted" />
+						<span class="text-sm">
+							<span class="font-medium text-accent">Choose a file</span>
+							<span class="text-muted"> or drop one here</span>
+						</span>
+						<input
+							bind:this={picker}
+							id={f.id}
+							name="file"
+							type="file"
+							accept=".csv,.html,.htm,.txt,text/csv,text/html,text/plain"
+							required
+							aria-describedby={f.describedby}
+							class="sr-only"
+							onchange={(e) => describe(e.currentTarget.files?.[0])}
+						/>
+					</label>
+
+					{#if chosen}
+						<!-- What is about to be sent, said before it is: the name, how big it is, and
+						     how many addresses are actually in it. -->
+						<p class="mt-2 flex items-center gap-2 text-sm" role="status">
+							<FileText size={15} aria-hidden="true" class="shrink-0 text-muted" />
+							<span class="min-w-0 flex-1 truncate">
+								<span class="font-medium">{chosen.name}</span>
+								<!-- One string, so the separators cannot lose their spaces to the
+								     template's own whitespace. -->
+								<span class="text-muted">{detail(chosen)}</span>
+							</span>
+							<Button
+								variant="ghost"
+								size="sm"
+								icon={X}
+								iconOnly
+								label="Choose a different file"
+								onclick={clearFile}
+							/>
+						</p>
+					{/if}
 				{/snippet}
 			</Field>
 			<p class="-mt-5 text-xs text-muted">
