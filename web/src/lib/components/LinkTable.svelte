@@ -19,7 +19,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus, ArrowUpToLine, Square, SquareCheck } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, CopyPlus, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus, ArrowUpToLine, Square, SquareCheck } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import PlaylistDropTray from './PlaylistDropTray.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
@@ -1106,52 +1106,28 @@
 		>
 			<span class="font-medium tabular-nums">{selected.size} selected</span>
 
-			<button
-				type="button"
-				disabled={bulkBusy}
-				onclick={() => bulkStatus('Watched')}
-				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-				style="border-color: var(--color-border)"
-			>
-				<Eye size={14} aria-hidden="true" /> Done
-			</button>
+			<Button size="sm" icon={Eye} disabled={bulkBusy} onclick={() => bulkStatus('Watched')}>
+				Done
+			</Button>
 
-			<button
-				type="button"
-				disabled={bulkBusy}
-				onclick={() => bulkStatus('Added')}
-				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-				style="border-color: var(--color-border)"
-			>
-				<EyeOff size={14} aria-hidden="true" /> Not done
-			</button>
+			<Button size="sm" icon={EyeOff} disabled={bulkBusy} onclick={() => bulkStatus('Added')}>
+				Not done
+			</Button>
 
 			{#if playlistId}
-				<button
-					type="button"
-					disabled={bulkBusy}
-					onclick={() => (moveOpen = true)}
-					class="rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-					style="border-color: var(--color-border)"
-				>Move to…</button>
-				<button
-					type="button"
-					disabled={bulkBusy}
-					onclick={() => (copyOpen = true)}
-					class="rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-					style="border-color: var(--color-border)"
-				>Copy to…</button>
+				<Button size="sm" icon={FolderInput} disabled={bulkBusy} onclick={() => (moveOpen = true)}>
+					Move to…
+				</Button>
+				<Button size="sm" icon={CopyPlus} disabled={bulkBusy} onclick={() => (copyOpen = true)}>
+					Copy to…
+				</Button>
 			{/if}
 
-			<button
-				type="button"
-				disabled={bulkBusy}
-				onclick={bulkDelete}
-				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-				style="border-color: var(--color-border); color: var(--color-danger)"
-			>
-				<Trash2 size={14} aria-hidden="true" /> Delete
-			</button>
+			<!-- The one action here that takes things away, said in the colour the rest of the app
+			     says it in rather than as red text on a neutral border. -->
+			<Button variant="danger-outline" size="sm" icon={Trash2} disabled={bulkBusy} onclick={bulkDelete}>
+				Delete
+			</Button>
 
 			<button
 				type="button"

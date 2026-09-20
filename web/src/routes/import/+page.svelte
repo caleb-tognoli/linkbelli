@@ -59,14 +59,7 @@
 				</div>
 			{/if}
 
-			<a
-				href="/import"
-				class="inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-				style="border-color: var(--color-border)"
-			>
-				<Upload size={15} aria-hidden="true" />
-				Import another file
-			</a>
+			<Button href="/import" icon={Upload}>Import another file</Button>
 		</div>
 	{:else}
 		<!-- Import form -->

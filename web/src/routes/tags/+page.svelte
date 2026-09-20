@@ -9,6 +9,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { Merge, Pencil, Trash2 } from '@lucide/svelte';
 	import type { TagChange, TagUsage } from '$lib/types';
 	import type { PageData } from './$types';
@@ -190,15 +191,9 @@
 									><span style="color: var(--color-muted)"> ({uses(tag)})</span>{/each}
 							</span>
 							{#if group.length === 2}
-								<button
-									type="button"
-									onclick={() => mergeGroup(group)}
-									disabled={busy !== null}
-									class="inline-flex shrink-0 items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-sm disabled:opacity-60"
-									style="border-color: var(--color-border)"
-								>
-									<Merge size={14} aria-hidden="true" /> Merge
-								</button>
+								<Button size="sm" icon={Merge} disabled={busy !== null} onclick={() => mergeGroup(group)}>
+									Merge
+								</Button>
 							{/if}
 						</li>
 					{/each}

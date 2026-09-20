@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { CloudOff, RefreshCw, X } from '@lucide/svelte';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
 
@@ -17,16 +18,9 @@
 		<span class="min-w-0 flex-1">{summary}</span>
 
 		{#if offlineSaves.waiting > 0}
-			<button
-				type="button"
-				onclick={() => offlineSaves.flush()}
-				disabled={offlineSaves.flushing}
-				class="inline-flex items-center gap-1.5 rounded-control border px-2 py-1 text-xs disabled:opacity-60"
-				style="border-color: var(--color-border)"
-			>
-				<RefreshCw size={12} aria-hidden="true" />
+			<Button size="sm" icon={RefreshCw} loading={offlineSaves.flushing} onclick={() => offlineSaves.flush()}>
 				{offlineSaves.flushing ? 'Sending…' : 'Send now'}
-			</button>
+			</Button>
 		{/if}
 	</div>
 

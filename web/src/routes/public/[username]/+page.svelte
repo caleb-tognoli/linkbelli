@@ -7,6 +7,7 @@
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import { page } from '$app/state';
 	import { api } from '$lib/api/client';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { Rss } from '@lucide/svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
 	import type { PageData } from './$types';
@@ -112,18 +113,15 @@
 		{#if data.isLoggedIn && !data.isSelf}
 			<!-- Following a person covers playlists they have not made yet, which is the whole
 			     difference from following each of their lists by hand. -->
-			<button
-				type="button"
+			<Button
+				icon={Rss}
+				loading={busy}
 				onclick={toggleFollow}
-				disabled={busy}
-				class="inline-flex shrink-0 items-center gap-2 rounded-control border px-3 py-2 text-sm disabled:opacity-60"
-				style="border-color: {followedByMe ? 'var(--color-accent)' : 'var(--color-border)'};
-				       color: {followedByMe ? 'var(--color-accent)' : 'inherit'}"
 				aria-pressed={followedByMe}
+				class={followedByMe ? 'border-accent text-accent' : ''}
 			>
-				<Rss size={15} aria-hidden="true" />
 				{followedByMe ? 'Following' : 'Follow'}
-			</button>
+			</Button>
 		{/if}
 	</header>
 

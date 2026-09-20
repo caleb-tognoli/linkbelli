@@ -546,49 +546,33 @@
 		</p>
 
 		<div class="mt-3 flex flex-wrap items-center gap-2">
-			<button
-				type="button"
+			<Button
+				size="sm"
+				icon={Settings2}
 				onclick={() => (showSettings = !showSettings)}
-				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-sm"
-				style="border-color: var(--color-border)"
 				aria-expanded={showSettings}
 			>
-				<Settings2 size={14} aria-hidden="true" /> Text settings
-			</button>
+				Text settings
+			</Button>
 
-			<button
-				type="button"
-				onclick={markFinished}
-				disabled={finished}
-				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-sm disabled:opacity-60"
-				style="border-color: var(--color-border)"
-				title="Mark done (e)"
-			>
-				<Check size={14} aria-hidden="true" />
+			<Button size="sm" icon={Check} onclick={markFinished} disabled={finished} title="Mark done (e)">
 				{finished ? 'Done' : 'Mark done'}
-			</button>
+			</Button>
 
 			{#if data.previous}
-				<button
-					type="button"
+				<Button
+					size="sm"
+					icon={ChevronLeft}
 					onclick={() => open(data.previous!.linkId)}
-					class="inline-flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-sm"
-					style="border-color: var(--color-border)"
 					title="Previous in this playlist (p)"
 				>
-					<ChevronLeft size={14} aria-hidden="true" /> Previous
-				</button>
+					Previous
+				</Button>
 			{/if}
 			{#if data.next}
-				<button
-					type="button"
-					onclick={() => open(data.next!.linkId)}
-					class="inline-flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-sm"
-					style="border-color: var(--color-border)"
-					title="Next in this playlist (n)"
-				>
-					Next <ChevronRight size={14} aria-hidden="true" />
-				</button>
+				<Button size="sm" onclick={() => open(data.next!.linkId)} title="Next in this playlist (n)">
+					Next <ChevronRight size={15} aria-hidden="true" />
+				</Button>
 			{/if}
 		</div>
 

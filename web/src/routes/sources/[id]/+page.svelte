@@ -14,7 +14,7 @@
 	import { page as routePage } from '$app/state';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { Play, RotateCcw, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe, LoaderCircle } from '@lucide/svelte';
+	import { Bell, BellOff, Play, RotateCcw, ChevronRight, Copy, Plus, Unlink, Lock, EyeOff, Globe, LoaderCircle } from '@lucide/svelte';
 
 	const visIcons = { Private: Lock, Unlisted: EyeOff, Public: Globe } as const;
 	import SourceForm from '$lib/components/SourceForm.svelte';
@@ -354,15 +354,13 @@
 						: 'This one will not be mentioned in the weekly summary or badged here, however long it goes without finding anything.'}
 				</p>
 			</div>
-			<button
-				type="button"
+			<Button
+				icon={data.source.muteQuietAlerts ? Bell : BellOff}
+				loading={mutingQuiet}
 				onclick={toggleQuietAlerts}
-				disabled={mutingQuiet}
-				class="shrink-0 rounded-control border px-3 py-2 text-sm disabled:opacity-60"
-				style="border-color: var(--color-border)"
 			>
 				{data.source.muteQuietAlerts ? 'Tell me about quiet weeks' : 'Mute quiet-week alerts'}
-			</button>
+			</Button>
 		</div>
 	{/if}
 

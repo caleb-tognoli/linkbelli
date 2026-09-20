@@ -9,7 +9,8 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
-	import { AlertCircle, ExternalLink } from '@lucide/svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import { AlertCircle, ExternalLink, EyeOff, X } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import AdminUsersPanel from '$lib/components/AdminUsersPanel.svelte';
 	import type { PageData } from './$types';
@@ -203,22 +204,20 @@
 
 					{#if report.status === 'Open'}
 						<div class="mt-2 flex flex-wrap items-center gap-2">
-							<button
-								type="button"
-								onclick={() => resolve(report.id, { dismiss: true })}
-								disabled={busy === report.id}
-								class="rounded-control border px-2.5 py-1 text-xs disabled:opacity-60"
-								style="border-color: var(--color-border)"
-							>Dismiss report</button>
+							<Button size="sm" icon={X} disabled={busy === report.id} onclick={() => resolve(report.id, { dismiss: true })}>
+								Dismiss report
+							</Button>
 							<!-- Private, not deleted: the owner keeps their work, and it stops being
 							     published. Deleting a collection over a report is not recoverable. -->
-							<button
-								type="button"
-								onclick={() => resolve(report.id, { takeDown: true })}
+							<Button
+								variant="danger-outline"
+								size="sm"
+								icon={EyeOff}
 								disabled={busy === report.id}
-								class="rounded-control border px-2.5 py-1 text-xs disabled:opacity-60"
-								style="border-color: var(--color-danger); color: var(--color-danger)"
-							>Take it down</button>
+								onclick={() => resolve(report.id, { takeDown: true })}
+							>
+								Take it down
+							</Button>
 						</div>
 					{:else}
 						<p class="mt-1 text-xs" style="color: var(--color-muted)">

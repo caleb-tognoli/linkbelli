@@ -1,5 +1,7 @@
 <script lang="ts">
 	import SkeletonRows from '$lib/components/ui/SkeletonRows.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import { Mail } from '@lucide/svelte';
 	import { api, json } from '$lib/api/client';
 	import Switch from '$lib/components/Switch.svelte';
 	import type { NotificationPrefs as Prefs } from '$lib/notifications';
@@ -127,15 +129,16 @@
 			{#if resent}
 				<p class="mt-2" style="color: var(--color-muted)">Another one is on its way.</p>
 			{:else}
-				<button
-					type="button"
+				<Button
+					size="sm"
+					icon={Mail}
+					class="mt-2"
+					loading={resending}
+					disabled={!email}
 					onclick={resendConfirmation}
-					disabled={resending || !email}
-					class="mt-2 rounded-control border px-2.5 py-1.5 text-sm disabled:opacity-60"
-					style="border-color: var(--color-border)"
 				>
 					{resending ? 'Sending…' : 'Send another link'}
-				</button>
+				</Button>
 			{/if}
 		</div>
 	{/if}

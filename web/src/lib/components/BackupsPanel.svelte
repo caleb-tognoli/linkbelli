@@ -12,7 +12,7 @@
 		type Backup,
 		type RestorePlan
 	} from '$lib/backups';
-	import { Download, RotateCcw, Trash2, Upload, X } from '@lucide/svelte';
+	import { DatabaseBackup, Download, RotateCcw, Trash2, Upload, X } from '@lucide/svelte';
 
 	let {
 		enabled: initialEnabled = true,
@@ -270,27 +270,14 @@
 	</label>
 
 	<div class="mt-4 flex flex-wrap items-center gap-3">
-		<button
-			type="button"
-			onclick={backUpNow}
-			disabled={working}
-			class="rounded-control border px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
-			style="border-color: var(--color-border)"
-		>
+		<Button icon={DatabaseBackup} loading={working} onclick={backUpNow}>
 			{working ? 'Backing up…' : 'Back up now'}
-		</button>
+		</Button>
 		<!-- The way back for somebody whose account is gone: they still have the file they
 		     downloaded, and nothing here is keyed to the server that wrote it. -->
-		<button
-			type="button"
-			onclick={() => picker?.click()}
-			disabled={working}
-			class="flex items-center gap-2 rounded-control border px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
-			style="border-color: var(--color-border)"
-		>
-			<Upload size={15} aria-hidden="true" />
+		<Button icon={Upload} disabled={working} onclick={() => picker?.click()}>
 			Restore from a file
-		</button>
+		</Button>
 		<input
 			bind:this={picker}
 			type="file"

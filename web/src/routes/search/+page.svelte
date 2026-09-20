@@ -418,11 +418,11 @@
 	{#if data.hosts.length > 1 && !data.host}
 		<div class="mt-3 flex flex-wrap gap-1.5">
 			{#each data.hosts.slice(0, 8) as facet (facet.hostname)}
+				<!-- Another way to narrow the same list, so it wears the same chip as the filters. -->
 				<button
 					type="button"
 					onclick={() => navigate({ host: facet.hostname })}
-					class="rounded-control border px-2 py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
-					style="border-color: var(--color-border); color: var(--color-muted)"
+					class={filterChipClass(false)}
 				>
 					{facet.hostname}
 					<span class="tabular-nums opacity-60">{facet.itemCount}</span>
@@ -442,13 +442,7 @@
 					: 'Type above, or pick a site to browse what you saved from it.'}
 			</p>
 			{#if hasFilters}
-				<a
-					href="/search"
-					class="mt-4 inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-					style="border-color: var(--color-border)"
-				>
-					<X size={14} aria-hidden="true" /> Clear filters
-				</a>
+				<Button href="/search" icon={X} class="mt-4">Clear filters</Button>
 			{/if}
 		</div>
 	{:else}

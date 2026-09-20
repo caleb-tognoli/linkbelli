@@ -2,6 +2,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import { api, json } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { Search, ShieldCheck, ShieldOff, UserCheck, UserX } from '@lucide/svelte';
 	import type { AdminUser } from '$lib/types';
 
@@ -112,12 +113,9 @@
 		placeholder="Find an account by name or address"
 		aria-label="Find an account"
 	/>
-	<button
-		type="submit"
-		disabled={searching}
-		class="rounded-control border px-3 py-2 text-sm disabled:opacity-60"
-		style="border-color: var(--color-border)"
-	>{searching ? 'Looking…' : 'Search'}</button>
+	<Button type="submit" icon={Search} loading={searching}>
+		{searching ? 'Looking…' : 'Search'}
+	</Button>
 </form>
 
 {#if error}
