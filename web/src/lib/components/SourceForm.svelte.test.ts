@@ -5,7 +5,7 @@ import { fakeApi, json } from '$lib/testing/fakeApi';
 import type { Source } from '$lib/types';
 import SourceForm from './SourceForm.svelte';
 
-const navigation = vi.hoisted(() => ({ goto: vi.fn(), invalidateAll: vi.fn() }));
+const navigation = vi.hoisted(() => ({ goto: vi.fn(), invalidateAll: vi.fn(), beforeNavigate: vi.fn() }));
 vi.mock('$app/navigation', () => navigation);
 
 const confirmDialog = vi.hoisted(() => vi.fn<(message: string) => Promise<boolean>>());
@@ -83,16 +83,30 @@ describe('SourceForm — creating', () => {
 		render(SourceForm, { mode: 'create' });
 
 		await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'Broken');
+		await userEvent.type(screen.getByRole('textbox', { name: /Feed URL/ }), 'https://example.com/feed.xml');
 		await userEvent.click(screen.getByRole('button', { name: 'Create' }));
 
 		expect(screen.getByRole('alert')).toHaveTextContent('That is not a valid pattern: unterminated [ at 4.');
 		expect(navigation.goto).not.toHaveBeenCalled();
 	});
 
+	it('says which field is missing rather than sending the request', async () => {
+		const { calls } = fakeApi({ 'POST /sources': json({}) });
+		render(SourceForm, { mode: 'create' });
+
+		await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'No address');
+		await userEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+		expect(screen.getByRole('alert')).toHaveTextContent('Feed URL is needed.');
+		expect(calls.filter((c) => c.method === 'POST')).toEqual([]);
+	});
+
 	it('names the quota when that is what stopped it', async () => {
 		fakeApi({ 'POST /sources': json({}, 429) });
 		render(SourceForm, { mode: 'create' });
 
+		await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'Another');
+		await userEvent.type(screen.getByRole('textbox', { name: /Feed URL/ }), 'https://example.com/feed.xml');
 		await userEvent.click(screen.getByRole('button', { name: 'Create' }));
 
 		expect(screen.getByRole('alert')).toHaveTextContent('You have reached your source quota.');

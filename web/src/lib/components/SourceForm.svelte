@@ -9,7 +9,8 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { beforeNavigate, goto, invalidateAll } from '$app/navigation';
+	import { untrack } from 'svelte';
 	import { api } from '$lib/api/client';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { X, Plus, Save, Lock, Globe, Trash2, ChevronRight, ChevronDown } from '@lucide/svelte';
@@ -133,6 +134,48 @@
 
 	let filtersOpen = $state(hasFilter(source?.filter));
 
+	/**
+	 * Which field a complaint belongs to.
+	 *
+	 * Every refusal used to land in one line beside the Save button — "Could not save — check the
+	 * name and config" — however specific the server had been about which field it meant.
+	 */
+	let fieldErrors = $state<Record<string, string>>({});
+
+	/** Everything typed, as one comparable value, so leaving with unsaved edits can be noticed. */
+	const snapshot = $derived(
+		JSON.stringify({ name, type, values, headers, schedule, visibility, status, filter, authMode })
+	);
+	// What it looked like when it was last in step with the server: at first load, and again
+	// after every successful save.
+	let baseline = $state(untrack(() => snapshot));
+	const dirty = $derived(snapshot !== baseline);
+	// Set while this form is the one navigating, so its own redirect after Create is not treated
+	// as somebody walking away from unsaved work.
+	let leaving = $state(false);
+
+	// The edits are in the browser and nowhere else. Cancelling a `leave` hands it to the
+	// browser's own "leave site?" dialog, which is the only thing that can stop a tab closing.
+	beforeNavigate((nav) => {
+		if (!dirty || leaving || busy) return;
+		if (nav.type === 'leave') {
+			nav.cancel();
+			return;
+		}
+		const to = nav.to?.url;
+		if (!to) return;
+		nav.cancel();
+		void confirmDialog('Leave without saving?', {
+			description: 'The changes to this source have not been saved.',
+			danger: true,
+			confirmLabel: 'Leave'
+		}).then((ok) => {
+			if (!ok) return;
+			leaving = true;
+			void goto(to);
+		});
+	});
+
 	// Built here rather than server-side: the origin someone is looking at is the one that will
 	// actually reach this instance.
 	const webhookUrl = $derived(
@@ -166,7 +209,7 @@
 			previewError =
 				res.status === 429
 					? 'Too many previews just now — try again in a moment.'
-					: ((await problem(res)) ?? 'Could not read that source.');
+					: (firstComplaint(await problem(res)) ?? 'Could not read that source.');
 			// Remembered even on failure, so a broken config is not retried on every keystroke.
 			lastPreviewed = key;
 		} catch {
@@ -281,7 +324,28 @@
 		return cfg;
 	}
 
-	async function save() {
+	/** The required fields of the current type that were left empty. */
+	function missingFields(): Record<string, string> {
+		const missing: Record<string, string> = {};
+		if (!name.trim()) missing.name = 'Give this source a name.';
+		for (const f of FIELDS[type]) {
+			if (f.required && !values[f.key]?.trim()) missing[f.key] = `${f.label} is needed.`;
+		}
+		return missing;
+	}
+
+	async function save(event?: SubmitEvent) {
+		event?.preventDefault();
+
+		fieldErrors = missingFields();
+		if (Object.keys(fieldErrors).length > 0) {
+			error = null;
+			// Straight to the first thing to fix, rather than leaving it to be hunted for.
+			const first = Object.keys(fieldErrors)[0];
+			document.getElementById(fieldId(first))?.focus();
+			return;
+		}
+
 		// Warn before dropping other users' subscriptions.
 		if (mode === 'edit' && source!.visibility === 'Shared' && visibility === 'Private') {
 			const ok = await confirmDialog(
@@ -302,14 +366,27 @@
 				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility, status, filter: filterBody });
 			}
 			if (!res.ok) {
+				if (res.status === 429) {
+					error = 'You have reached your source quota.';
+					return;
+				}
+				const complaint = await problem(res);
+				// Named fields go under the field; anything else stays beside the button.
+				fieldErrors = complaint.byField;
 				error =
-					res.status === 429
-						? 'You have reached your source quota.'
-						: ((await problem(res)) ?? 'Could not save — check the name and config.');
+					Object.keys(complaint.byField).length > 0
+						? null
+						: (complaint.message ?? 'Could not save — check the name and config.');
+				if (Object.keys(complaint.byField).length > 0) {
+					document.getElementById(fieldId(Object.keys(complaint.byField)[0]))?.focus();
+				}
 				return;
 			}
+			fieldErrors = {};
+			baseline = snapshot;
 			if (mode === 'create') {
 				const created = (await res.json()) as Source;
+				leaving = true;
 				await goto(`/sources/${created.id}`);
 			} else {
 				await invalidateAll();
@@ -320,29 +397,63 @@
 		}
 	}
 
+	/** A complaint in one line, for the preview panel, which has no fields to hang them on. */
+	function firstComplaint(complaint: { byField: Record<string, string>; message: string | null }): string | null {
+		return complaint.message ?? Object.values(complaint.byField)[0] ?? null;
+	}
+
+	/** The id of a field's input, so a complaint about it can put the cursor there. */
+	function fieldId(key: string): string {
+		return key === 'name' ? `${uid}-name` : `${uid}-cfg-${key}`;
+	}
+
 	/**
-	 * The server's own words, when it has any. A rejected pattern is worth quoting verbatim —
-	 * "Could not save" tells someone nothing about which bracket they left open.
+	 * The server's own words, when it has any, against the fields they are about.
+	 *
+	 * A rejected pattern is worth quoting verbatim — "Could not save" tells someone nothing about
+	 * which bracket they left open — and ProblemDetails already says which key it means, which
+	 * this page used to throw away.
 	 */
-	async function problem(res: Response): Promise<string | null> {
+	async function problem(res: Response): Promise<{ byField: Record<string, string>; message: string | null }> {
 		try {
 			const body = (await res.json()) as { errors?: Record<string, string[]>; detail?: string };
-			const first = Object.values(body.errors ?? {})[0]?.[0];
-			return first ?? body.detail ?? null;
+			const byField: Record<string, string> = {};
+			const known = ['name', ...FIELDS[type].map((f) => f.key), ...AUTH_FIELDS.map((f) => f.key)];
+			let message: string | null = null;
+			for (const [key, messages] of Object.entries(body.errors ?? {})) {
+				// "Config.feedUrl" and "feedUrl" both mean the feed URL box.
+				const tail = key.split('.').slice(-1)[0];
+				const match = known.find((k) => k.split('.').slice(-1)[0].toLowerCase() === tail.toLowerCase());
+				if (match) byField[match] = messages[0];
+				else message ??= messages[0];
+			}
+			return { byField, message: message ?? body.detail ?? null };
 		} catch {
-			return null;
+			return { byField: {}, message: null };
 		}
 	}
 
 </script>
 
-<div class="flex flex-col gap-4">
+<!-- A real form, so Enter in a text box saves; it was a div, and Enter did nothing. `novalidate`
+     because the missing fields are said in the page, under the field, in the same voice as the
+     rest — not in a browser bubble that disappears on the next click. -->
+<form class="flex flex-col gap-4" novalidate onsubmit={save}>
 	<div class="flex flex-col gap-1 text-sm">
 		<!-- A label rather than a caption: the field used to have no name of its own, so a screen
 		     reader announced it as nothing more than "edit text". -->
-		<label for="{uid}-name">Name</label>
+		<label for="{uid}-name">
+			Name <span aria-hidden="true" class="text-danger">*</span>
+		</label>
 		<div class="flex items-center gap-2">
-			<Input id="{uid}-name" bind:value={name} class="flex-1" />
+			<Input
+				id="{uid}-name"
+				bind:value={name}
+				required
+				invalid={!!fieldErrors.name}
+				aria-describedby={fieldErrors.name ? `${uid}-name-error` : undefined}
+				class="flex-1"
+			/>
 			<Menu
 				triggerClass={buttonClass('secondary', 'md', false, 'shrink-0')}
 				title="Change visibility"
@@ -365,6 +476,9 @@
 				/>
 			</Menu>
 		</div>
+		{#if fieldErrors.name}
+			<p id="{uid}-name-error" class="text-xs text-danger" role="alert">{fieldErrors.name}</p>
+		{/if}
 	</div>
 
 	<div class="flex flex-wrap items-end gap-8">
@@ -459,10 +573,25 @@
 				{/if}
 
 				{#each FIELDS[type].filter(f => !SCRAPER_LINK_FIELDS.includes(f.key as typeof SCRAPER_LINK_FIELDS[number])) as f (f.key)}
-					<label class="flex flex-col gap-1 text-sm">
-						<span>{f.label}{#if !f.required && !f.hideOptional}<span style="color: var(--color-muted)"> (optional)</span>{/if}</span>
-						<Input bind:value={values[f.key]} type={f.inputType ?? 'text'} placeholder={f.placeholder ?? ''} />
-					</label>
+					<Field
+						label={f.label}
+						id={fieldId(f.key)}
+						required={f.required}
+						optional={!f.required && !f.hideOptional}
+						error={fieldErrors[f.key] ?? null}
+					>
+						{#snippet children(c)}
+							<Input
+								id={c.id}
+								bind:value={values[f.key]}
+								type={f.inputType ?? 'text'}
+								placeholder={f.placeholder ?? ''}
+								required={f.required}
+								invalid={c.invalid}
+								aria-describedby={c.describedby}
+							/>
+						{/snippet}
+					</Field>
 				{/each}
 
 				{#if type === 'Scraper'}
@@ -714,7 +843,7 @@
 	</fieldset>
 
 	<div class="flex items-center gap-3">
-		<Button variant="primary" icon={Save} onclick={save} loading={busy}>
+		<Button type="submit" variant="primary" icon={Save} loading={busy}>
 			{mode === 'create' ? 'Create' : 'Save'}
 		</Button>
 		{#if ondelete}
@@ -726,4 +855,4 @@
 			<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 		{/if}
 	</div>
-</div>
+</form>
