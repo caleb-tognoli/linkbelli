@@ -82,3 +82,12 @@ public record RestorePlan(
 
 /// <summary>Restore from a file rather than a stored snapshot.</summary>
 public record RestoreFromFileRequest(string Json, bool DryRun = false);
+
+/// <summary>
+/// Changes the password of the account making the request.
+/// </summary>
+/// <remarks>
+/// The current password is required. A bearer token is proof that a session exists, not proof
+/// that the person at the keyboard owns it — an unlocked laptop is the case this is for.
+/// </remarks>
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

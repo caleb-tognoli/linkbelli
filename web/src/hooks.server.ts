@@ -4,7 +4,16 @@ import { ACCESS_COOKIE, REFRESH_COOKIE, clearTokens, setTokens } from '$lib/serv
 import { fetchWithDeadline, newTraceparent, UPSTREAM_DEADLINE_MS } from '$lib/server/upstream';
 
 // Auth pages: redirect already-signed-in users away from these.
-const AUTH_PAGES = ['/login', '/register', '/forgot-password', '/reset-password'];
+const AUTH_PAGES = ['/login', '/register'];
+
+/**
+ * Password pages, which belong to whoever holds the link.
+ *
+ * They were in AUTH_PAGES, so a signed-in visitor clicking a reset link in their own inbox was
+ * bounced to the home page and could not finish. Settings can change a password without any of
+ * this; these are for the case where the old one is gone.
+ */
+const PASSWORD_PAGES = ['/forgot-password', '/reset-password'];
 
 /**
  * Landing pages for a link in an email.
@@ -109,6 +118,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		pathname === '/' ||
 		CRAWLER_FILES.includes(pathname) ||
 		isAuthPage ||
+		PASSWORD_PAGES.includes(pathname) ||
 		MAIL_LANDINGS.includes(pathname) ||
 		ANON_PREFIXES.some((p) => startsWithSegment(pathname, p));
 

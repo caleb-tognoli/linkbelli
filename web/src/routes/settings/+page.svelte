@@ -10,6 +10,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
+	import ChangePasswordForm from '$lib/components/ChangePasswordForm.svelte';
 	import BackupsPanel from '$lib/components/BackupsPanel.svelte';
 	import NotificationsPanel from '$lib/components/NotificationsPanel.svelte';
 	import WebhooksPanel from '$lib/components/WebhooksPanel.svelte';
@@ -195,6 +196,8 @@
 						<dd class="[overflow-wrap:anywhere]">{data.user.email ?? '—'}</dd>
 					</dl>
 				{/if}
+
+				<ChangePasswordForm />
 			</section>
 
 			<section id="appearance" aria-labelledby="appearance-heading" class="flex scroll-mt-20 flex-col gap-8 md:scroll-mt-8">

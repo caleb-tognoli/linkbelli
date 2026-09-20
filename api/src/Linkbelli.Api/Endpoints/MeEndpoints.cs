@@ -5,6 +5,7 @@ using Linkbelli.Application.Identity;
 using Linkbelli.Application.Services;
 using Linkbelli.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
 namespace Linkbelli.Api.Endpoints;
@@ -72,6 +73,71 @@ public static class MeEndpoints
         .RequireAuthorization(secured)
         .RequireRateLimiting("sensitive")
         .WithName("DeleteMyAccount");
+
+        // Signed in, there was no way to change a password: the only route was the signed-out
+        // reset flow, which this app redirected a signed-in visitor away from. Bearer only —
+        // an API key is for programs, and a program has no business changing the password that
+        // would revoke it.
+        app.MapPost("/me/password", async (
+            ChangePasswordRequest request,
+            ClaimsPrincipal user,
+            UserManager<ApplicationUser> users,
+            IAuditLog audit,
+            CancellationToken ct) =>
+        {
+            var errors = new Dictionary<string, string[]>();
+            if (string.IsNullOrEmpty(request.CurrentPassword))
+            {
+                errors["currentPassword"] = ["Your current password is required."];
+            }
+
+            if (string.IsNullOrEmpty(request.NewPassword))
+            {
+                errors["newPassword"] = ["A new password is required."];
+            }
+
+            if (errors.Count > 0)
+            {
+                return Results.ValidationProblem(errors);
+            }
+
+            var account = await users.FindByIdAsync(user.GetUserId().ToString());
+            if (account is null)
+            {
+                return Results.NotFound();
+            }
+
+            var result = await users.ChangePasswordAsync(
+                account, request.CurrentPassword, request.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                // Told apart deliberately: "that is not your password" and "that password is not
+                // allowed" are different problems with different fixes, and one message for both
+                // leaves somebody retyping a password that was right.
+                var wrong = result.Errors.Any(e => e.Code == "PasswordMismatch");
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    [wrong ? "currentPassword" : "newPassword"] = wrong
+                        ? ["That password is not right."]
+                        : result.Errors.Select(e => e.Description).ToArray(),
+                });
+            }
+
+            // ChangePasswordAsync rolls the security stamp, so refresh tokens minted for other
+            // sessions stop working. Access tokens already issued live out their short lives.
+            await audit.RecordAsync(
+                account.Id, "user.password_changed", "User", account.Id,
+                summary: "Changed their own password", ct: ct);
+
+            return Results.NoContent();
+        })
+        .RequireAuthorization(new AuthorizeAttribute
+        {
+            AuthenticationSchemes = IdentityConstants.BearerScheme,
+        })
+        .RequireRateLimiting("sensitive")
+        .WithName("ChangeMyPassword");
 
         app.MapGet("/me/quota", async (ClaimsPrincipal user, IUserQuotaService quotas, CancellationToken ct) =>
             Results.Ok(await quotas.GetStatusAsync(user.GetUserId(), ct)))
