@@ -339,9 +339,9 @@
 					<Menu size={23} aria-hidden="true" />
 				</Dialog.Trigger>
 				<Dialog.Portal>
-					<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
+					<Dialog.Overlay class="anim-fade fixed inset-0 z-40 bg-black/40" />
 					<Dialog.Content
-						class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 border-r p-4"
+						class="anim-slide-left fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 border-r p-4"
 						style="border-color: var(--color-border); background: var(--color-surface)"
 					>
 						<div class="flex items-center justify-between gap-2 px-2 pb-4">
