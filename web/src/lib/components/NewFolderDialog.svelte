@@ -53,7 +53,7 @@
 	{/snippet}
 
 	<form class="flex flex-col gap-3" onsubmit={create}>
-		<Field label="Name">
+		<Field label="Name" required>
 			{#snippet children(f)}
 				<!-- svelte-ignore a11y_autofocus -- a dialog whose only field is this one -->
 				<Input id={f.id} bind:value={name} required autofocus aria-describedby={f.describedby} />

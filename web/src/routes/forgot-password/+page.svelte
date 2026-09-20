@@ -46,7 +46,7 @@
 				};
 			}}
 		>
-			<Field label="Username or email">
+			<Field label="Username or email" required>
 				{#snippet children(f)}
 					<!-- svelte-ignore a11y_autofocus -- the first field of the form this page exists for -->
 					<Input

@@ -7,6 +7,7 @@
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { Upload, CheckCircle } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
@@ -86,30 +87,33 @@
 				</p>
 			{/if}
 
-			<!-- File upload -->
-			<div class="space-y-1.5">
-				<label for="file" class="block text-sm font-medium">File</label>
-				<input
-					id="file"
-					name="file"
-					type="file"
-					accept=".csv,.html,.htm,.txt,text/csv,text/html,text/plain"
-					required
-					aria-describedby="file-hint"
-					class="block w-full rounded-control border border-border-strong bg-bg px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-control file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
-				/>
-				<p id="file-hint" class="text-xs text-muted">
-					A browser's bookmark export (<code>.html</code>), a plain list of addresses, one per
-					line, or a CSV with a <code>url</code> column and an optional <code>note</code>.
-					<a href="/import/sample.csv" download class="underline underline-offset-2 text-accent">
-						Download a sample CSV
-					</a>.
-				</p>
-			</div>
+			<Field
+				label="File"
+				required
+				hint="A browser's bookmark export (.html), a plain list of addresses, one per line, or a CSV with a url column and an optional note."
+			>
+				{#snippet children(f)}
+					<input
+						id={f.id}
+						name="file"
+						type="file"
+						accept=".csv,.html,.htm,.txt,text/csv,text/html,text/plain"
+						required
+						aria-describedby={f.describedby}
+						class="block w-full rounded-control border border-border-strong bg-bg px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-control file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
+					/>
+				{/snippet}
+			</Field>
+			<p class="-mt-5 text-xs text-muted">
+				<a href="/import/sample.csv" download class="text-accent underline underline-offset-2">
+					Download a sample CSV
+				</a>
+			</p>
 
-			<!-- Destination -->
-			<div class="space-y-3">
-				<p class="text-sm font-medium">Add to</p>
+			<!-- A fieldset, so the choice and the field it reveals are one thing rather than a
+			     paragraph that happens to sit above them. -->
+			<fieldset class="space-y-3">
+				<legend class="text-sm font-medium">Add to</legend>
 
 				<input type="hidden" name="destination" value={destination} />
 				<SegmentedControl
@@ -134,26 +138,37 @@
 						{#if data.playlists.length === 0}
 							<p class="text-sm" style="color: var(--color-muted)">You don't have any playlists yet.</p>
 						{:else}
-							<Select name="playlistId" aria-label="Playlist to import into">
-								{#each data.playlists as pl (pl.id)}
-									<option value={pl.id}>{pl.name}</option>
-								{/each}
-							</Select>
+							<Field label="Playlist to import into" hideLabel>
+								{#snippet children(f)}
+									<Select id={f.id} name="playlistId" aria-describedby={f.describedby}>
+										{#each data.playlists as pl (pl.id)}
+											<option value={pl.id}>{pl.name}</option>
+										{/each}
+									</Select>
+								{/snippet}
+							</Field>
 						{/if}
 					</div>
 				{/if}
 
 				{#if destination === 'new'}
-					<div>
-						<Input
-							name="newPlaylistName"
-							type="text"
-							placeholder="Playlist name"
-							aria-label="Name of the new playlist"
-						/>
-					</div>
+					<!-- A label rather than a placeholder, which goes the moment anybody types into
+					     it — and required, since choosing "New playlist" and leaving it empty was
+					     something only the server found out about. -->
+					<Field label="Name of the new playlist" required>
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								name="newPlaylistName"
+								type="text"
+								placeholder="Reading queue"
+								required
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 				{/if}
-			</div>
+			</fieldset>
 
 			<Button
 				type="submit"

@@ -77,7 +77,7 @@
 				}}
 			>
 				{#if !data.email}
-					<Field label="Your email address">
+					<Field label="Your email address" required>
 						{#snippet children(f)}
 							<!-- svelte-ignore a11y_autofocus -- the one field on a page that is otherwise a dead end -->
 							<Input

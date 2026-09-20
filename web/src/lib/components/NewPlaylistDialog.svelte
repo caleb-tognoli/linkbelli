@@ -106,7 +106,7 @@
 </script>
 
 {#snippet fields(values: CreateForm)}
-	<Field label="Name">
+	<Field label="Name" required>
 		{#snippet children(f)}
 			<!-- svelte-ignore a11y_autofocus -- a dialog opened to be typed into -->
 			<Input id={f.id} name="name" required autofocus value={values?.name ?? ''} aria-describedby={f.describedby} />
