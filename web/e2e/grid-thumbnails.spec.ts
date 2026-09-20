@@ -36,7 +36,8 @@ test('every thumbnail in a twenty-item grid is served, not just the first few', 
 	});
 
 	await page.goto(`/playlists/${playlist.id}`);
-	await page.getByRole('button', { name: 'Grid view' }).click();
+	// The layout switch is a radio group, so the segments answer to radio rather than button.
+	await page.getByRole('radio', { name: 'Grid view' }).click();
 
 	// The images load lazily, as they should: brought into view one by one, the way somebody
 	// scrolling down the grid would, rather than the grid being made to fetch what is off screen.

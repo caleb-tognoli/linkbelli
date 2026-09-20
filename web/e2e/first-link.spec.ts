@@ -13,12 +13,15 @@ test('a new account makes a playlist, pastes a link and sees it filled in', asyn
 	await page.goto('/register');
 	await page.getByLabel('Username').fill(username);
 	await page.getByLabel('Email').fill(`${username}@example.com`);
-	await page.getByLabel('Password').fill(PASSWORD);
+	// By role: the "Show password" button's name contains Password too.
+	await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
 	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page).not.toHaveURL(/\/register/);
 
 	await page.goto('/playlists');
-	await page.getByRole('button', { name: 'New playlist' }).click();
+	// The page offers this twice on an empty library — in the header and in the empty state — and
+	// either will do.
+	await page.getByRole('button', { name: 'New playlist' }).first().click();
 	const dialog = page.getByRole('dialog');
 	await dialog.getByLabel('Name').fill('Things to read');
 	await dialog.getByRole('button', { name: 'Create' }).click();

@@ -82,7 +82,9 @@ export async function items(account: Account, playlistId: string): Promise<{ lin
 export async function signIn(page: Page, account: Account): Promise<void> {
 	await page.goto('/login');
 	await page.getByRole('textbox', { name: /username or email/i }).fill(account.username);
-	await page.getByLabel('Password').fill(PASSWORD);
+	// By role: getByLabel matches a substring, and the field's own "Show password" button carries
+	// Password in its name as well, so the plain label locator finds two things.
+	await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
 	await page.getByRole('button', { name: /sign in/i }).click();
 	await expect(page).not.toHaveURL(/\/login/);
 }
