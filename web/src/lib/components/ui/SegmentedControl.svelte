@@ -1,5 +1,6 @@
 <script lang="ts" module>
 	import type { Component } from 'svelte';
+	import { CONTROL_HEIGHT } from './sizes';
 
 	export interface Segment<T extends string = string> {
 		value: T;
@@ -43,10 +44,13 @@
 	let group: HTMLElement | undefined = $state();
 
 	const isLinks = $derived(options.some((o) => o.href));
-	// min-h-6 even at the small size: a 22px-tall segment is under the 24px a target has to be.
-	const pad = $derived(
-		size === 'sm' ? 'min-h-6 px-2.5 py-1 text-xs' : 'min-h-8 px-3 py-1.5 text-sm'
-	);
+	// `md` takes the shared control height, so a segmented control in a filter row is exactly as
+	// tall as the buttons beside it — it used to be 36px against their 43. The height goes on the
+	// group and the segments fill it, so the group's own border does not add two pixels on top.
+	// `sm` stays at the chip scale, because that is what it sits among in the link table's filter
+	// bar; min-h-6 even there, since a 22px-tall segment is under the 24px a target has to be.
+	const box = $derived(size === 'sm' ? '' : CONTROL_HEIGHT.md);
+	const pad = $derived(size === 'sm' ? 'min-h-6 px-2.5 py-1 text-xs' : 'h-full px-3 text-sm');
 
 	function choose(next: T) {
 		if (next === value) return;
@@ -83,7 +87,7 @@
 {#if isLinks}
 	<nav
 		aria-label={label}
-		class="inline-flex max-w-full divide-x overflow-x-auto rounded-control border border-border {extra}"
+		class="inline-flex max-w-full divide-x overflow-x-auto rounded-control border border-border {box} {extra}"
 	>
 		{#each options as option (option.value)}
 			{@const active = option.value === value}
@@ -107,7 +111,7 @@
 		aria-label={label}
 		tabindex="-1"
 		{onkeydown}
-		class="inline-flex max-w-full divide-x overflow-x-auto rounded-control border border-border {extra}"
+		class="inline-flex max-w-full divide-x overflow-x-auto rounded-control border border-border {box} {extra}"
 	>
 		{#each options as option (option.value)}
 			{@const active = option.value === value}

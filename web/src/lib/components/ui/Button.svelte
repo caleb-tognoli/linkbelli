@@ -1,4 +1,6 @@
 <script lang="ts" module>
+	import { CONTROL_HEIGHT } from './sizes';
+
 	export type ButtonVariant =
 		| 'primary'
 		| 'secondary'
@@ -23,14 +25,14 @@
 	/**
 	 * One height per size, whatever is inside.
 	 *
-	 * In pixels rather than rem because the root size here is 18px: a toolbar of buttons — some
-	 * with labels, some icon-only, some with a label that hides itself on a phone — came out at
-	 * 26, 31 and 34 pixels tall side by side, which is what made the playlist header look like
-	 * three toolbars stacked.
+	 * It used to be a min-height, which the content always exceeded, so it never actually bound:
+	 * a labelled `sm` button measured 34px beside an icon-only one at 32, and `md` came out at 43
+	 * with a border and 41 without — so two Button variants side by side were different heights.
+	 * The height is now set, and comes from the shared scale every other control reads.
 	 */
 	const SIZES: Record<ButtonSize, { text: string; icon: string; px: number }> = {
-		md: { text: 'min-h-[38px] px-3 py-2 text-sm', icon: 'min-h-[38px] min-w-[38px] p-1.5', px: 17 },
-		sm: { text: 'min-h-[32px] px-2.5 py-1 text-sm', icon: 'min-h-[32px] min-w-[32px] p-1', px: 15 }
+		md: { text: `${CONTROL_HEIGHT.md} px-3 text-sm`, icon: `${CONTROL_HEIGHT.md} w-[42px]`, px: 17 },
+		sm: { text: `${CONTROL_HEIGHT.sm} px-2.5 text-sm`, icon: `${CONTROL_HEIGHT.sm} w-[34px]`, px: 15 }
 	};
 
 	/** The classes a Button renders with, for the rare trigger that has to be another element. */

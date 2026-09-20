@@ -24,6 +24,6 @@
 	bind:this={element}
 	bind:value
 	aria-invalid={invalid || undefined}
-	class={controlClass(size, invalid, `resize-y ${extra}`, width)}
+	class={controlClass(size, invalid, `resize-y ${extra}`, width, 'auto')}
 	{...rest}
 ></textarea>

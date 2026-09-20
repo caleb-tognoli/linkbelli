@@ -1,4 +1,6 @@
 <script lang="ts" module>
+	import { CONTROL_HEIGHT, type ControlSize } from './sizes';
+
 	/** How much room a control takes: the width of whatever holds it, or of its own contents. */
 	export type ControlWidth = 'full' | 'auto';
 
@@ -12,17 +14,22 @@
 	 * is how one select in a filter row came out 588px wide and wrapped the row onto three lines.
 	 */
 	export function controlClass(
-		size: 'sm' | 'md' = 'md',
+		size: ControlSize = 'md',
 		invalid = false,
 		extra = '',
-		width: ControlWidth = 'full'
+		width: ControlWidth = 'full',
+		/** `auto` for a textarea, which is as tall as its rows say. */
+		height: 'fixed' | 'auto' = 'fixed'
 	): string {
 		return [
 			'min-w-0 rounded-control border bg-bg text-sm text-text placeholder:text-muted',
 			width === 'full' ? 'w-full' : 'w-auto',
+			// One height with everything else in a row, rather than whatever padding and
+			// line-height happened to add up to.
+			height === 'fixed' ? CONTROL_HEIGHT[size] : size === 'sm' ? 'py-1.5' : 'py-2',
 			'focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-60',
 			invalid ? 'border-danger' : 'border-border-strong',
-			size === 'sm' ? 'px-2.5 py-1.5' : 'px-3 py-2',
+			size === 'sm' ? 'px-2.5' : 'px-3',
 			extra
 		]
 			.filter(Boolean)
