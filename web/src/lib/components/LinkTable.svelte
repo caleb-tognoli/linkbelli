@@ -1220,12 +1220,16 @@
 						</p>
 
 						{#if !readonly}
+							<!-- doneToggleLabel, like the row menu and the reader: this was the one
+							     place left saying "watched", which is an odd thing to say about a
+							     paper or a repository and is not what the same button says two
+							     views away. -->
 							<button
 								type="button"
 								onclick={() => toggleWatched(item)}
 								class="mt-1 w-full rounded-control border py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
 								style="border-color: var(--color-border); color: var(--color-muted)"
-							>{item.status === 'Watched' ? 'Mark unwatched' : 'Mark watched'}</button>
+							>{doneToggleLabel(item.status === 'Watched')}</button>
 						{/if}
 					</div>
 				</li>
