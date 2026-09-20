@@ -547,6 +547,16 @@
 		});
 	}
 
+	/**
+	 * How a link that is done is drawn, in both views.
+	 *
+	 * The row used to go to 45% opacity in the table and 50% in the grid, which took the muted
+	 * metadata under 2:1 — unreadable, and two different unreadables. The title goes muted, a
+	 * "Done" badge says so in words, and only the picture is faded. Shared so the two views
+	 * cannot drift apart again.
+	 */
+	const DONE_TITLE = 'color: var(--color-muted)';
+
 	/** Whether anything is selected: what brings the checkbox column back on a narrow screen. */
 	const selecting = $derived(selected.size > 0);
 
@@ -666,7 +676,7 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						class="break-words hover:underline"
-						style={item.status === 'Watched' ? 'color: var(--color-muted)' : ''}
+						style={item.status === 'Watched' ? DONE_TITLE : ''}
 					>
 						{showUrls ? item.link.url : (item.metadata?.title ?? item.link.title ?? item.link.url)}
 					</a>
@@ -1177,7 +1187,7 @@
 								src={`/api/v1/thumbnails/${item.link.id}`}
 								alt=""
 								class="aspect-video w-full object-cover"
-								style={item.status === 'Watched' ? 'opacity: 0.6' : ''}
+								class:opacity-60={item.status === 'Watched'}
 								loading="lazy"
 								onerror={() => thumbnailFailed.add(item.link.id)}
 							/>
@@ -1199,7 +1209,7 @@
 							target="_blank"
 							rel="noopener noreferrer"
 							class="line-clamp-2 text-sm font-medium hover:underline"
-							style={item.status === 'Watched' ? 'color: var(--color-muted)' : ''}
+							style={item.status === 'Watched' ? DONE_TITLE : ''}
 						>
 							{item.metadata?.title ?? item.link.title ?? item.link.url}
 						</a>
