@@ -15,7 +15,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
-	import { BookOpen, Check, Clock, Star, Trash2, Undo2 } from '@lucide/svelte';
+	import { BookOpen, Check, Clock, Link2, Star, Trash2, Undo2, Upload } from '@lucide/svelte';
 	import { PRESETS, PRESET_LABELS, backWhen, resolvePreset, type SnoozePreset } from '$lib/snooze';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import type { PageData } from './$types';
@@ -164,10 +164,22 @@
 
 	{#if queued.length === 0}
 		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
-			<p class="font-medium">Nothing waiting.</p>
-			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				Everything you have saved is marked done.
-			</p>
+			{#if data.hasSaved}
+				<p class="font-medium">Nothing waiting.</p>
+				<p class="mt-1 text-sm" style="color: var(--color-muted)">
+					Everything you have saved is marked done.
+				</p>
+			{:else}
+				<!-- An account with nothing in it is not caught up, it has not started. -->
+				<p class="font-medium">Nothing here yet.</p>
+				<p class="mt-1 text-sm" style="color: var(--color-muted)">
+					Anything you save turns up here until you mark it done.
+				</p>
+				<div class="mt-4 flex flex-wrap justify-center gap-2">
+					<Button href="/save" variant="primary" icon={Link2}>Save a link</Button>
+					<Button href="/import" icon={Upload}>Import a file</Button>
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<p class="mt-5 text-sm" style="color: var(--color-muted)">

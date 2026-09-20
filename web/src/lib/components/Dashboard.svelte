@@ -26,10 +26,29 @@
 		usage: Usage | null;
 		onboardingDismissed?: boolean;
 	} = $props();
+
+	/**
+	 * Whether anything has ever been saved here.
+	 *
+	 * Registration signs somebody in and drops them on this page, so the first sentence a new
+	 * account read was "Welcome back" — half a minute after it was made — over an Up next that
+	 * said everything they had saved was marked done, which was true only because they had saved
+	 * nothing. Both were written for the case that is common later, not the one that is certain
+	 * first.
+	 */
+	const isNew = $derived(!usage || usage.items + usage.pendingItems === 0);
 </script>
 
 <div class="flex flex-col gap-10">
-	<PageHeader title={username ? `Welcome back, ${username}` : 'Welcome back'}>
+	<PageHeader
+		title={isNew
+			? username
+				? `Welcome, ${username}`
+				: 'Welcome'
+			: username
+				? `Welcome back, ${username}`
+				: 'Welcome back'}
+	>
 		{#snippet actions()}
 			<Button href="/save" icon={Link2}>Save a link</Button>
 			<Button href="/playlists" variant="primary" icon={ListMusic}>Your playlists</Button>
@@ -63,7 +82,14 @@
 			{/if}
 		</div>
 		{#if upNext.items.length === 0}
-			<p class="mt-2 text-sm text-muted">Nothing waiting — everything you saved is marked done.</p>
+			<p class="mt-2 text-sm text-muted">
+				{#if isNew}
+					Nothing here yet. <a href="/save" class="text-accent underline underline-offset-2">Save a link</a>
+					and it turns up in Up next.
+				{:else}
+					Nothing waiting — everything you saved is marked done.
+				{/if}
+			</p>
 		{:else}
 			<ul class="mt-3 flex flex-col divide-y rounded-card border border-border">
 				{#each upNext.items as hit (hit.itemId)}
