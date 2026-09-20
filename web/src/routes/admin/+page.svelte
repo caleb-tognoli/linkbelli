@@ -207,7 +207,7 @@
 								disabled={busy === report.id}
 								class="rounded-md border px-2.5 py-1 text-xs disabled:opacity-60"
 								style="border-color: var(--color-border)"
-							>Nothing wrong</button>
+							>Dismiss report</button>
 							<!-- Private, not deleted: the owner keeps their work, and it stops being
 							     published. Deleting a collection over a report is not recoverable. -->
 							<button

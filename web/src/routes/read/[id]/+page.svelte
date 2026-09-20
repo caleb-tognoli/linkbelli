@@ -524,7 +524,7 @@
 				style="border-color: var(--color-border)"
 				aria-expanded={showSettings}
 			>
-				<Settings2 size={14} aria-hidden="true" /> How it reads
+				<Settings2 size={14} aria-hidden="true" /> Text settings
 			</button>
 
 			<button

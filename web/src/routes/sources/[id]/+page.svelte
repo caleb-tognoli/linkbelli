@@ -361,7 +361,7 @@
 				class="shrink-0 rounded-md border px-3 py-2 text-sm disabled:opacity-60"
 				style="border-color: var(--color-border)"
 			>
-				{data.source.muteQuietAlerts ? 'Tell me again' : 'It is meant to be quiet'}
+				{data.source.muteQuietAlerts ? 'Tell me about quiet weeks' : 'Mute quiet-week alerts'}
 			</button>
 		</div>
 	{/if}

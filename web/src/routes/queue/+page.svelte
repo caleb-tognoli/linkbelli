@@ -303,9 +303,9 @@
 	<div class="flex shrink-0 flex-wrap items-center gap-1 self-end sm:self-auto">
 		<!-- Five choices, not a date picker: "not now" is a feeling, and being made to pick a
 		     Tuesday to express it is why snooze buttons go unused. -->
-		<Menu triggerClass={buttonClass('secondary', 'sm')} title="Not now" align="end">
+		<Menu triggerClass={buttonClass('secondary', 'sm')} title="Put this aside until later" align="end">
 			{#snippet trigger()}
-				<Clock size={15} aria-hidden="true" /> Not now
+				<Clock size={15} aria-hidden="true" /> Snooze
 			{/snippet}
 			{#each PRESETS as preset (preset)}
 				<MenuItem onselect={() => snooze(hit, preset)}>{PRESET_LABELS[preset]}</MenuItem>

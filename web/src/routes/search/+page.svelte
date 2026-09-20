@@ -264,7 +264,7 @@
 
 	<details class="mt-2">
 		<summary class="cursor-pointer text-xs" style="color: var(--color-muted)">
-			Things you can type
+			Search syntax
 		</summary>
 		<!-- The same filters as the buttons below, typed. Which matters because a typed search is
 		     one you can put in a URL, send to somebody, or save as a sentence. -->
