@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Playlist, ImportResult } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
+import { parseRows } from '$lib/importFormats';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	// Load all the caller's playlists for the destination picker.
@@ -19,52 +20,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return { playlists };
 };
 
-// --- CSV parsing ---
-
-function parseLine(line: string): string[] {
-	const result: string[] = [];
-	let current = '';
-	let inQuotes = false;
-
-	for (let i = 0; i < line.length; i++) {
-		const c = line[i];
-		if (c === '"') {
-			if (inQuotes && line[i + 1] === '"') {
-				current += '"';
-				i++;
-			} else {
-				inQuotes = !inQuotes;
-			}
-		} else if (c === ',' && !inQuotes) {
-			result.push(current);
-			current = '';
-		} else {
-			current += c;
-		}
-	}
-	result.push(current);
-	return result;
-}
-
-function parseCsv(text: string): Array<{ url: string; note?: string }> {
-	const lines = text.split(/\r?\n/).filter((l) => l.trim());
-	if (lines.length < 2) return [];
-
-	const headers = parseLine(lines[0]).map((h) => h.toLowerCase().trim());
-	const urlIdx = headers.indexOf('url');
-	if (urlIdx === -1) return [];
-	const noteIdx = headers.indexOf('note');
-
-	return lines
-		.slice(1)
-		.map((line) => parseLine(line))
-		.filter((cols) => cols[urlIdx]?.trim())
-		.map((cols) => ({
-			url: cols[urlIdx].trim(),
-			...(noteIdx >= 0 && cols[noteIdx]?.trim() ? { note: cols[noteIdx].trim() } : {})
-		}));
-}
-
 // --- Action ---
 
 export const actions: Actions = {
@@ -78,7 +33,7 @@ export const actions: Actions = {
 			destination === 'new' ? String(data.get('newPlaylistName') ?? '').trim() : undefined;
 
 		if (!file || file.size === 0) {
-			return fail(400, { error: 'Please select a CSV file.' });
+			return fail(400, { error: 'Choose a file to import.' });
 		}
 		if (destination === 'new' && !newPlaylistName) {
 			return fail(400, { error: 'Please enter a name for the new playlist.' });
@@ -88,7 +43,7 @@ export const actions: Actions = {
 		}
 
 		const text = await file.text();
-		const rows = parseCsv(text);
+		const rows = parseRows(text, file.name);
 
 		if (rows.length > 2000) {
 			return fail(400, {
@@ -98,7 +53,9 @@ export const actions: Actions = {
 
 		if (rows.length === 0) {
 			return fail(400, {
-				error: 'No valid rows found. Make sure the file has a header row with a "url" column.'
+				error:
+					'Nothing to import from that file. A CSV needs a header row with a "url" column; ' +
+					'a bookmark export or a plain list of addresses is read as it is.'
 			});
 		}
 

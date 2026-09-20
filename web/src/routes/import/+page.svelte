@@ -94,18 +94,22 @@
 
 			<!-- File upload -->
 			<div class="space-y-1.5">
-				<label for="file" class="block text-sm font-medium">CSV file</label>
+				<label for="file" class="block text-sm font-medium">File</label>
 				<input
 					id="file"
 					name="file"
 					type="file"
-					accept=".csv,text/csv"
+					accept=".csv,.html,.htm,.txt,text/csv,text/html,text/plain"
 					required
-					class="block w-full rounded-md border px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
-					style="border-color: var(--color-border-strong); background: var(--color-bg)"
+					aria-describedby="file-hint"
+					class="block w-full rounded-control border border-border-strong bg-bg px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
 				/>
-				<p class="text-xs" style="color: var(--color-muted)">
-					Expected format: <code>url,note</code> — one link per row, header row required.
+				<p id="file-hint" class="text-xs text-muted">
+					A browser's bookmark export (<code>.html</code>), a plain list of addresses, one per
+					line, or a CSV with a <code>url</code> column and an optional <code>note</code>.
+					<a href="/import/sample.csv" download class="underline underline-offset-2 text-accent">
+						Download a sample CSV
+					</a>.
 				</p>
 			</div>
 
@@ -117,12 +121,19 @@
 				<SegmentedControl
 					label="Add to"
 					options={[
-						{ value: 'none', label: 'None' },
+						{ value: 'none', label: 'No playlist' },
 						{ value: 'existing', label: 'Existing playlist' },
 						{ value: 'new', label: 'New playlist' }
 					]}
 					bind:value={destination}
 				/>
+				{#if destination === 'none'}
+					<!-- "None" read as "do nothing with these". They are saved either way; the choice
+					     is only whether they land in a list as well. -->
+					<p class="text-xs text-muted">
+						The links are saved to your library and searchable, but not put in a playlist.
+					</p>
+				{/if}
 
 				{#if destination === 'existing'}
 					<div>

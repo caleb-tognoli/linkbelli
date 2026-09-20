@@ -32,7 +32,7 @@
 			Icon: Upload,
 			title: 'Import',
 			href: '/import',
-			body: 'Bring links in from a browser bookmark export or a plain list of URLs, straight into a playlist of your choosing.'
+			body: 'Bring links in from a browser bookmark export, a CSV, or a plain list of addresses, straight into a playlist of your choosing.'
 		}
 	];
 
