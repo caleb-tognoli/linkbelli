@@ -170,7 +170,7 @@
 
 
 	{#if data.tags.length === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">No tags yet.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				Tag a playlist or a link and it will show up here.
@@ -179,7 +179,7 @@
 	{:else}
 		{#if similar.length > 0}
 			<!-- The whole reason to look at this screen: two spellings of one subject. -->
-			<div class="mt-6 rounded-lg border p-4" style="border-color: var(--color-border)">
+			<div class="mt-6 rounded-card border p-4" style="border-color: var(--color-border)">
 				<h2 class="t-subsection">These look like the same tag</h2>
 				<ul class="mt-2 flex flex-col gap-2">
 					{#each similar as group (group[0].name)}
@@ -194,7 +194,7 @@
 									type="button"
 									onclick={() => mergeGroup(group)}
 									disabled={busy !== null}
-									class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60"
+									class="inline-flex shrink-0 items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-sm disabled:opacity-60"
 									style="border-color: var(--color-border)"
 								>
 									<Merge size={14} aria-hidden="true" /> Merge
@@ -216,7 +216,7 @@
 			/>
 		</label>
 
-		<ul class="mt-3 divide-y rounded-lg border" style="border-color: var(--color-border)">
+		<ul class="mt-3 divide-y rounded-card border" style="border-color: var(--color-border)">
 			{#each shown as tag (tag.name)}
 				<li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5" style="border-color: var(--color-border)">
 					<div class="min-w-0">
@@ -231,7 +231,7 @@
 							type="button"
 							onclick={() => rename(tag)}
 							disabled={busy !== null}
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+							class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 							title="Rename or merge"
 							aria-label="Rename or merge {tag.name}"
 						>
@@ -241,7 +241,7 @@
 							type="button"
 							onclick={() => remove(tag)}
 							disabled={busy !== null}
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+							class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 							style="color: var(--color-danger)"
 							title="Remove everywhere"
 							aria-label="Remove {tag.name} everywhere"

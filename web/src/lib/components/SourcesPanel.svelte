@@ -170,13 +170,13 @@
 	}
 </script>
 
-<div class="rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
+<div class="rounded-card border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
 	<div class="flex items-center justify-between">
 		<h2 class="t-section">Sources</h2>
 		{#if isOwner}
 			<Popover.Root bind:open={addOpen}>
 				<Popover.Trigger
-					class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+					class="inline-flex items-center rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10"
 					title={addOpen ? 'Cancel' : 'Add source'}
 					aria-label={addOpen ? 'Cancel' : 'Add source'}
 				>
@@ -187,7 +187,7 @@
 					{/if}
 				</Popover.Trigger>
 				<Popover.Content
-					class="popover-surface z-(--z-popover) w-72 max-h-96 overflow-y-auto rounded-lg border p-3 shadow-md"
+					class="popover-surface z-(--z-popover) w-72 max-h-96 overflow-y-auto rounded-card border p-3 shadow-md"
 					align="end"
 					sideOffset={6}
 				>
@@ -200,7 +200,7 @@
 							size="sm"
 							class="flex-1"
 						/>
-						<button type="button" onclick={searchShared} disabled={searching} class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Search shared" aria-label="Search shared sources">
+						<button type="button" onclick={searchShared} disabled={searching} class="rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60" title="Search shared" aria-label="Search shared sources">
 							<Search size={16} aria-hidden="true" />
 						</button>
 					</div>
@@ -212,7 +212,7 @@
 								{#each ownFiltered as src (src.id)}
 									<SourceListItem name={src.name} badge={displayType(src.type)} href={sourceHref(src.id)}>
 										{#snippet actions()}
-											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Connect source" aria-label="Connect source" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
+											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Connect source" aria-label="Connect source" class="inline-flex items-center justify-center rounded-control size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
 												<Link size={15} aria-hidden="true" />
 											</button>
 										{/snippet}
@@ -229,7 +229,7 @@
 								{#each sharedResults as src (src.id)}
 									<SourceListItem name={src.name} badge={displayType(src.type)} subtitle={`@${src.ownerUsername}`}>
 										{#snippet actions()}
-											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Subscribe" aria-label="Subscribe to source" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
+											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Subscribe" aria-label="Subscribe to source" class="inline-flex items-center justify-center rounded-control size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
 												<UserPlus size={16} aria-hidden="true" />
 											</button>
 										{/snippet}
@@ -274,7 +274,7 @@
 					{#snippet actions()}
 						{#if isOwner}
 							{#if src.ownedByMe}
-								<button type="button" onclick={() => run(src.id)} disabled={busy} title="Run now" aria-label="Run now" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70">
+								<button type="button" onclick={() => run(src.id)} disabled={busy} title="Run now" aria-label="Run now" class="inline-flex items-center justify-center rounded-control size-6 tap-target hover:opacity-70">
 									<Play size={15} aria-hidden="true" />
 								</button>
 							{/if}
@@ -294,7 +294,7 @@
 								onclick={() => openSubscribeDialog(src)}
 								title="Subscribe from one of my playlists"
 								aria-label="Subscribe from one of my playlists"
-								class="inline-flex items-center rounded p-0.5 hover:opacity-70"
+								class="inline-flex items-center rounded-control p-0.5 hover:opacity-70"
 								style="color: var(--color-accent)"
 							>
 								<UserPlus size={15} aria-hidden="true" />
@@ -308,7 +308,7 @@
 			<button
 				type="button"
 				onclick={() => sourcesExpanded = true}
-				class="mt-1 flex w-full items-center justify-center rounded-md py-1 hover:bg-black/5 dark:hover:bg-white/10"
+				class="mt-1 flex w-full items-center justify-center rounded-control py-1 hover:bg-black/5 dark:hover:bg-white/10"
 				style="color: var(--color-muted)"
 				title="Show all sources"
 				aria-label="Show all sources"

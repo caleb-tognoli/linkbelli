@@ -84,7 +84,7 @@
 	</PageHeader>
 
 	{#if items.length === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<Rss size={20} aria-hidden="true" class="mx-auto" style="color: var(--color-muted)" />
 			<p class="mt-2 font-medium">Nothing here yet.</p>
 			<p class="mt-1 text-sm text-muted">

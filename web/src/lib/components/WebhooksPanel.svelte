@@ -314,7 +314,7 @@
 		<ul class="flex flex-col gap-2">
 			{#each hooks as hook (hook.id)}
 				<li
-					class="rounded-lg border px-3 py-2.5 text-sm"
+					class="rounded-card border px-3 py-2.5 text-sm"
 					style="border-color: var(--color-border); background: var(--color-surface)"
 				>
 					<div class="flex items-center gap-2 sm:gap-3">
@@ -403,7 +403,7 @@
 													onclick={() => redeliver(hook, d)}
 													title="Send it again"
 													aria-label="Send it again"
-													class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+													class="inline-flex items-center rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10"
 												>
 													<RotateCcw size={13} aria-hidden="true" />
 												</button>

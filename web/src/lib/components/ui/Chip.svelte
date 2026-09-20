@@ -6,7 +6,7 @@
 	 * A tag: something to follow (`href`), or to take away (`onremove`).
 	 *
 	 * Tags were drawn five different ways — muted text on a page-coloured block that vanished on
-	 * a card, rounded or pill, with remove buttons around 16px across. One shape now, at least
+	 * a card, rounded-control or pill, with remove buttons around 16px across. One shape now, at least
 	 * 24px tall, with a remove button that is a real target and says what it removes.
 	 */
 	let {

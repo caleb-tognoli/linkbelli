@@ -643,7 +643,7 @@
 						in the same box.
 					-->
 					<span
-						class="flex h-[2.8rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded bg-surface @lg:h-[3.5rem] @lg:w-[5.6rem]"
+						class="flex h-[2.8rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-control bg-surface @lg:h-[3.5rem] @lg:w-[5.6rem]"
 						class:opacity-60={item.status === 'Watched'}
 					>
 						{#if thumb}
@@ -1059,7 +1059,7 @@
 		</div>
 	{:else}
 		<div
-			class="rounded-lg border border-dashed p-10 text-center"
+			class="rounded-card border border-dashed p-10 text-center"
 			style="border-color: var(--color-border)"
 		>
 			<p class="font-medium">No links yet.</p>
@@ -1101,7 +1101,7 @@
 	{#if !readonly && selected.size > 0}
 		<!-- Appears only with a selection, so it never occupies space it hasn't earned. -->
 		<div
-			class="mb-2 flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm"
+			class="mb-2 flex flex-wrap items-center gap-2 rounded-control border px-3 py-2 text-sm"
 			style="border-color: var(--color-accent); background: var(--color-surface)"
 		>
 			<span class="font-medium tabular-nums">{selected.size} selected</span>
@@ -1110,7 +1110,7 @@
 				type="button"
 				disabled={bulkBusy}
 				onclick={() => bulkStatus('Watched')}
-				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 				style="border-color: var(--color-border)"
 			>
 				<Eye size={14} aria-hidden="true" /> Done
@@ -1120,7 +1120,7 @@
 				type="button"
 				disabled={bulkBusy}
 				onclick={() => bulkStatus('Added')}
-				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 				style="border-color: var(--color-border)"
 			>
 				<EyeOff size={14} aria-hidden="true" /> Not done
@@ -1131,14 +1131,14 @@
 					type="button"
 					disabled={bulkBusy}
 					onclick={() => (moveOpen = true)}
-					class="rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+					class="rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 					style="border-color: var(--color-border)"
 				>Move to…</button>
 				<button
 					type="button"
 					disabled={bulkBusy}
 					onclick={() => (copyOpen = true)}
-					class="rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+					class="rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 					style="border-color: var(--color-border)"
 				>Copy to…</button>
 			{/if}
@@ -1147,7 +1147,7 @@
 				type="button"
 				disabled={bulkBusy}
 				onclick={bulkDelete}
-				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
+				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 				style="border-color: var(--color-border); color: var(--color-danger)"
 			>
 				<Trash2 size={14} aria-hidden="true" /> Delete
@@ -1156,7 +1156,7 @@
 			<button
 				type="button"
 				onclick={() => selected.clear()}
-				class="ml-auto rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+				class="ml-auto rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10"
 				title="Clear selection"
 				aria-label="Clear selection"
 			>
@@ -1176,7 +1176,7 @@
 				<!-- The grid has no reorder zone, so the card itself can be the drag source —
 				     nothing else is competing for the gesture here. -->
 				<li
-					class="flex flex-col overflow-hidden rounded-lg border"
+					class="flex flex-col overflow-hidden rounded-card border"
 					draggable={!readonly && playlistId ? 'true' : 'false'}
 					ondragstart={(e) => onRowDragStart(e, item)}
 					data-item-focused={focusedItem?.id === item.id}
@@ -1247,7 +1247,7 @@
 							<button
 								type="button"
 								onclick={() => toggleWatched(item)}
-								class="mt-1 w-full rounded border py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+								class="mt-1 w-full rounded-control border py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
 								style="border-color: var(--color-border); color: var(--color-muted)"
 							>{item.status === 'Watched' ? 'Mark unwatched' : 'Mark watched'}</button>
 						{/if}

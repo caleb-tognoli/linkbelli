@@ -115,7 +115,7 @@
 	<button
 		type="submit"
 		disabled={searching}
-		class="rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+		class="rounded-control border px-3 py-2 text-sm disabled:opacity-60"
 		style="border-color: var(--color-border)"
 	>{searching ? 'Looking…' : 'Search'}</button>
 </form>
@@ -125,7 +125,7 @@
 {/if}
 
 {#if users.length > 0}
-	<ul class="mt-3 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+	<ul class="mt-3 flex flex-col divide-y rounded-card border" style="border-color: var(--color-border)">
 		{#each users as user (user.id)}
 			<li class="flex flex-wrap items-center gap-3 p-3" style="border-color: var(--color-border)">
 				<div class="min-w-0 flex-1">
@@ -148,7 +148,7 @@
 						type="button"
 						onclick={() => toggleAdmin(user)}
 						disabled={busy !== null || user.username === me}
-						class="inline-flex items-center rounded-md border p-1.5 disabled:opacity-40"
+						class="inline-flex items-center rounded-control border p-1.5 disabled:opacity-40"
 						style="border-color: var(--color-border)"
 						title={user.username === me
 							? 'You cannot change your own administrator access'
@@ -167,7 +167,7 @@
 						type="button"
 						onclick={() => toggleSuspended(user)}
 						disabled={busy !== null || user.username === me}
-						class="inline-flex items-center rounded-md border p-1.5 disabled:opacity-40"
+						class="inline-flex items-center rounded-control border p-1.5 disabled:opacity-40"
 						style="border-color: var(--color-border); color: {user.suspendedAt
 							? 'inherit'
 							: 'var(--color-danger)'}"

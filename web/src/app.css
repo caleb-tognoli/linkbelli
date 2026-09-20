@@ -63,7 +63,10 @@
 	--color-chip: color-mix(in srgb, var(--color-text) 9%, transparent);
 
 	/* Corners by what they belong to, rather than picked per file: rounded-control for inputs,
-	   buttons and chips; rounded-card for cards, panels and popovers; rounded-dialog for dialogs. */
+	   buttons and chips; rounded-card for cards, panels and popovers; rounded-dialog for dialogs;
+	   rounded-mark for a few pixels of softening on something drawn at text size, like a highlight
+	   in the reader — where a control's corner would be a visible blob. */
+	--radius-mark: 0.125rem;
 	--radius-control: 0.375rem;
 	--radius-card: 0.5rem;
 	--radius-dialog: 0.75rem;

@@ -123,7 +123,7 @@
 </script>
 
 <div
-	class="rounded-lg border p-3"
+	class="rounded-card border p-3"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	<div class="flex gap-2">
@@ -149,7 +149,7 @@
 	</div>
 
 	{#if showAdd && preview}
-		<div class="mt-3 flex gap-3 rounded-md border p-3" style="border-color: var(--color-border)">
+		<div class="mt-3 flex gap-3 rounded-control border p-3" style="border-color: var(--color-border)">
 			{#if preview.imageUrl}
 				<!-- Sized before it loads, so the rest of the panel does not jump sideways when the
 				     picture arrives. -->
@@ -160,7 +160,7 @@
 					height="56"
 					loading="lazy"
 					decoding="async"
-					class="size-14 shrink-0 rounded bg-chip object-cover"
+					class="size-14 shrink-0 rounded-control bg-chip object-cover"
 				/>
 			{/if}
 			<div class="min-w-0">

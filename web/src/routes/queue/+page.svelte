@@ -163,7 +163,7 @@
 	/>
 
 	{#if queued.length === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing waiting.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				Everything you have saved is marked done.
@@ -179,7 +179,7 @@
 			<p class="text-xs" style="color: var(--color-muted)">
 				Part way through. The quickest things to finish.
 			</p>
-			<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+			<ul class="mt-2 flex flex-col divide-y rounded-card border" style="border-color: var(--color-border)">
 				{#each started as hit (hit.itemId)}
 					{@render row(hit)}
 				{/each}
@@ -188,7 +188,7 @@
 			<h2 class="mt-6 t-subsection">Not started</h2>
 		{/if}
 
-		<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+		<ul class="mt-2 flex flex-col divide-y rounded-card border" style="border-color: var(--color-border)">
 			{#each fresh as hit (hit.itemId)}
 				{@render row(hit)}
 			{/each}
@@ -209,7 +209,7 @@
 			<summary class="cursor-pointer text-sm font-medium">
 				Put aside ({data.aside.total ?? data.aside.items.length})
 			</summary>
-			<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+			<ul class="mt-2 flex flex-col divide-y rounded-card border" style="border-color: var(--color-border)">
 				{#each data.aside.items as hit (hit.itemId)}
 					<li
 						class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3"
@@ -256,7 +256,7 @@
 					{#if hit.link.favicon}
 						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
 					{:else}
-						<span class="mt-0.5 size-4 shrink-0 rounded-sm" style="background: var(--color-border)"></span>
+						<span class="mt-0.5 size-4 shrink-0 rounded-mark" style="background: var(--color-border)"></span>
 					{/if}
 
 					<div class="min-w-0 flex-1">

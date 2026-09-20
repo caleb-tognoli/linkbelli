@@ -69,7 +69,7 @@
 						<div class="flex items-baseline justify-between gap-4">
 							<dt class="flex shrink-0 items-baseline gap-1">
 								{#each row.keys as key (key)}
-									<kbd class="rounded border border-border bg-bg px-1.5 py-0.5 text-xs">{key}</kbd>
+									<kbd class="rounded-control border border-border bg-bg px-1.5 py-0.5 text-xs">{key}</kbd>
 								{/each}
 							</dt>
 							<dd class="min-w-0 flex-1 text-right text-muted">{row.does}</dd>

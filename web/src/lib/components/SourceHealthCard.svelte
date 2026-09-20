@@ -68,7 +68,7 @@
 
 	{#if health.lastError}
 		<pre
-			class="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded p-2 text-xs"
+			class="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded-control p-2 text-xs"
 			style="background: var(--color-bg); color: var(--color-danger)">{health.lastError}</pre>
 	{/if}
 </div>

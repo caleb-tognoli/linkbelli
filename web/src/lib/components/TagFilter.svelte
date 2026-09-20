@@ -81,7 +81,7 @@
 		</Popover.Trigger>
 		<Popover.Portal>
 			<Popover.Content
-				class="popover-surface z-(--z-popover) w-64 rounded-lg border p-2 shadow-2xl"
+				class="popover-surface z-(--z-popover) w-64 rounded-card border p-2 shadow-2xl"
 				sideOffset={6}
 			>
 				<Input
@@ -98,7 +98,7 @@
 							<button
 								type="button"
 								onclick={() => add(t.name)}
-								class="flex w-full items-center justify-between rounded px-2 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
+								class="flex w-full items-center justify-between rounded-control px-2 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
 							>
 								<span>{t.name}</span>
 								<span class="text-xs" style="color: var(--color-muted)">{t.playlistCount}</span>

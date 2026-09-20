@@ -176,7 +176,7 @@
 			<Search size={16} aria-hidden="true" />
 			{#if !collapsed}
 				<span class="flex-1 text-left">Search or jump…</span>
-				<kbd class="rounded border border-border px-1 text-xs">Ctrl K</kbd>
+				<kbd class="rounded-control border border-border px-1 text-xs">Ctrl K</kbd>
 			{:else}
 				<span class="sr-only">Search, or jump to a playlist</span>
 			{/if}
@@ -198,7 +198,7 @@
 					{@const count = item.count?.() ?? 0}
 					<a
 						href={item.href}
-						class="relative flex items-center gap-3 rounded-md px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
+						class="relative flex items-center gap-3 rounded-control px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
 						class:font-medium={active}
 						style={active ? 'background: var(--color-border)' : ''}
 						aria-current={active ? 'page' : undefined}
@@ -229,7 +229,7 @@
 			{#if data.pinned.length > 0}
 				<Popover.Root>
 					<Popover.Trigger
-						class="flex items-center justify-center rounded-md px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
+						class="flex items-center justify-center rounded-control px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
 						title="Saved searches"
 						aria-label="Saved searches"
 					>
@@ -240,7 +240,7 @@
 						{#each data.pinned as saved (saved.id)}
 							<a
 								href={`/search?saved=${saved.id}`}
-								class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+								class="flex items-center gap-2 rounded-control px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
 							>
 								<span class="min-w-0 flex-1 truncate">{saved.name}</span>
 								<span class="shrink-0 text-xs text-muted tabular-nums">{saved.count}</span>
@@ -252,7 +252,7 @@
 			{#if data.folders.length > 0}
 				<Popover.Root>
 					<Popover.Trigger
-						class="flex items-center justify-center rounded-md px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
+						class="flex items-center justify-center rounded-control px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10"
 						title="Folders"
 						aria-label="Folders"
 					>
@@ -277,7 +277,7 @@
 				{#each data.pinned as saved (saved.id)}
 					<a
 						href={`/search?saved=${saved.id}`}
-						class="flex items-center gap-2 rounded-md px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+						class="flex items-center gap-2 rounded-control px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 						title={saved.name}
 					>
 						<Bookmark size={15} aria-hidden="true" class="shrink-0" />
@@ -304,7 +304,7 @@
 	<div class="mt-3 flex shrink-0 {showLabels ? 'items-center gap-1' : 'flex-col gap-1'} border-t pt-3" style="border-color: var(--color-border)">
 		<a
 			href="/settings"
-			class="flex min-w-0 items-center gap-3 rounded-md px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 {showLabels ? 'flex-1' : 'justify-center'}"
+			class="flex min-w-0 items-center gap-3 rounded-control px-3 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 {showLabels ? 'flex-1' : 'justify-center'}"
 			class:font-medium={onSettings}
 			style={onSettings ? 'background: var(--color-border)' : ''}
 			aria-current={onSettings ? 'page' : undefined}
@@ -318,7 +318,7 @@
 			<!-- Shown only where it will work: the API is still the authority on who may look. -->
 			<a
 				href="/admin"
-				class="rounded-md p-2.5 hover:bg-black/5 dark:hover:bg-white/10"
+				class="rounded-control p-2.5 hover:bg-black/5 dark:hover:bg-white/10"
 				class:font-medium={onAdmin}
 				style={onAdmin ? 'background: var(--color-border)' : ''}
 				aria-current={onAdmin ? 'page' : undefined}
@@ -331,7 +331,7 @@
 		<form method="post" action="/logout" class={showLabels ? '' : 'flex justify-center'}>
 			<button
 				type="submit"
-				class="rounded-md p-2.5 hover:bg-black/5 dark:hover:bg-white/10"
+				class="rounded-control p-2.5 hover:bg-black/5 dark:hover:bg-white/10"
 				title="Sign out"
 				aria-label="Sign out"
 			>
@@ -362,7 +362,7 @@
 		>
 			<Dialog.Root bind:open={drawerOpen}>
 				<Dialog.Trigger
-					class="-ml-1 rounded p-2 hover:bg-black/5 dark:hover:bg-white/10"
+					class="-ml-1 rounded-control p-2 hover:bg-black/5 dark:hover:bg-white/10"
 					aria-label="Open navigation menu"
 				>
 					<Menu size={23} aria-hidden="true" />
@@ -412,7 +412,7 @@
 				<button
 					type="button"
 					onclick={toggleSidebar}
-					class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+					class="rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 					title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 					aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 				>

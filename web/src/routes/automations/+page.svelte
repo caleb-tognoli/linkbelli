@@ -352,7 +352,7 @@
 		<ul class="mt-6 flex flex-col gap-2">
 			{#each data.rules as rule, index (rule.id)}
 				<li
-					class="rounded-lg border px-4 py-3"
+					class="rounded-card border px-4 py-3"
 					style="border-color: var(--color-border); background: var(--color-surface)"
 				>
 					<div class="flex items-start justify-between gap-3">
@@ -400,7 +400,7 @@
 								type="button"
 								onclick={() => runOverExisting(rule)}
 								disabled={running === rule.id}
-								class="rounded p-1.5 hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+								class="rounded-control p-1.5 hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
 								style="color: var(--color-muted)"
 								title="Run this over the links you already have"
 								aria-label={`Run ${rule.name} over existing links`}
@@ -411,7 +411,7 @@
 							<button
 								type="button"
 								onclick={() => remove(rule)}
-								class="rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+								class="rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 								style="color: var(--color-danger)"
 								title="Delete rule"
 								aria-label="Delete rule"
@@ -427,7 +427,7 @@
 
 	{#if open}
 		<div
-			class="mt-8 rounded-lg border p-4"
+			class="mt-8 rounded-card border p-4"
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<div class="flex items-center justify-between">
@@ -435,7 +435,7 @@
 				<button
 					type="button"
 					onclick={() => (open = false)}
-					class="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+					class="rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10"
 					title="Close"
 					aria-label="Close"
 				>
@@ -456,7 +456,7 @@
 				{/snippet}
 			</Field>
 
-			<fieldset class="mt-4 rounded-md border p-3" style="border-color: var(--color-border)">
+			<fieldset class="mt-4 rounded-control border p-3" style="border-color: var(--color-border)">
 				<legend class="px-1 text-xs" style="color: var(--color-muted)">When all of these are true</legend>
 				<div class="grid gap-3 sm:grid-cols-2">
 					<Field label="It lands in">
@@ -564,7 +564,7 @@
 				</p>
 			</fieldset>
 
-			<fieldset class="mt-4 rounded-md border p-3" style="border-color: var(--color-border)">
+			<fieldset class="mt-4 rounded-control border p-3" style="border-color: var(--color-border)">
 				<legend class="px-1 text-xs" style="color: var(--color-muted)">Then</legend>
 				<div class="grid gap-3 sm:grid-cols-2">
 					<Field label="Tag it">
@@ -649,7 +649,7 @@
 			</div>
 
 			{#if preview}
-				<div class="mt-4 rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
+				<div class="mt-4 rounded-control border p-3 text-sm" style="border-color: var(--color-border)">
 					<p>
 						Would have matched <strong>{preview.matches}</strong>
 						{preview.matches === 1 ? 'link' : 'links'} among your most recent saves.

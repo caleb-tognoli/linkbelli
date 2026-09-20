@@ -119,7 +119,7 @@
 	{#if !confirmed}
 		<!-- Everything below is switched on and does nothing. Said here rather than left to be
 		     discovered, because "my notifications are broken" is the obvious conclusion. -->
-		<div class="mt-3 rounded-md border p-3 text-sm" style="border-color: var(--color-warning)">
+		<div class="mt-3 rounded-control border p-3 text-sm" style="border-color: var(--color-warning)">
 			<p>
 				Nothing is sent to {email ?? 'your address'} until you confirm it. Look for the message
 				from when you signed up, or ask for another.
@@ -131,7 +131,7 @@
 					type="button"
 					onclick={resendConfirmation}
 					disabled={resending || !email}
-					class="mt-2 rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60"
+					class="mt-2 rounded-control border px-2.5 py-1.5 text-sm disabled:opacity-60"
 					style="border-color: var(--color-border)"
 				>
 					{resending ? 'Sending…' : 'Send another link'}

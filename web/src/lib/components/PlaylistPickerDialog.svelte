@@ -100,7 +100,7 @@
 							type="button"
 							onclick={() => pick(pl)}
 							disabled={!!status}
-							class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
+							class="flex w-full items-center justify-between rounded-control px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
 						>
 							<span class="truncate">{pl.name}</span>
 							<span class="ml-2 flex shrink-0 items-center gap-1.5">

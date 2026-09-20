@@ -145,7 +145,7 @@
 	{:else if queued}
 		<!-- Not dressed up as a success and not reported as a failure: the link is kept, and the
 		     honest thing is to say which of those it is. -->
-		<div class="mt-6 rounded-lg border p-6 text-center" style="border-color: var(--color-border); background: var(--color-surface)">
+		<div class="mt-6 rounded-card border p-6 text-center" style="border-color: var(--color-border); background: var(--color-surface)">
 			<Clock size={28} aria-hidden="true" class="mx-auto" style="color: var(--color-warning)" />
 			<p class="mt-2 font-medium">Waiting for a connection.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
@@ -159,7 +159,7 @@
 			</div>
 		</div>
 	{:else if saved}
-		<div class="mt-6 rounded-lg border p-6 text-center" style="border-color: var(--color-border); background: var(--color-surface)">
+		<div class="mt-6 rounded-card border p-6 text-center" style="border-color: var(--color-border); background: var(--color-surface)">
 			<Check size={28} aria-hidden="true" class="mx-auto" style="color: var(--color-accent)" />
 			<p class="mt-2 font-medium">Saved to {savedPlaylist?.name}.</p>
 			<div class="mt-4 flex justify-center gap-3 text-sm">

@@ -18,7 +18,7 @@
 
 <a
 	href={`/folders/${folder.id}`}
-	class="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:border-[var(--color-accent)]"
+	class="flex items-center gap-3 rounded-card border p-4 transition-colors hover:border-[var(--color-accent)]"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	<FolderIcon size={23} aria-hidden="true" style="color: var(--color-muted)" />

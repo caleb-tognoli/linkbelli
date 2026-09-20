@@ -88,7 +88,7 @@
 			<button
 				type="button"
 				onclick={cancelAdd}
-				class="inline-flex items-center justify-center rounded size-6 tap-target hover:bg-black/5 dark:hover:bg-white/10"
+				class="inline-flex items-center justify-center rounded-control size-6 tap-target hover:bg-black/5 dark:hover:bg-white/10"
 				style="color: var(--color-muted)"
 				title="Cancel"
 				aria-label="Cancel"
@@ -107,7 +107,7 @@
 					type="button"
 					onclick={() => onSelect(f.id)}
 					disabled={busy || creating}
-					class="flex flex-1 items-center gap-1.5 truncate rounded px-1.5 py-1 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
+					class="flex flex-1 items-center gap-1.5 truncate rounded-control px-1.5 py-1 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
 					style={selectedId === f.id ? 'color: var(--color-accent)' : ''}
 					title={f.name}
 				>
@@ -118,7 +118,7 @@
 					type="button"
 					onclick={() => startAdd(f.id)}
 					disabled={creating}
-					class="inline-flex shrink-0 items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
+					class="inline-flex shrink-0 items-center rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
 					style="color: var(--color-muted)"
 					title="New subfolder in {f.name}"
 					aria-label="New subfolder in {f.name}"
@@ -139,7 +139,7 @@
 				type="button"
 				onclick={() => onSelect(null)}
 				disabled={busy || creating}
-				class="flex flex-1 items-center gap-1.5 rounded px-1.5 py-1 text-left hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
+				class="flex flex-1 items-center gap-1.5 rounded-control px-1.5 py-1 text-left hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
 				style={selectedId === null ? 'color: var(--color-accent)' : 'color: var(--color-muted)'}
 			>
 				<House size={15} aria-hidden="true" class="shrink-0" />
@@ -149,7 +149,7 @@
 				type="button"
 				onclick={() => startAdd(null)}
 				disabled={creating}
-				class="inline-flex shrink-0 items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
+				class="inline-flex shrink-0 items-center rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40"
 				style="color: var(--color-muted)"
 				title="New top-level folder"
 				aria-label="New top-level folder"

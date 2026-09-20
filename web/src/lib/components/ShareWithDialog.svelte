@@ -218,7 +218,7 @@
 
 	{#if inviteLink}
 		<div
-			class="mt-2 shrink-0 rounded-md border p-2.5 text-xs"
+			class="mt-2 shrink-0 rounded-control border p-2.5 text-xs"
 			style="border-color: var(--color-border)"
 		>
 			<p style="color: var(--color-muted)">
@@ -242,7 +242,7 @@
 		{:else}
 			<ul class="flex flex-col gap-1">
 				{#each members as member (member.username)}
-					<li class="flex items-center gap-2 rounded-md px-1 py-1.5 text-sm">
+					<li class="flex items-center gap-2 rounded-control px-1 py-1.5 text-sm">
 						<span class="min-w-0 flex-1 truncate">@{member.username}</span>
 						<Select
 							value={member.role}
@@ -258,7 +258,7 @@
 						<button
 							type="button"
 							onclick={() => remove(member)}
-							class="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+							class="rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10"
 							style="color: var(--color-danger)"
 							title={`Remove ${member.username}`}
 							aria-label={`Remove ${member.username}`}

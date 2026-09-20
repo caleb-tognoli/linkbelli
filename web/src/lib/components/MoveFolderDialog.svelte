@@ -73,7 +73,7 @@
 <Modal bind:open title="Move folder" size="sm">
 	{#snippet trigger()}
 		<Dialog.Trigger
-			class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+			class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 			title="Move folder"
 			aria-label="Move folder"
 		>

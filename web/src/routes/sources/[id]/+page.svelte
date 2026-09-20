@@ -341,7 +341,7 @@
 		     Some sources are meant to be quiet, which is what the button is for: saying so once
 		     is help, saying so every week is how somebody learns to ignore the real one. -->
 		<div
-			class="mt-4 flex flex-wrap items-start justify-between gap-3 rounded-lg border px-4 py-3"
+			class="mt-4 flex flex-wrap items-start justify-between gap-3 rounded-card border px-4 py-3"
 			style="border-color: {data.source.quiet ? 'var(--color-warning)' : 'var(--color-border)'}"
 		>
 			<div class="min-w-0">
@@ -358,7 +358,7 @@
 				type="button"
 				onclick={toggleQuietAlerts}
 				disabled={mutingQuiet}
-				class="shrink-0 rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+				class="shrink-0 rounded-control border px-3 py-2 text-sm disabled:opacity-60"
 				style="border-color: var(--color-border)"
 			>
 				{data.source.muteQuietAlerts ? 'Tell me about quiet weeks' : 'Mute quiet-week alerts'}
@@ -366,7 +366,7 @@
 		</div>
 	{/if}
 
-	<div class="mt-8 rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
+	<div class="mt-8 rounded-card border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
 		<div class="flex items-center justify-between">
 			<h2 class="t-section">Playlists</h2>
 			<Button size="sm" icon={Plus} onclick={openLinkDialog}>Connect playlist</Button>
@@ -383,7 +383,7 @@
 								onclick={() => unlinkPlaylist(playlist.id)}
 								title={`Disconnect ${playlist.name}`}
 								aria-label={`Disconnect ${playlist.name}`}
-								class="inline-flex items-center rounded p-0.5 hover:opacity-70"
+								class="inline-flex items-center rounded-control p-0.5 hover:opacity-70"
 								style="color: var(--color-danger)"
 							>
 								<Unlink size={15} aria-hidden="true" />
@@ -447,7 +447,7 @@
 									<button
 										type="button"
 										onclick={() => { errorRun = run; errorOpen = true; }}
-										class="rounded px-1.5 py-0.5 underline-offset-2 hover:underline"
+										class="rounded-control px-1.5 py-0.5 underline-offset-2 hover:underline"
 										style="color: var(--color-danger)"
 									>
 										{run.status}
@@ -461,7 +461,7 @@
 									<button
 										type="button"
 										onclick={() => showItems(run, 'found')}
-										class="rounded px-1.5 py-0.5 underline-offset-2 hover:underline"
+										class="rounded-control px-1.5 py-0.5 underline-offset-2 hover:underline"
 										style="color: var(--color-accent)"
 										title="Show items found"
 										aria-label="Show items found"
@@ -469,7 +469,7 @@
 										{run.foundCount}
 									</button>
 								{:else}
-									<button type="button" disabled class="rounded px-1.5 py-0.5 opacity-30 cursor-default">0</button>
+									<button type="button" disabled class="rounded-control px-1.5 py-0.5 opacity-30 cursor-default">0</button>
 								{/if}
 							</td>
 							<td class="py-1">
@@ -477,7 +477,7 @@
 									<button
 										type="button"
 										onclick={() => showItems(run, 'added')}
-										class="rounded px-1.5 py-0.5 underline-offset-2 hover:underline"
+										class="rounded-control px-1.5 py-0.5 underline-offset-2 hover:underline"
 										style="color: var(--color-accent)"
 										title="Show items added"
 										aria-label="Show items added"
@@ -485,7 +485,7 @@
 										{run.addedCount}
 									</button>
 								{:else}
-									<button type="button" disabled class="rounded px-1.5 py-0.5 opacity-30 cursor-default">0</button>
+									<button type="button" disabled class="rounded-control px-1.5 py-0.5 opacity-30 cursor-default">0</button>
 								{/if}
 							</td>
 							{#if anySkipped}
@@ -554,7 +554,7 @@
 						<button
 							type="button"
 							onclick={() => linkPlaylist(pl.id)}
-							class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+							class="flex w-full items-center justify-between rounded-control px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
 						>
 							<span class="truncate">{pl.name}</span>
 							<VisIcon size={13} aria-label={pl.visibility} class="ml-2 shrink-0" style="color: var(--color-muted)" />
@@ -571,7 +571,7 @@
 
 <Modal bind:open={errorOpen} title="Run failed" size="lg">
 	<pre
-		class="whitespace-pre-wrap break-words rounded p-3 text-xs"
+		class="whitespace-pre-wrap break-words rounded-control p-3 text-xs"
 		style="background: var(--color-bg); color: var(--color-danger)">{errorRun?.error ?? ''}</pre>
 </Modal>
 

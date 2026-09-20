@@ -23,7 +23,7 @@
 
 	{#if form && 'success' in form && form.success}
 		<!-- Result display -->
-		<div class="rounded-lg border p-6" style="border-color: var(--color-border); background: var(--color-surface)">
+		<div class="rounded-card border p-6" style="border-color: var(--color-border); background: var(--color-surface)">
 			<div class="mb-4 flex items-center gap-2.5">
 				<CheckCircle size={20} aria-hidden="true" style="color: var(--color-accent)" />
 				<span class="font-semibold">Import complete</span>
@@ -49,7 +49,7 @@
 			</div>
 
 			{#if form.result.errors.length > 0}
-				<div class="mb-4 rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
+				<div class="mb-4 rounded-control border p-3 text-sm" style="border-color: var(--color-border)">
 					<p class="mb-1.5 font-medium" style="color: var(--color-danger)">Failed rows</p>
 					<ul class="space-y-1" style="color: var(--color-muted)">
 						{#each form.result.errors as err, index (index)}
@@ -61,7 +61,7 @@
 
 			<a
 				href="/import"
-				class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+				class="inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
 				style="border-color: var(--color-border)"
 			>
 				<Upload size={15} aria-hidden="true" />
@@ -85,7 +85,7 @@
 		>
 			{#if form && 'error' in form && form.error}
 				<p
-					class="rounded-md border px-3 py-2 text-sm"
+					class="rounded-control border px-3 py-2 text-sm"
 					style="border-color: var(--color-danger); color: var(--color-danger)"
 					role="alert"
 				>
@@ -103,7 +103,7 @@
 					accept=".csv,.html,.htm,.txt,text/csv,text/html,text/plain"
 					required
 					aria-describedby="file-hint"
-					class="block w-full rounded-control border border-border-strong bg-bg px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
+					class="block w-full rounded-control border border-border-strong bg-bg px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-control file:border-0 file:px-3 file:py-1 file:text-sm file:font-medium"
 				/>
 				<p id="file-hint" class="text-xs text-muted">
 					A browser's bookmark export (<code>.html</code>), a plain list of addresses, one per

@@ -64,7 +64,7 @@
 
 
 	{#if data.groups.length === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing saved twice.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				Links are deduplicated as they arrive, so this stays empty until the same page turns up
@@ -79,7 +79,7 @@
 
 		<ul class="mt-3 flex flex-col gap-3">
 			{#each data.groups as group (group.key)}
-				<li class="rounded-lg border p-4" style="border-color: var(--color-border)">
+				<li class="rounded-card border p-4" style="border-color: var(--color-border)">
 					<div class="flex items-start gap-2">
 						<CopyCheck size={16} aria-hidden="true" class="mt-0.5 shrink-0" style="color: var(--color-muted)" />
 						<div class="min-w-0">

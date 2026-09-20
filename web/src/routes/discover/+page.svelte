@@ -113,7 +113,7 @@
 	{/if}
 
 	{#if items.length === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing found.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				{data.q || data.activeTags.length ? 'Try a different search or tag.' : 'No public playlists yet.'}

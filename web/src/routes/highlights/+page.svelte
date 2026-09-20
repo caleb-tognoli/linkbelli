@@ -49,7 +49,7 @@
 
 	{#if items.length === 0}
 		<div
-			class="mt-8 flex flex-col items-center gap-2 rounded-lg border px-6 py-10 text-center text-sm"
+			class="mt-8 flex flex-col items-center gap-2 rounded-card border px-6 py-10 text-center text-sm"
 			style="border-color: var(--color-border); color: var(--color-muted)"
 		>
 			<Highlighter size={22} aria-hidden="true" />

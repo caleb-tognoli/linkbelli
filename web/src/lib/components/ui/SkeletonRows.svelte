@@ -16,6 +16,6 @@
 
 <div class="flex flex-col gap-1 {extra}" aria-hidden="true">
 	{#each Array(rows) as _, i (i)}
-		<div class="h-8 rounded-md bg-chip" class:animate-pulse={animate}></div>
+		<div class="h-8 rounded-control bg-chip" class:animate-pulse={animate}></div>
 	{/each}
 </div>

@@ -549,7 +549,7 @@
 			<button
 				type="button"
 				onclick={() => (showSettings = !showSettings)}
-				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm"
+				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-sm"
 				style="border-color: var(--color-border)"
 				aria-expanded={showSettings}
 			>
@@ -560,7 +560,7 @@
 				type="button"
 				onclick={markFinished}
 				disabled={finished}
-				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60"
+				class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1.5 text-sm disabled:opacity-60"
 				style="border-color: var(--color-border)"
 				title="Mark done (e)"
 			>
@@ -572,7 +572,7 @@
 				<button
 					type="button"
 					onclick={() => open(data.previous!.linkId)}
-					class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-sm"
+					class="inline-flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-sm"
 					style="border-color: var(--color-border)"
 					title="Previous in this playlist (p)"
 				>
@@ -583,7 +583,7 @@
 				<button
 					type="button"
 					onclick={() => open(data.next!.linkId)}
-					class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-sm"
+					class="inline-flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-sm"
 					style="border-color: var(--color-border)"
 					title="Next in this playlist (n)"
 				>
@@ -593,7 +593,7 @@
 		</div>
 
 		{#if showSettings}
-			<div class="mt-3 flex flex-col gap-2 rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
+			<div class="mt-3 flex flex-col gap-2 rounded-control border p-3 text-sm" style="border-color: var(--color-border)">
 				<!-- Per device, on purpose: the right size on a phone is the wrong one on a desktop. -->
 				{#each [
 					{ key: 'size', label: 'Size', values: SIZES },
@@ -639,7 +639,7 @@
 			<!-- One line on purpose: whitespace between these blocks would be read as the article's. -->
 			<p data-paragraph={index}>{#each toSegments(paragraph, byParagraph.get(index) ?? []) as segment, s (s)}{#if segment.ids.length}<mark
 							data-highlight={segment.ids[segment.ids.length - 1]}
-							class="cursor-pointer rounded-sm"
+							class="cursor-pointer rounded-mark"
 							class:noted={segment.ids.some((id) => noted.has(id))}
 							style="color: inherit; background: {segment.ids.length > 1 ||
 							segment.ids.includes(active?.id ?? '')
@@ -695,7 +695,7 @@
 						<button
 							type="button"
 							onclick={(event) => openPanel(h.id, event.currentTarget)}
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+							class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 							title={h.note ? 'Edit the note' : 'Add a note'}
 							aria-label={h.note ? 'Edit the note' : 'Add a note'}
 						>
@@ -704,7 +704,7 @@
 						<button
 							type="button"
 							onclick={() => remove(h)}
-							class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+							class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 							title="Remove this highlight"
 							aria-label="Remove this highlight"
 						>
@@ -727,7 +727,7 @@
 		two sat on top of each other and neither could be used.
 	-->
 	<div
-		class="popover-surface fixed z-(--z-popover) flex items-center gap-0.5 rounded-lg border p-1 text-sm shadow-lg {touch
+		class="popover-surface fixed z-(--z-popover) flex items-center gap-0.5 rounded-card border p-1 text-sm shadow-lg {touch
 			? 'inset-x-3 justify-center'
 			: '-translate-x-1/2 -translate-y-full'}"
 		style={touch
@@ -744,7 +744,7 @@
 			<button
 				type="button"
 				onclick={() => highlight(false)}
-				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+				class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 				title="Highlight (h)"
 				aria-label="Highlight"
 			>
@@ -753,7 +753,7 @@
 			<button
 				type="button"
 				onclick={() => highlight(true)}
-				class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+				class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10"
 				title="Highlight and add a note"
 				aria-label="Highlight and add a note"
 			>
@@ -765,7 +765,7 @@
 
 {#if activeHighlight && panelAt}
 	<div
-		class="popover-surface fixed z-(--z-popover) rounded-lg border p-2 text-sm shadow-lg"
+		class="popover-surface fixed z-(--z-popover) rounded-card border p-2 text-sm shadow-lg"
 		style="left: {panelAt.x}px; top: {panelAt.y}px; width: {panelAt.width}px"
 		role="dialog"
 		aria-label="Note on this highlight"

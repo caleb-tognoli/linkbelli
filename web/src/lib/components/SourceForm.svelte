@@ -522,7 +522,7 @@
 		<div class="flex flex-col gap-2 text-sm">
 			<span>Run every</span>
 			<div class="flex items-center gap-2">
-				<div class="inline-flex divide-x overflow-hidden rounded-md border text-sm" style="border-color: var(--color-border); --tw-divide-opacity: 1">
+				<div class="inline-flex divide-x overflow-hidden rounded-control border text-sm" style="border-color: var(--color-border); --tw-divide-opacity: 1">
 					<button
 						type="button"
 						disabled={scheduleCount <= (scheduleUnit === 'minutes' ? 5 : 1)}
@@ -569,7 +569,7 @@
 		</div>
 	</div>
 
-	<fieldset class="rounded-lg border p-4" style="border-color: var(--color-border)">
+	<fieldset class="rounded-card border p-4" style="border-color: var(--color-border)">
 		<legend class="px-1 text-xs" style="color: var(--color-muted)">Configuration</legend>
 
 		<div class="flex flex-col gap-6">
@@ -592,7 +592,7 @@
 
 				{#if type === 'Webhook'}
 					<!-- Nothing to fill in. What this type needs is the URL, going the other way. -->
-					<div class="rounded-md border p-3 text-sm" style="border-color: var(--color-border)">
+					<div class="rounded-control border p-3 text-sm" style="border-color: var(--color-border)">
 						{#if webhookUrl}
 							<p>Push links here:</p>
 							<CopyField value={webhookUrl} label="Webhook address" class="mt-2" />
@@ -652,7 +652,7 @@
 				<div class="flex flex-col gap-2">
 					<div class="flex items-center justify-between">
 						<span class="text-sm">Request headers</span>
-						<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center rounded p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
+						<button type="button" onclick={() => (headers = [...headers, { name: '', value: '' }])} class="inline-flex items-center rounded-control p-1.5 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-accent)" title="Add request header" aria-label="Add request header">
 							<Plus size={15} aria-hidden="true" />
 						</button>
 					</div>
@@ -675,7 +675,7 @@
 				</div>
 
 				<!-- Authentication -->
-				<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
+				<div class="flex flex-col gap-3 rounded-card border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
 					<div class="flex items-center justify-between gap-4">
 						<span class="text-sm font-medium">Authentication</span>
 						<SegmentedControl
@@ -724,7 +724,7 @@
 
 				<!-- Metadata (Scraper only) -->
 				{#if type === 'Scraper'}
-					<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
+					<div class="flex flex-col gap-3 rounded-card border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
 						<span class="text-sm font-medium">Metadata</span>
 						<!-- Stacked into a card per field below `md`: as a five-column grid on a phone
 						     each input was about fifty pixels wide, which is unusable for a CSS
@@ -811,7 +811,7 @@
 	</fieldset>
 
 	{#if previewing || preview || previewError}
-		<div class="rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
+		<div class="rounded-card border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
 			<div class="flex items-center justify-between">
 				<span class="text-sm font-medium">What this finds now</span>
 				{#if previewing}
@@ -842,7 +842,7 @@
 		</div>
 	{/if}
 
-	<fieldset class="rounded-lg border p-4" style="border-color: var(--color-border)">
+	<fieldset class="rounded-card border p-4" style="border-color: var(--color-border)">
 		<legend class="px-1 text-xs" style="color: var(--color-muted)">
 			<button
 				type="button"

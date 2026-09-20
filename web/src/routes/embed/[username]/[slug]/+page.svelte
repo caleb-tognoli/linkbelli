@@ -14,7 +14,7 @@
 	<title>{data.playlist.name}</title>
 	<!-- An embed is a fragment of someone else's page; it should never be indexed as one of ours. -->
 	<meta name="robots" content="noindex" />
-	<!-- The frame shows the host page behind the card's rounded corners, not the app's own
+	<!-- The frame shows the host page behind the card's rounded-control corners, not the app's own
 	     background, which is only there to be a page. -->
 	<style>
 		html,

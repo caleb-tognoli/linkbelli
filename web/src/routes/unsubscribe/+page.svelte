@@ -9,7 +9,7 @@
 </script>
 
 <div
-	class="w-full max-w-sm rounded-xl border p-6 text-center"
+	class="w-full max-w-sm rounded-card border p-6 text-center"
 	style="border-color: var(--color-border); background: var(--color-surface)"
 >
 	{#if data.ok}

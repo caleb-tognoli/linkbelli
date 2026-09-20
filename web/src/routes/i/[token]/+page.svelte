@@ -53,7 +53,7 @@
 	</p>
 
 	<article
-		class="mt-3 overflow-hidden rounded-xl border"
+		class="mt-3 overflow-hidden rounded-card border"
 		style="border-color: var(--color-border); background: var(--color-surface)"
 	>
 		{#if cardImage}

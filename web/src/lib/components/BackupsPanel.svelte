@@ -208,7 +208,7 @@
 	{#if plan}
 		<!-- The numbers before the button, because the only way to trust a restore is to be told
 		     what it will do while it is still possible to decide otherwise. -->
-		<div class="mt-3 rounded-md border p-3 text-sm" style="border-color: var(--color-accent)">
+		<div class="mt-3 rounded-control border p-3 text-sm" style="border-color: var(--color-accent)">
 			<p class="font-medium">
 				{plan.dryRun ? 'Restoring' : 'Restored'} the snapshot from {formatAge(plan.takenAt)}
 			</p>
@@ -274,7 +274,7 @@
 			type="button"
 			onclick={backUpNow}
 			disabled={working}
-			class="rounded-md border px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+			class="rounded-control border px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
 			style="border-color: var(--color-border)"
 		>
 			{working ? 'Backing up…' : 'Back up now'}
@@ -285,7 +285,7 @@
 			type="button"
 			onclick={() => picker?.click()}
 			disabled={working}
-			class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+			class="flex items-center gap-2 rounded-control border px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
 			style="border-color: var(--color-border)"
 		>
 			<Upload size={15} aria-hidden="true" />
@@ -319,7 +319,7 @@
 		</p>
 	{:else}
 		<ul
-			class="mt-3 divide-y rounded-lg border text-sm"
+			class="mt-3 divide-y rounded-card border text-sm"
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			{#each backups as backup (backup.id)}

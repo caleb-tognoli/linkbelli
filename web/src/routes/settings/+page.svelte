@@ -171,7 +171,7 @@
 							href={`#${section.id}`}
 							onclick={() => (current = section.id)}
 							aria-current={current === section.id ? 'location' : undefined}
-							class="block rounded-md px-3 py-2 text-sm whitespace-nowrap hover:bg-black/5 dark:hover:bg-white/10 {current ===
+							class="block rounded-control px-3 py-2 text-sm whitespace-nowrap hover:bg-black/5 dark:hover:bg-white/10 {current ===
 							section.id
 								? 'bg-selected font-medium text-accent'
 								: 'text-muted'} {section.id === 'close' ? 'md:mt-4' : ''}"

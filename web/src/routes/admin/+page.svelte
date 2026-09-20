@@ -80,7 +80,7 @@
 
 	<dl class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
 		{#each totals as stat (stat.label)}
-			<div class="rounded-lg border px-3 py-2" style="border-color: var(--color-border); background: var(--color-surface)">
+			<div class="rounded-card border px-3 py-2" style="border-color: var(--color-border); background: var(--color-surface)">
 				<dt class="text-xs" style="color: var(--color-muted)">{stat.label}</dt>
 				<dd class="text-lg tabular-nums">{stat.value.toLocaleString()}</dd>
 			</div>
@@ -90,7 +90,7 @@
 	<h2 class="mt-8 t-section">Worth a look</h2>
 	<dl class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
 		{#each attention as stat (stat.label)}
-			<div class="rounded-lg border px-3 py-2" style="border-color: var(--color-border); background: var(--color-surface)">
+			<div class="rounded-card border px-3 py-2" style="border-color: var(--color-border); background: var(--color-surface)">
 				<dt class="text-xs" style="color: var(--color-muted)">{stat.label}</dt>
 				<dd
 					class="text-lg tabular-nums"
@@ -105,7 +105,7 @@
 		{@const jobs = o.jobs}
 		<dl class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
 			{#each [{ label: 'Enqueued', value: jobs.enqueued }, { label: 'Processing', value: jobs.processing }, { label: 'Scheduled', value: jobs.scheduled }, { label: 'Failed', value: jobs.failed }, { label: 'Succeeded', value: jobs.succeeded }] as stat (stat.label)}
-				<div class="rounded-lg border px-3 py-2" style="border-color: var(--color-border); background: var(--color-surface)">
+				<div class="rounded-card border px-3 py-2" style="border-color: var(--color-border); background: var(--color-surface)">
 					<dt class="text-xs" style="color: var(--color-muted)">{stat.label}</dt>
 					<dd
 						class="text-lg tabular-nums"
@@ -207,7 +207,7 @@
 								type="button"
 								onclick={() => resolve(report.id, { dismiss: true })}
 								disabled={busy === report.id}
-								class="rounded-md border px-2.5 py-1 text-xs disabled:opacity-60"
+								class="rounded-control border px-2.5 py-1 text-xs disabled:opacity-60"
 								style="border-color: var(--color-border)"
 							>Dismiss report</button>
 							<!-- Private, not deleted: the owner keeps their work, and it stops being
@@ -216,7 +216,7 @@
 								type="button"
 								onclick={() => resolve(report.id, { takeDown: true })}
 								disabled={busy === report.id}
-								class="rounded-md border px-2.5 py-1 text-xs disabled:opacity-60"
+								class="rounded-control border px-2.5 py-1 text-xs disabled:opacity-60"
 								style="border-color: var(--color-danger); color: var(--color-danger)"
 							>Take it down</button>
 						</div>
@@ -257,7 +257,7 @@
 						<details class="mt-1">
 							<summary class="cursor-pointer text-xs" style="color: var(--color-muted)">Details</summary>
 							<pre
-								class="mt-1 overflow-x-auto rounded p-2 text-xs"
+								class="mt-1 overflow-x-auto rounded-control p-2 text-xs"
 								style="background: var(--color-bg)">{entry.details}</pre>
 						</details>
 					{/if}

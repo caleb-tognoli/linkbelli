@@ -98,7 +98,7 @@
 </script>
 
 {#if sources.length === 0}
-	<div class="rounded-lg border border-dashed p-8 text-center" style="border-color: var(--color-border)">
+	<div class="rounded-card border border-dashed p-8 text-center" style="border-color: var(--color-border)">
 		<p class="font-medium">No sources yet.</p>
 		<p class="mx-auto mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
 			A source watches something — a feed, a subreddit, a channel, a page — and drops what it
@@ -120,7 +120,7 @@
 	/>
 
 	{#if filtered.length === 0}
-		<div class="mt-3 rounded-lg border border-dashed p-8 text-center" style="border-color: var(--color-border)">
+		<div class="mt-3 rounded-card border border-dashed p-8 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">No matching sources.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">Try a different name, type, or URL.</p>
 		</div>
@@ -172,7 +172,7 @@
 								<Globe size={15} aria-hidden="true" />
 							{/if}
 						</span>
-						<button type="button" onclick={() => run(src)} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Run now" aria-label={`Run ${src.name} now`}>
+						<button type="button" onclick={() => run(src)} class="inline-flex items-center rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10" title="Run now" aria-label={`Run ${src.name} now`}>
 							<Play size={15} aria-hidden="true" />
 						</button>
 					{/snippet}

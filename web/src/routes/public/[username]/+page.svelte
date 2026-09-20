@@ -116,7 +116,7 @@
 				type="button"
 				onclick={toggleFollow}
 				disabled={busy}
-				class="inline-flex shrink-0 items-center gap-2 rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+				class="inline-flex shrink-0 items-center gap-2 rounded-control border px-3 py-2 text-sm disabled:opacity-60"
 				style="border-color: {followedByMe ? 'var(--color-accent)' : 'var(--color-border)'};
 				       color: {followedByMe ? 'var(--color-accent)' : 'inherit'}"
 				aria-pressed={followedByMe}
@@ -128,7 +128,7 @@
 	</header>
 
 	{#if playlists.length === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing published yet.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				When {data.profile.username} makes a playlist public, it shows up here.

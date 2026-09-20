@@ -368,7 +368,7 @@
 			{/if}
 			{#each data.saved as saved (saved.id)}
 				<span
-					class="inline-flex items-center rounded-md border text-xs"
+					class="inline-flex items-center rounded-control border text-xs"
 					style="border-color: var(--color-border)"
 				>
 					<button type="button" onclick={() => applySaved(saved)} class="px-2 py-1 hover:underline">
@@ -406,7 +406,7 @@
 				<button
 					type="button"
 					onclick={saveSearch}
-					class="inline-flex min-h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 py-1 text-xs text-muted hover:bg-black/5 dark:hover:bg-white/10"
+					class="inline-flex min-h-6 items-center gap-1 rounded-control border border-dashed border-border px-2 py-1 text-xs text-muted hover:bg-black/5 dark:hover:bg-white/10"
 					title="Come back to this search later"
 				>
 					<Plus size={12} aria-hidden="true" /> Save this search
@@ -421,7 +421,7 @@
 				<button
 					type="button"
 					onclick={() => navigate({ host: facet.hostname })}
-					class="rounded-md border px-2 py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
+					class="rounded-control border px-2 py-1 text-xs hover:bg-black/5 dark:hover:bg-white/10"
 					style="border-color: var(--color-border); color: var(--color-muted)"
 				>
 					{facet.hostname}
@@ -432,7 +432,7 @@
 	{/if}
 
 	{#if hits.length === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">
 				{hasFilters ? 'Nothing matched.' : 'Search across everything you have saved.'}
 			</p>
@@ -444,7 +444,7 @@
 			{#if hasFilters}
 				<a
 					href="/search"
-					class="mt-4 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+					class="mt-4 inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/10"
 					style="border-color: var(--color-border)"
 				>
 					<X size={14} aria-hidden="true" /> Clear filters
@@ -452,7 +452,7 @@
 			{/if}
 		</div>
 	{:else}
-		<ul class="mt-5 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+		<ul class="mt-5 flex flex-col divide-y rounded-card border" style="border-color: var(--color-border)">
 			{#each hits as hit (hit.itemId)}
 				<li
 					class="flex items-start gap-3 p-3 transition-colors hover:bg-chip/60"
@@ -461,7 +461,7 @@
 					{#if hit.link.favicon}
 						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
 					{:else}
-						<span class="mt-0.5 size-4 shrink-0 rounded-sm" style="background: var(--color-border)"></span>
+						<span class="mt-0.5 size-4 shrink-0 rounded-mark" style="background: var(--color-border)"></span>
 					{/if}
 
 					<div class="min-w-0 flex-1">

@@ -35,7 +35,7 @@
 
 {#if visible}
 	<section
-		class="rounded-lg border p-5"
+		class="rounded-card border p-5"
 		style="border-color: var(--color-border); background: var(--color-surface)"
 		aria-label="Getting started"
 	>
@@ -50,7 +50,7 @@
 			<button
 				type="button"
 				onclick={dismiss}
-				class="shrink-0 rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+				class="shrink-0 rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10"
 				style="color: var(--color-muted)"
 				title="Hide this for good"
 				aria-label="Hide getting started"

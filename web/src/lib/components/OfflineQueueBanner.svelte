@@ -9,7 +9,7 @@
 
 {#if summary}
 	<div
-		class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2 text-sm"
+		class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-card border px-3 py-2 text-sm"
 		style="border-color: var(--color-warning); background: var(--color-surface)"
 		role="status"
 	>
@@ -21,7 +21,7 @@
 				type="button"
 				onclick={() => offlineSaves.flush()}
 				disabled={offlineSaves.flushing}
-				class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs disabled:opacity-60"
+				class="inline-flex items-center gap-1.5 rounded-control border px-2 py-1 text-xs disabled:opacity-60"
 				style="border-color: var(--color-border)"
 			>
 				<RefreshCw size={12} aria-hidden="true" />
@@ -41,7 +41,7 @@
 					<button
 						type="button"
 						onclick={() => offlineSaves.drop(save.id)}
-						class="inline-flex items-center justify-center rounded size-6 tap-target shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
+						class="inline-flex items-center justify-center rounded-control size-6 tap-target shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
 						title="Forget this one"
 						aria-label={`Forget ${save.url}`}
 					>

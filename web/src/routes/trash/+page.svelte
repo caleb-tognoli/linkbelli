@@ -125,7 +125,7 @@
 
 
 	{#if total === 0}
-		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
+		<div class="mt-8 rounded-card border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing deleted.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				Playlists and links you delete show up here, so you can put them back.
@@ -135,7 +135,7 @@
 
 	{#if data.trash.playlists.length}
 		<h2 class="mt-8 t-subsection" style="color: var(--color-muted)">Playlists</h2>
-		<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+		<ul class="mt-2 flex flex-col divide-y rounded-card border" style="border-color: var(--color-border)">
 			{#each data.trash.playlists as playlist (playlist.id)}
 				<li class="flex items-center gap-3 p-3" style="border-color: var(--color-border)">
 					<ListMusic size={18} aria-hidden="true" style="color: var(--color-muted)" class="shrink-0" />
@@ -164,7 +164,7 @@
 
 	{#if data.trash.items.length}
 		<h2 class="mt-8 t-subsection" style="color: var(--color-muted)">Links</h2>
-		<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
+		<ul class="mt-2 flex flex-col divide-y rounded-card border" style="border-color: var(--color-border)">
 			{#each data.trash.items as item (item.id)}
 				<li class="flex items-center gap-3 p-3" style="border-color: var(--color-border)">
 					<Link2 size={18} aria-hidden="true" style="color: var(--color-muted)" class="shrink-0" />

@@ -41,7 +41,7 @@
 					<button
 						type="button"
 						onclick={() => toggle(node.id)}
-						class="inline-flex items-center justify-center rounded size-6 tap-target shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
+						class="inline-flex items-center justify-center rounded-control size-6 tap-target shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
 						style="color: var(--color-muted)"
 						aria-expanded={isOpen}
 						aria-label={isOpen ? `Collapse ${node.name}` : `Expand ${node.name}`}
@@ -59,7 +59,7 @@
 
 				<a
 					href={`/folders/${node.id}`}
-					class="flex min-w-0 flex-1 items-center gap-1.5 rounded px-1.5 py-1 hover:bg-black/5 dark:hover:bg-white/10"
+					class="flex min-w-0 flex-1 items-center gap-1.5 rounded-control px-1.5 py-1 hover:bg-black/5 dark:hover:bg-white/10"
 					class:font-medium={isCurrent}
 					style={isCurrent ? 'background: var(--color-border)' : ''}
 					aria-current={isCurrent ? 'page' : undefined}

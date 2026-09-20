@@ -28,7 +28,7 @@
 </script>
 
 <span
-	class="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 align-middle text-xs font-semibold {TONES[tone]} {extra}"
+	class="inline-flex shrink-0 items-center gap-1 rounded-control px-1.5 py-0.5 align-middle text-xs font-semibold {TONES[tone]} {extra}"
 	{title}
 >
 	{@render children()}

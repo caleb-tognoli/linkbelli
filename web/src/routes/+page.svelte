@@ -123,7 +123,7 @@
 				{#each features as feature (feature.href)}
 					<a
 						href={feature.href}
-						class="group flex flex-col rounded-lg border p-5 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+						class="group flex flex-col rounded-card border p-5 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
 						style="border-color: var(--color-border); background: var(--color-surface)"
 					>
 						<span class="flex items-center gap-2.5">

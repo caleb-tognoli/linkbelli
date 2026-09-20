@@ -129,7 +129,7 @@
 				<button
 					type="button"
 					onclick={() => choose(template)}
-					class="flex flex-col rounded-lg border p-3 text-left transition-colors hover:border-[var(--color-accent)]"
+					class="flex flex-col rounded-card border p-3 text-left transition-colors hover:border-[var(--color-accent)]"
 					style="border-color: var(--color-border); background: var(--color-surface)"
 				>
 					<span class="font-medium">{template.name}</span>

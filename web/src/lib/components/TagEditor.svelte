@@ -159,7 +159,7 @@
 							id={`${listId}-${i}`}
 							role="option"
 							aria-selected={i === highlighted}
-							class="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs {i === highlighted
+							class="flex items-center justify-between gap-2 rounded-control px-2 py-1 text-xs {i === highlighted
 								? 'bg-selected text-accent'
 								: ''}"
 						>
