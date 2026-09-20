@@ -53,6 +53,8 @@
 			feedNew={data.dashboard.feedNew}
 			usage={data.dashboard.usage}
 			onboardingDismissed={data.user?.onboardingDismissed ?? false}
+			email={data.user?.email ?? undefined}
+			emailConfirmed={data.user?.emailConfirmed ?? true}
 		/>
 	</Page>
 {:else}

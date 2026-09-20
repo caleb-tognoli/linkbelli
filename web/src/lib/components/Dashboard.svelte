@@ -1,5 +1,6 @@
 <script lang="ts">
 	import OnboardingChecklist from './OnboardingChecklist.svelte';
+	import ConfirmEmailNotice from './ConfirmEmailNotice.svelte';
 	import { ArrowRight, BookOpen, Link2, ListMusic, Rss } from '@lucide/svelte';
 	import Button from './ui/Button.svelte';
 	import PageHeader from './ui/PageHeader.svelte';
@@ -17,7 +18,9 @@
 		recent,
 		feedNew,
 		usage,
-		onboardingDismissed = false
+		onboardingDismissed = false,
+		email = undefined,
+		emailConfirmed = true
 	}: {
 		username: string | null;
 		upNext: Paged<SearchHit>;
@@ -25,6 +28,9 @@
 		feedNew: number;
 		usage: Usage | null;
 		onboardingDismissed?: boolean;
+		email?: string;
+		/** Until this is true, nothing the app sends can reach them. */
+		emailConfirmed?: boolean;
 	} = $props();
 
 	/**
@@ -54,6 +60,10 @@
 			<Button href="/playlists" variant="primary" icon={ListMusic}>Your playlists</Button>
 		{/snippet}
 	</PageHeader>
+
+	{#if !emailConfirmed}
+		<ConfirmEmailNotice {email} />
+	{/if}
 
 	<!-- First, for a new account: this is the screen it lands on after signing up, so the
 	     first steps belong here rather than one click away on the playlists page. -->
