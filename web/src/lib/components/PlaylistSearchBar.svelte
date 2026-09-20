@@ -2,6 +2,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
+	import { failureMessage } from '$lib/api/errors';
 	import { Plus, Search } from '@lucide/svelte';
 	import { looksLikeUrl } from '$lib/urls';
 	import type { LinkPreview, PlaylistItem } from '$lib/types';
@@ -106,15 +107,15 @@
 				return;
 			}
 			if (!res.ok) {
-				error = 'Could not add the link.';
+				// failureMessage tells a lost connection, a conflict and a rate limit apart; the
+				// sentence here is only for the cases that have no better one.
+				error = failureMessage(res.status, 'Could not add the link.');
 				return;
 			}
 			const item = (await res.json()) as PlaylistItem;
 			query = '';
 			preview = null;
 			onAdded(item);
-		} catch {
-			error = 'Could not reach the server.';
 		} finally {
 			adding = false;
 		}

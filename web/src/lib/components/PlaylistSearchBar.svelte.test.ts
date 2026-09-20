@@ -111,6 +111,7 @@ describe('PlaylistSearchBar', () => {
 		await userEvent.click(screen.getByRole('button', { name: 'Add link' }));
 
 		expect(screen.getByRole('alert')).toHaveTextContent('Could not reach the server.');
+		expect(box).toHaveValue(URL);
 	});
 
 	it('previews an address once typing has paused', async () => {

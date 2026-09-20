@@ -7,7 +7,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { api } from '$lib/api/client';
+	import { api, isOffline } from '$lib/api/client';
 	import { Check, Clock, ExternalLink, Search, ListPlus } from '@lucide/svelte';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
 	import OfflineSupportNotice from '$lib/components/OfflineSupportNotice.svelte';
@@ -65,20 +65,14 @@
 		busy = true;
 		error = null;
 
-		let res: Response;
-		try {
-			res = await api.post(`/playlists/${playlistId}/items`, {
-				url: url.trim(),
-				note: note.trim() || null
-			});
-		} catch {
-			// The request never left. This is the case the queue exists for: the share sheet has
-			// already closed behind the person, and losing the link here loses it for good.
-			busy = false;
-			queued = keep();
-			if (!queued) error = 'No connection, and nowhere to keep this until there is one.';
-			return;
-		}
+		// A request that never left comes back as NO_CONNECTION rather than as a rejection, and
+		// outcomeFor calls that "offline" — the same branch below that catches a server having a
+		// bad minute. This is the case the queue exists for: the share sheet has already closed
+		// behind the person, and losing the link here loses it for good.
+		const res = await api.post(`/playlists/${playlistId}/items`, {
+			url: url.trim(),
+			note: note.trim() || null
+		});
 
 		busy = false;
 
@@ -92,12 +86,16 @@
 		} else if (res.status === 400) {
 			error = 'That does not look like a web address.';
 		} else if (outcomeFor(res.status) === 'offline') {
-			// The same judgement the queue makes when it flushes: a server having a bad minute,
-			// a rate limit, or a lapsed session are all "not yet" rather than "no". This page is
-			// where the share sheet lands, so a dead end here loses the link — the sheet has
-			// already closed behind the person and there is nothing to press again.
+			// The same judgement the queue makes when it flushes: no connection at all, a server
+			// having a bad minute, a rate limit, or a lapsed session are all "not yet" rather than
+			// "no". This page is where the share sheet lands, so a dead end here loses the link —
+			// the sheet has already closed behind the person and there is nothing to press again.
 			queued = keep();
-			if (!queued) error = 'Could not save that. Try again.';
+			if (!queued) {
+				error = isOffline(res)
+					? 'No connection, and nowhere to keep this until there is one.'
+					: 'Could not save that. Try again.';
+			}
 		} else {
 			error = 'Could not save that. Try again.';
 		}
