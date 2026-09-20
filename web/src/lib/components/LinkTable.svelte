@@ -589,7 +589,7 @@
 			<!-- At phone width the checkbox appears only once something is being selected, and the
 			     row menu is how that starts: a checkbox, two drag grips, a thumbnail and a date
 			     column left about sixty pixels for the title, which wrapped one letter at a time. -->
-			<td class="pr-1 {selecting ? '' : 'hidden sm:table-cell'}">
+			<td class="pr-1 {selecting ? '' : 'hidden @lg:table-cell'}">
 				<Checkbox
 					checked={selected.has(item.id)}
 					onchange={() => toggleSelected(item.id)}
@@ -599,7 +599,7 @@
 			<!-- Two grips, because they are two different things and sharing one gesture between
 			     them would make both ambiguous. The left reorders within this playlist; the right
 			     takes the row out of it. Each is labelled, and each does only its own job. -->
-			<td class="hidden select-none whitespace-nowrap pr-1 sm:table-cell" style="color: var(--color-muted)">
+			<td class="hidden select-none whitespace-nowrap pr-1 @lg:table-cell" style="color: var(--color-muted)">
 				{#if draggable}
 					<span
 						use:dragHandle
@@ -646,7 +646,7 @@
 						in the same box.
 					-->
 					<span
-						class="flex h-[2.8rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded bg-surface sm:h-[3.5rem] sm:w-[5.6rem]"
+						class="flex h-[2.8rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded bg-surface @lg:h-[3.5rem] @lg:w-[5.6rem]"
 						class:opacity-60={item.status === 'Watched'}
 					>
 						{#if thumb}
@@ -715,7 +715,7 @@
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.metadata.author}</p>
 					{/if}
 					<!-- Only where the column it belongs to is hidden. -->
-					<p class="mt-0.5 text-xs text-muted sm:hidden">
+					<p class="mt-0.5 text-xs text-muted @lg:hidden">
 						Added <time datetime={item.creationTime} title={formatExact(item.creationTime)}>
 							{dateAdded(item.creationTime)}
 						</time>
@@ -774,7 +774,7 @@
 				</div>
 			</div>
 		</td>
-		<td class="hidden whitespace-nowrap text-center sm:table-cell" style="color: var(--color-muted)">
+		<td class="hidden whitespace-nowrap text-center @lg:table-cell" style="color: var(--color-muted)">
 			<time datetime={item.creationTime} title={formatExact(item.creationTime)}>
 				{dateAdded(item.creationTime)}
 			</time>
@@ -1259,12 +1259,20 @@
 			{/each}
 		</ul>
 	{:else}
-		<div class="overflow-x-auto">
+		<!-- A container query, not a viewport one.
+
+		     The columns appeared at sm — 640px of *screen* — but the table is drawn beside a 324px
+		     sidebar, so at a 768px viewport it had 357px to work in and needed 527: the Added
+		     column and the row menu were pushed off the edge behind a horizontal scrollbar, and the
+		     title was squeezed to a couple of words. It asked the wrong question. What matters is
+		     how much room this box has, so that is what it asks, and collapsing the sidebar now
+		     buys the columns back rather than changing nothing. -->
+		<div class="@container overflow-x-auto">
 			<table class="w-full border-collapse text-sm">
 				<thead>
 					<tr class="text-left" style="color: var(--color-muted)">
 						{#if !readonly}
-							<th class="w-6 {selecting ? '' : 'hidden sm:table-cell'}">
+							<th class="w-6 {selecting ? '' : 'hidden @lg:table-cell'}">
 								<Checkbox
 									checked={allSelected}
 									indeterminate={selected.size > 0 && !allSelected}
@@ -1272,10 +1280,10 @@
 									label="Select all"
 								/>
 							</th>
-							<th class="hidden w-6 sm:table-cell"></th>
+							<th class="hidden w-6 @lg:table-cell"></th>
 						{/if}
 						<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
-						<th class="hidden py-2 text-center font-medium sm:table-cell">
+						<th class="hidden py-2 text-center font-medium @lg:table-cell">
 						<button
 							type="button"
 							onclick={clickAddedHeader}
