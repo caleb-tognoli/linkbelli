@@ -727,7 +727,7 @@
 		two sat on top of each other and neither could be used.
 	-->
 	<div
-		class="popover-surface fixed z-(--z-popover) flex items-center gap-0.5 rounded-card border p-1 text-sm shadow-lg {touch
+		class="popover-surface fixed z-(--z-popover) flex items-center gap-0.5 rounded-card border p-1 text-sm shadow-popover {touch
 			? 'inset-x-3 justify-center'
 			: '-translate-x-1/2 -translate-y-full'}"
 		style={touch
@@ -765,7 +765,7 @@
 
 {#if activeHighlight && panelAt}
 	<div
-		class="popover-surface fixed z-(--z-popover) rounded-card border p-2 text-sm shadow-lg"
+		class="popover-surface fixed z-(--z-popover) rounded-card border p-2 text-sm shadow-popover"
 		style="left: {panelAt.x}px; top: {panelAt.y}px; width: {panelAt.width}px"
 		role="dialog"
 		aria-label="Note on this highlight"

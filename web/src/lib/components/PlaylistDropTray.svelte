@@ -143,7 +143,7 @@
 	<!-- Fixed to the edge of the viewport rather than placed in the page: a drag can start from a
 	     row that has been scrolled to anywhere, and the target has to be somewhere predictable. -->
 	<aside
-		class="fixed bottom-4 right-4 z-(--z-popover) w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-card border shadow-lg"
+		class="fixed bottom-4 right-4 z-(--z-popover) w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-card border shadow-popover"
 		style="border-color: var(--color-border); background: var(--color-surface)"
 		aria-label="Drop onto a playlist"
 	>

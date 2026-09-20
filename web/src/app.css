@@ -71,9 +71,12 @@
 	--radius-card: 0.5rem;
 	--radius-dialog: 0.75rem;
 
-	/* Elevation: shadow-popover for menus and popovers, shadow-dialog for dialogs and toasts. */
+	/* Elevation: shadow-popover for menus, popovers and floating panels; shadow-dialog for
+	   dialogs and toasts; shadow-knob for the one thing that is a physical object rather than a
+	   layer — a switch's knob, which needs to look like it sits on the track. */
 	--shadow-popover: 0 4px 16px -2px rgb(0 0 0 / 0.14), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 	--shadow-dialog: 0 20px 40px -8px rgb(0 0 0 / 0.3), 0 8px 16px -8px rgb(0 0 0 / 0.2);
+	--shadow-knob: 0 1px 2px 0 rgb(0 0 0 / 0.2);
 }
 
 /* Stacking order, by role. Used as z-(--z-popover) and so on. */

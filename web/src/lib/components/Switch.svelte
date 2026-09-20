@@ -36,7 +36,7 @@
 		: 'background: var(--color-border-strong)'}
 >
 	<span
-		class="my-0.5 inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200"
+		class="my-0.5 inline-block h-4 w-4 rounded-full bg-white shadow-knob transition-transform duration-200"
 		style={checked ? 'transform: translateX(1.125rem)' : 'transform: translateX(0.125rem)'}
 	></span>
 </button>
