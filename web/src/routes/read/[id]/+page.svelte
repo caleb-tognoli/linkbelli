@@ -187,6 +187,14 @@
 		void goto(`/read/${linkId}${suffix}`);
 	}
 
+	/** The site, unless "the site" is just the article's own title said twice. */
+	const siteLabel = $derived.by(() => {
+		const site = data.content.siteName?.trim();
+		const title = data.content.title?.trim();
+		if (!site || (title && site.toLowerCase() === title.toLowerCase())) return data.content.host;
+		return site;
+	});
+
 	const backHref = $derived(data.from ? `/playlists/${data.from}` : '/queue');
 	const backLabel = $derived(data.from ? (data.fromName ?? 'Back to the playlist') : 'Up next');
 
@@ -491,30 +499,44 @@
 	<BackLink href={backHref} label={backLabel} class="mb-3" />
 	<header class="border-b pb-4" style="border-color: var(--color-border)">
 		<h1 class="text-2xl font-semibold leading-tight">{data.content.title ?? data.content.url}</h1>
+		<!--
+			Each fact carries its own separator inside an inline-flex group, so a "·" can never
+			wrap to the start of the next line on its own.
+
+			The site name is whatever enrichment read from the page, which for many sites is the
+			<title> — so it repeated the heading directly above it, word for word. Where it does,
+			the host is the useful thing to say instead.
+		-->
 		<p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm" style="color: var(--color-muted)">
-			<span>{data.content.siteName ?? data.content.host}</span>
-			<span aria-hidden="true">·</span>
-			<span>{data.content.wordCount.toLocaleString()} words</span>
-			{#if minutes}
+			<span>{siteLabel}</span>
+			<span class="inline-flex items-center gap-x-2">
 				<span aria-hidden="true">·</span>
-				<span>{minutes} min read</span>
+				{data.content.wordCount.toLocaleString()} words
+			</span>
+			{#if minutes}
+				<span class="inline-flex items-center gap-x-2">
+					<span aria-hidden="true">·</span>
+					{minutes} min read
+				</span>
 			{/if}
 			{#if highlights.length}
-				<span aria-hidden="true">·</span>
-				<a href="#marked" class="hover:underline">
-					{highlights.length} marked
-				</a>
+				<span class="inline-flex items-center gap-x-2">
+					<span aria-hidden="true">·</span>
+					<a href="#marked" class="hover:underline">{highlights.length} marked</a>
+				</span>
 			{/if}
-			<span aria-hidden="true">·</span>
-			<a
-				href={data.content.url}
-				target="_blank"
-				rel="noreferrer"
-				class="inline-flex items-center gap-1 hover:underline"
-			>
-				Original
-				<ExternalLink size={12} aria-hidden="true" />
-			</a>
+			<span class="inline-flex items-center gap-x-2">
+				<span aria-hidden="true">·</span>
+				<a
+					href={data.content.url}
+					target="_blank"
+					rel="noreferrer"
+					class="inline-flex items-center gap-1 hover:underline"
+				>
+					Original
+					<ExternalLink size={12} aria-hidden="true" />
+				</a>
+			</span>
 		</p>
 
 		<div class="mt-3 flex flex-wrap items-center gap-2">
