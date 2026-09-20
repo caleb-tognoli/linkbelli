@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { toast } from '$lib/toast.svelte';
@@ -18,7 +18,8 @@ describe('Toaster', () => {
 		expect(await screen.findByRole('status')).toHaveTextContent('Saved.');
 
 		await vi.advanceTimersByTimeAsync(5100);
-		expect(screen.queryByText('Saved.')).not.toBeInTheDocument();
+		// waitFor, because it leaves on a transition rather than in the same frame.
+		await waitFor(() => expect(screen.queryByText('Saved.')).not.toBeInTheDocument());
 	});
 
 	it('announces a failure as an alert and keeps it until dismissed', async () => {
@@ -34,7 +35,7 @@ describe('Toaster', () => {
 		await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
 		// The region stays — it has to be in the tree before a message arrives, or the message is
 		// not announced — so what goes is the message.
-		expect(screen.queryByText('Could not save that.')).not.toBeInTheDocument();
+		await waitFor(() => expect(screen.queryByText('Could not save that.')).not.toBeInTheDocument());
 		expect(screen.getByRole('alert')).toBeInTheDocument();
 	});
 

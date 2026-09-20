@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { fly } from 'svelte/transition';
+	import { prefersReducedMotion } from '$lib/motion';
 	import { CircleAlert, CircleCheck, Info, X } from '@lucide/svelte';
 	import { toast, type Toast } from '$lib/toast.svelte';
 
@@ -73,6 +75,16 @@
 	}
 
 	const ICONS = { info: Info, success: CircleCheck, error: CircleAlert };
+
+	/**
+	 * Arriving and leaving, rather than appearing and vanishing between frames.
+	 *
+	 * Dialogs, menus, popovers and the drawer all animate; toasts did not — and they appear at the
+	 * far bottom of the screen, away from wherever somebody is looking, which is exactly where a
+	 * little movement is what draws the eye. Cut to nothing where less motion was asked for; the
+	 * CSS rule in app.css cannot reach a transition Svelte runs from script.
+	 */
+	const motion = $derived(prefersReducedMotion() ? { duration: 0 } : { y: 12, duration: 160 });
 </script>
 
 <div
@@ -102,7 +114,7 @@
 		onfocusout={() => hold('other', false)}
 	>
 		{#each toast.list.filter((t) => t.tone !== 'error') as item (item.id)}
-			{@render card(item)}
+			<div transition:fly={motion}>{@render card(item)}</div>
 		{/each}
 	</div>
 	<!-- svelte-ignore a11y_mouse_events_have_key_events -- as above. -->
@@ -117,7 +129,7 @@
 		onfocusout={() => hold('error', false)}
 	>
 		{#each toast.list.filter((t) => t.tone === 'error') as item (item.id)}
-			{@render card(item)}
+			<div transition:fly={motion}>{@render card(item)}</div>
 		{/each}
 	</div>
 </div>
