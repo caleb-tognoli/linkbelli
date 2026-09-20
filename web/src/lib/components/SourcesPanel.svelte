@@ -187,7 +187,7 @@
 					{/if}
 				</Popover.Trigger>
 				<Popover.Content
-					class="popover-surface z-30 w-72 max-h-96 overflow-y-auto rounded-lg border p-3 shadow-md"
+					class="popover-surface z-(--z-popover) w-72 max-h-96 overflow-y-auto rounded-lg border p-3 shadow-md"
 					align="end"
 					sideOffset={6}
 				>

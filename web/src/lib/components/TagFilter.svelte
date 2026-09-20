@@ -81,7 +81,7 @@
 		</Popover.Trigger>
 		<Popover.Portal>
 			<Popover.Content
-				class="popover-surface z-50 w-64 rounded-lg border p-2 shadow-2xl"
+				class="popover-surface z-(--z-popover) w-64 rounded-lg border p-2 shadow-2xl"
 				sideOffset={6}
 			>
 				<Input

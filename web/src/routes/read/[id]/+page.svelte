@@ -484,7 +484,7 @@
 
 <!-- Where you are, pinned to the top. The one thing a long article never told you. -->
 <div
-	class="fixed inset-x-0 top-0 z-20 h-0.5"
+	class="fixed inset-x-0 top-0 z-(--z-sticky) h-0.5"
 	style="background: var(--color-accent); width: {Math.round(progress * 100)}%"
 	role="progressbar"
 	aria-label="How far through this article you are"
@@ -725,7 +725,7 @@
 		two sat on top of each other and neither could be used.
 	-->
 	<div
-		class="popover-surface fixed z-30 flex items-center gap-0.5 rounded-lg border p-1 text-sm shadow-lg {touch
+		class="popover-surface fixed z-(--z-popover) flex items-center gap-0.5 rounded-lg border p-1 text-sm shadow-lg {touch
 			? 'inset-x-3 justify-center'
 			: '-translate-x-1/2 -translate-y-full'}"
 		style={touch
@@ -763,7 +763,7 @@
 
 {#if activeHighlight && panelAt}
 	<div
-		class="popover-surface fixed z-30 rounded-lg border p-2 text-sm shadow-lg"
+		class="popover-surface fixed z-(--z-popover) rounded-lg border p-2 text-sm shadow-lg"
 		style="left: {panelAt.x}px; top: {panelAt.y}px; width: {panelAt.width}px"
 		role="dialog"
 		aria-label="Note on this highlight"

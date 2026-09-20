@@ -108,9 +108,9 @@
 
 <Dialog.Root bind:open={open.open}>
 	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-40 bg-black/40" />
+		<Dialog.Overlay class="fixed inset-0 z-(--z-overlay) bg-black/40" />
 		<Dialog.Content
-			class="fixed left-1/2 top-[15vh] z-50 w-[92vw] max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border shadow-2xl"
+			class="fixed left-1/2 top-[15vh] z-(--z-modal) w-[92vw] max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border shadow-2xl"
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<Dialog.Title class="sr-only">Search and jump</Dialog.Title>
