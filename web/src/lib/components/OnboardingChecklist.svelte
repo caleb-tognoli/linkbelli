@@ -65,7 +65,7 @@
 			<button
 				type="button"
 				onclick={dismiss}
-				class="shrink-0 rounded-control p-1 hover:bg-black/5 dark:hover:bg-white/10"
+				class="tap-target inline-flex size-6 shrink-0 items-center justify-center rounded-control hover:bg-black/5 dark:hover:bg-white/10"
 				style="color: var(--color-muted)"
 				title="Hide this for good"
 				aria-label="Hide getting started"

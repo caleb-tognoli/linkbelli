@@ -27,6 +27,7 @@
 		class="fixed inset-x-0 top-0 z-(--z-toast) h-0.5 overflow-hidden"
 		role="progressbar"
 		aria-label="Loading the page"
+		aria-valuetext="Loading"
 	>
 		<div class="navigation-progress h-full w-1/3 bg-accent"></div>
 	</div>

@@ -32,11 +32,31 @@
 </script>
 
 {#if rows.length > 0}
+	<!--
+		A tree, said out loud.
+
+		Depth was carried by padding alone, on sibling divs — so a folder nested three deep inside
+		a ten-deep hierarchy was announced as one item in a flat list of names, with nothing to say
+		where it sat or that it had anything under it. The rows stay flat in the markup, because
+		the open ones are computed as a flat list, and the tree roles carry the shape instead.
+	-->
 	<nav aria-label="Folders" class="flex flex-col gap-0.5 text-sm">
-		{#each rows as node (node.id)}
+		<ul role="tree" aria-label="Folders" class="flex flex-col gap-0.5">
+		{#each rows as node, i (node.id)}
 			{@const isOpen = open.has(node.id)}
 			{@const isCurrent = node.id === currentId}
-			<div class="flex items-center" style={`padding-left: ${node.depth * 0.85}rem`}>
+			{@const siblings = rows.filter((r) => r.depth === node.depth)}
+			<li
+				role="treeitem"
+				aria-level={node.depth + 1}
+				aria-setsize={siblings.length}
+				aria-posinset={siblings.indexOf(node) + 1}
+				aria-expanded={node.children.length > 0 ? isOpen : undefined}
+				aria-selected={isCurrent}
+				aria-current={isCurrent ? 'page' : undefined}
+				class="flex items-center"
+				style={`padding-left: ${node.depth * 0.85}rem`}
+			>
 				{#if node.children.length > 0}
 					<button
 						type="button"
@@ -76,7 +96,8 @@
 						</span>
 					{/if}
 				</a>
-			</div>
+			</li>
 		{/each}
+		</ul>
 	</nav>
 {/if}
