@@ -319,7 +319,10 @@
 			aria-label={`Account settings for ${data.user?.username ?? 'you'}`}
 		>
 			<User size={20} aria-hidden="true" />
-			{#if showLabels}<span class="truncate" style="color: var(--color-muted)">{data.user?.username}</span>{/if}
+			<!-- Muted only while the row is not the current page. On the active row the background
+			     is --color-border, and muted text on that is 4.34:1 in light mode — under the 4.5
+			     small text needs, and the only place in the app that failed it. -->
+			{#if showLabels}<span class="truncate" class:text-muted={!onSettings}>{data.user?.username}</span>{/if}
 		</a>
 		{#if isAdmin}
 			<!-- Shown only where it will work: the API is still the authority on who may look. -->
