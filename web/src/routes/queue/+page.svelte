@@ -248,7 +248,10 @@
 {#snippet row(hit: SearchHit)}
 	<!-- Stacked below `sm`: the actions were a fixed 210px cluster beside the title, which left
 	     the title so little room that an address wrapped one character at a time. -->
-	<li class="flex flex-col gap-2 p-3 sm:flex-row sm:items-start sm:gap-3" style="border-color: var(--color-border)">
+	<li
+		class="flex flex-col gap-2 p-3 transition-colors hover:bg-chip/60 sm:flex-row sm:items-start sm:gap-3"
+		style="border-color: var(--color-border)"
+	>
 		<div class="flex min-w-0 flex-1 items-start gap-3">
 					{#if hit.link.favicon}
 						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />

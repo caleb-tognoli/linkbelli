@@ -283,6 +283,24 @@ button,
 	animation: lb-slide-out-left 150ms ease-in;
 }
 
+/* A row that has just arrived.
+
+   A link added from the search bar was appended to a list of forty and nothing said which one it
+   was. This washes accent over it for a moment and then leaves it alone. Reduced motion cuts the
+   animation, as it does every other one here — the row is still there, which was the point. */
+@keyframes lb-flash {
+	from {
+		background: var(--color-selected);
+	}
+	to {
+		background: transparent;
+	}
+}
+
+.flash {
+	animation: lb-flash 2s ease-out;
+}
+
 /* A finger-sized target around a control that has to stay visually small.
    A drag grip, a tree's chevron, a switch: drawn at 14–20px, they measured 13–23px across and
    were missed as often as hit on a phone. The area is painted by a pseudo-element that overflows

@@ -440,7 +440,10 @@
 	{:else}
 		<ul class="mt-5 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
 			{#each hits as hit (hit.itemId)}
-				<li class="flex items-start gap-3 p-3" style="border-color: var(--color-border)">
+				<li
+					class="flex items-start gap-3 p-3 transition-colors hover:bg-chip/60"
+					style="border-color: var(--color-border)"
+				>
 					{#if hit.link.favicon}
 						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
 					{:else}

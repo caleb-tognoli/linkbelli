@@ -321,6 +321,8 @@
 		document
 			.querySelector(`[data-item-id="${item.id}"]`)
 			?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
+		// Which row it is, for the two seconds somebody needs to find it in a list of forty.
+		table?.flash(item.id);
 	}
 
 	function itemsEndpoint() {
@@ -355,6 +357,9 @@
 		nextCursor = page.nextCursor;
 		total = page.total ?? null;
 	}
+
+	/** The table itself, so a newly added row can be pointed at. */
+	let table = $state<LinkTable>();
 
 	/** A refetch in flight, so the list can say it is about to change rather than sit stale. */
 	let refreshing = $state(false);
@@ -686,6 +691,7 @@
 	     being shown is never mistaken for the answer. -->
 	<div class="mt-5 transition-opacity" class:opacity-60={refreshing} aria-busy={refreshing}>
 		<LinkTable
+			bind:this={table}
 			bind:items
 			readonly={!canEdit}
 			{onfetchsort}

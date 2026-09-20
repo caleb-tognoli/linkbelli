@@ -527,6 +527,25 @@
 		return !item.link.enriched;
 	}
 
+	/**
+	 * A row worth pointing at for a moment: one just added, or one just put back.
+	 *
+	 * Exported so the page that adds a link can say which one it was.
+	 */
+	let flashedId = $state<string | null>(null);
+
+	export function flash(itemId: string) {
+		flashedId = null;
+		// Next frame, so a second flash on the same row restarts the animation rather than
+		// being ignored as "already that value".
+		requestAnimationFrame(() => {
+			flashedId = itemId;
+			setTimeout(() => {
+				if (flashedId === itemId) flashedId = null;
+			}, 2000);
+		});
+	}
+
 	/** Whether anything is selected: what brings the checkbox column back on a narrow screen. */
 	const selecting = $derived(selected.size > 0);
 
@@ -543,7 +562,8 @@
 
 {#snippet row(item: PlaylistItem, draggable: boolean)}
 	<tr
-		class="border-t align-middle"
+		class="border-t align-middle transition-colors hover:bg-chip/60"
+		class:flash={flashedId === item.id}
 		data-item-focused={focusedItem?.id === item.id}
 		data-item-id={item.id}
 		data-watched={item.status === 'Watched'}
