@@ -6,7 +6,8 @@
 	import { api, json } from '$lib/api/client';
 	import { buildCommands } from '$lib/commands';
 	import { isTypingTarget } from '$lib/keyboard';
-	import { Search } from '@lucide/svelte';
+	import { Search, X } from '@lucide/svelte';
+	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import type { Paged, Playlist } from '$lib/types';
 
 	// Held outside this component, so the sidebar's own button and the mobile header can open it.
@@ -108,9 +109,12 @@
 
 <Dialog.Root bind:open={open.open}>
 	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-(--z-overlay) bg-black/40" />
+		<!-- anim-fade and anim-pop, like every other dialog. This is the overlay the app opens more
+		     than any other and it was the one that appeared and vanished between frames, which
+		     reads as a glitch rather than as something opening. -->
+		<Dialog.Overlay class="anim-fade fixed inset-0 z-(--z-overlay) bg-black/40" />
 		<Dialog.Content
-			class="fixed left-1/2 top-[15vh] z-(--z-modal) w-[92vw] max-w-lg -translate-x-1/2 overflow-hidden rounded-dialog border shadow-dialog"
+			class="anim-pop fixed left-1/2 top-[15vh] z-(--z-modal) w-[92vw] max-w-lg -translate-x-1/2 overflow-hidden rounded-dialog border shadow-dialog"
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<Dialog.Title class="sr-only">Search and jump</Dialog.Title>
@@ -132,6 +136,11 @@
 					aria-activedescendant={commands.length > 0 ? optionId(activeIndex) : undefined}
 					class="w-full bg-transparent py-3 outline-none focus-visible:outline-offset-[-3px]"
 				/>
+				<!-- A way out that is not Escape: on a phone there is no Escape key, and the only
+				     thing left to tap was whatever slice of the overlay the panel did not cover. -->
+				<Dialog.Close class={buttonClass('ghost', 'sm', true, '-mr-1 shrink-0')} title="Close" aria-label="Close">
+					<X size={16} aria-hidden="true" />
+				</Dialog.Close>
 			</div>
 
 			{#if commands.length === 0}
