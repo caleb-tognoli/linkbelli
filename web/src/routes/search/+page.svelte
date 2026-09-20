@@ -210,7 +210,7 @@
 			onchange={(e) => navigate({ kind: e.currentTarget.value })}
 			aria-label="Kind"
 			size="sm"
-			class="w-auto"
+			width="auto"
 			style={data.kind ? 'border-color: var(--color-accent); color: var(--color-accent)' : ''}
 		>
 			<option value="">Anything</option>
