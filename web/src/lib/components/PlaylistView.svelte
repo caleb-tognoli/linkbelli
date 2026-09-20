@@ -228,6 +228,23 @@
 		{ format: 'html', label: 'Bookmarks' }
 	];
 	let playlistName = $state(playlist.name);
+
+	/**
+	 * Where "Follow it" and "Save a copy" send somebody who has no account yet.
+	 *
+	 * Back to this playlist once they have one, rather than to a home page that has forgotten
+	 * what they were looking at.
+	 */
+	const signUpHref = $derived(
+		`/register?redirectTo=${encodeURIComponent(page.url.pathname + page.url.search)}`
+	);
+
+	/** The public feed for this playlist, where there is one to point at. */
+	const feedHref = $derived(
+		ownerUsername && !isOwner
+			? `/public/${encodeURIComponent(ownerUsername)}/${encodeURIComponent(playlist.slug)}/feed.rss`
+			: null
+	);
 	// Editable now, so the page shows what the dialog last saved rather than what the server sent
 	// when the page loaded.
 	let description = $state(playlist.description ?? null);
@@ -514,10 +531,11 @@
 					</p>
 				{/if}
 			{/if}
-			{#if !isOwner}
+			{#if !isOwner && (isLoggedIn || likeCount > 0)}
 				<!-- The lightest thing a visitor can say about someone else's list, and the only
-				     thing they do here that its owner ever sees. Shown to anonymous visitors as a
-				     count they can read but not add to. -->
+				     thing they do here that its owner ever sees. Hidden at zero for a visitor who
+				     cannot press it: "♡ 0" on a list nobody has found yet says something
+				     discouraging and untrue. -->
 				<button
 					type="button"
 					onclick={toggleLike}
@@ -641,6 +659,21 @@
 			{/if}
 		</div>
 	</header>
+
+	{#if !isOwner && !isLoggedIn}
+		<!-- A signed-out visitor could read the list and nothing else: following and copying were
+		     not offered, and the feeds existed only as <link> tags no human ever sees. -->
+		<div class="mt-4 flex flex-wrap items-center gap-2 rounded-card border border-border bg-surface px-4 py-3 text-sm">
+			<p class="mr-auto text-muted">Keep up with this list, or start one of your own.</p>
+			<Button href={signUpHref} variant="primary" size="sm" icon={Rss}>Follow it</Button>
+			<Button href={signUpHref} size="sm" icon={CopyPlus}>Save a copy</Button>
+			{#if feedHref}
+				<Button href={feedHref} size="sm" icon={Rss} title="Subscribe in a feed reader">
+					RSS
+				</Button>
+			{/if}
+		</div>
+	{/if}
 
 	{#if isOwner && playlist.averageScore != null && playlist.scoredCount}
 		<p class="mt-2 flex items-center gap-1.5 text-sm" style="color: var(--color-muted)">
