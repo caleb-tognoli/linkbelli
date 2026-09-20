@@ -69,15 +69,38 @@
 		error = null;
 	}
 
-	const ready = $derived(
-		!!chosen &&
-			!!name.trim() &&
-			chosen.fields.every((f) => !f.required || values[f.key]?.trim()) &&
-			(destination !== NEW_PLAYLIST || !!newPlaylistName.trim())
-	);
+	/**
+	 * What the form is still waiting for, in the order somebody reads it.
+	 *
+	 * The Create button used to be disabled on the same conditions and say nothing about them, so
+	 * pressing it did nothing at all and no field was marked — the one you had missed looked
+	 * exactly like the ones you had filled.
+	 */
+	const missing = $derived.by(() => {
+		if (!chosen) return [] as { key: string; label: string }[];
+
+		const gaps: { key: string; label: string }[] = [];
+		if (!name.trim()) gaps.push({ key: 'name', label: 'Name' });
+		if (destination === NEW_PLAYLIST && !newPlaylistName.trim()) {
+			gaps.push({ key: 'newPlaylist', label: 'Name of the new playlist' });
+		}
+		for (const field of chosen.fields) {
+			if (field.required && !values[field.key]?.trim()) gaps.push({ key: field.key, label: field.label });
+		}
+		return gaps;
+	});
+
+	/** Marked only once somebody has asked to create, so a half-filled form is not scolded. */
+	let showGaps = $state(false);
+	const gapFor = (key: string) => (showGaps && missing.some((g) => g.key === key) ? 'Needed.' : null);
 
 	async function create() {
-		if (!chosen || !ready) return;
+		if (!chosen) return;
+		if (missing.length > 0) {
+			showGaps = true;
+			error = `Fill in ${missing.map((g) => g.label.toLowerCase()).join(', ')} first.`;
+			return;
+		}
 		busy = true;
 		error = null;
 
@@ -153,17 +176,23 @@
 			<p class="text-sm" style="color: var(--color-muted)">{chosen.description}</p>
 		</div>
 
-		<Field label="Name">
+		<Field label="Name" required error={gapFor('name')}>
 			{#snippet children(f)}
 				<Input
 					id={f.id}
 					bind:value={name}
+					invalid={f.invalid}
 					aria-describedby={f.describedby}
 				/>
 			{/snippet}
 		</Field>
 
-		<DestinationPicker {playlists} bind:value={destination} bind:newName={newPlaylistName} />
+		<DestinationPicker
+			{playlists}
+			bind:value={destination}
+			bind:newName={newPlaylistName}
+			error={gapFor('newPlaylist')}
+		/>
 
 		{#each chosen.fields as field (field.key)}
 			<!-- A Field, like the two above it: built by hand, a template's required variable was
@@ -174,13 +203,14 @@
 				hint={field.help ?? undefined}
 				required={field.required}
 				optional={!field.required}
+				error={gapFor(field.key)}
 			>
 				{#snippet children(f)}
 					<Input
 						id={f.id}
 						bind:value={values[field.key]}
 						placeholder={field.placeholder ?? ''}
-						required={field.required}
+						invalid={f.invalid}
 						aria-describedby={f.describedby}
 					/>
 				{/snippet}
@@ -192,7 +222,9 @@
 		{/if}
 
 		<div class="flex items-center gap-2">
-			<Button variant="primary" icon={Check} onclick={create} loading={busy} disabled={!ready}>
+			<!-- Enabled, and answering with what is missing. A disabled button with no reason
+			     beside it is a dead end somebody can only get out of by guessing. -->
+			<Button variant="primary" icon={Check} onclick={create} loading={busy}>
 				{busy ? 'Creating…' : 'Create source'}
 			</Button>
 			<Button variant="ghost" onclick={onskip}>Set one up by hand instead</Button>

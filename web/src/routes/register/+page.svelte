@@ -21,8 +21,32 @@
 	// Only once they have moved on: telling somebody their username is too short while they are
 	// typing the third character of it is noise.
 	let usernameTouched = $state(false);
-	const usernameError = $derived(usernameTouched ? usernameProblem(username) : null);
+	/** Set by a submit that could not go, so the form says what it is waiting for. */
+	let attempted = $state(false);
+	const usernameError = $derived(
+		usernameTouched || attempted ? usernameProblem(username) : null
+	);
+	const passwordError = $derived(
+		attempted && !passwordAcceptable(password) ? 'Meet all five rules below.' : null
+	);
 	const rulesId = 'password-rules';
+
+	/**
+	 * Holds the form back, and says why.
+	 *
+	 * The button used to be disabled on the same two conditions and say nothing about either — and
+	 * because the username error was hidden until blur, a form that looked complete could sit in
+	 * front of a button that did nothing, with no way to find out which field was the problem.
+	 */
+	function check({ cancel, formElement }: { cancel: () => void; formElement: HTMLFormElement }) {
+		attempted = true;
+		const bad = usernameProblem(username) ? 'username' : !passwordAcceptable(password) ? 'password' : null;
+		if (!bad) return true;
+
+		cancel();
+		formElement.querySelector<HTMLInputElement>(`input[name="${bad}"]`)?.focus();
+		return false;
+	}
 
 	// Carried across to the other form, so whichever one somebody ends up using still takes them
 	// where they were going.
@@ -42,7 +66,9 @@
 	<form
 		method="post"
 		class="mt-5 flex flex-col gap-3"
-		use:enhance={() => {
+		novalidate
+		use:enhance={({ cancel, formElement }) => {
+			if (!check({ cancel, formElement })) return;
 			submitting = true;
 			return async ({ update }) => {
 				await update();
@@ -84,7 +110,7 @@
 			{/snippet}
 		</Field>
 
-		<Field label="Password" required>
+		<Field label="Password" required error={passwordError}>
 			{#snippet children(f)}
 				<PasswordInput
 					id={f.id}
@@ -92,7 +118,8 @@
 					autocomplete="new-password"
 					bind:value={password}
 					minlength={PASSWORD_MIN}
-					required
+					invalid={f.invalid}
+					aria-required="true"
 					aria-describedby={[f.describedby, rulesId].filter(Boolean).join(' ')}
 				/>
 			{/snippet}
@@ -108,7 +135,6 @@
 			variant="primary"
 			icon={UserPlus}
 			loading={submitting}
-			disabled={!passwordAcceptable(password) || !!usernameProblem(username)}
 			class="mt-1 w-full"
 		>
 			{submitting ? 'Creating…' : 'Create account'}
