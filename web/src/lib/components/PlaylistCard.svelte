@@ -81,7 +81,7 @@
 			{name}
 		</a>
 		{#if nsfw || actions}
-			<span class="relative z-(--z-sticky) flex shrink-0 items-center gap-1.5">
+			<span class="relative z-(--z-raised) flex shrink-0 items-center gap-1.5">
 				{#if nsfw}<NsfwBadge />{/if}
 				{#if actions}{@render actions()}{/if}
 			</span>
@@ -94,7 +94,7 @@
 
 	{#if tags.length}
 		<!-- Raised above the card's stretched link, so a tag can be a link of its own. -->
-		<div class="relative z-(--z-sticky) flex flex-wrap gap-1 self-start">
+		<div class="relative z-(--z-raised) flex flex-wrap gap-1 self-start">
 			{#each tags as tag (tag)}
 				<Chip href={tagHref?.(tag)} title={tagHref ? `Show playlists tagged ${tag}` : undefined}>{tag}</Chip>
 			{/each}

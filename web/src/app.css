@@ -87,6 +87,10 @@
 	   sticks to the top of a page has to start below it rather than under it. */
 	--app-bar-h: 3.8rem;
 
+	/* Above a card's own stretched link, so a tag on it can be a link of its own. Nothing to do
+	   with the page's layers below — it is one element lifted over its sibling. */
+	--z-raised: 1;
+
 	--z-sticky: 20;
 	/* The top bar outranks a page's own sticky chrome: it holds the way to everywhere else. */
 	--z-app-bar: 25;
