@@ -879,9 +879,6 @@
 						     playlist's own pictures, not a placeholder. -->
 						<MenuItem icon={Image} onselect={() => setCover(item)}>Use as the playlist cover</MenuItem>
 					{/if}
-					{#if !showScoreCol}
-						<MenuItem icon={Star} onselect={() => (forceShowScore = true)}>Show the score column</MenuItem>
-					{/if}
 					<MenuSeparator />
 					<MenuItem icon={Trash2} danger onselect={() => remove(item)}>Remove from this playlist</MenuItem>
 				</Menu>
@@ -1045,6 +1042,19 @@
 		>
 			<Image size={12} aria-hidden="true" /> Thumbnails
 		</button>
+
+		{#if !readonly}
+			<!-- Here, with the other display options, rather than in a row's own menu — where a
+			     setting for the whole table sat among twelve actions about that one link. -->
+			<button
+				type="button"
+				onclick={() => (forceShowScore = !showScoreCol)}
+				class={chipTrigger(showScoreCol)}
+				aria-pressed={showScoreCol}
+			>
+				<Star size={12} aria-hidden="true" /> Scores
+			</button>
+		{/if}
 
 		{#if total !== null}
 			<span class="ml-auto text-xs" style="color: var(--color-muted)">
