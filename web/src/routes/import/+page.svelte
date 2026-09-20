@@ -70,9 +70,12 @@
 			enctype="multipart/form-data"
 			use:enhance={() => {
 				submitting = true;
+				// Cleared after the result is on the page, not before it: the other way round
+				// dropped the spinner while the import was still being applied, so the button went
+				// idle in front of a page that had not changed yet.
 				return async ({ update }) => {
-					submitting = false;
 					await update();
+					submitting = false;
 				};
 			}}
 			class="space-y-7"
