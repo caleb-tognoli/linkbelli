@@ -367,7 +367,7 @@
 
 	<div class="mt-8 rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
 		<div class="flex items-center justify-between">
-			<h2 class="font-medium">Playlists</h2>
+			<h2 class="t-section">Playlists</h2>
 			<Button size="sm" icon={Plus} onclick={openLinkDialog}>Connect playlist</Button>
 		</div>
 		{#if attachedPlaylists.length}

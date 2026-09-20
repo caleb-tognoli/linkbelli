@@ -179,7 +179,7 @@
 		{#if similar.length > 0}
 			<!-- The whole reason to look at this screen: two spellings of one subject. -->
 			<div class="mt-6 rounded-lg border p-4" style="border-color: var(--color-border)">
-				<h2 class="text-sm font-medium">These look like the same tag</h2>
+				<h2 class="t-subsection">These look like the same tag</h2>
 				<ul class="mt-2 flex flex-col gap-2">
 					{#each similar as group (group[0].name)}
 						<li class="flex flex-wrap items-center justify-between gap-2 text-sm">

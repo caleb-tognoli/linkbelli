@@ -107,7 +107,7 @@
 	<!-- The effect above has already handed over to the form by hand. -->
 {:else if !chosen}
 	<div>
-		<h2 class="flex items-center gap-1.5 font-medium">
+		<h2 class="flex items-center gap-1.5 t-section">
 			<Sparkles size={16} aria-hidden="true" /> Start from a template
 		</h2>
 		<p class="mt-1 text-sm" style="color: var(--color-muted)">
@@ -140,7 +140,7 @@
 	<div class="flex flex-col gap-3">
 		<div>
 			<BackLink onclick={() => (chosen = null)} label="All templates" />
-			<h2 class="mt-2 font-medium">{chosen.name}</h2>
+			<h2 class="mt-2 t-section">{chosen.name}</h2>
 			<p class="text-sm" style="color: var(--color-muted)">{chosen.description}</p>
 		</div>
 

@@ -102,7 +102,7 @@
 
 <div class="flex flex-col gap-4">
 	<div class="flex items-center justify-between">
-		<h3 class="font-medium">API keys</h3>
+		<h3 class="t-section">API keys</h3>
 		<Modal bind:open={dialogOpen} onOpenChange={resetOnClose} title="New API key">
 			{#snippet trigger()}
 				<Dialog.Trigger class={buttonClass('secondary', 'sm')}>

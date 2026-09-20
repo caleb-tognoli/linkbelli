@@ -60,7 +60,7 @@
 </script>
 
 <div>
-	<h3 class="font-medium">Password</h3>
+	<h3 class="t-section">Password</h3>
 	<form class="mt-3 flex max-w-sm flex-col gap-3" onsubmit={save} novalidate>
 		<Field label="Current password" error={currentError} required>
 			{#snippet children(f)}

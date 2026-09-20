@@ -184,7 +184,7 @@
 
 		<div class="flex min-w-0 flex-col gap-16">
 			<section id="account" aria-labelledby="account-heading" class="flex scroll-mt-20 flex-col gap-6 md:scroll-mt-8">
-				<h2 id="account-heading" class="text-lg font-semibold">Account</h2>
+				<h2 id="account-heading" class="t-group">Account</h2>
 				{#if data.user}
 					<!-- minmax(0, 1fr) and wrapping anywhere: an email address is one unbreakable word,
 					     and a plain 1fr column refuses to be narrower than it — which made the whole page
@@ -201,17 +201,17 @@
 			</section>
 
 			<section id="appearance" aria-labelledby="appearance-heading" class="flex scroll-mt-20 flex-col gap-8 md:scroll-mt-8">
-				<h2 id="appearance-heading" class="text-lg font-semibold">Appearance & content</h2>
+				<h2 id="appearance-heading" class="t-group">Appearance & content</h2>
 
 				<div>
-					<h3 class="font-medium">Theme</h3>
+					<h3 class="t-section">Theme</h3>
 					<div class="mt-3">
 						<ThemeToggle initial={data.theme} />
 					</div>
 				</div>
 
 				<div>
-					<h3 class="font-medium">Content</h3>
+					<h3 class="t-section">Content</h3>
 					<label class="mt-3 flex items-center gap-2 text-sm">
 						<Switch checked={showNsfw} onchange={setNsfw} labelledby="pref-nsfw" />
 						<span id="pref-nsfw">Show adult (NSFW) content</span>
@@ -219,7 +219,7 @@
 				</div>
 
 				<div>
-					<h3 class="font-medium">Archiving</h3>
+					<h3 class="t-section">Archiving</h3>
 					<label class="mt-3 flex items-center gap-2 text-sm">
 						<Switch checked={archiveLinks} onchange={setArchive} labelledby="pref-archive" />
 						<span id="pref-archive">Keep a public snapshot of pages I save</span>
@@ -235,16 +235,16 @@
 			</section>
 
 			<section id="email" aria-labelledby="email-heading" class="flex scroll-mt-20 flex-col gap-6 md:scroll-mt-8">
-				<h2 id="email-heading" class="text-lg font-semibold">Email</h2>
+				<h2 id="email-heading" class="t-group">Email</h2>
 				<NotificationsPanel email={data.user?.email} confirmed={data.user?.emailConfirmed ?? true} />
 			</section>
 
 			<section id="data" aria-labelledby="data-heading" class="flex scroll-mt-20 flex-col gap-8 md:scroll-mt-8">
-				<h2 id="data-heading" class="text-lg font-semibold">Your data</h2>
+				<h2 id="data-heading" class="t-group">Your data</h2>
 
 				{#if data.usage}
 					<div>
-						<h3 class="font-medium">What you have here</h3>
+						<h3 class="t-section">What you have here</h3>
 						<dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 rounded-card border bg-surface p-4 text-sm sm:grid-cols-4">
 							{#each usageEntries as entry (entry.label)}
 								<div>
@@ -265,7 +265,7 @@
 
 				{#if data.quota}
 					<div>
-						<h3 class="font-medium">Quota</h3>
+						<h3 class="t-section">Quota</h3>
 						<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
 							{#each [
 								{ label: 'Sources', used: data.quota.sourcesUsed, max: data.quota.maxSources },
@@ -289,7 +289,7 @@
 				{/if}
 
 				<div>
-					<h3 class="font-medium">Export</h3>
+					<h3 class="t-section">Export</h3>
 					<p class="mt-1 text-sm text-muted">
 						Download everything you have here. It is your data; take it wherever you like.
 					</p>
@@ -306,10 +306,10 @@
 			</section>
 
 			<section id="integrations" aria-labelledby="integrations-heading" class="flex scroll-mt-20 flex-col gap-8 md:scroll-mt-8">
-				<h2 id="integrations-heading" class="text-lg font-semibold">Integrations</h2>
+				<h2 id="integrations-heading" class="t-group">Integrations</h2>
 
 				<div>
-					<h3 class="font-medium">Save from anywhere</h3>
+					<h3 class="t-section">Save from anywhere</h3>
 					<p class="mt-1 text-sm text-muted">
 						Drag this to your bookmarks bar. Clicking it on any page opens Linkbelli with the
 						address already filled in — no extension needed.
@@ -346,7 +346,7 @@
 				aria-labelledby="close-heading"
 				class="scroll-mt-20 rounded-card border border-danger p-5 md:scroll-mt-8"
 			>
-				<h2 id="close-heading" class="text-lg font-semibold text-danger">Close this account</h2>
+				<h2 id="close-heading" class="t-group text-danger">Close this account</h2>
 
 				{#if leavingAt}
 					<p class="mt-2 max-w-prose text-sm">

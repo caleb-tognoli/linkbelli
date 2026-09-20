@@ -430,7 +430,7 @@
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<div class="flex items-center justify-between">
-				<h2 class="font-medium">{editing ? 'Edit rule' : 'New rule'}</h2>
+				<h2 class="t-section">{editing ? 'Edit rule' : 'New rule'}</h2>
 				<button
 					type="button"
 					onclick={() => (open = false)}

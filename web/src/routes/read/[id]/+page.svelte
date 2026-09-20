@@ -629,7 +629,7 @@
 
 	{#if ordered.length}
 		<section id="marked" class="mt-10 border-t pt-6" style="border-color: var(--color-border)">
-			<h2 class="font-medium">Marked in this article</h2>
+			<h2 class="t-section">Marked in this article</h2>
 			<ul class="mt-3 flex flex-col gap-3">
 				{#each ordered as h (h.id)}
 					<li class="flex items-start gap-2 text-sm">

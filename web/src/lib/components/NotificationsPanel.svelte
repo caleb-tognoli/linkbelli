@@ -111,7 +111,7 @@
 </script>
 
 <div>
-	<h3 class="font-medium">Notifications</h3>
+	<h3 class="t-section">Notifications</h3>
 	<p class="mt-1 max-w-prose text-sm" style="color: var(--color-muted)">
 		Nothing here is marketing, and every message carries a link that turns that kind off. The
 		two about your own things are on; the two that repeat are not, unless you say so.

@@ -86,7 +86,7 @@
 		{/each}
 	</dl>
 
-	<h2 class="mt-8 font-medium">Worth a look</h2>
+	<h2 class="mt-8 t-section">Worth a look</h2>
 	<dl class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
 		{#each attention as stat (stat.label)}
 			<div class="rounded-lg border px-3 py-2" style="border-color: var(--color-border); background: var(--color-surface)">
@@ -99,7 +99,7 @@
 		{/each}
 	</dl>
 
-	<h2 class="mt-8 font-medium">Background jobs</h2>
+	<h2 class="mt-8 t-section">Background jobs</h2>
 	{#if o.jobs}
 		{@const jobs = o.jobs}
 		<dl class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -122,7 +122,7 @@
 		</p>
 	{/if}
 
-	<h2 class="mt-8 font-medium">Sources needing attention</h2>
+	<h2 class="mt-8 t-section">Sources needing attention</h2>
 	{#if o.topFailingSources.length === 0}
 		<p class="mt-2 text-sm" style="color: var(--color-muted)">None failing.</p>
 	{:else}
@@ -154,7 +154,7 @@
 		</div>
 	{/if}
 
-	<h2 class="mt-8 font-medium">Where the links live</h2>
+	<h2 class="mt-8 t-section">Where the links live</h2>
 	{#if o.topHosts.length === 0}
 		<p class="mt-2 text-sm" style="color: var(--color-muted)">Nothing saved yet.</p>
 	{:else}
@@ -173,7 +173,7 @@
 		</ul>
 	{/if}
 
-	<h2 class="mt-8 font-medium">
+	<h2 class="mt-8 t-section">
 		Reports
 		{#if openReports.length}
 			<span class="ml-1 text-sm" style="color: var(--color-danger)">{openReports.length} open</span>
@@ -232,7 +232,7 @@
 
 	<AdminUsersPanel me={page.data.user?.username ?? null} />
 
-	<h2 class="mt-8 font-medium">Recent actions</h2>
+	<h2 class="mt-8 t-section">Recent actions</h2>
 	{#if data.audit.length === 0}
 		<p class="mt-2 text-sm" style="color: var(--color-muted)">Nothing recorded yet.</p>
 	{:else}
@@ -263,7 +263,7 @@
 		</ul>
 	{/if}
 
-	<h2 class="mt-8 font-medium">Recent fetch errors</h2>
+	<h2 class="mt-8 t-section">Recent fetch errors</h2>
 	{#if o.recentErrors.length === 0}
 		<p class="mt-2 pb-10 text-sm" style="color: var(--color-muted)">
 			Nothing has failed in the last {o.recentDays} days.

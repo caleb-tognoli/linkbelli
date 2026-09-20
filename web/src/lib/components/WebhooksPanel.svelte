@@ -204,7 +204,7 @@
 
 <div class="flex flex-col gap-3">
 	<div class="flex items-center justify-between">
-		<h3 class="font-medium">Webhooks</h3>
+		<h3 class="t-section">Webhooks</h3>
 		<Modal bind:open={dialogOpen} onOpenChange={resetOnClose} title="New webhook" size="lg">
 			{#snippet trigger()}
 				<Dialog.Trigger class={buttonClass('secondary', 'sm')}>

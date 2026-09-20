@@ -15,7 +15,7 @@
 
 <div class="rounded-card border bg-surface px-4 py-3">
 	<div class="flex items-baseline justify-between gap-3">
-		<h2 class="font-medium">Health</h2>
+		<h2 class="t-section">Health</h2>
 		<span class="text-xs" style="color: var(--color-muted)">
 			Last {health.windowDays} days
 		</span>

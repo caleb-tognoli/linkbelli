@@ -154,7 +154,7 @@
 
 	{#if followCount > 0}
 		<div class="mt-10">
-			<h2 class="text-sm font-medium" style="color: var(--color-muted)">Following</h2>
+			<h2 class="t-subsection">Following</h2>
 			<div class="mt-2 flex flex-wrap gap-1.5 text-xs">
 				{#each data.following.playlists as playlist (playlist.playlistId)}
 					<Chip href={`/public/${encodeURIComponent(playlist.ownerUsername)}/${encodeURIComponent(playlist.slug)}`}>

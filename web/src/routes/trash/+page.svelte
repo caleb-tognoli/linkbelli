@@ -133,7 +133,7 @@
 	{/if}
 
 	{#if data.trash.playlists.length}
-		<h2 class="mt-8 text-sm font-medium" style="color: var(--color-muted)">Playlists</h2>
+		<h2 class="mt-8 t-subsection" style="color: var(--color-muted)">Playlists</h2>
 		<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
 			{#each data.trash.playlists as playlist (playlist.id)}
 				<li class="flex items-center gap-3 p-3" style="border-color: var(--color-border)">
@@ -162,7 +162,7 @@
 	{/if}
 
 	{#if data.trash.items.length}
-		<h2 class="mt-8 text-sm font-medium" style="color: var(--color-muted)">Links</h2>
+		<h2 class="mt-8 t-subsection" style="color: var(--color-muted)">Links</h2>
 		<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
 			{#each data.trash.items as item (item.id)}
 				<li class="flex items-center gap-3 p-3" style="border-color: var(--color-border)">

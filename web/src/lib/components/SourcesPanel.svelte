@@ -172,7 +172,7 @@
 
 <div class="rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
 	<div class="flex items-center justify-between">
-		<h2 class="font-medium">Sources</h2>
+		<h2 class="t-section">Sources</h2>
 		{#if isOwner}
 			<Popover.Root bind:open={addOpen}>
 				<Popover.Trigger

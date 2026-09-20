@@ -144,6 +144,42 @@ button,
 	border-radius: 2px;
 }
 
+/* Type roles.
+
+   Dialog titles were text-lg in five dialogs and base size in six; section headings were
+   font-medium in most places and small muted text in others, for headings doing the same job.
+   Four roles, named after what the heading is rather than how big it is. */
+@layer components {
+	.t-page {
+		font-size: var(--text-2xl);
+		line-height: var(--tw-leading, var(--text-2xl--line-height));
+		font-weight: 600;
+	}
+
+	.t-group {
+		font-size: var(--text-lg);
+		line-height: var(--tw-leading, var(--text-lg--line-height));
+		font-weight: 600;
+	}
+
+	.t-section {
+		font-weight: 500;
+	}
+
+	.t-subsection {
+		font-size: var(--text-sm);
+		line-height: var(--tw-leading, var(--text-sm--line-height));
+		font-weight: 500;
+		color: var(--color-muted);
+	}
+
+	.t-dialog {
+		font-size: var(--text-lg);
+		line-height: var(--tw-leading, var(--text-lg--line-height));
+		font-weight: 600;
+	}
+}
+
 /* A finger-sized target around a control that has to stay visually small.
    A drag grip, a tree's chevron, a switch: drawn at 14–20px, they measured 13–23px across and
    were missed as often as hit on a phone. The area is painted by a pseudo-element that overflows

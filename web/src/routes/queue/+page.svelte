@@ -174,7 +174,7 @@
 		</p>
 
 		{#if started.length > 0}
-			<h2 class="mt-5 text-sm font-medium">Carry on</h2>
+			<h2 class="mt-5 t-subsection">Carry on</h2>
 			<p class="text-xs" style="color: var(--color-muted)">
 				Part way through. The quickest things to finish.
 			</p>
@@ -184,7 +184,7 @@
 				{/each}
 			</ul>
 
-			<h2 class="mt-6 text-sm font-medium">Not started</h2>
+			<h2 class="mt-6 t-subsection">Not started</h2>
 		{/if}
 
 		<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">

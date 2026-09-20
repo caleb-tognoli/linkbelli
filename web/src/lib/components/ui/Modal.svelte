@@ -55,7 +55,7 @@
 		>
 			<div class="flex shrink-0 items-start justify-between gap-3">
 				<div class="min-w-0">
-					<Dialog.Title class="text-lg font-semibold">{title}</Dialog.Title>
+					<Dialog.Title class="t-dialog">{title}</Dialog.Title>
 					{#if description}
 						<Dialog.Description class="mt-1 text-sm text-muted">{description}</Dialog.Description>
 					{/if}

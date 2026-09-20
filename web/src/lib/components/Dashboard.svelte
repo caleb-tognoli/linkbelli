@@ -55,7 +55,7 @@
 
 	<section aria-labelledby="dash-next">
 		<div class="flex items-baseline justify-between gap-3">
-			<h2 id="dash-next" class="font-medium">Up next</h2>
+			<h2 id="dash-next" class="t-section">Up next</h2>
 			{#if upNext.items.length}
 				<a href="/queue" class="text-sm text-muted hover:text-text hover:underline">
 					All {upNext.total ?? ''} waiting
@@ -104,7 +104,7 @@
 
 	<section aria-labelledby="dash-recent">
 		<div class="flex items-baseline justify-between gap-3">
-			<h2 id="dash-recent" class="font-medium">Recent playlists</h2>
+			<h2 id="dash-recent" class="t-section">Recent playlists</h2>
 			{#if recent.length}
 				<a href="/playlists" class="text-sm text-muted hover:text-text hover:underline">All playlists</a>
 			{/if}

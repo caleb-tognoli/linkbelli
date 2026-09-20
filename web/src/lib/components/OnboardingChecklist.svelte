@@ -41,7 +41,7 @@
 	>
 		<header class="flex items-start justify-between gap-3">
 			<div>
-				<h2 class="font-medium">Getting started</h2>
+				<h2 class="t-section">Getting started</h2>
 				<p class="mt-0.5 text-sm" style="color: var(--color-muted)">
 					{progress.done} of {progress.total} done. This goes away on its own once you have a
 					playlist with something in it.
