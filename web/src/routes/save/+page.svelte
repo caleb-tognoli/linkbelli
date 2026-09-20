@@ -7,7 +7,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
-	import { Check, Clock, ExternalLink } from '@lucide/svelte';
+	import { Check, Clock, ExternalLink, Search } from '@lucide/svelte';
 	import { offlineSaves } from '$lib/offlineSaves.svelte';
 	import OfflineSupportNotice from '$lib/components/OfflineSupportNotice.svelte';
 	import { outcomeFor } from '$lib/offlineQueue';
@@ -17,13 +17,48 @@
 
 	let url = $state(data.url);
 	let note = $state('');
-	let playlistId = $state(data.playlists[0]?.id ?? '');
+
+	/**
+	 * Where the last link went.
+	 *
+	 * Saving from a share sheet is repetitive by nature — the same playlist, several times in an
+	 * evening — and this page always started on whichever playlist happened to sort first, so
+	 * every save needed the list opened again.
+	 */
+	const LAST_PLAYLIST = 'lb_save_playlist';
+
+	function remembered(): string {
+		try {
+			const id = localStorage.getItem(LAST_PLAYLIST);
+			if (id && data.playlists.some((p) => p.id === id)) return id;
+		} catch {
+			// Private windows and blocked storage: the first playlist will do.
+		}
+		return '';
+	}
+
+	let playlistId = $state(remembered() || data.playlists[0]?.id || '');
+
+	/** Narrows a long list, so a person with forty playlists is not scrolling a select. */
+	let filter = $state('');
+	const choices = $derived(
+		filter.trim()
+			? data.playlists.filter((p) => p.name.toLowerCase().includes(filter.trim().toLowerCase()))
+			: data.playlists
+	);
+
+	// Keeping to what is on offer: filtering past the chosen playlist would otherwise leave the
+	// select showing a name that is no longer one of its options.
+	$effect(() => {
+		if (choices.length > 0 && !choices.some((p) => p.id === playlistId)) playlistId = choices[0].id;
+	});
 	let busy = $state(false);
 	let saved = $state(false);
 	let queued = $state(false);
 	let error = $state<string | null>(null);
 
-	async function save() {
+	async function save(event?: SubmitEvent) {
+		event?.preventDefault();
 		if (!url.trim() || !playlistId) return;
 
 		busy = true;
@@ -48,9 +83,11 @@
 
 		if (res.ok) {
 			saved = true;
+			rememberPlaylist();
 		} else if (res.status === 409) {
 			// Already there is a normal outcome, not a failure to report as one.
 			saved = true;
+			rememberPlaylist();
 		} else if (res.status === 400) {
 			error = 'That does not look like a web address.';
 		} else if (outcomeFor(res.status) === 'offline') {
@@ -65,7 +102,16 @@
 		}
 	}
 
+	function rememberPlaylist() {
+		try {
+			localStorage.setItem(LAST_PLAYLIST, playlistId);
+		} catch {
+			// Nothing is lost that was not already saved.
+		}
+	}
+
 	function keep(): boolean {
+		rememberPlaylist();
 		return offlineSaves.add({
 			playlistId,
 			playlistName: savedPlaylist?.name ?? 'a playlist',
@@ -127,7 +173,9 @@
 			</div>
 		</div>
 	{:else}
-		<div class="mt-5 flex flex-col gap-3">
+		<!-- A form, so the keyboard's Enter — and a phone keyboard's Go — saves the link. It was a
+		     div with a button, and pressing Enter in the address field did nothing at all. -->
+		<form class="mt-5 flex flex-col gap-3" onsubmit={save}>
 			{#if data.title}
 				<p class="text-sm" style="color: var(--color-muted)">{data.title}</p>
 			{/if}
@@ -144,6 +192,33 @@
 				{/snippet}
 			</Field>
 
+			{#if url.trim()}
+				<!-- Beside the address it belongs to, rather than below the Save button where it
+				     read as an afterthought to a decision already made. -->
+				<a
+					href={url}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="-mt-2 inline-flex items-center gap-1.5 text-xs text-muted hover:underline"
+				>
+					<ExternalLink size={12} aria-hidden="true" /> Open it first
+				</a>
+			{/if}
+
+			{#if data.playlists.length > 10}
+				<Field label="Find a playlist" hideLabel>
+					{#snippet children(f)}
+						<Input
+							id={f.id}
+							bind:value={filter}
+							icon={Search}
+							placeholder="Find a playlist…"
+							aria-describedby={f.describedby}
+						/>
+					{/snippet}
+				</Field>
+			{/if}
+
 			<Field label="Playlist">
 				{#snippet children(f)}
 					<Select
@@ -151,12 +226,15 @@
 						bind:value={playlistId}
 						aria-describedby={f.describedby}
 					>
-					{#each data.playlists as playlist (playlist.id)}
+					{#each choices as playlist (playlist.id)}
 						<option value={playlist.id}>{playlist.name}</option>
 					{/each}
 					</Select>
 				{/snippet}
 			</Field>
+			{#if choices.length === 0}
+				<p class="-mt-2 text-xs text-muted">No playlist matches that.</p>
+			{/if}
 
 			<Field label="Note" optional>
 				{#snippet children(f)}
@@ -174,25 +252,13 @@
 				<p class="text-sm" style="color: var(--color-danger)" role="alert">{error}</p>
 			{/if}
 
-			<Button variant="primary" icon={Check} onclick={save} loading={busy} disabled={!url.trim()}>
+			<Button type="submit" variant="primary" icon={Check} loading={busy} disabled={!url.trim() || !playlistId}>
 				{busy ? 'Saving…' : 'Save'}
 			</Button>
 
 			<!-- This is the screen the share sheet lands on, and the one that promises to work
 			     without a connection. If it will not, here is where that has to be said. -->
 			<OfflineSupportNotice compact />
-
-			{#if url.trim()}
-				<a
-					href={url}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="inline-flex items-center gap-1.5 text-xs"
-					style="color: var(--color-muted)"
-				>
-					<ExternalLink size={12} aria-hidden="true" /> Open it first
-				</a>
-			{/if}
-		</div>
+		</form>
 	{/if}
 </section>
