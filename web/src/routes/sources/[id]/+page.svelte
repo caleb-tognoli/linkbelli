@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { plural } from '$lib/labels';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { onDestroy } from 'svelte';
 	import { failureMessage } from '$lib/api/errors';
@@ -574,7 +575,7 @@
 
 <Modal
 	bind:open={itemsOpen}
-	title={`${itemsMode === 'added' ? 'Added' : 'Found'} ${itemsTotal} ${itemsTotal === 1 ? 'item' : 'items'}`}
+	title={`${itemsMode === 'added' ? 'Added' : 'Found'} ${plural(itemsTotal, 'link')}`}
 	description={itemsTruncated
 		? `Showing the first ${itemsList.length}. Run history keeps a sample, not every address.`
 		: undefined}

@@ -996,7 +996,7 @@
 
 		{#if total !== null}
 			<span class="ml-auto text-xs" style="color: var(--color-muted)">
-				{total} {total === 1 ? 'item' : 'items'}
+				{plural(total, 'link')}
 			</span>
 		{/if}
 	</div>

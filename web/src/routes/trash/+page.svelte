@@ -1,6 +1,7 @@
 <svelte:head><title>Trash - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import { plural } from '$lib/labels';
 	import { failureMessage } from '$lib/api/errors';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -17,6 +18,16 @@
 	let busy = $state<string | null>(null);
 
 	const total = $derived(data.trash.playlists.length + data.trash.items.length);
+
+	/** "2 playlists and 1 link" — the two kinds are not interchangeable, so both are named. */
+	const contents = $derived(
+		[
+			data.trash.playlists.length > 0 ? plural(data.trash.playlists.length, 'playlist') : null,
+			data.trash.items.length > 0 ? plural(data.trash.items.length, 'link') : null
+		]
+			.filter(Boolean)
+			.join(' and ')
+	);
 
 	/** "in 12 days", or "today" on the last day — how long is left to change your mind. */
 	function purgesIn(purgeAfter: string): string {
@@ -80,7 +91,7 @@
 
 	async function empty() {
 		const ok = await confirmDialog(
-			`Permanently delete everything in the trash? ${total} ${total === 1 ? 'thing' : 'things'} will be gone for good.`,
+			`Permanently delete everything in the trash? ${contents} will be gone for good.`,
 			{ danger: true, confirmLabel: 'Delete for good' }
 		);
 		if (!ok) return;
