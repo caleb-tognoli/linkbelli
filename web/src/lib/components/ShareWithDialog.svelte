@@ -8,7 +8,7 @@
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import { Dialog } from 'bits-ui';
 	import { api } from '$lib/api/client';
-	import { UserPlus, X } from '@lucide/svelte';
+	import { Link2, UserPlus, X } from '@lucide/svelte';
 	import type { PlaylistMember, PlaylistRole } from '$lib/types';
 
 	let { playlistId }: { playlistId: string } = $props();
@@ -47,6 +47,20 @@
 		} catch {
 			return 'Could not share it.';
 		}
+	}
+
+	/**
+	 * An address is a person who is not here yet.
+	 *
+	 * Typed into the same box, an email address used to be sent as a username — which the server
+	 * has no answer for — while the thing that would have worked was small underlined text below.
+	 */
+	const looksLikeEmail = $derived(username.includes('@'));
+
+	/** Whichever of the two the typed text calls for. */
+	function submit() {
+		if (looksLikeEmail) void invite();
+		else void share();
 	}
 
 	async function share() {
@@ -156,7 +170,12 @@
 	<div class="flex shrink-0 gap-2">
 		<Input
 			bind:value={username}
-			onkeydown={(e) => e.key === 'Enter' && share()}
+			onkeydown={(e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					submit();
+				}
+			}}
 			placeholder="username or email"
 			aria-label="Username or email address"
 			class="min-w-0 flex-1"
@@ -166,27 +185,31 @@
 				<option value={option.value}>{option.label}</option>
 			{/each}
 		</Select>
-		<Button variant="primary" onclick={share} loading={busy} disabled={!username.trim()}>Add</Button>
+		<Button
+			variant="primary"
+			onclick={submit}
+			loading={busy || inviting}
+			disabled={!username.trim()}
+		>
+			{looksLikeEmail ? 'Send invite' : 'Add'}
+		</Button>
 	</div>
 
-	<p class="mt-1.5 shrink-0 text-xs" style="color: var(--color-muted)">
-		{roles.find((r) => r.value === role)?.hint}
+	<p class="mt-1.5 shrink-0 text-xs text-muted">
+		{#if looksLikeEmail}
+			They get a link that works once and lasts two weeks. {roles.find((r) => r.value === role)?.hint}
+		{:else}
+			{roles.find((r) => r.value === role)?.hint}
+		{/if}
 	</p>
 
-	<div class="mt-2 shrink-0">
-		<button
-			type="button"
-			onclick={invite}
-			disabled={inviting}
-			class="text-xs underline underline-offset-2 disabled:opacity-60"
-			style="color: var(--color-accent)"
-		>
-			{inviting ? 'Making a link…' : 'Invite by link instead'}
-		</button>
-		{#if username.includes('@')}
-			<span class="ml-1 text-xs" style="color: var(--color-muted)">— and email it there</span>
-		{/if}
-	</div>
+	{#if !looksLikeEmail}
+		<div class="mt-2 shrink-0">
+			<Button size="sm" icon={Link2} onclick={invite} loading={inviting}>
+				{inviting ? 'Making a link…' : 'Or create an invite link'}
+			</Button>
+		</div>
+	{/if}
 
 	{#if inviteLink}
 		<div
