@@ -138,9 +138,20 @@ body {
 	animation: lb-rise-out 100ms ease-in;
 }
 
-button,
-[role='button'] {
-	cursor: pointer;
+/* A button says it can be pressed — and says it cannot, when it cannot. Layered, because
+   unlayered this beat Button's own `disabled:cursor-not-allowed` and every disabled button in
+   the app went on inviting a click it would refuse. */
+@layer base {
+	button,
+	[role='button'] {
+		cursor: pointer;
+	}
+
+	button:disabled,
+	[role='button'][aria-disabled='true'],
+	button[aria-disabled='true'] {
+		cursor: not-allowed;
+	}
 }
 
 /* App-wide keyboard focus ring. Custom controls are styled with inline `style`
