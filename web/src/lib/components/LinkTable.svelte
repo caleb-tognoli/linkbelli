@@ -15,7 +15,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus, ArrowUpToLine } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus, ArrowUpToLine, Square, SquareCheck } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import PlaylistDropTray from './PlaylistDropTray.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
@@ -524,6 +524,9 @@
 		return !item.link.enriched;
 	}
 
+	/** Whether anything is selected: what brings the checkbox column back on a narrow screen. */
+	const selecting = $derived(selected.size > 0);
+
 	const toggleClass = 'inline-flex min-h-6 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors';
 
 	/** A filter or sort chip: accent when it narrows or reorders what is shown. */
@@ -541,7 +544,10 @@
 		style="border-color: var(--color-border);{focusedItem?.id === item.id ? ' box-shadow: inset 3px 0 0 var(--color-accent)' : ''}"
 	>
 		{#if !readonly}
-			<td class="pr-1">
+			<!-- At phone width the checkbox appears only once something is being selected, and the
+			     row menu is how that starts: a checkbox, two drag grips, a thumbnail and a date
+			     column left about sixty pixels for the title, which wrapped one letter at a time. -->
+			<td class="pr-1 {selecting ? '' : 'hidden sm:table-cell'}">
 				<Checkbox
 					checked={selected.has(item.id)}
 					onchange={() => toggleSelected(item.id)}
@@ -551,7 +557,7 @@
 			<!-- Two grips, because they are two different things and sharing one gesture between
 			     them would make both ambiguous. The left reorders within this playlist; the right
 			     takes the row out of it. Each is labelled, and each does only its own job. -->
-			<td class="select-none whitespace-nowrap pr-1" style="color: var(--color-muted)">
+			<td class="hidden select-none whitespace-nowrap pr-1 sm:table-cell" style="color: var(--color-muted)">
 				{#if draggable}
 					<span
 						use:dragHandle
@@ -656,6 +662,8 @@
 					{#if item.metadata?.author}
 						<p class="mt-0.5 text-xs" style="color: var(--color-muted)">{item.metadata.author}</p>
 					{/if}
+					<!-- Only where the column it belongs to is hidden. -->
+					<p class="mt-0.5 text-xs text-muted sm:hidden">Added {dateAdded(item.creationTime)}</p>
 					{#if showWhoAdded && item.addedBy}
 						<!-- Only on a playlist more than one person adds to. On a list somebody keeps
 						     alone, "added by you" on every row is noise saying nothing. -->
@@ -710,7 +718,7 @@
 				</div>
 			</div>
 		</td>
-		<td class="whitespace-nowrap text-center" style="color: var(--color-muted)">{dateAdded(item.creationTime)}</td>
+		<td class="hidden whitespace-nowrap text-center sm:table-cell" style="color: var(--color-muted)">{dateAdded(item.creationTime)}</td>
 		{#if showScoreCol}
 			<td class="w-10 pl-6 text-center" style="color: var(--color-muted)">
 				<input
@@ -784,6 +792,14 @@
 						<MenuItem icon={ArrowDown} onselect={() => moveWithin(item, 'down')}>Move down</MenuItem>
 					{/if}
 					<MenuSeparator />
+					<!-- On a phone this is the only way in to selecting: the column it lives in is
+					     not shown until something is selected. -->
+					<MenuItem
+						icon={selected.has(item.id) ? SquareCheck : Square}
+						onselect={() => toggleSelected(item.id)}
+					>
+						{selected.has(item.id) ? 'Take out of the selection' : 'Select this'}
+					</MenuItem>
 					<MenuItem icon={ListPlus} onselect={() => { shareItem = item; shareOpen = true; }}>
 						Add to another playlist…
 					</MenuItem>
@@ -810,7 +826,7 @@
 		{/if}
 	</tr>
 	{#if !readonly && noteEditId === item.id}
-		{@const colCount = 4 + (showScoreCol ? 1 : 0)}
+		{@const colCount = 5 + (showScoreCol ? 1 : 0)}
 		<tr class="border-t" style="border-color: var(--color-border)">
 			<td colspan={colCount} class="px-2 py-2">
 				<div class="flex items-start gap-2">
@@ -1188,7 +1204,7 @@
 				<thead>
 					<tr class="text-left" style="color: var(--color-muted)">
 						{#if !readonly}
-							<th class="w-6">
+							<th class="w-6 {selecting ? '' : 'hidden sm:table-cell'}">
 								<Checkbox
 									checked={allSelected}
 									indeterminate={selected.size > 0 && !allSelected}
@@ -1196,10 +1212,10 @@
 									label="Select all"
 								/>
 							</th>
-							<th class="w-6"></th>
+							<th class="hidden w-6 sm:table-cell"></th>
 						{/if}
 						<th class="py-2 font-medium">{showUrls ? 'URL' : 'Title'}</th>
-						<th class="py-2 text-center font-medium">
+						<th class="hidden py-2 text-center font-medium sm:table-cell">
 						<button
 							type="button"
 							onclick={clickAddedHeader}
