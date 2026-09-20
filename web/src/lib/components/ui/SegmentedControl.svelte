@@ -43,7 +43,10 @@
 	let group: HTMLElement | undefined = $state();
 
 	const isLinks = $derived(options.some((o) => o.href));
-	const pad = $derived(size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm');
+	// min-h-6 even at the small size: a 22px-tall segment is under the 24px a target has to be.
+	const pad = $derived(
+		size === 'sm' ? 'min-h-6 px-2.5 py-1 text-xs' : 'min-h-8 px-3 py-1.5 text-sm'
+	);
 
 	function choose(next: T) {
 		if (next === value) return;

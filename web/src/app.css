@@ -144,6 +144,27 @@ button,
 	border-radius: 2px;
 }
 
+/* A finger-sized target around a control that has to stay visually small.
+   A drag grip, a tree's chevron, a switch: drawn at 14–20px, they measured 13–23px across and
+   were missed as often as hit on a phone. The area is painted by a pseudo-element that overflows
+   its own box, so nothing in the layout moves — and only where the pointer is actually coarse,
+   since a mouse hits 16px perfectly well. */
+@media (pointer: coarse) {
+	.tap-target {
+		position: relative;
+	}
+
+	.tap-target::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 44px;
+		height: 44px;
+		transform: translate(-50%, -50%);
+	}
+}
+
 /* Less motion, for anyone whose system asks for it: transitions and animations finish at once and
    scrolling jumps rather than glides. Script-driven scrolling asks lib/motion.ts the same question. */
 @media (prefers-reduced-motion: reduce) {

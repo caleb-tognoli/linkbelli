@@ -138,7 +138,7 @@
 					aria-activedescendant={suggestions.length > 0 ? `${listId}-${highlighted}` : undefined}
 					autocomplete="off"
 					disabled={busy}
-					class="w-24 border-0 bg-transparent py-0.5 text-xs text-text outline-none"
+					class="min-h-6 w-24 border-0 bg-transparent py-0.5 text-xs text-text outline-none"
 					onfocus={() => {
 						focused = true;
 						void loadKnown();

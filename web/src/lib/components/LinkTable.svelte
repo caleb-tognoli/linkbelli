@@ -561,7 +561,7 @@
 				{#if draggable}
 					<span
 						use:dragHandle
-						class="cursor-grab align-middle"
+						class="tap-target inline-flex size-6 cursor-grab items-center justify-center align-middle"
 						title="Drag to reorder"
 						aria-label={`Reorder ${item.link.title ?? item.link.url}`}
 					>
@@ -579,7 +579,7 @@
 						draggable="true"
 						ondragstart={(e) => onRowDragStart(e, item)}
 						onclick={() => moveOne(item)}
-						class="cursor-grab align-middle"
+						class="tap-target inline-flex size-6 cursor-grab items-center justify-center align-middle"
 						title="Drag to another playlist, or press to choose one"
 						aria-label={`Move ${item.link.title ?? item.link.url} to another playlist`}
 					>

@@ -212,7 +212,7 @@
 								{#each ownFiltered as src (src.id)}
 									<SourceListItem name={src.name} badge={displayType(src.type)} href={sourceHref(src.id)}>
 										{#snippet actions()}
-											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Attach source" aria-label="Attach source" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-accent)">
+											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Attach source" aria-label="Attach source" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
 												<Link size={15} aria-hidden="true" />
 											</button>
 										{/snippet}
@@ -229,7 +229,7 @@
 								{#each sharedResults as src (src.id)}
 									<SourceListItem name={src.name} badge={displayType(src.type)} subtitle={`@${src.ownerUsername}`}>
 										{#snippet actions()}
-											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Subscribe" aria-label="Subscribe to source" class="inline-flex items-center rounded p-0.5 hover:opacity-70" style="color: var(--color-accent)">
+											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Subscribe" aria-label="Subscribe to source" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
 												<UserPlus size={16} aria-hidden="true" />
 											</button>
 										{/snippet}
@@ -274,7 +274,7 @@
 					{#snippet actions()}
 						{#if isOwner}
 							{#if src.ownedByMe}
-								<button type="button" onclick={() => run(src.id)} disabled={busy} title="Run now" aria-label="Run now" class="inline-flex items-center rounded p-0.5 hover:opacity-70">
+								<button type="button" onclick={() => run(src.id)} disabled={busy} title="Run now" aria-label="Run now" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70">
 									<Play size={15} aria-hidden="true" />
 								</button>
 							{/if}

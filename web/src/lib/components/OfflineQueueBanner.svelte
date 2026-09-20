@@ -41,7 +41,7 @@
 					<button
 						type="button"
 						onclick={() => offlineSaves.drop(save.id)}
-						class="shrink-0 rounded p-0.5 hover:bg-black/5 dark:hover:bg-white/10"
+						class="inline-flex items-center justify-center rounded size-6 tap-target shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
 						title="Forget this one"
 						aria-label={`Forget ${save.url}`}
 					>

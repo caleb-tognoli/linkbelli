@@ -41,7 +41,7 @@
 					<button
 						type="button"
 						onclick={() => toggle(node.id)}
-						class="shrink-0 rounded p-0.5 hover:bg-black/5 dark:hover:bg-white/10"
+						class="inline-flex items-center justify-center rounded size-6 tap-target shrink-0 hover:bg-black/5 dark:hover:bg-white/10"
 						style="color: var(--color-muted)"
 						aria-expanded={isOpen}
 						aria-label={isOpen ? `Collapse ${node.name}` : `Expand ${node.name}`}
