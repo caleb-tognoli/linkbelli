@@ -1,6 +1,8 @@
 <svelte:head><title>Confirm your address - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { MailCheck, MailX } from '@lucide/svelte';
 	import type { PageData } from './$types';
@@ -10,6 +12,11 @@
 	let resending = $state(false);
 	let resent = $state(false);
 	let resendError = $state<string | null>(null);
+
+	// A link opened without its address — truncated by a mail client, usually — left the page with
+	// nothing on it but the complaint. Typed in, it has something to send to.
+	let typed = $state('');
+	const address = $derived(data.email || typed.trim());
 
 	/**
 	 * Asks for another link.
@@ -24,7 +31,7 @@
 		const res = await fetch('/api/v1/auth/resend-confirmation', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ email: data.email })
+			body: JSON.stringify({ email: address })
 		});
 
 		resending = false;
@@ -58,25 +65,54 @@
 		</h1>
 		<p class="mt-2 text-sm" style="color: var(--color-muted)">{data.error}</p>
 
-		{#if data.email}
-			{#if resent}
-				<p class="mt-4 text-sm">Another link is on its way to {data.email}.</p>
-			{:else}
-				<Button variant="primary" onclick={resend} loading={resending} class="mt-4">
+		{#if resent}
+			<p class="mt-4 text-sm">Another link is on its way to {address}.</p>
+		{:else}
+			<form
+				class="mt-4 flex flex-col gap-3"
+				onsubmit={(e) => {
+					e.preventDefault();
+					void resend();
+				}}
+			>
+				{#if !data.email}
+					<Field label="Your email address">
+						{#snippet children(f)}
+							<!-- svelte-ignore a11y_autofocus -- the one field on a page that is otherwise a dead end -->
+							<Input
+								id={f.id}
+								type="email"
+								bind:value={typed}
+								autocomplete="email"
+								autofocus
+								required
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
+				{/if}
+				<Button
+					type="submit"
+					variant="primary"
+					loading={resending}
+					disabled={!address}
+					class="self-start"
+				>
 					{resending ? 'Sending…' : 'Send another link'}
 				</Button>
-			{/if}
+			</form>
+		{/if}
 
-			{#if resendError}
-				<p class="mt-2 text-sm" style="color: var(--color-danger)" role="alert">{resendError}</p>
-			{/if}
+		{#if resendError}
+			<p class="mt-2 text-sm" style="color: var(--color-danger)" role="alert">{resendError}</p>
 		{/if}
 
 		<p class="mt-4 text-sm">
 			<!-- Signing in still works: only outbound mail waits on confirmation. -->
 			<a href="/" class="underline underline-offset-2" style="color: var(--color-muted)">
-				Your account works either way
+				Continue to Linkbelli
 			</a>
+			<span class="text-muted"> — your account works either way.</span>
 		</p>
 	{/if}
 </div>
