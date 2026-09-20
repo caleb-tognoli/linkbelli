@@ -313,13 +313,18 @@
 					<p class="mt-1 text-sm text-muted">
 						Download everything you have here. It is your data; take it wherever you like.
 					</p>
-					<div class="mt-3 flex flex-wrap gap-2">
+					<!-- The sentence that tells these four apart used to be a title attribute, so on a
+					     phone — which has no hover — somebody chose blind between four downloads. -->
+					<ul class="mt-3 grid gap-3 sm:grid-cols-2">
 						{#each EXPORTS as fmt (fmt.format)}
-							<Button href={`/api/v1/export?format=${fmt.format}`} download icon={Download} title={fmt.hint}>
-								{fmt.label}
-							</Button>
+							<li class="flex flex-col items-start gap-1">
+								<Button href={`/api/v1/export?format=${fmt.format}`} download icon={Download}>
+									{fmt.label}
+								</Button>
+								<span class="text-xs text-muted">{fmt.hint}</span>
+							</li>
 						{/each}
-					</div>
+					</ul>
 				</div>
 
 				<BackupsPanel enabled={data.user?.backupsEnabled ?? true} initial={data.backups} />
