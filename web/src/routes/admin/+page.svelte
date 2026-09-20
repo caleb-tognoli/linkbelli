@@ -231,7 +231,9 @@
 		</ul>
 	{/if}
 
-	<AdminUsersPanel me={page.data.user?.username ?? null} />
+	<div class="mt-8">
+		<AdminUsersPanel me={page.data.user?.username ?? null} />
+	</div>
 
 	<h2 class="mt-8 t-section">Recent actions</h2>
 	{#if data.audit.length === 0}

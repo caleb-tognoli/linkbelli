@@ -92,7 +92,7 @@
 	}
 </script>
 
-<h2 class="mt-8 font-medium">Accounts</h2>
+<h2 class="t-section">Accounts</h2>
 <p class="mt-1 text-sm" style="color: var(--color-muted)">
 	Suspending keeps everything and blocks the door. Deleting an account is its owner's decision,
 	made from their own settings.
