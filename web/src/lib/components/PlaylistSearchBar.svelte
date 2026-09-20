@@ -150,7 +150,17 @@
 	{#if showAdd && preview}
 		<div class="mt-3 flex gap-3 rounded-md border p-3" style="border-color: var(--color-border)">
 			{#if preview.imageUrl}
-				<img src={preview.imageUrl} alt="" class="h-14 w-14 rounded object-cover" />
+				<!-- Sized before it loads, so the rest of the panel does not jump sideways when the
+				     picture arrives. -->
+				<img
+					src={preview.imageUrl}
+					alt=""
+					width="56"
+					height="56"
+					loading="lazy"
+					decoding="async"
+					class="size-14 shrink-0 rounded bg-chip object-cover"
+				/>
 			{/if}
 			<div class="min-w-0">
 				<div class="truncate font-medium">{preview.title ?? preview.canonicalUrl}</div>

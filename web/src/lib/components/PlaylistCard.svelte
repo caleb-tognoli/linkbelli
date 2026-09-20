@@ -50,21 +50,30 @@
 		tagHref?: (tag: string) => string;
 		actions?: Snippet;
 	} = $props();
+
+	/** A cover that would not load: the space stays, so the card keeps its height. */
+	let coverFailed = $state(false);
 </script>
 
 <div
 	class="relative flex flex-col gap-2 rounded-card border border-border bg-surface p-4 transition-colors hover:border-accent has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent"
 >
-	{#if coverLinkId}
+	{#if coverLinkId && !coverFailed}
 		<!-- Served through the same proxy every other thumbnail uses, so a cover leaks no more than
-		     the rows already do. -->
+		     the rows already do. The box keeps its height whether or not the picture arrives: it
+		     used to remove itself on an error, and the card jumped a hundred pixels shorter while
+		     a grid of them was being read. -->
 		<img
 			src={`/api/v1/thumbnails/${coverLinkId}`}
 			alt=""
-			class="-mx-4 -mt-4 mb-1 h-28 w-[calc(100%+2rem)] rounded-t-[inherit] object-cover"
+			class="-mx-4 -mt-4 mb-1 h-28 w-[calc(100%+2rem)] rounded-t-[inherit] bg-chip object-cover"
 			loading="lazy"
-			onerror={(e) => e.currentTarget.remove()}
+			decoding="async"
+			onerror={() => (coverFailed = true)}
 		/>
+
+	{:else if coverLinkId}
+		<span class="-mx-4 -mt-4 mb-1 block h-28 w-[calc(100%+2rem)] rounded-t-[inherit] bg-chip"></span>
 	{/if}
 
 	<div class="flex items-start justify-between gap-2">
