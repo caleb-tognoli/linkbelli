@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EditPlaylistDialog from '$lib/components/EditPlaylistDialog.svelte';
 	import { scrollBehavior } from '$lib/motion';
 	import { tick } from 'svelte';
 	import { failureMessage } from '$lib/api/errors';
@@ -227,6 +228,9 @@
 		{ format: 'html', label: 'Bookmarks' }
 	];
 	let playlistName = $state(playlist.name);
+	// Editable now, so the page shows what the dialog last saved rather than what the server sent
+	// when the page loaded.
+	let description = $state(playlist.description ?? null);
 	const currentVis = $derived(visConfig[visibility] ?? visConfig.Private);
 
 	async function saveName(el: HTMLInputElement) {
@@ -437,8 +441,8 @@
 					by <a href={`/public/${encodeURIComponent(ownerUsername)}`} class="hover:underline">@{ownerUsername}</a>
 				</p>
 			{/if}
-			{#if playlist.description}
-				<p class="mt-1" style="color: var(--color-muted)">{playlist.description}</p>
+			{#if description}
+				<p class="mt-1" style="color: var(--color-muted)">{description}</p>
 			{/if}
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
@@ -604,6 +608,14 @@
 						</MenuItem>
 					{/each}
 				</Menu>
+				<EditPlaylistDialog
+					{playlist}
+					bind:name={playlistName}
+					bind:description
+					bind:visibility
+					bind:nsfwSetting
+					onsaved={(saved) => (isNsfw = saved.nsfw)}
+				/>
 				<Button variant="ghost-danger" icon={Trash2} iconOnly label="Delete playlist" onclick={deletePlaylist} />
 			{/if}
 		</div>
