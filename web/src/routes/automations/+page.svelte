@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { scrollBehavior } from '$lib/motion';
+	import { tick } from 'svelte';
 	import { failureMessage } from '$lib/api/errors';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
@@ -13,7 +15,7 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import { describeRule } from '$lib/automation';
-	import { Check, History, Plus, Trash2, Wand2, X } from '@lucide/svelte';
+	import { Check, History, Plus, Trash2, Wand2, X, ChevronUp, ChevronDown } from '@lucide/svelte';
 	import type { AutomationPreview, AutomationRule, ContentKind } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -55,6 +57,8 @@
 
 	let draft = $state(blank());
 	let editing = $state<string | null>(null);
+	let reordering = $state<string | null>(null);
+	let editorName = $state<HTMLInputElement>();
 	let open = $state(false);
 	let busy = $state(false);
 
@@ -107,6 +111,19 @@
 		preview = null;
 		error = null;
 		open = true;
+		void focusEditor();
+	}
+
+	/**
+	 * Puts the cursor where the work is.
+	 *
+	 * The editor opens below the whole list, so on a page with six rules pressing "New rule"
+	 * changed something off the bottom of the screen and left focus on the button.
+	 */
+	async function focusEditor() {
+		await tick();
+		editorName?.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
+		editorName?.focus();
 	}
 
 	function startEdit(rule: AutomationRule) {
@@ -133,6 +150,35 @@
 		preview = null;
 		error = null;
 		open = true;
+		void focusEditor();
+	}
+
+	/**
+	 * Swaps a rule with its neighbour.
+	 *
+	 * The page says rules run in order, top first — which was true, and there was no way to
+	 * change that order short of deleting a rule and making it again.
+	 */
+	async function move(rule: AutomationRule, direction: -1 | 1) {
+		const rules = data.rules;
+		const here = rules.findIndex((r) => r.id === rule.id);
+		const there = here + direction;
+		if (here < 0 || there < 0 || there >= rules.length) return;
+
+		const neighbour = rules[there];
+		reordering = rule.id;
+		try {
+			const first = await api.patch(`/automations/${rule.id}`, { position: neighbour.position });
+			const second = first.ok
+				? await api.patch(`/automations/${neighbour.id}`, { position: rule.position })
+				: null;
+			if (!first.ok || !second?.ok) {
+				toast.error(failureMessage((second ?? first).status, 'Could not change the order.'));
+			}
+			await invalidateAll();
+		} finally {
+			reordering = null;
+		}
 	}
 
 	/** The server's own words when it has any — a rejected pattern is worth quoting verbatim. */
@@ -148,6 +194,14 @@
 	async function save() {
 		if (!draft.name.trim()) {
 			error = 'Give the rule a name.';
+			return;
+		}
+		// "Move it to — Choose…" saved happily and then did nothing at all.
+		if (draft.destination && !draft.destinationId) {
+			error =
+				draft.destination === 'move'
+					? 'Choose the playlist to move links to.'
+					: 'Choose the playlist to put links in.';
 			return;
 		}
 
@@ -290,7 +344,7 @@
 		</p>
 	{:else}
 		<ul class="mt-6 flex flex-col gap-2">
-			{#each data.rules as rule (rule.id)}
+			{#each data.rules as rule, index (rule.id)}
 				<li
 					class="rounded-lg border px-4 py-3"
 					style="border-color: var(--color-border); background: var(--color-surface)"
@@ -312,6 +366,30 @@
 							</p>
 						</button>
 						<div class="flex shrink-0 items-center gap-2">
+							{#if data.rules.length > 1}
+								<!-- Order is the whole of how rules interact: one that moves a link out of
+								     a playlist decides whether the next one ever sees it. -->
+								<div class="flex flex-col">
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={ChevronUp}
+										iconOnly
+										label={`Move ${rule.name} earlier`}
+										onclick={() => move(rule, -1)}
+										disabled={index === 0 || reordering !== null}
+									/>
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={ChevronDown}
+										iconOnly
+										label={`Move ${rule.name} later`}
+										onclick={() => move(rule, 1)}
+										disabled={index === data.rules.length - 1 || reordering !== null}
+									/>
+								</div>
+							{/if}
 							<button
 								type="button"
 								onclick={() => runOverExisting(rule)}
@@ -359,10 +437,18 @@
 				</button>
 			</div>
 
-			<label class="mt-4 flex flex-col gap-1 text-sm">
-				<span>Name</span>
-				<Input bind:value={draft.name} placeholder="Long reads go to Later" />
-			</label>
+			<Field label="Name" class="mt-4" required>
+				{#snippet children(f)}
+					<Input
+						id={f.id}
+						bind:element={editorName}
+						bind:value={draft.name}
+						placeholder="Long reads go to Later"
+						required
+						aria-describedby={f.describedby}
+					/>
+				{/snippet}
+			</Field>
 
 			<fieldset class="mt-4 rounded-md border p-3" style="border-color: var(--color-border)">
 				<legend class="px-1 text-xs" style="color: var(--color-muted)">When all of these are true</legend>
@@ -503,7 +589,7 @@
 							<label class="flex flex-1 flex-col gap-1 text-sm">
 								<span class="sr-only">Destination playlist</span>
 								<span aria-hidden="true">&nbsp;</span>
-								<Select bind:value={draft.destinationId}>
+								<Select bind:value={draft.destinationId} required invalid={!draft.destinationId}>
 									<option value="">Choose…</option>
 									{#each data.playlists as playlist (playlist.id)}
 										<option value={playlist.id}>{playlist.name}</option>
