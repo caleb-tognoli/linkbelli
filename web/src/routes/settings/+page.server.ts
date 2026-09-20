@@ -1,15 +1,16 @@
 import type { Backup } from '$lib/backups';
 import type { NotificationPrefs } from '$lib/notifications';
-import type { ApiKey, Quota, Usage, User } from '$lib/types';
+import type { ApiKey, Quota, Usage } from '$lib/types';
 import type { Webhook, WebhookEventInfo } from '$lib/webhooks';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, cookies }) => {
+export const load: PageServerLoad = async ({ locals, cookies, parent }) => {
+	// Who this is comes from the layout, which has already asked.
+	const { user } = await parent();
 	// All of it here rather than three panels fetching their own after the page has painted:
 	// Email, Backups and Webhooks each rendered the word "Looking…" for a moment first.
-	const [meRes, quotaRes, keysRes, usageRes, notificationsRes, backupsRes, hooksRes, eventsRes] =
+	const [quotaRes, keysRes, usageRes, notificationsRes, backupsRes, hooksRes, eventsRes] =
 		await Promise.all([
-			locals.api('/api/v1/me'),
 			locals.api('/api/v1/me/quota'),
 			locals.api('/api/v1/me/apikeys'),
 			locals.api('/api/v1/me/usage'),
@@ -19,7 +20,6 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 			locals.api('/api/v1/me/webhooks/events')
 		]);
 
-	const user = meRes.ok ? ((await meRes.json()) as User) : null;
 	const quota = quotaRes.ok ? ((await quotaRes.json()) as Quota) : null;
 	const apiKeys = keysRes.ok ? ((await keysRes.json()) as ApiKey[]) : [];
 	const theme = (cookies.get('lb_theme') ?? 'system') as 'light' | 'dark' | 'system';
