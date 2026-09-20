@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { displayUsername } from '$lib/labels';
 	import { ExternalLink } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
@@ -30,7 +31,7 @@
 	<header>
 		<a href={playlistUrl} target="_blank" rel="noopener noreferrer" class="title">
 			{data.playlist.name}<span class="sr-only"> (opens in a new tab)</span></a>
-		<span class="by">by @{data.username}</span>
+		<span class="by">by {displayUsername(data.username)}</span>
 	</header>
 
 	{#if data.playlist.description}

@@ -42,7 +42,7 @@
 	-->
 	<nav aria-label="Folders" class="flex flex-col gap-0.5 text-sm">
 		<ul role="tree" aria-label="Folders" class="flex flex-col gap-0.5">
-		{#each rows as node, i (node.id)}
+		{#each rows as node (node.id)}
 			{@const isOpen = open.has(node.id)}
 			{@const isCurrent = node.id === currentId}
 			{@const siblings = rows.filter((r) => r.depth === node.depth)}

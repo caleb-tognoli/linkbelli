@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import { displayUsername } from '$lib/labels';
 	import Page from '$lib/components/ui/Page.svelte';
 	import type { Paged, PublicPlaylistSummary } from '$lib/types';
 	import { failureMessage } from '$lib/api/errors';
@@ -110,7 +111,7 @@
 
 	<header class="mt-3 flex items-start justify-between gap-4">
 		<div>
-			<h1 class="t-page">@{data.profile.username}</h1>
+			<h1 class="t-page">{displayUsername(data.profile.username)}</h1>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
 				{counts} · here since {joined}{followerCount ? ` · ${followerCount} ${followerCount === 1 ? 'follower' : 'followers'}` : ''}
 			</p>

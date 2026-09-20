@@ -35,3 +35,18 @@ export const DONE_LABEL = 'Done';
 export function plural(count: number, one: string, many = `${one}s`): string {
 	return `${count} ${count === 1 ? one : many}`;
 }
+
+/**
+ * A username as it is shown, with the @ in front.
+ *
+ * Usernames may not be email addresses — accountRules refuses one — but older accounts predate
+ * that rule, and the display layer was rendering them verbatim: "@someone@example.com", which
+ * looks broken and publishes an address on a page anybody can read. The local part is enough to
+ * say who somebody is, and is what they would have chosen.
+ */
+export function displayUsername(username: string | null | undefined): string {
+	if (!username) return '@someone';
+
+	const at = username.indexOf('@');
+	return `@${at > 0 ? username.slice(0, at) : username}`;
+}

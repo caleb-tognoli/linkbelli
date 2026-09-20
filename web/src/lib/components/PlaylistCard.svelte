@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Heart } from '@lucide/svelte';
+	import { displayUsername } from '$lib/labels';
 	import type { Snippet } from 'svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import Chip from './ui/Chip.svelte';
@@ -105,7 +106,7 @@
 		{#if visibility}
 			<VisibilityBadge {visibility} />
 		{:else if owner}
-			<span class="truncate">@{owner}</span>
+			<span class="truncate">{displayUsername(owner)}</span>
 		{/if}
 		<span class="flex shrink-0 items-center gap-2">
 			{#if likeCount}

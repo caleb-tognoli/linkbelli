@@ -21,6 +21,7 @@
 	import PasteLinksDialog from './PasteLinksDialog.svelte';
 	import ReportDialog from './ReportDialog.svelte';
 	import { api } from '$lib/api/client';
+	import { displayUsername } from '$lib/labels';
 	import { savePrefs } from '$lib/prefs';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
@@ -479,7 +480,7 @@
 			{/if}
 			{#if ownerUsername}
 				<p class="mt-0.5 text-sm" style="color: var(--color-muted)">
-					by <a href={`/public/${encodeURIComponent(ownerUsername)}`} class="hover:underline">@{ownerUsername}</a>
+					by <a href={`/public/${encodeURIComponent(ownerUsername)}`} class="hover:underline">{displayUsername(ownerUsername)}</a>
 				</p>
 			{/if}
 			{#if description}

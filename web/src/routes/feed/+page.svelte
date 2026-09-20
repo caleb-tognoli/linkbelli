@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import { displayUsername } from '$lib/labels';
 	import { formatDate } from '$lib/dates';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -139,7 +140,7 @@
 									class="hover:underline"
 								>{item.playlistName}</a>
 								<span aria-hidden="true">·</span>
-								<span>@{item.ownerUsername}</span>
+								<span>{displayUsername(item.ownerUsername)}</span>
 								<span aria-hidden="true">·</span>
 								<span>{item.host}</span>
 								<span aria-hidden="true">·</span>
