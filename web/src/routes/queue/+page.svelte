@@ -1,6 +1,7 @@
 <svelte:head><title>Up next - linkbelli</title></svelte:head>
 
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import type { Paged, SearchHit } from '$lib/types';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import { failureMessage } from '$lib/api/errors';
@@ -13,7 +14,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
-	import { BookOpen, Check, Clock, Star, Trash2 } from '@lucide/svelte';
+	import { BookOpen, Check, Clock, Star, Trash2, Undo2 } from '@lucide/svelte';
 	import { PRESETS, PRESET_LABELS, backWhen, resolvePreset, type SnoozePreset } from '$lib/snooze';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import type { PageData } from './$types';
@@ -209,7 +210,10 @@
 			</summary>
 			<ul class="mt-2 flex flex-col divide-y rounded-lg border" style="border-color: var(--color-border)">
 				{#each data.aside.items as hit (hit.itemId)}
-					<li class="flex items-center gap-3 p-3" style="border-color: var(--color-border)">
+					<li
+						class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3"
+						style="border-color: var(--color-border)"
+					>
 						<div class="min-w-0 flex-1">
 							<a
 								href={hit.link.url}
@@ -224,13 +228,15 @@
 								{/if}
 							</p>
 						</div>
-						<button
-							type="button"
+						<Button
+							size="sm"
+							icon={Undo2}
 							onclick={() => wake(hit.itemId)}
 							disabled={busy !== null}
-							class="inline-flex shrink-0 items-center rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60"
-							style="border-color: var(--color-border)"
-						>Bring it back</button>
+							class="self-end sm:self-auto"
+						>
+							Bring it back
+						</Button>
 					</li>
 				{/each}
 			</ul>
@@ -239,7 +245,10 @@
 </Page>
 
 {#snippet row(hit: SearchHit)}
-	<li class="flex items-start gap-3 p-3" style="border-color: var(--color-border)">
+	<!-- Stacked below `sm`: the actions were a fixed 210px cluster beside the title, which left
+	     the title so little room that an address wrapped one character at a time. -->
+	<li class="flex flex-col gap-2 p-3 sm:flex-row sm:items-start sm:gap-3" style="border-color: var(--color-border)">
+		<div class="flex min-w-0 flex-1 items-start gap-3">
 					{#if hit.link.favicon}
 						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
 					{:else}
@@ -289,8 +298,9 @@
 							{/if}
 						</p>
 					</div>
+		</div>
 
-	<div class="flex shrink-0 items-center gap-1">
+	<div class="flex shrink-0 flex-wrap items-center gap-1 self-end sm:self-auto">
 		<!-- Five choices, not a date picker: "not now" is a feeling, and being made to pick a
 		     Tuesday to express it is why snooze buttons go unused. -->
 		<Menu triggerClass={buttonClass('secondary', 'sm')} title="Not now" align="end">
@@ -303,29 +313,26 @@
 		</Menu>
 
 		{#if (hit.snoozeCount ?? 0) >= 3}
-			<button
-				type="button"
+			<Button
+				variant="ghost-danger"
+				size="sm"
+				icon={Trash2}
+				iconOnly
+				label={`Move to trash — put aside ${hit.snoozeCount} times`}
 				onclick={() => letGo(hit)}
 				disabled={busy !== null}
-				class="inline-flex items-center rounded-md border p-1.5 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-				style="border-color: var(--color-border); color: var(--color-danger)"
-				title="Put aside {hit.snoozeCount} times — let it go?"
-				aria-label="Move to trash"
-			>
-				<Trash2 size={14} aria-hidden="true" />
-			</button>
+			/>
 		{/if}
 
-		<button
-			type="button"
+		<Button
+			size="sm"
+			icon={Check}
 			onclick={() => markWatched(hit.itemId)}
 			disabled={busy !== null}
-			class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
-			style="border-color: var(--color-border)"
 			title="Mark watched"
 		>
-			<Check size={14} aria-hidden="true" /> Done
-		</button>
+			Done
+		</Button>
 	</div>
 	</li>
 {/snippet}
