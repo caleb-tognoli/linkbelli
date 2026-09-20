@@ -198,6 +198,8 @@
 						<hr class="mx-3 mb-1 border-border" />
 					{/if}
 				{/if}
+				<!-- The tooltip is for the rail, where the icon is all there is: expanded, it popped a
+				     native tooltip repeating the word already sitting beside it. -->
 				{#each group.items as item (item.href)}
 					{@const active = item.match(page.url.pathname)}
 					{@const count = item.count?.() ?? 0}
@@ -207,7 +209,7 @@
 						class:font-medium={active}
 						style={active ? 'background: var(--color-border)' : ''}
 						aria-current={active ? 'page' : undefined}
-						title={item.label}
+						title={showLabels ? undefined : item.label}
 					>
 						<item.Icon size={20} aria-hidden="true" />
 						{#if showLabels}<span class="flex-1">{item.label}</span>{/if}
