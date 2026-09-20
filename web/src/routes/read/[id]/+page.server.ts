@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { Highlight } from '$lib/highlights';
 import type { LinkContent, Paged, PlaylistItem } from '$lib/types';
+import { parseSettings } from '$lib/readerSettings.svelte';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -17,7 +18,7 @@ import type { PageServerLoad } from './$types';
  */
 const NEIGHBOUR_WINDOW = 100;
 
-export const load: PageServerLoad = async ({ locals, params, url }) => {
+export const load: PageServerLoad = async ({ locals, params, url, cookies }) => {
 	const res = await locals.api(`/api/v1/links/${params.id}/content`);
 
 	// 404 covers both "no such link" and "that page had no article in it" — from the reader's
@@ -36,6 +37,9 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
 	return {
 		content,
+		// Read here, like the theme: the reader's size, width and font settle before the first
+		// paint instead of being corrected a moment after it.
+		reader: parseSettings(cookies.get('lb_reader')),
 		// Marks have to be on the page when it paints, not a moment later: text that changes
 		// colour after you have started reading it is worse than text that never did.
 		highlights,

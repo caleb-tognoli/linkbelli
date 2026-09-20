@@ -453,6 +453,10 @@
 		void tick().then(resume);
 	});
 
+	// Before anything is drawn. `load()` still runs below for a device that stored its settings
+	// before the cookie existed.
+	readerSettings.hydrate(data.reader);
+
 	onMount(() => {
 		readerSettings.load();
 

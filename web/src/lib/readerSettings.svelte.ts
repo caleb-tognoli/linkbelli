@@ -13,13 +13,39 @@ export type ReaderFont = (typeof FONTS)[number];
 
 const KEY = 'lb_reader';
 
-interface Stored {
+/** A year: long enough that the setting outlives any reasonable gap between readings. */
+const COOKIE_MAX_AGE = 31_536_000;
+
+export interface Stored {
 	size: ReaderSize;
 	width: ReaderWidth;
 	font: ReaderFont;
 }
 
 const DEFAULTS: Stored = { size: 'medium', width: 'narrow', font: 'sans' };
+
+/**
+ * Reads a stored value, whatever it came from.
+ *
+ * Shared with the server, which reads the same shape out of the cookie — a value that is not one
+ * of the names this version knows is ignored rather than trusted.
+ */
+export function parseSettings(raw: string | null | undefined): Partial<Stored> {
+	if (!raw) return {};
+
+	try {
+		const stored = JSON.parse(raw) as Partial<Stored>;
+		return {
+			...(stored.size && SIZES.includes(stored.size) ? { size: stored.size } : {}),
+			...(stored.width && WIDTHS.includes(stored.width) ? { width: stored.width } : {}),
+			...(stored.font && FONTS.includes(stored.font) ? { font: stored.font } : {})
+		};
+	} catch {
+		// Blocked site data, a private window, or something else's key at this name. The
+		// defaults are a perfectly good place to read from.
+		return {};
+	}
+}
 
 /**
  * How somebody likes to read.
@@ -33,21 +59,36 @@ class ReaderSettings {
 	width = $state<ReaderWidth>(DEFAULTS.width);
 	font = $state<ReaderFont>(DEFAULTS.font);
 
-	/** Reads what was stored. Safe to call when there is nothing, or nowhere to read from. */
+	/**
+	 * Applies what the server read out of the cookie, before the first paint.
+	 *
+	 * These used to be read from localStorage in onMount, so an article opened at "large, serif"
+	 * was drawn once at the defaults and then re-drawn — the page jumped under the reader's eyes
+	 * every single time.
+	 */
+	hydrate(stored: Partial<Stored> | null | undefined) {
+		if (!stored) return;
+		if (stored.size) this.size = stored.size;
+		if (stored.width) this.width = stored.width;
+		if (stored.font) this.font = stored.font;
+	}
+
+	/**
+	 * Reads what this device stored, for anything the server did not send.
+	 *
+	 * Still reads localStorage: settings kept before the cookie existed are moved across on the
+	 * next read rather than quietly reverting to the defaults.
+	 */
 	load() {
 		if (!browser) return;
 
 		try {
-			const raw = localStorage.getItem(KEY);
-			if (!raw) return;
-
-			const stored = JSON.parse(raw) as Partial<Stored>;
-			if (stored.size && SIZES.includes(stored.size)) this.size = stored.size;
-			if (stored.width && WIDTHS.includes(stored.width)) this.width = stored.width;
-			if (stored.font && FONTS.includes(stored.font)) this.font = stored.font;
+			const stored = parseSettings(localStorage.getItem(KEY));
+			if (Object.keys(stored).length === 0) return;
+			this.hydrate(stored);
+			this.save();
 		} catch {
-			// Blocked site data, a private window, or something else's key at this name. The
-			// defaults are a perfectly good place to read from.
+			// Nowhere to read from. The defaults will do.
 		}
 	}
 
@@ -59,11 +100,18 @@ class ReaderSettings {
 	private save() {
 		if (!browser) return;
 
+		const value = JSON.stringify({ size: this.size, width: this.width, font: this.font });
+
+		// In a cookie as well as in localStorage, so the server can draw the article at the right
+		// size the first time rather than leaving the browser to correct it.
 		try {
-			localStorage.setItem(
-				KEY,
-				JSON.stringify({ size: this.size, width: this.width, font: this.font })
-			);
+			document.cookie = `${KEY}=${encodeURIComponent(value)}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`;
+		} catch {
+			// Cookies refused. localStorage may still work.
+		}
+
+		try {
+			localStorage.setItem(KEY, value);
 		} catch {
 			// Nowhere to keep it. The setting still applies to this page, which is most of it.
 		}
