@@ -12,7 +12,15 @@
 	import { Link2, UserPlus, X } from '@lucide/svelte';
 	import type { PlaylistMember, PlaylistRole } from '$lib/types';
 
-	let { playlistId }: { playlistId: string } = $props();
+	/**
+	 * `open` is bindable so the playlist's overflow menu can open this without a button of
+	 * its own; leaving `withTrigger` off hides the button and makes the menu item the way in.
+	 */
+	let {
+		playlistId,
+		open = $bindable(false),
+		withTrigger = true
+	}: { playlistId: string; open?: boolean; withTrigger?: boolean } = $props();
 
 	const roles: { value: PlaylistRole; label: string; hint: string }[] = [
 		{ value: 'Viewer', label: 'Viewer', hint: 'Can read it' },
@@ -20,7 +28,6 @@
 		{ value: 'Editor', label: 'Editor', hint: 'Can also edit and remove' }
 	];
 
-	let open = $state(false);
 	let members = $state<PlaylistMember[]>([]);
 	let username = $state('');
 	let role = $state<PlaylistRole>('Viewer');
@@ -166,10 +173,12 @@
 	description="With specific people, by username — or with a link, for somebody who has no account here yet. Making it public is a separate decision."
 >
 	{#snippet trigger()}
-		<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Share with specific people">
-			<UserPlus size={15} aria-hidden="true" />
-			<span class="sr-only md:not-sr-only">Share</span>
-		</Dialog.Trigger>
+		{#if withTrigger}
+			<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Share with specific people">
+				<UserPlus size={15} aria-hidden="true" />
+				<span class="sr-only md:not-sr-only">Share</span>
+			</Dialog.Trigger>
+		{/if}
 	{/snippet}
 
 	<div class="flex shrink-0 gap-2">

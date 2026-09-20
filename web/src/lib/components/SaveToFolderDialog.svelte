@@ -9,21 +9,28 @@
 	import FolderPicker from './FolderPicker.svelte';
 	import type { Folder as FolderType } from '$lib/types';
 
+	/**
+	 * `open` is bindable so the playlist's overflow menu can open this without a button of its
+	 * own; leaving `withTrigger` off hides the button and makes the menu item the way in.
+	 */
 	let {
 		playlistId,
 		currentFolderId = null,
 		currentFolderName = null,
-		compact = false
+		compact = false,
+		open = $bindable(false),
+		withTrigger = true
 	}: {
 		playlistId: string;
 		currentFolderId?: string | null;
 		currentFolderName?: string | null;
 		compact?: boolean;
+		open?: boolean;
+		withTrigger?: boolean;
 	} = $props();
 
 	const filed = $derived(currentFolderId !== null);
 
-	let open = $state(false);
 	let folders = $state<FolderType[]>([]);
 	let loading = $state(false);
 	let busy = $state(false);
@@ -85,6 +92,7 @@
 
 <Modal bind:open title={filed ? 'Move to another folder' : 'Add to folder'} size="sm">
 	{#snippet trigger()}
+		{#if withTrigger}
 		<Dialog.Trigger
 			class={compact ? buttonClass('ghost', 'sm', true) : buttonClass('secondary', 'sm')}
 			title={filed ? `In ${currentFolderName} — move it` : 'Add to folder'}
@@ -101,6 +109,7 @@
 				{/if}
 			{/if}
 		</Dialog.Trigger>
+		{/if}
 	{/snippet}
 
 	<div class="flex-1 overflow-y-auto">

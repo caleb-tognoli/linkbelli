@@ -9,6 +9,7 @@
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
 	import MenuItem from '$lib/components/ui/MenuItem.svelte';
+	import MenuSeparator from '$lib/components/ui/MenuSeparator.svelte';
 	import Menu from '$lib/components/ui/Menu.svelte';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import PlaylistSearchBar from './PlaylistSearchBar.svelte';
@@ -24,7 +25,7 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ChevronDown, CopyPlus, Download, Eye, EyeOff, Globe, Heart, Lock, Rss, Star, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, CopyPlus, Download, Eye, EyeOff, Folder, Globe, Heart, Lock, MoreHorizontal, Rss, Star, Trash2, UserPlus } from '@lucide/svelte';
 	import type { AttachedSource, NsfwSetting, Paged, Playlist, PlaylistItem, PlaylistRole, SourceSummary, Visibility } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
@@ -179,6 +180,10 @@
 			liking = false;
 		}
 	}
+
+	/** The two dialogs the overflow menu opens, which have no trigger of their own. */
+	let shareOpen = $state(false);
+	let folderOpen = $state(false);
 
 	const resolvedBackHref = $derived(backHref ?? (isOwner ? '/playlists' : '/discover'));
 	const resolvedBackLabel = $derived(backLabel ?? (isOwner ? 'Playlists' : 'Discover'));
@@ -487,9 +492,9 @@
 					{#snippet trigger()}
 						<currentVis.icon size={15} aria-hidden="true" />
 						<span class="sr-only">Visibility:</span>
-						<!-- The icon carries it on a phone — a padlock, an eye, a globe — and the word
-						     comes back as soon as there is room for it. -->
-						<span class="sr-only md:not-sr-only">{currentVis.label}</span>
+						<!-- Said at every width now: with four controls in this row instead of ten,
+						     there is room for the word, and it wraps rather than going silent. -->
+						<span>{currentVis.label}</span>
 						<ChevronDown size={13} aria-hidden="true" />
 					{/snippet}
 					<MenuRadio
@@ -503,14 +508,6 @@
 						onchange={setVisibility}
 					/>
 				</Menu>
-				{#if publicPreviewHref}
-					<!-- The obvious thing to want straight after publishing, and previously
-					     impossible: your own public address redirected you back to this editor. -->
-					<Button href={publicPreviewHref} size="sm" icon={Eye} title="See this the way a visitor does">
-						<span class="hidden sm:inline">View as a visitor</span>
-						<span class="sr-only sm:hidden">View as a visitor</span>
-					</Button>
-				{/if}
 				{#if visibility !== 'Private' && (likeCount > 0 || followerCount > 0)}
 					<!-- Read-only, and only once somebody has actually done it: a published
 					     playlist showing "0 likes" says something discouraging and untrue about a
@@ -598,59 +595,19 @@
 			{#if canAdd}
 				<PasteLinksDialog playlistId={playlist.id} onpasted={reloadItems} />
 			{/if}
-			{#if isOwner}
-				<ShareWithDialog playlistId={playlist.id} />
-			{/if}
 			{#if !isOwner && isLoggedIn && ownerUsername}
 				<!-- Moderation was a host blocklist and nothing else: someone who found a problem
 				     had no way to say so. -->
 				<ReportDialog username={ownerUsername} slug={playlist.slug} />
 			{/if}
-			{#if isLoggedIn}
+			{#if isLoggedIn && !isOwner}
 				<SaveToFolderDialog
 					playlistId={playlist.id}
 					currentFolderId={playlist.folderId}
 					currentFolderName={playlist.folderName}
 				/>
 			{/if}
-			{#if isOwner && (isNsfw || nsfwSetting !== 'Auto')}
-				<Menu
-					triggerClass={buttonClass('secondary', 'sm', false, isNsfw ? 'border-danger text-danger' : '')}
-					title="Adult content"
-					align="end"
-					width="w-60"
-				>
-					{#snippet trigger()}
-						{isNsfw ? 'Adult' : 'Not adult'}
-						<ChevronDown size={13} aria-hidden="true" />
-					{/snippet}
-					<MenuRadio
-						value={nsfwSetting}
-						options={(['Auto', 'No', 'Yes'] as const).map((option) => ({
-							value: option,
-							label: NSFW_LABELS[option],
-							description: option === 'Auto' ? 'Go by what the sites declare' : undefined
-						}))}
-						onchange={setNsfw}
-					/>
-				</Menu>
-			{/if}
 			{#if isOwner}
-				<Menu
-					triggerClass={buttonClass('ghost', 'sm', true)}
-					title="Export this playlist"
-					label="Export this playlist"
-					align="end"
-				>
-					{#snippet trigger()}
-						<Download size={17} aria-hidden="true" />
-					{/snippet}
-					{#each PLAYLIST_EXPORTS as fmt (fmt.format)}
-						<MenuItem icon={Download} href={`/api/v1/export/playlists/${playlist.id}?format=${fmt.format}`} download>
-							{fmt.label}
-						</MenuItem>
-					{/each}
-				</Menu>
 				<EditPlaylistDialog
 					{playlist}
 					bind:name={playlistName}
@@ -659,7 +616,76 @@
 					bind:nsfwSetting
 					onsaved={(saved) => (isNsfw = saved.nsfw)}
 				/>
-				<Button variant="ghost-danger" size="sm" icon={Trash2} iconOnly label="Delete playlist" onclick={deletePlaylist} />
+
+				<!--
+					Everything else this playlist can have done to it, behind one button.
+
+					The row was ten controls wide — a visibility menu, paste, share, folder, export,
+					preview, adult, edit, delete and two counts — with no grouping, four of them
+					labelled and two of them bare icons of the same size. On a phone every label
+					hides itself, so it became seven unlabelled icons in a row with no tooltips to
+					fall back on, and the red one that deletes the playlist sat eight pixels from
+					the pencil that edits it.
+
+					Four things stay out here: what it is, how to put links in it, how to change it,
+					and this. Delete lives at the bottom of the menu, behind a separator, which is
+					the shape the row menus in the link table already use.
+				-->
+				<Menu
+					triggerClass={buttonClass('ghost', 'sm', true)}
+					title="More"
+					label="More things to do with this playlist"
+					align="end"
+					width="w-64"
+				>
+					{#snippet trigger()}
+						<MoreHorizontal size={17} aria-hidden="true" />
+					{/snippet}
+
+					{#if publicPreviewHref}
+						<!-- The obvious thing to want straight after publishing, and previously
+						     impossible: your own public address redirected you back to this editor. -->
+						<MenuItem icon={Eye} href={publicPreviewHref}>View as a visitor</MenuItem>
+					{/if}
+					<MenuItem icon={UserPlus} onselect={() => (shareOpen = true)}>Share with people…</MenuItem>
+					<MenuItem icon={Folder} onselect={() => (folderOpen = true)}>
+						{playlist.folderName ? `In ${playlist.folderName} — move it…` : 'Add to folder…'}
+					</MenuItem>
+
+					<MenuSeparator />
+					{#each PLAYLIST_EXPORTS as fmt (fmt.format)}
+						<MenuItem icon={Download} href={`/api/v1/export/playlists/${playlist.id}?format=${fmt.format}`} download>
+							Export as {fmt.label}
+						</MenuItem>
+					{/each}
+
+					{#if isNsfw || nsfwSetting !== 'Auto'}
+						<MenuSeparator />
+						<p class="px-3 pt-1 pb-0.5 t-subsection">Adult content</p>
+						<MenuRadio
+							value={nsfwSetting}
+							options={(['Auto', 'No', 'Yes'] as const).map((option) => ({
+								value: option,
+								label: NSFW_LABELS[option],
+								description: option === 'Auto' ? 'Go by what the sites declare' : undefined
+							}))}
+							onchange={setNsfw}
+						/>
+					{/if}
+
+					<MenuSeparator />
+					<MenuItem icon={Trash2} danger onselect={deletePlaylist}>Move to the trash…</MenuItem>
+				</Menu>
+
+				<!-- Opened from the menu above, so they have no button of their own out here. -->
+				<ShareWithDialog playlistId={playlist.id} bind:open={shareOpen} withTrigger={false} />
+				<SaveToFolderDialog
+					playlistId={playlist.id}
+					currentFolderId={playlist.folderId}
+					currentFolderName={playlist.folderName}
+					bind:open={folderOpen}
+					withTrigger={false}
+				/>
 			{/if}
 		</div>
 	</header>

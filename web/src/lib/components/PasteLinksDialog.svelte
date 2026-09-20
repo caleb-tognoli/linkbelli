@@ -68,7 +68,7 @@
 	{#snippet trigger()}
 		<Dialog.Trigger class={buttonClass('secondary', 'sm')} title="Paste a block of links">
 			<ClipboardPaste size={15} aria-hidden="true" />
-			<span class="sr-only md:not-sr-only">Paste links</span>
+			<span>Paste links</span>
 		</Dialog.Trigger>
 	{/snippet}
 
