@@ -329,6 +329,23 @@
 		});
 	}
 
+	/**
+	 * The row j and k are on, in words.
+	 *
+	 * The cursor was an accent stripe and nothing else: DOM focus never moves, so pressing j walked
+	 * a marker down the list in complete silence and then o, e and x acted on a row nobody had been
+	 * told about. Announced from a region that is always mounted, for the same reason the toasts
+	 * are — a live region that arrives with its text is commonly not read.
+	 */
+	const focusedSpoken = $derived.by(() => {
+		if (!focusedItem) return '';
+
+		const title = focusedItem.metadata?.title ?? focusedItem.link.title ?? focusedItem.link.url;
+		const where = `${focusedIndex + 1} of ${displayItems.length}`;
+		const done = focusedItem.status === 'Watched' ? `, ${DONE_LABEL}` : '';
+		return `${title}${done}. ${where}.`;
+	});
+
 
 	let noteEditId = $state<string | null>(null);
 	let draftNote = $state('');
@@ -580,6 +597,7 @@
 		data-item-focused={focusedItem?.id === item.id}
 		data-item-id={item.id}
 		data-watched={item.status === 'Watched'}
+		aria-current={focusedItem?.id === item.id ? 'true' : undefined}
 		style="border-color: var(--color-border);{focusedItem?.id === item.id ? ' box-shadow: inset 3px 0 0 var(--color-accent)' : ''}"
 	>
 		{#if !readonly}
@@ -1175,6 +1193,7 @@
 					ondragstart={(e) => onRowDragStart(e, item)}
 					data-item-focused={focusedItem?.id === item.id}
 					data-item-id={item.id}
+					aria-current={focusedItem?.id === item.id ? 'true' : undefined}
 					style="border-color: {focusedItem?.id === item.id ? 'var(--color-accent)' : 'var(--color-border)'}; background: var(--color-surface)"
 				>
 					<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="block">
@@ -1281,7 +1300,7 @@
 						<button
 							type="button"
 							onclick={clickAddedHeader}
-							class="inline-flex items-center gap-1 hover:opacity-70"
+							class="tap-target inline-flex min-h-6 items-center gap-1 hover:opacity-70"
 							title="Sort by date added"
 							aria-label="Sort by date added"
 						>
@@ -1300,7 +1319,7 @@
 								<button
 									type="button"
 									onclick={clickScoreHeader}
-									class="inline-flex items-center gap-1 hover:opacity-70"
+									class="tap-target inline-flex min-h-6 items-center gap-1 hover:opacity-70"
 									title="Sort by score"
 									aria-label="Sort by score"
 								>
@@ -1340,6 +1359,10 @@
 	{/if}
 
 	{#if signedIn}
+		<!-- Always mounted, so what it says when j or k moves the cursor is a change to a region
+		     that is already there — which is the only kind a screen reader reliably reads. -->
+		<p class="sr-only" role="status">{focusedSpoken}</p>
+
 		<!-- One link to all of them, rather than a footnote listing four and hiding below `sm`.
 		     The palette and this list are only mounted for somebody signed in. -->
 		<p class="mt-3 text-xs">
