@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import Page from '$lib/components/ui/Page.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { page } from '$app/state';
 	import KindBadge from '$lib/components/KindBadge.svelte';
@@ -47,7 +48,7 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<section class="mx-auto max-w-xl">
+<Page width="card">
 	<p class="text-sm" style="color: var(--color-muted)">
 		{data.item.sharedBy} shared this with you
 	</p>
@@ -111,4 +112,4 @@
 	<p class="mt-4 text-center text-xs" style="color: var(--color-muted)">
 		Shared with <a href="/" class="underline">Linkbelli</a>
 	</p>
-</section>
+</Page>

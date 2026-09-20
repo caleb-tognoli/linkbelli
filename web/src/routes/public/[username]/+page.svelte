@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import Page from '$lib/components/ui/Page.svelte';
 	import type { Paged, PublicPlaylistSummary } from '$lib/types';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
@@ -100,7 +101,7 @@
 	<meta name="twitter:description" content={description} />
 </svelte:head>
 
-<section class="mx-auto max-w-5xl">
+<Page>
 	<BackLink href="/discover" label="Discover" />
 
 	<header class="mt-3 flex items-start justify-between gap-4">
@@ -153,4 +154,4 @@
 			<LoadMore onclick={loadMore} loading={loadingMore} remaining={data.profile.publicPlaylistCount - playlists.length} />
 		{/if}
 	{/if}
-</section>
+</Page>

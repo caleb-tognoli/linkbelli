@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { formatDate, formatExact } from '$lib/dates';
 	import { plural } from '$lib/labels';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -304,7 +305,7 @@
 
 <svelte:head><title>{pageTitle(`${data.source.name}`)}</title></svelte:head>
 
-<section class="mx-auto max-w-4xl">
+<Page width="medium">
 	<BackLink href={backHref} label={backLabel} />
 
 	<header class="mt-3 flex flex-wrap items-start justify-between gap-3">
@@ -529,7 +530,7 @@
 			{/key}
 		</div>
 	</div>
-</section>
+</Page>
 
 <Modal bind:open={linkOpen} title="Connect a playlist" size="sm">
 	<Input

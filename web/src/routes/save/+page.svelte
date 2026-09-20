@@ -2,6 +2,7 @@
 
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import Page from '$lib/components/ui/Page.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
@@ -129,7 +130,7 @@
 	const savedPlaylist = $derived(data.playlists.find((p) => p.id === playlistId));
 </script>
 
-<section class="mx-auto max-w-md">
+<Page width="card">
 	<h1 class="text-2xl font-semibold">Save a link</h1>
 
 	{#if data.playlists.length === 0}
@@ -263,4 +264,4 @@
 			<OfflineSupportNotice compact />
 		</form>
 	{/if}
-</section>
+</Page>

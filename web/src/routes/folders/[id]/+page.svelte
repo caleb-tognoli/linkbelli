@@ -1,5 +1,6 @@
 ﻿<script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -62,7 +63,7 @@
 
 <svelte:head><title>{pageTitle(`${data.folder.name}`)}</title></svelte:head>
 
-<section class="mx-auto max-w-5xl">
+<Page>
 	<!-- Breadcrumb trail: Playlists / ancestors / current -->
 	<nav aria-label="Breadcrumb" class="text-sm" style="color: var(--color-muted)">
 		<ol class="flex flex-wrap items-center gap-1">
@@ -155,4 +156,4 @@
 			{/each}
 		</div>
 	{/if}
-</section>
+</Page>

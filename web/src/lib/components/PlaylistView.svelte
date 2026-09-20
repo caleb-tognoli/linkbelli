@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EditPlaylistDialog from '$lib/components/EditPlaylistDialog.svelte';
+	import Page from '$lib/components/ui/Page.svelte';
 	import { scrollBehavior } from '$lib/motion';
 	import { tick } from 'svelte';
 	import { failureMessage } from '$lib/api/errors';
@@ -445,7 +446,7 @@
 	}
 </script>
 
-<section class="mx-auto max-w-5xl">
+<Page>
 	<BackLink href={resolvedBackHref} label={resolvedBackLabel} />
 
 	<header class="mt-3 flex flex-wrap items-start justify-between gap-3">
@@ -745,4 +746,4 @@
 			<LoadMore onclick={loadMore} loading={loadingMore} remaining={total === null ? null : total - items.length} />
 		{/if}
 	</div>
-</section>
+</Page>

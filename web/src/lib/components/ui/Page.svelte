@@ -1,14 +1,16 @@
 <script lang="ts" module>
 	/**
 	 * How wide a page's content runs, by what the page holds rather than picked per file:
-	 * `narrow` for reading down a list, `medium` for lists with a little more on each row and for
-	 * settings, `default` for grids of cards, `form` for a single form.
+	 * `card` for a page that is one card, `narrow` for reading down a list, `medium` for lists
+	 * with a little more on each row and for settings, `default` for grids of cards, `form` for a
+	 * single form.
 	 */
 	export const PAGE_WIDTHS = {
+		card: 'max-w-md',
+		form: 'max-w-2xl',
 		narrow: 'max-w-3xl',
 		medium: 'max-w-4xl',
-		default: 'max-w-5xl',
-		form: 'max-w-2xl'
+		default: 'max-w-5xl'
 	} as const;
 </script>
 

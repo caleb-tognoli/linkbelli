@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import Page from '$lib/components/ui/Page.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { page } from '$app/state';
 
@@ -39,7 +40,7 @@
 
 <svelte:head><title>{pageTitle(`${heading}`)}</title></svelte:head>
 
-<section class="mx-auto max-w-md py-16 text-center">
+<Page width="card" class="py-16 text-center">
 	<p class="text-5xl font-semibold" style="color: var(--color-muted)">{status}</p>
 	<h1 class="mt-3 text-xl font-semibold">{heading}</h1>
 	<p class="mt-2 text-sm" style="color: var(--color-muted)">{detail}</p>
@@ -56,4 +57,4 @@
 		{/if}
 		<Button href="/">Home</Button>
 	</div>
-</section>
+</Page>
