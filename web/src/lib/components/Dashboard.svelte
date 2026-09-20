@@ -113,8 +113,7 @@
 								rel="noopener noreferrer"
 								class="break-words font-medium hover:underline"
 							>
-								{hit.link.title ?? hit.link.url}
-							</a>
+								{hit.link.title ?? hit.link.url}<span class="sr-only"> (opens in a new tab)</span></a>
 							<p class="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted">
 								<a href={`/playlists/${hit.playlistId}`} class="hover:underline">{hit.playlistName}</a>
 								{#if hit.link.wordCount}

@@ -124,8 +124,7 @@
 						{/if}
 						<div class="min-w-0 flex-1">
 							<a href={item.url} target="_blank" rel="noreferrer" class="break-words hover:underline">
-								{item.title ?? item.url}
-							</a>
+								{item.title ?? item.url}<span class="sr-only"> (opens in a new tab)</span></a>
 							<KindBadge kind={item.kind} />
 							{#if item.wordCount}
 								<a

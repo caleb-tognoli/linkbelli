@@ -688,8 +688,7 @@
 						class="break-words hover:underline"
 						style={item.status === 'Watched' ? DONE_TITLE : ''}
 					>
-						{showUrls ? item.link.url : (item.metadata?.title ?? item.link.title ?? item.link.url)}
-					</a>
+						{showUrls ? item.link.url : (item.metadata?.title ?? item.link.title ?? item.link.url)}<span class="sr-only"> (opens in a new tab)</span></a>
 					{#if item.status === 'Watched'}
 						<!-- Said, not faded: the whole row used to go to 45% opacity, which took its
 						     text — the muted metadata most of all — well under a readable contrast. -->
@@ -763,8 +762,7 @@
 									class="inline-flex items-center gap-1 underline underline-offset-2"
 								>
 									<Archive size={12} aria-hidden="true" />
-									Archived copy
-								</a>
+									Archived copy<span class="sr-only"> (opens in a new tab)</span></a>
 							{/if}
 							{#if !readonly}
 								<button
@@ -1199,8 +1197,7 @@
 							class="line-clamp-2 text-sm font-medium hover:underline"
 							style={item.status === 'Watched' ? DONE_TITLE : ''}
 						>
-							{item.metadata?.title ?? item.link.title ?? item.link.url}
-						</a>
+							{item.metadata?.title ?? item.link.title ?? item.link.url}<span class="sr-only"> (opens in a new tab)</span></a>
 						{#if item.status === 'Watched'}
 							<span class="inline-flex items-center gap-0.5 text-xs" style="color: var(--color-muted)">
 								<Check size={12} aria-hidden="true" /> {DONE_LABEL}

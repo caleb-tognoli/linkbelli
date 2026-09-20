@@ -29,8 +29,7 @@
 <div class="embed" data-embed-theme={data.theme}>
 	<header>
 		<a href={playlistUrl} target="_blank" rel="noopener noreferrer" class="title">
-			{data.playlist.name}
-		</a>
+			{data.playlist.name}<span class="sr-only"> (opens in a new tab)</span></a>
 		<span class="by">by @{data.username}</span>
 	</header>
 
@@ -50,8 +49,7 @@
 						<span class="icon placeholder"></span>
 					{/if}
 					<a href={item.link.url} target="_blank" rel="noopener noreferrer">
-						{item.metadata?.title ?? item.link.title ?? item.link.url}
-					</a>
+						{item.metadata?.title ?? item.link.title ?? item.link.url}<span class="sr-only"> (opens in a new tab)</span></a>
 					<span class="host">{item.link.host}</span>
 				</li>
 			{/each}

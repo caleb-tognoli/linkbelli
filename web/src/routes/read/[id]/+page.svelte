@@ -636,7 +636,7 @@
 	{#if data.content.truncated}
 		<p class="mt-6 border-t pt-4 text-sm" style="border-color: var(--color-border); color: var(--color-muted)">
 			This article was longer than Linkbelli keeps. The rest is still at the
-			<a href={data.content.url} target="_blank" rel="noreferrer" class="underline">original</a>.
+			<a href={data.content.url} target="_blank" rel="noreferrer" class="underline">original<span class="sr-only"> (opens in a new tab)</span></a>.
 		</p>
 	{/if}
 

@@ -68,8 +68,7 @@
 				rel="noreferrer"
 				class="text-lg font-medium hover:underline"
 			>
-				{title}
-			</a>
+				{title}<span class="sr-only"> (opens in a new tab)</span></a>
 			{#if data.item.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
 			<KindBadge kind={data.item.kind} />
 

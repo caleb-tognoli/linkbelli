@@ -175,7 +175,7 @@
 							rel="noopener noreferrer"
 							class="block truncate hover:underline"
 							title={item.url}
-						>{item.title ?? item.url}</a>
+						>{item.title ?? item.url}<span class="sr-only"> (opens in a new tab)</span></a>
 						<p class="truncate text-xs" style="color: var(--color-muted)">
 							from <a href={`/playlists/${item.playlistId}`} class="hover:underline">{item.playlistName}</a>
 							· {purgesIn(item.purgeAfter)}

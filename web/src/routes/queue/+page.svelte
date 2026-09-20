@@ -234,7 +234,7 @@
 								target="_blank"
 								rel="noopener noreferrer"
 								class="break-words text-sm hover:underline"
-							>{hit.link.title ?? hit.link.url}</a>
+							>{hit.link.title ?? hit.link.url}<span class="sr-only"> (opens in a new tab)</span></a>
 							<p class="mt-0.5 text-xs" style="color: var(--color-muted)">
 								{hit.snoozedUntil ? backWhen(hit.snoozedUntil) : ''}
 								{#if (hit.snoozeCount ?? 0) > 1}
@@ -274,7 +274,7 @@
 							target="_blank"
 							rel="noopener noreferrer"
 							class="break-words font-medium hover:underline"
-						>{hit.link.title ?? hit.link.url}</a>
+						>{hit.link.title ?? hit.link.url}<span class="sr-only"> (opens in a new tab)</span></a>
 						{#if hit.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
 
 						{#if hit.note}
