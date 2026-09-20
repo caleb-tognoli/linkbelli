@@ -28,7 +28,7 @@ export function describeRule(
 	if (rule.addTags.length) then.push(`tag it ${rule.addTags.join(', ')}`);
 	if (rule.moveToPlaylistId) then.push(`move it to ${playlistName(rule.moveToPlaylistId)}`);
 	if (rule.copyToPlaylistId) then.push(`also put it in ${playlistName(rule.copyToPlaylistId)}`);
-	if (rule.markWatched) then.push('mark it watched');
+	if (rule.markWatched) then.push('mark it done');
 	if (rule.setScore !== null && rule.setScore !== undefined) then.push(`score it ${rule.setScore}`);
 	if (rule.archive) then.push('keep a public snapshot of it');
 	if (rule.trash) then.push('send it to the trash');

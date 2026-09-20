@@ -45,8 +45,8 @@
 
 	const statuses = [
 		{ value: '', label: 'All' },
-		{ value: 'unwatched', label: 'Unwatched' },
-		{ value: 'watched', label: 'Watched' }
+		{ value: 'unwatched', label: 'To do' },
+		{ value: 'watched', label: 'Done' }
 	];
 
 	/**
@@ -193,8 +193,8 @@
 			onclick={() => navigate({ finished: data.finished ? '' : '7', status: '' })}
 			class={buttonClass('secondary', 'md', false, data.finished ? 'border-accent text-accent' : '')}
 			aria-pressed={!!data.finished}
-			title="Items you marked watched in the last week"
-		>Finished this week</button>
+			title="Links you marked done in the last week"
+		>Done this week</button>
 
 		<button
 			type="button"
@@ -485,7 +485,7 @@
 							{/if}
 							{#if hit.status === 'Watched'}
 								<span aria-hidden="true">·</span>
-								<span class="inline-flex items-center gap-1"><Eye size={12} aria-hidden="true" /> watched</span>
+								<span class="inline-flex items-center gap-1"><Eye size={12} aria-hidden="true" /> done</span>
 							{/if}
 							{#if hit.score !== null}
 								<span aria-hidden="true">·</span>

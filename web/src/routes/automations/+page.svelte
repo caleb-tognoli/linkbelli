@@ -621,7 +621,7 @@
 				</div>
 
 				<div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-					<Checkbox bind:checked={draft.markWatched}>Mark it watched</Checkbox>
+					<Checkbox bind:checked={draft.markWatched}>Mark it done</Checkbox>
 					<Checkbox bind:checked={draft.archive}>Keep a public snapshot</Checkbox>
 					<Checkbox bind:checked={draft.trash}>Send it to the trash</Checkbox>
 					<Checkbox bind:checked={draft.stopOnMatch}>Stop here</Checkbox>

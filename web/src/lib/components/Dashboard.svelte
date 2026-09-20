@@ -63,7 +63,7 @@
 			{/if}
 		</div>
 		{#if upNext.items.length === 0}
-			<p class="mt-2 text-sm text-muted">Nothing waiting — everything you saved is marked watched.</p>
+			<p class="mt-2 text-sm text-muted">Nothing waiting — everything you saved is marked done.</p>
 		{:else}
 			<ul class="mt-3 flex flex-col divide-y rounded-card border border-border">
 				{#each upNext.items as hit (hit.itemId)}

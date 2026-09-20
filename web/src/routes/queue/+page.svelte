@@ -165,7 +165,7 @@
 		<div class="mt-8 rounded-lg border border-dashed p-10 text-center" style="border-color: var(--color-border)">
 			<p class="font-medium">Nothing waiting.</p>
 			<p class="mt-1 text-sm" style="color: var(--color-muted)">
-				Everything you have saved is marked watched.
+				Everything you have saved is marked done.
 			</p>
 		</div>
 	{:else}
@@ -329,7 +329,7 @@
 			icon={Check}
 			onclick={() => markWatched(hit.itemId)}
 			disabled={busy !== null}
-			title="Mark watched"
+			title="Mark done"
 		>
 			Done
 		</Button>

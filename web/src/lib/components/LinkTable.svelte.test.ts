@@ -103,13 +103,13 @@ describe('LinkTable — selecting', () => {
 });
 
 describe('LinkTable — acting on a selection', () => {
-	it('marks the selection watched in one request, then lets the page refresh', async () => {
+	it('marks the selection done in one request, then lets the page refresh', async () => {
 		const { calls } = fakeApi({ 'POST /items/bulk': json({ affected: 2, skipped: 0 }) });
 		const { onmove } = setup();
 
 		await select(1);
 		await select(2);
-		await userEvent.click(screen.getByRole('button', { name: 'Watched' }));
+		await userEvent.click(screen.getByRole('button', { name: 'Done' }));
 
 		expect(calls).toContainEqual({
 			method: 'POST',
@@ -134,7 +134,7 @@ describe('LinkTable — acting on a selection', () => {
 		const { onmove } = setup();
 
 		await select(1);
-		await userEvent.click(screen.getByRole('button', { name: 'Unwatched' }));
+		await userEvent.click(screen.getByRole('button', { name: 'Not done' }));
 
 		expect(problem()).toHaveTextContent(message);
 		expect(screen.getByText('1 selected')).toBeInTheDocument();
@@ -146,7 +146,7 @@ describe('LinkTable — acting on a selection', () => {
 		setup();
 
 		await select(2);
-		await userEvent.click(screen.getByRole('button', { name: 'Watched' }));
+		await userEvent.click(screen.getByRole('button', { name: 'Done' }));
 
 		expect(problem()).toHaveTextContent('Could not reach the server.');
 	});
@@ -211,10 +211,10 @@ describe('LinkTable — acting on a selection', () => {
 		setup();
 
 		await select(1);
-		await userEvent.click(screen.getByRole('button', { name: 'Watched' }));
+		await userEvent.click(screen.getByRole('button', { name: 'Done' }));
 
 		const bar = screen.getByText('1 selected').parentElement!;
-		expect(within(bar).getByRole('button', { name: 'Unwatched' })).toBeDisabled();
+		expect(within(bar).getByRole('button', { name: 'Not done' })).toBeDisabled();
 		expect(within(bar).getByRole('button', { name: 'Delete' })).toBeDisabled();
 
 		answer(json({ affected: 1, skipped: 0 }));

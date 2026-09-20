@@ -533,10 +533,10 @@
 				disabled={finished}
 				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60"
 				style="border-color: var(--color-border)"
-				title="Mark finished (e)"
+				title="Mark done (e)"
 			>
 				<Check size={14} aria-hidden="true" />
-				{finished ? 'Finished' : 'Mark finished'}
+				{finished ? 'Done' : 'Mark done'}
 			</button>
 
 			{#if data.previous}

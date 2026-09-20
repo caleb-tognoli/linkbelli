@@ -58,7 +58,7 @@ describe('describeRule', () => {
 
 	it('says plainly that a rule with no conditions catches everything', () => {
 		expect(describeRule(rule({ markWatched: true }), name)).toBe(
-			'When anything arrives, mark it watched.'
+			'When anything arrives, mark it done.'
 		);
 	});
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { DONE_LABEL, STATUS_FILTERS, STATUS_LABELS, doneToggleLabel, plural, type StatusFilter as StatusFilterValue } from '$lib/labels';
 	import { failureMessage } from '$lib/api/errors';
 	import Button, { buttonClass } from '$lib/components/ui/Button.svelte';
 	import MenuSeparator from '$lib/components/ui/MenuSeparator.svelte';
@@ -28,7 +29,7 @@
 	import type { AttachedSource, PlaylistItem } from '$lib/types';
 	import type { PlaylistPrefs } from '$lib/prefs';
 
-	type StatusFilter = 'All' | 'Unwatched' | 'Watched';
+	type StatusFilter = StatusFilterValue;
 
 	let {
 		items = $bindable(),
@@ -88,7 +89,7 @@
 	let showUrls = $state(initialPrefs?.showUrls ?? false);
 	let forceShowScore = $state(false);
 
-	const statusOptions: StatusFilter[] = ['All', 'Unwatched', 'Watched'];
+	const statusOptions: StatusFilter[] = [...STATUS_FILTERS];
 
 	const sourceFilterLabel = $derived(
 		sourceFilter === null
@@ -176,7 +177,7 @@
 		const changed = before.filter((b) => b.status !== status);
 		if (changed.length === 0) return;
 		toast.success(
-			`Marked ${changed.length} ${changed.length === 1 ? 'link' : 'links'} ${status === 'Watched' ? 'watched' : 'unwatched'}.`,
+			`Marked ${plural(changed.length, 'link')} ${status === 'Watched' ? 'done' : 'not done'}.`,
 			{
 				action: {
 					label: 'Undo',
@@ -652,7 +653,7 @@
 							class="ml-1.5 inline-flex items-center gap-0.5 align-middle text-xs"
 							style="color: var(--color-muted)"
 						>
-							<Check size={12} aria-hidden="true" /> Watched
+							<Check size={12} aria-hidden="true" /> {DONE_LABEL}
 						</span>
 					{/if}
 					{#if item.link.nsfw}<span class="ml-1.5"><NsfwBadge /></span>{/if}
@@ -776,7 +777,7 @@
 						<MoreVertical size={16} aria-hidden="true" />
 					{/snippet}
 					<MenuItem icon={item.status === 'Watched' ? EyeOff : Eye} onselect={() => toggleWatched(item)}>
-						{item.status === 'Watched' ? 'Mark as unwatched' : 'Mark as watched'}
+						{doneToggleLabel(item.status === 'Watched')}
 					</MenuItem>
 					{#if item.link.wordCount}
 						<MenuItem icon={BookOpen} href={`/read/${item.link.id}${playlistId ? `?from=${playlistId}` : ''}`}>
@@ -910,12 +911,12 @@
 				{#snippet trigger()}
 					<Eye size={12} aria-hidden="true" />
 					<span class="sr-only">Status:</span>
-					{statusFilter}
+					{STATUS_LABELS[statusFilter]}
 					<ChevronDown size={12} aria-hidden="true" />
 				{/snippet}
 				<MenuRadio
 					value={statusFilter}
-					options={statusOptions.map((status) => ({ value: status, label: status }))}
+					options={statusOptions.map((status) => ({ value: status, label: STATUS_LABELS[status] }))}
 					onchange={(status) => onstatusfilter?.(status)}
 				/>
 			</Menu>
@@ -1068,7 +1069,7 @@
 				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 				style="border-color: var(--color-border)"
 			>
-				<Eye size={14} aria-hidden="true" /> Watched
+				<Eye size={14} aria-hidden="true" /> Done
 			</button>
 
 			<button
@@ -1078,7 +1079,7 @@
 				class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-black/5 disabled:opacity-60 dark:hover:bg-white/10"
 				style="border-color: var(--color-border)"
 			>
-				<EyeOff size={14} aria-hidden="true" /> Unwatched
+				<EyeOff size={14} aria-hidden="true" /> Not done
 			</button>
 
 			{#if playlistId}
@@ -1172,7 +1173,7 @@
 						</a>
 						{#if item.status === 'Watched'}
 							<span class="inline-flex items-center gap-0.5 text-xs" style="color: var(--color-muted)">
-								<Check size={12} aria-hidden="true" /> Watched
+								<Check size={12} aria-hidden="true" /> {DONE_LABEL}
 							</span>
 						{/if}
 
@@ -1291,7 +1292,7 @@
 
 	<p class="mt-3 hidden text-xs sm:block" style="color: var(--color-muted)">
 		<kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>o</kbd> to open{#if !readonly}, <kbd>e</kbd> to mark
-			watched, <kbd>x</kbd> to select{/if}. <kbd>/</kbd> to jump anywhere.
+			done, <kbd>x</kbd> to select{/if}. <kbd>/</kbd> to jump anywhere.
 	</p>
 {/if}
 

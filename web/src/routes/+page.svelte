@@ -14,7 +14,7 @@
 			Icon: ListMusic,
 			title: 'Playlists',
 			href: '/playlists',
-			body: 'Ordered, taggable lists of links. Group them into folders, mark what you have already watched, and keep each one private, unlisted, or public.'
+			body: 'Ordered, taggable lists of links. Group them into folders, mark what you are done with, and keep each one private, unlisted, or public.'
 		},
 		{
 			Icon: Rss,
