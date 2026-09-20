@@ -165,18 +165,23 @@
 	     link and Sign out sat at y=900 and y=904: entirely below the fold, with no scrollbar and
 	     nothing to say there was more. -->
 	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-	<!-- Says the key it answers, because that is how anybody learns it. -->
+	<!-- Says the key it answers, because that is how anybody learns it.
+
+	     showLabels, not `collapsed` — the drawer renders this snippet with labels on, and reading
+	     the sidebar's own cookie meant somebody who had collapsed the rail on their laptop got a
+	     bare magnifying glass in the drawer on their phone, unlabelled among twelve labelled
+	     items. The key hint goes on a touch screen, which has no Ctrl to press. -->
 		<button
 			type="button"
 			onclick={() => palette.show()}
 			class="mb-3 flex items-center gap-2 rounded-control border border-border px-3 py-2 text-sm text-muted hover:bg-black/5 dark:hover:bg-white/10"
-			class:justify-center={collapsed}
+			class:justify-center={!showLabels}
 			title="Search, or jump to a playlist"
 		>
 			<Search size={16} aria-hidden="true" />
-			{#if !collapsed}
+			{#if showLabels}
 				<span class="flex-1 text-left">Search or jump…</span>
-				<kbd class="rounded-control border border-border px-1 text-xs">Ctrl K</kbd>
+				<kbd class="rounded-control border border-border px-1 text-xs pointer-coarse:hidden">Ctrl K</kbd>
 			{:else}
 				<span class="sr-only">Search, or jump to a playlist</span>
 			{/if}
