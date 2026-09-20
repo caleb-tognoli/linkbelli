@@ -8,12 +8,14 @@
 	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
-	import Select from '$lib/components/ui/Select.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
+	import MenuRadio from '$lib/components/ui/MenuRadio.svelte';
+	import { filterChipClass } from '$lib/components/ui/chips';
 	import Input from '$lib/components/ui/Input.svelte';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, BookOpen, Bookmark, Check, Pin, Search, Eye, SlidersHorizontal, Star, X, Plus } from '@lucide/svelte';
+	import { AlertCircle, BookOpen, Bookmark, Check, ChevronDown, Clock, Pin, Search, Eye, Shapes, SlidersHorizontal, Star, X, Plus } from '@lucide/svelte';
 	import { Dialog } from 'bits-ui';
 	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -189,53 +191,64 @@
 </script>
 
 {#snippet filterControls()}
+		<!-- The same chips the link table wears, from the same helper: this row used to be full-height
+		     bordered buttons with a native select dropped among them, which made the two places you
+		     narrow a list of links look like two different products. -->
 		<button
 			type="button"
 			onclick={() => navigate({ finished: data.finished ? '' : '7', status: '' })}
-			class={buttonClass('secondary', 'md', false, data.finished ? 'border-accent text-accent' : '')}
+			class={filterChipClass(!!data.finished)}
 			aria-pressed={!!data.finished}
 			title="Links you marked done in the last week"
-		>Done this week</button>
+		>
+			<Check size={12} aria-hidden="true" /> Done this week
+		</button>
 
 		<button
 			type="button"
 			onclick={() => navigate({ sort: data.sort === 'score' ? '' : 'score' })}
-			class={buttonClass('secondary', 'md', false, data.sort === 'score' ? 'border-accent text-accent' : '')}
+			class={filterChipClass(data.sort === 'score')}
 			aria-pressed={data.sort === 'score'}
 			title="Your highest-scored links, across every playlist"
-		>Best rated</button>
-
-		<Select
-			value={data.kind}
-			onchange={(e) => navigate({ kind: e.currentTarget.value })}
-			aria-label="Kind"
-			size="sm"
-			width="auto"
-			style={data.kind ? 'border-color: var(--color-accent); color: var(--color-accent)' : ''}
 		>
-			<option value="">Anything</option>
-			{#each kinds as option (option.value)}
-				<option value={option.value}>{option.label}</option>
-			{/each}
-		</Select>
+			<Star size={12} aria-hidden="true" /> Best rated
+		</button>
+
+		<Menu triggerClass={filterChipClass(!!data.kind)} title="Filter by kind" align="start">
+			{#snippet trigger()}
+				<Shapes size={12} aria-hidden="true" />
+				<span class="sr-only">Kind:</span>
+				{kinds.find((k) => k.value === data.kind)?.label ?? 'Anything'}
+				<ChevronDown size={12} aria-hidden="true" />
+			{/snippet}
+			<MenuRadio
+				value={data.kind}
+				options={[{ value: '', label: 'Anything' }, ...kinds]}
+				onchange={(kind) => navigate({ kind })}
+			/>
+		</Menu>
 
 		<!-- The question people actually ask when picking what to open: not "what is good", but
 		     "what fits in the time I have". -->
 		<button
 			type="button"
 			onclick={() => navigate({ maxMinutes: data.maxMinutes ? '' : '5' })}
-			class={buttonClass('secondary', 'md', false, data.maxMinutes ? 'border-accent text-accent' : '')}
+			class={filterChipClass(!!data.maxMinutes)}
 			aria-pressed={!!data.maxMinutes}
 			title="Articles you could finish in five minutes"
-		>Under 5 min</button>
+		>
+			<Clock size={12} aria-hidden="true" /> Under 5 min
+		</button>
 
 		<button
 			type="button"
 			onclick={() => navigate({ broken: data.broken ? '' : '1' })}
-			class={buttonClass('secondary', 'md', false, data.broken ? 'border-danger text-danger' : '')}
+			class={filterChipClass(!!data.broken, 'danger')}
 			aria-pressed={!!data.broken}
 			title="Links whose page is gone or can no longer be read"
-		>Broken</button>
+		>
+			<AlertCircle size={12} aria-hidden="true" /> Broken
+		</button>
 {/snippet}
 
 <Page width="medium">
@@ -285,6 +298,7 @@
 	<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
 		<SegmentedControl
 			label="Status"
+			size="sm"
 			options={statuses}
 			value={data.status}
 			onchange={(status) => navigate({ status })}

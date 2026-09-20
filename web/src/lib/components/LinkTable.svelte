@@ -24,6 +24,7 @@
 	import PlaylistDropTray from './PlaylistDropTray.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
 	import KindBadge from './KindBadge.svelte';
+	import { filterChipClass } from '$lib/components/ui/chips';
 	import { savePrefs } from '$lib/prefs';
 	import { isInteractiveTarget, isPlainKey, moveFocus } from '$lib/keyboard';
 	import { describeDrag, dragSet, encodePayload, ITEMS_MIME } from '$lib/dragItems';
@@ -568,12 +569,8 @@
 	/** Whether the command palette exists on this page at all. */
 	const signedIn = $derived(!!page.data.user);
 
-	const toggleClass = 'inline-flex min-h-6 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors';
-
-	/** A filter or sort chip: accent when it narrows or reorders what is shown. */
-	function chipTrigger(active: boolean) {
-		return `${toggleClass} ${active ? 'border-accent text-accent' : 'border-border text-muted'}`;
-	}
+	/** A filter or sort chip: accent when it narrows or reorders what is shown. Shared with search. */
+	const chipTrigger = filterChipClass;
 </script>
 
 {#snippet row(item: PlaylistItem, draggable: boolean)}
