@@ -51,7 +51,7 @@
 		try {
 			const res = await api.get(`/search?status=unwatched&sort=queue&limit=25&cursor=${encodeURIComponent(nextCursor)}`);
 			if (!res.ok) {
-				toast.error(failureMessage(res.status, 'Could not load more.'));
+				toast.error(failureMessage(res, 'Could not load more.'));
 				return;
 			}
 			const page = (await res.json()) as Paged<SearchHit>;
@@ -74,12 +74,12 @@
 					run: async () => {
 						const again = await api.patch(`/items/${itemId}`, { status: 'Added' });
 						if (again.ok) await invalidateAll();
-						else toast.error(failureMessage(again.status, 'Could not undo that.'));
+						else toast.error(failureMessage(again, 'Could not undo that.'));
 					}
 				}
 			});
 		} else {
-			toast.error(failureMessage(res.status, 'Could not mark that done.'));
+			toast.error(failureMessage(res, 'Could not mark that done.'));
 		}
 	}
 
@@ -99,7 +99,7 @@
 			forget(hit.itemId);
 			await invalidateAll();
 		} else {
-			toast.error(failureMessage(res.status, 'Could not put that aside.'));
+			toast.error(failureMessage(res, 'Could not put that aside.'));
 		}
 	}
 
@@ -114,7 +114,7 @@
 		const res = await api.del(`/items/${itemId}/snooze`);
 		busy = null;
 		if (res.ok) await invalidateAll();
-		else toast.error(failureMessage(res.status, 'Could not bring that back.'));
+		else toast.error(failureMessage(res, 'Could not bring that back.'));
 	}
 
 	async function letGo(hit: SearchHit) {
@@ -131,7 +131,7 @@
 			forget(hit.itemId);
 			await invalidateAll();
 		} else {
-			toast.error(failureMessage(res.status, 'Could not move that to the trash.'));
+			toast.error(failureMessage(res, 'Could not move that to the trash.'));
 		}
 	}
 

@@ -71,7 +71,7 @@
 				items = [...items, ...page.items];
 				nextCursor = page.nextCursor;
 			} else {
-				toast.error(failureMessage(res.status, 'Could not load any more playlists.'));
+				toast.error(failureMessage(res, 'Could not load any more playlists.'));
 			}
 		} finally {
 			loadingMore = false;

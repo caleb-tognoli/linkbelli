@@ -33,7 +33,7 @@
 			await invalidateAll();
 		} else {
 			el.value = folderName;
-			toast.error(failureMessage(res.status, 'Could not rename the folder.'));
+			toast.error(failureMessage(res, 'Could not rename the folder.'));
 		}
 	}
 
@@ -52,7 +52,7 @@
 				await goto(folder.parentId ? `/folders/${folder.parentId}` : '/playlists');
 			} else {
 				busy = false;
-				toast.error(failureMessage(res.status, 'Could not delete the folder.'));
+				toast.error(failureMessage(res, 'Could not delete the folder.'));
 			}
 		} catch {
 			busy = false;

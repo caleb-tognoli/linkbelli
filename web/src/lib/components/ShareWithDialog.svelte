@@ -133,7 +133,7 @@
 			{ role: value }
 		);
 		if (res.ok) await load();
-		else toast.error(failureMessage(res.status, `Could not change ${member.username}'s role.`));
+		else toast.error(failureMessage(res, `Could not change ${member.username}'s role.`));
 	}
 
 	async function remove(member: PlaylistMember) {
@@ -149,12 +149,12 @@
 							{ role: member.role }
 						);
 						if (again.ok) await load();
-						else toast.error(failureMessage(again.status, `Could not give ${member.username} access again.`));
+						else toast.error(failureMessage(again, `Could not give ${member.username} access again.`));
 					}
 				}
 			});
 		} else {
-			toast.error(failureMessage(res.status, `Could not remove ${member.username}.`));
+			toast.error(failureMessage(res, `Could not remove ${member.username}.`));
 		}
 	}
 

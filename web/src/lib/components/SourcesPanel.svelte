@@ -91,12 +91,12 @@
 					);
 					if (backfill) {
 						const filled = await api.post(`/playlists/${playlistId}/sources/${sourceId}/backfill`);
-						if (!filled.ok) toast.error(failureMessage(filled.status, 'Could not add those links.'));
+						if (!filled.ok) toast.error(failureMessage(filled, 'Could not add those links.'));
 						await onreloaditems?.();
 					}
 				}
 			} else {
-				toast.error(failureMessage(res.status, 'Could not attach that source.'));
+				toast.error(failureMessage(res, 'Could not attach that source.'));
 			}
 		} finally {
 			busy = false;
@@ -107,7 +107,7 @@
 		const res = await api.post(`/sources/${sourceId}/run`);
 		if (res.status === 202) toast.success('Run queued. New links arrive as it finds them.');
 		else if (res.status === 429) toast.error('Daily run limit reached — try again later.');
-		else if (!res.ok) toast.error(failureMessage(res.status, 'Could not start a run.'));
+		else if (!res.ok) toast.error(failureMessage(res, 'Could not start a run.'));
 	}
 
 	async function detach(sourceId: string) {
@@ -123,12 +123,12 @@
 						run: async () => {
 							const again = await api.post(`/playlists/${playlistId}/sources`, { sourceId });
 							if (again.ok) await refresh();
-							else toast.error(failureMessage(again.status, 'Could not attach it again.'));
+							else toast.error(failureMessage(again, 'Could not attach it again.'));
 						}
 					}
 				});
 			} else {
-				toast.error(failureMessage(res.status, 'Could not detach that source.'));
+				toast.error(failureMessage(res, 'Could not detach that source.'));
 			}
 		} finally {
 			busy = false;

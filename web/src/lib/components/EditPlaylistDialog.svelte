@@ -96,7 +96,7 @@
 		saving = false;
 
 		if (!res.ok) {
-			error = failureMessage(res.status, 'Could not save those details.');
+			error = failureMessage(res, 'Could not save those details.');
 			return;
 		}
 

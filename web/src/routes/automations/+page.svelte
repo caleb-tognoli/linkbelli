@@ -174,7 +174,7 @@
 				? await api.patch(`/automations/${neighbour.id}`, { position: rule.position })
 				: null;
 			if (!first.ok || !second?.ok) {
-				toast.error(failureMessage((second ?? first).status, 'Could not change the order.'));
+				toast.error(failureMessage(second ?? first, 'Could not change the order.'));
 			}
 			await invalidateAll();
 		} finally {
@@ -265,7 +265,7 @@
 	async function toggle(rule: AutomationRule, enabled: boolean) {
 		const res = await api.patch(`/automations/${rule.id}`, { enabled });
 		if (res.ok) await invalidateAll();
-		else toast.error(failureMessage(res.status, enabled ? 'Could not turn that rule on.' : 'Could not turn that rule off.'));
+		else toast.error(failureMessage(res, enabled ? 'Could not turn that rule on.' : 'Could not turn that rule off.'));
 	}
 
 	/** The rule currently being run over the backlog, so its button can say so. */
@@ -319,7 +319,7 @@
 
 		const res = await api.del(`/automations/${rule.id}`);
 		if (res.ok || res.status === 204) await invalidateAll();
-		else toast.error(failureMessage(res.status, 'Could not delete that rule.'));
+		else toast.error(failureMessage(res, 'Could not delete that rule.'));
 	}
 
 </script>

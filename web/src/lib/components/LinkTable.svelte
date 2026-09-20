@@ -151,7 +151,7 @@
 			// Forty items not moving looks exactly like forty items moving and the page not
 			// refreshing. Any of these can fail for real: a 409 from the concurrency token, a
 			// 429, a 403 once a share role is revoked mid-session.
-			warn(failureMessage(res.status, 'Could not do that to the selection.'));
+			warn(failureMessage(res, 'Could not do that to the selection.'));
 			return false;
 		} catch {
 			warn('Could not reach the server.');
@@ -191,7 +191,7 @@
 							action: 'SetStatus',
 							status: status === 'Watched' ? 'Added' : 'Watched'
 						});
-						if (!res.ok) warn(failureMessage(res.status, 'Could not undo that.'));
+						if (!res.ok) warn(failureMessage(res, 'Could not undo that.'));
 						await onmove?.();
 					}
 				}
@@ -240,7 +240,7 @@
 		const res = await api.post(`/links/${item.link.id}/recheck`);
 		if (!res.ok) {
 			rechecking.delete(item.link.id);
-			warn(failureMessage(res.status, 'Could not check that page again.'));
+			warn(failureMessage(res, 'Could not check that page again.'));
 			return;
 		}
 		// Reading the page happens in the background, so there is nothing truthful to show at
@@ -347,7 +347,7 @@
 	async function setCover(item: PlaylistItem) {
 		const res = await api.patch(`/playlists/${playlistId}`, { coverLinkId: item.link.id });
 		if (res.ok) say('Cover set.');
-		else warn(failureMessage(res.status, 'Could not set the cover.'));
+		else warn(failureMessage(res, 'Could not set the cover.'));
 	}
 
 	/**
@@ -439,7 +439,7 @@
 		items = order;
 		const res = await api.post(`/items/${item.id}/move`, { afterItemId });
 		if (!res.ok) {
-			warn(failureMessage(res.status, 'Could not move that.'));
+			warn(failureMessage(res, 'Could not move that.'));
 			await onmove?.();
 			return;
 		}
@@ -471,7 +471,7 @@
 			items = items.map((i) => (i.id === item.id ? { ...i, note, tags: saved.tags ?? [] } : i));
 		} else {
 			// Said out loud, because the editor closes on blur and the note is gone with it.
-			warn(failureMessage(res.status, 'Could not save that note.'));
+			warn(failureMessage(res, 'Could not save that note.'));
 		}
 	}
 
@@ -485,7 +485,7 @@
 		if (!res.ok) {
 			// The caller snaps the input to what this returns, so returning the requested value
 			// after a failed write left a rating on screen that the server had never heard of.
-			warn(failureMessage(res.status, 'Could not save that rating.'));
+			warn(failureMessage(res, 'Could not save that rating.'));
 			return item.score;
 		}
 
@@ -500,7 +500,7 @@
 			if (total !== null) total = Math.max(0, total - 1);
 			toast.success('Moved to the trash.', { action: { label: 'Undo', run: () => restoreFromTrash([item.id]) } });
 		} else {
-			warn(failureMessage(res.status, 'Could not remove that link.'));
+			warn(failureMessage(res, 'Could not remove that link.'));
 		}
 	}
 
@@ -510,7 +510,7 @@
 		if (!res.ok) {
 			// Returning quietly left the checkbox snapping back with no reason given, which reads
 			// as the app being broken rather than as the write being refused.
-			warn(failureMessage(res.status, 'Could not mark that.'));
+			warn(failureMessage(res, 'Could not mark that.'));
 			return;
 		}
 		const updated = items.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i));

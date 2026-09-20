@@ -66,7 +66,7 @@
 				toast.success(action.takeDown ? 'Taken down: it is private now.' : 'Report dismissed.');
 				await invalidateAll();
 			} else {
-				toast.error(failureMessage(res.status, 'Could not resolve that report.'));
+				toast.error(failureMessage(res, 'Could not resolve that report.'));
 			}
 		} finally {
 			busy = null;

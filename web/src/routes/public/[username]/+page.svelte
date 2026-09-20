@@ -55,7 +55,7 @@
 				`/public/users/${encodeURIComponent(data.profile.username)}/playlists?cursor=${encodeURIComponent(nextCursor)}`
 			);
 			if (!res.ok) {
-				toast.error(failureMessage(res.status, 'Could not load more playlists.'));
+				toast.error(failureMessage(res, 'Could not load more playlists.'));
 				return;
 			}
 			const page = (await res.json()) as Paged<PublicPlaylistSummary>;
@@ -81,7 +81,7 @@
 				followerCount = state.followerCount;
 			} else {
 				toast.error(
-					failureMessage(res.status, followedByMe ? 'Could not unfollow them.' : 'Could not follow them.')
+					failureMessage(res, followedByMe ? 'Could not unfollow them.' : 'Could not follow them.')
 				);
 			}
 		} finally {

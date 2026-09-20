@@ -92,7 +92,7 @@
 		if (!(await confirmDialog(`Revoke "${key.name}"? Apps using it will stop working.`, { danger: true, confirmLabel: 'Revoke' }))) return;
 		const res = await api.del(`/me/apikeys/${key.id}`);
 		if (res.ok || res.status === 204) keys = keys.filter((k) => k.id !== key.id);
-		else toast.error(failureMessage(res.status, 'Could not revoke that key.'));
+		else toast.error(failureMessage(res, 'Could not revoke that key.'));
 	}
 
 	function fmt(iso: string | null) {

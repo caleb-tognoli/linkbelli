@@ -110,7 +110,7 @@
 				tags: tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : null
 			});
 			if (!res.ok) {
-				inlineError = failureMessage(res.status, 'Could not create playlist.');
+				inlineError = failureMessage(res, 'Could not create playlist.');
 				return;
 			}
 			const playlist = (await res.json()) as { id: string };

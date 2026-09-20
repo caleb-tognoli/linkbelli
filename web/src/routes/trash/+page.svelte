@@ -53,7 +53,7 @@
 			toast.success(`"${name}" deleted for good.`);
 			await invalidateAll();
 		} else {
-			toast.error(failureMessage(res.status, 'Could not delete that.'));
+			toast.error(failureMessage(res, 'Could not delete that.'));
 		}
 	}
 

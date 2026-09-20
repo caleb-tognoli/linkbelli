@@ -108,7 +108,7 @@
 	async function savePreferences(): Promise<boolean> {
 		const res = await api.put('/me/preferences', { showNsfw, archiveLinks });
 		if (res.ok) toast.success('Saved.');
-		else toast.error(failureMessage(res.status, 'Could not save that setting.'));
+		else toast.error(failureMessage(res, 'Could not save that setting.'));
 		return res.ok;
 	}
 

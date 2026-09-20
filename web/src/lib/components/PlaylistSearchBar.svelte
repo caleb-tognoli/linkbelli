@@ -109,7 +109,7 @@
 			if (!res.ok) {
 				// failureMessage tells a lost connection, a conflict and a rate limit apart; the
 				// sentence here is only for the cases that have no better one.
-				error = failureMessage(res.status, 'Could not add the link.');
+				error = failureMessage(res, 'Could not add the link.');
 				return;
 			}
 			const item = (await res.json()) as PlaylistItem;

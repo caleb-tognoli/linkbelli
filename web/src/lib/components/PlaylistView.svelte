@@ -150,7 +150,7 @@
 				followedByMe = state.following;
 				followerCount = state.followerCount;
 			} else {
-				toast.error(failureMessage(res.status, followedByMe ? 'Could not unfollow this.' : 'Could not follow this.'));
+				toast.error(failureMessage(res, followedByMe ? 'Could not unfollow this.' : 'Could not follow this.'));
 			}
 		} finally {
 			following = false;
@@ -173,7 +173,7 @@
 				likeCount = state.likeCount;
 				likedByMe = state.likedByMe;
 			} else {
-				toast.error(failureMessage(res.status, 'Could not change your like.'));
+				toast.error(failureMessage(res, 'Could not change your like.'));
 			}
 		} finally {
 			liking = false;
@@ -219,7 +219,7 @@
 			isNsfw = ((await res.json()) as Playlist).nsfw;
 		} else {
 			nsfwSetting = previous;
-			toast.error(failureMessage(res.status, 'Could not change the adult-content setting.'));
+			toast.error(failureMessage(res, 'Could not change the adult-content setting.'));
 		}
 	}
 
@@ -261,7 +261,7 @@
 			toast.success('Renamed.');
 		} else {
 			el.value = playlistName;
-			toast.error(failureMessage(res.status, 'Could not rename the playlist.'));
+			toast.error(failureMessage(res, 'Could not rename the playlist.'));
 		}
 	}
 
@@ -285,12 +285,12 @@
 					run: async () => {
 						const restored = await api.post(`/trash/playlists/${id}/restore`);
 						if (restored.ok) await goto(`/playlists/${id}`);
-						else toast.error(failureMessage(restored.status, 'Could not restore it. It is still in the trash.'));
+						else toast.error(failureMessage(restored, 'Could not restore it. It is still in the trash.'));
 					}
 				}
 			});
 		} else {
-			toast.error(failureMessage(res.status, 'Could not delete the playlist.'));
+			toast.error(failureMessage(res, 'Could not delete the playlist.'));
 		}
 	}
 
@@ -312,7 +312,7 @@
 		if (res.ok) toast.success(`${visConfig[next].label}: ${VIS_HINTS[next].toLowerCase()}.`);
 		if (!res.ok) {
 			visibility = prev;
-			toast.error(failureMessage(res.status, 'Could not change who can see this.'));
+			toast.error(failureMessage(res, 'Could not change who can see this.'));
 		}
 	}
 
@@ -388,7 +388,7 @@
 		try {
 			const res = await api.get(`${itemsEndpoint()}${buildParams()}`);
 			if (res.ok) applyPage((await res.json()) as Paged<PlaylistItem>);
-			else toast.error(failureMessage(res.status, 'Could not load the links.'));
+			else toast.error(failureMessage(res, 'Could not load the links.'));
 		} catch {
 			toast.error('Could not reach the server.');
 		} finally {
@@ -441,7 +441,7 @@
 				if (page.total !== undefined) total = page.total;
 			} else {
 				// The cursor is untouched, so pressing it again asks for the same page.
-				toast.error(failureMessage(res.status, 'Could not load any more links.'));
+				toast.error(failureMessage(res, 'Could not load any more links.'));
 			}
 		} finally {
 			loadingMore = false;

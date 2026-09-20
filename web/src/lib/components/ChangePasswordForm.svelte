@@ -54,7 +54,7 @@
 		currentError = errors.currentPassword?.[0] ?? null;
 		nextError = errors.newPassword?.[0] ?? null;
 		if (!currentError && !nextError) {
-			nextError = failureMessage(res.status, 'Could not change your password.');
+			nextError = failureMessage(res, 'Could not change your password.');
 		}
 	}
 </script>

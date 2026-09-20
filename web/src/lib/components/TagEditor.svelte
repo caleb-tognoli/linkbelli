@@ -61,7 +61,7 @@
 				// Put back what was on the page: a tag that looks added and is not is worse than
 				// one that visibly failed to be.
 				tags = before;
-				toast.error(failureMessage(res.status, 'Could not save the tags.'));
+				toast.error(failureMessage(res, 'Could not save the tags.'));
 			}
 		} finally {
 			busy = false;

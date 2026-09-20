@@ -100,7 +100,7 @@
 			} else if (res.status === 429) {
 				toast.error('Daily run limit reached — try again later.');
 			} else {
-				toast.error(failureMessage(res.status, 'Could not start a run.'));
+				toast.error(failureMessage(res, 'Could not start a run.'));
 			}
 		} finally {
 			busy = false;
@@ -194,7 +194,7 @@
 			await goto('/sources');
 		} else {
 			busy = false;
-			toast.error(failureMessage(res.status, 'Could not delete the source.'));
+			toast.error(failureMessage(res, 'Could not delete the source.'));
 		}
 	}
 
@@ -252,7 +252,7 @@
 		});
 		mutingQuiet = false;
 		if (res.ok) await invalidateAll();
-		else toast.error(failureMessage(res.status, 'Could not change that.'));
+		else toast.error(failureMessage(res, 'Could not change that.'));
 	}
 
 	async function linkPlaylist(playlistId: string) {
@@ -261,7 +261,7 @@
 			linkResults = linkResults.filter(p => p.id !== playlistId);
 			await invalidateAll();
 		} else {
-			toast.error(failureMessage(res.status, 'Could not connect that playlist.'));
+			toast.error(failureMessage(res, 'Could not connect that playlist.'));
 		}
 	}
 
@@ -270,7 +270,7 @@
 		const name = data.playlists.find((p) => p.id === playlistId)?.name ?? 'That playlist';
 		const res = await api.patch(`/sources/${data.source.id}`, { playlistIds: before.filter((id) => id !== playlistId) });
 		if (!res.ok) {
-			toast.error(failureMessage(res.status, 'Could not disconnect that playlist.'));
+			toast.error(failureMessage(res, 'Could not disconnect that playlist.'));
 			return;
 		}
 		await invalidateAll();
@@ -280,7 +280,7 @@
 				run: async () => {
 					const again = await api.patch(`/sources/${data.source.id}`, { playlistIds: before });
 					if (again.ok) await invalidateAll();
-					else toast.error(failureMessage(again.status, 'Could not connect it again.'));
+					else toast.error(failureMessage(again, 'Could not connect it again.'));
 				}
 			}
 		});

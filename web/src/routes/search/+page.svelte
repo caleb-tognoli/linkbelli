@@ -186,7 +186,7 @@
 				hits = [...hits, ...page.items];
 				nextCursor = page.nextCursor;
 			} else {
-				toast.error(failureMessage(res.status, 'Could not load any more results.'));
+				toast.error(failureMessage(res, 'Could not load any more results.'));
 			}
 		} finally {
 			loadingMore = false;

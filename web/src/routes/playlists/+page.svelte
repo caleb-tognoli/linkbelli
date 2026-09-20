@@ -60,7 +60,7 @@
 			for (const t of data.activeTags) qs.append('tag', t);
 			const res = await api.get(`/playlists?${qs}`);
 			if (!res.ok) {
-				toast.error(failureMessage(res.status, 'Could not load more playlists.'));
+				toast.error(failureMessage(res, 'Could not load more playlists.'));
 				return;
 			}
 			const page = (await res.json()) as Paged<Playlist>;
