@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { formatDate, formatExact } from '$lib/dates';
 	import { DONE_LABEL, STATUS_FILTERS, STATUS_LABELS, doneToggleLabel, plural, type StatusFilter as StatusFilterValue } from '$lib/labels';
 	import { failureMessage } from '$lib/api/errors';
@@ -528,6 +529,9 @@
 
 	/** Whether anything is selected: what brings the checkbox column back on a narrow screen. */
 	const selecting = $derived(selected.size > 0);
+
+	/** Whether the command palette exists on this page at all. */
+	const signedIn = $derived(!!page.data.user);
 
 	const toggleClass = 'inline-flex min-h-6 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors';
 
@@ -1299,7 +1303,10 @@
 
 	<p class="mt-3 hidden text-xs sm:block" style="color: var(--color-muted)">
 		<kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>o</kbd> to open{#if !readonly}, <kbd>e</kbd> to mark
-			done, <kbd>x</kbd> to select{/if}. <kbd>/</kbd> to jump anywhere.
+			done, <kbd>x</kbd> to select{/if}.{#if signedIn}
+			<!-- The palette is only mounted for somebody signed in, and a public playlist was
+			     advertising a key that did nothing. -->
+			<kbd>/</kbd> to jump anywhere.{/if}
 	</p>
 {/if}
 
