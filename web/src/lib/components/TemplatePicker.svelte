@@ -6,9 +6,27 @@
 	import { api, json } from '$lib/api/client';
 	import { goto } from '$app/navigation';
 	import { Sparkles, Check } from '@lucide/svelte';
-	import type { SourceTemplate } from '$lib/types';
+	import DestinationPicker, { NEW_PLAYLIST, createPlaylist } from '$lib/components/DestinationPicker.svelte';
+	import type { Playlist, SourceTemplate } from '$lib/types';
 
-	let { onskip }: { onskip: () => void } = $props();
+	let {
+		onskip,
+		playlists = [],
+		preselectedPlaylistId = null
+	}: {
+		onskip: () => void;
+		/** Where what it finds can go. */
+		playlists?: Playlist[];
+		/** Chosen already, when this started from a playlist's own Sources panel. */
+		preselectedPlaylistId?: string | null;
+	} = $props();
+
+	// A source with nowhere to put things is the product's promise minus its point, so this is
+	// asked here rather than left to a second step on the source's page afterwards.
+	let destination = $state(
+		preselectedPlaylistId ?? playlists[0]?.id ?? NEW_PLAYLIST
+	);
+	let newPlaylistName = $state('');
 
 	let templates = $state<SourceTemplate[]>([]);
 	let chosen = $state<SourceTemplate | null>(null);
@@ -45,7 +63,8 @@
 	const ready = $derived(
 		!!chosen &&
 			!!name.trim() &&
-			chosen.fields.every((f) => !f.required || values[f.key]?.trim())
+			chosen.fields.every((f) => !f.required || values[f.key]?.trim()) &&
+			(destination !== NEW_PLAYLIST || !!newPlaylistName.trim())
 	);
 
 	async function create() {
@@ -53,10 +72,19 @@
 		busy = true;
 		error = null;
 
+		const playlistId =
+			destination === NEW_PLAYLIST ? await createPlaylist(newPlaylistName) : destination;
+		if (!playlistId) {
+			busy = false;
+			error = 'Could not make that playlist. The source was not created.';
+			return;
+		}
+
 		const res = await api.post('/sources', {
 			name: name.trim(),
 			templateId: chosen.id,
 			variables: values,
+			playlistIds: [playlistId],
 			timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
 		});
 
@@ -125,6 +153,8 @@
 				/>
 			{/snippet}
 		</Field>
+
+		<DestinationPicker {playlists} bind:value={destination} bind:newName={newPlaylistName} />
 
 		{#each chosen.fields as field (field.key)}
 			<label class="flex flex-col gap-1 text-sm">

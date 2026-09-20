@@ -240,6 +240,22 @@
 					{:else if searched && !searching}
 						<p class="mt-2 text-xs" style="color: var(--color-muted)">No shared sources found.</p>
 					{/if}
+
+					{#if isOwner}
+						<!-- Nothing here attaches a source that does not exist yet, and making one
+						     from /sources left it feeding nothing. -->
+						<div class="mt-3 border-t border-border pt-2">
+							<Button
+								href={`/sources/new?playlist=${playlistId}`}
+								variant="ghost"
+								size="sm"
+								icon={Plus}
+								class="w-full justify-start"
+							>
+								Create a new source for this playlist
+							</Button>
+						</div>
+					{/if}
 				</Popover.Content>
 			</Popover.Root>
 		{/if}

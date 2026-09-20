@@ -15,7 +15,8 @@
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { X, Plus, Save, Lock, Globe, Trash2, ChevronRight, ChevronDown } from '@lucide/svelte';
 	import Switch from './Switch.svelte';
-	import type { Source, SourceFilter, SourceType, SourceVisibility } from '$lib/types';
+	import DestinationPicker, { NEW_PLAYLIST, createPlaylist } from '$lib/components/DestinationPicker.svelte';
+	import type { Playlist, Source, SourceFilter, SourceType, SourceVisibility } from '$lib/types';
 	import { isPreviewable, previewKey, type SourcePreview } from '$lib/sourcePreview';
 
 	type VisOption = { label: string; icon: typeof Lock };
@@ -27,8 +28,22 @@
 	let {
 		mode,
 		source,
-		ondelete
-	}: { mode: 'create' | 'edit'; source?: Source; ondelete?: () => void } = $props();
+		ondelete,
+		playlists = [],
+		preselectedPlaylistId = null
+	}: {
+		mode: 'create' | 'edit';
+		source?: Source;
+		ondelete?: () => void;
+		/** Where a new source's links can land. Only used when creating one. */
+		playlists?: Playlist[];
+		preselectedPlaylistId?: string | null;
+	} = $props();
+
+	// Asked while the source is being made, not left to "Link playlist" on a page nobody knows
+	// to look for afterwards.
+	let destination = $state(preselectedPlaylistId ?? playlists[0]?.id ?? NEW_PLAYLIST);
+	let newPlaylistName = $state('');
 
 	// Unique per form, so the name field's label can point at it even with two forms on a page.
 	const uid = $props.id();
@@ -328,6 +343,9 @@
 	function missingFields(): Record<string, string> {
 		const missing: Record<string, string> = {};
 		if (!name.trim()) missing.name = 'Give this source a name.';
+		if (mode === 'create' && destination === NEW_PLAYLIST && !newPlaylistName.trim()) {
+			missing.newPlaylistName = 'Name the playlist this fills.';
+		}
 		for (const f of FIELDS[type]) {
 			if (f.required && !values[f.key]?.trim()) missing[f.key] = `${f.label} is needed.`;
 		}
@@ -361,7 +379,17 @@
 			const filterBody = buildFilter();
 			let res: Response;
 			if (mode === 'create') {
-				res = await api.post('/sources', { name, type, config, schedule, visibility, status, timeZone, filter: filterBody });
+				const playlistId =
+					destination === NEW_PLAYLIST ? await createPlaylist(newPlaylistName) : destination;
+				if (!playlistId) {
+					error = 'Could not make that playlist. The source was not created.';
+					return;
+				}
+				res = await api.post('/sources', {
+					name, type, config, schedule, visibility, status, timeZone,
+					filter: filterBody,
+					playlistIds: [playlistId]
+				});
 			} else {
 				res = await api.patch(`/sources/${source!.id}`, { name, type, schedule, config, visibility, status, filter: filterBody });
 			}
@@ -480,6 +508,15 @@
 			<p id="{uid}-name-error" class="text-xs text-danger" role="alert">{fieldErrors.name}</p>
 		{/if}
 	</div>
+
+	{#if mode === 'create'}
+		<DestinationPicker
+			{playlists}
+			bind:value={destination}
+			bind:newName={newPlaylistName}
+			error={fieldErrors.newPlaylistName ?? null}
+		/>
+	{/if}
 
 	<div class="flex flex-wrap items-end gap-8">
 		<div class="flex flex-col gap-2 text-sm">

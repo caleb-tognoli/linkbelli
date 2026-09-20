@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeApi, json } from '$lib/testing/fakeApi';
-import type { Source } from '$lib/types';
+import type { Playlist, Source } from '$lib/types';
 import SourceForm from './SourceForm.svelte';
 
 const navigation = vi.hoisted(() => ({ goto: vi.fn(), invalidateAll: vi.fn(), beforeNavigate: vi.fn() }));
@@ -20,6 +20,9 @@ vi.mock('$lib/dialog.svelte', () => ({ confirmDialog, promptDialog: vi.fn() }));
  */
 
 const FEED = 'https://example.org/feed.xml';
+
+/** Somewhere for a new source's links to land, which the form now insists on. */
+const PLAYLISTS = [{ id: 'p1', name: 'Canals', visibility: 'Private', tags: [], itemCount: 0 }] as unknown as Playlist[];
 
 function existing(over: Partial<Source> = {}): Source {
 	return {
@@ -55,7 +58,7 @@ afterEach(() => {
 describe('SourceForm — creating', () => {
 	it('creates an RSS source from what was typed and opens it', async () => {
 		const { calls } = fakeApi({ 'POST /sources': json(existing({ id: 'new-1' }), 201) });
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 
 		await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'Canals weekly');
 		await userEvent.type(screen.getByRole('textbox', { name: 'Feed URL' }), FEED);
@@ -67,7 +70,10 @@ describe('SourceForm — creating', () => {
 			type: 'Rss',
 			config: { feedUrl: FEED },
 			status: 'Active',
-			visibility: 'Private'
+			visibility: 'Private',
+			// Attached as it is made: a source that fills nothing is the product's promise minus
+			// its point.
+			playlistIds: ['p1']
 		});
 		expect(navigation.goto).toHaveBeenCalledWith('/sources/new-1');
 	});
@@ -80,7 +86,7 @@ describe('SourceForm — creating', () => {
 				400
 			)
 		});
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 
 		await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'Broken');
 		await userEvent.type(screen.getByRole('textbox', { name: /Feed URL/ }), 'https://example.com/feed.xml');
@@ -92,7 +98,7 @@ describe('SourceForm — creating', () => {
 
 	it('says which field is missing rather than sending the request', async () => {
 		const { calls } = fakeApi({ 'POST /sources': json({}) });
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 
 		await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'No address');
 		await userEvent.click(screen.getByRole('button', { name: 'Create' }));
@@ -103,7 +109,7 @@ describe('SourceForm — creating', () => {
 
 	it('names the quota when that is what stopped it', async () => {
 		fakeApi({ 'POST /sources': json({}, 429) });
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 
 		await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'Another');
 		await userEvent.type(screen.getByRole('textbox', { name: /Feed URL/ }), 'https://example.com/feed.xml');
@@ -114,7 +120,7 @@ describe('SourceForm — creating', () => {
 
 	it('has nothing to configure for a pushed source, and says where the address will come from', async () => {
 		fakeApi({});
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 
 		await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Type' }), 'Webhook');
 
@@ -133,7 +139,7 @@ describe('SourceForm — the preview', () => {
 		const { calls } = fakeApi({
 			'POST /sources/preview': json({ count: 2, links: [{ url: 'https://example.org/a', title: 'First post' }, { url: 'https://example.org/b', title: null }] })
 		});
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
 		await user.type(screen.getByRole('textbox', { name: 'Feed URL' }), FEED);
@@ -150,7 +156,7 @@ describe('SourceForm — the preview', () => {
 	it('warns when the source can be read but finds nothing', async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		fakeApi({ 'POST /sources/preview': json({ count: 0, links: [] }) });
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
 		await user.type(screen.getByRole('textbox', { name: 'Feed URL' }), FEED);
@@ -162,7 +168,7 @@ describe('SourceForm — the preview', () => {
 	it('says so when previews are being rate-limited', async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		fakeApi({ 'POST /sources/preview': json({}, 429) });
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
 		await user.type(screen.getByRole('textbox', { name: 'Feed URL' }), FEED);
@@ -174,7 +180,7 @@ describe('SourceForm — the preview', () => {
 	it('does not preview an address that is still being typed', async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		const { calls } = fakeApi({});
-		render(SourceForm, { mode: 'create' });
+		render(SourceForm, { mode: 'create', playlists: PLAYLISTS });
 		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
 		await user.type(screen.getByRole('textbox', { name: 'Feed URL' }), 'https://exam');
