@@ -257,7 +257,7 @@
 			linkResults = linkResults.filter(p => p.id !== playlistId);
 			await invalidateAll();
 		} else {
-			toast.error(failureMessage(res.status, 'Could not link that playlist.'));
+			toast.error(failureMessage(res.status, 'Could not connect that playlist.'));
 		}
 	}
 
@@ -266,7 +266,7 @@
 		const name = data.playlists.find((p) => p.id === playlistId)?.name ?? 'That playlist';
 		const res = await api.patch(`/sources/${data.source.id}`, { playlistIds: before.filter((id) => id !== playlistId) });
 		if (!res.ok) {
-			toast.error(failureMessage(res.status, 'Could not unlink that playlist.'));
+			toast.error(failureMessage(res.status, 'Could not disconnect that playlist.'));
 			return;
 		}
 		await invalidateAll();
@@ -276,7 +276,7 @@
 				run: async () => {
 					const again = await api.patch(`/sources/${data.source.id}`, { playlistIds: before });
 					if (again.ok) await invalidateAll();
-					else toast.error(failureMessage(again.status, 'Could not link it again.'));
+					else toast.error(failureMessage(again.status, 'Could not connect it again.'));
 				}
 			}
 		});
@@ -368,7 +368,7 @@
 	<div class="mt-8 rounded-lg border px-4 py-3" style="border-color: var(--color-border); background: var(--color-surface)">
 		<div class="flex items-center justify-between">
 			<h2 class="font-medium">Playlists</h2>
-			<Button size="sm" icon={Plus} onclick={openLinkDialog}>Link playlist</Button>
+			<Button size="sm" icon={Plus} onclick={openLinkDialog}>Connect playlist</Button>
 		</div>
 		{#if attachedPlaylists.length}
 			<ul class="mt-2 flex flex-col gap-2">
@@ -380,8 +380,8 @@
 							<button
 								type="button"
 								onclick={() => unlinkPlaylist(playlist.id)}
-								title="Unlink"
-								aria-label="Unlink"
+								title={`Disconnect ${playlist.name}`}
+								aria-label={`Disconnect ${playlist.name}`}
 								class="inline-flex items-center rounded p-0.5 hover:opacity-70"
 								style="color: var(--color-danger)"
 							>
@@ -392,7 +392,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="mt-2 text-sm" style="color: var(--color-muted)">No playlists linked.</p>
+			<p class="mt-2 text-sm" style="color: var(--color-muted)">No playlists connected.</p>
 		{/if}
 	</div>
 
@@ -530,7 +530,7 @@
 	</div>
 </section>
 
-<Modal bind:open={linkOpen} title="Link playlist" size="sm">
+<Modal bind:open={linkOpen} title="Connect a playlist" size="sm">
 	<Input
 		bind:value={linkSearch}
 		placeholder="Search…"
@@ -542,7 +542,7 @@
 		{#if linkLoading && linkResults.length === 0}
 			<p class="py-2 text-sm" style="color: var(--color-muted)">Loading…</p>
 		{:else if linkResults.length === 0}
-			<p class="py-2 text-sm" style="color: var(--color-muted)">{linkSearch.trim() ? 'No matches.' : 'No playlists to link.'}</p>
+			<p class="py-2 text-sm" style="color: var(--color-muted)">{linkSearch.trim() ? 'No matches.' : 'No playlists to connect.'}</p>
 		{:else}
 			<ul class="flex flex-col gap-1">
 				{#each linkResults as pl (pl.id)}

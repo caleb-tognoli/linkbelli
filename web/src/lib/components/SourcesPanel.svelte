@@ -212,7 +212,7 @@
 								{#each ownFiltered as src (src.id)}
 									<SourceListItem name={src.name} badge={displayType(src.type)} href={sourceHref(src.id)}>
 										{#snippet actions()}
-											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Attach source" aria-label="Attach source" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
+											<button type="button" onclick={() => subscribe(src.id)} disabled={busy} title="Connect source" aria-label="Connect source" class="inline-flex items-center justify-center rounded size-6 tap-target hover:opacity-70" style="color: var(--color-accent)">
 												<Link size={15} aria-hidden="true" />
 											</button>
 										{/snippet}
@@ -284,7 +284,7 @@
 								size="sm"
 								icon={Unlink}
 								iconOnly
-								label={src.ownedByMe ? `Stop ${src.name} feeding this playlist` : `Unsubscribe from ${src.name}`}
+								label={src.ownedByMe ? `Disconnect ${src.name}` : `Unsubscribe from ${src.name}`}
 								onclick={() => detach(src.id)}
 								disabled={busy}
 							/>
@@ -292,8 +292,8 @@
 							<button
 								type="button"
 								onclick={() => openSubscribeDialog(src)}
-								title="Add to my playlist"
-								aria-label="Add to my playlist"
+								title="Subscribe from one of my playlists"
+								aria-label="Subscribe from one of my playlists"
 								class="inline-flex items-center rounded p-0.5 hover:opacity-70"
 								style="color: var(--color-accent)"
 							>

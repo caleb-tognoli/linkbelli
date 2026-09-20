@@ -82,12 +82,12 @@
 	}
 </script>
 
-<Modal bind:open title={filed ? 'Move to folder' : 'Save to folder'} size="sm">
+<Modal bind:open title={filed ? 'Move to another folder' : 'Add to folder'} size="sm">
 	{#snippet trigger()}
 		<Dialog.Trigger
 			class={compact ? buttonClass('ghost', 'sm', true) : buttonClass('secondary', 'sm')}
-			title={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
-			aria-label={filed ? `Move from: ${currentFolderName}` : 'Move to folder'}
+			title={filed ? `In ${currentFolderName} — move it` : 'Add to folder'}
+			aria-label={filed ? `In ${currentFolderName} — move it to another folder` : 'Add to folder'}
 		>
 			{#if compact}
 				<FolderInput size={15} aria-hidden="true" />
