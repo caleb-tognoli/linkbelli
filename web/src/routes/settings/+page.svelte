@@ -10,6 +10,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { api } from '$lib/api/client';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import ApiKeysManager from '$lib/components/ApiKeysManager.svelte';
 	import ChangePasswordForm from '$lib/components/ChangePasswordForm.svelte';
 	import BackupsPanel from '$lib/components/BackupsPanel.svelte';
@@ -67,12 +68,28 @@
 	/**
 	 * Asks for the account to go.
 	 *
-	 * Confirmed by password rather than by a dialog: a session left open on a shared machine
-	 * should not be enough to end somebody's account, and "type DELETE to confirm" is a ritual
-	 * that proves you can type.
+	 * The password is what proves it is you — a session left open on a shared machine should not
+	 * be enough to end somebody's account, and "type DELETE to confirm" is a ritual that proves
+	 * you can type. But proving who you are and meaning to do it are two questions, and only the
+	 * first was being asked: one press on a filled-in field and the account was scheduled, while
+	 * moving a single playlist to the trash — recoverable for thirty days — stops to ask. So it
+	 * asks once, and names the date rather than repeating the warning above.
 	 */
 	async function leave(event: SubmitEvent) {
 		event.preventDefault();
+
+		const goesOn = new Date(Date.now() + GRACE_DAYS * 86_400_000).toLocaleDateString(undefined, {
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric'
+		});
+		const sure = await confirmDialog('Close this account?', {
+			description: `Everything you have here goes on ${goesOn}. Signing in before then calls it off.`,
+			danger: true,
+			confirmLabel: 'Close my account'
+		});
+		if (!sure) return;
+
 		leaving = true;
 		leaveError = null;
 
@@ -84,10 +101,8 @@
 			leavingAt = ((await res.json()) as { deletesAt: string }).deletesAt;
 		} else if (res.status === 400) {
 			leaveError = 'That password is not right.';
-		} else if (res.status === 429) {
-			leaveError = 'Too many attempts. Wait a minute and try again.';
 		} else {
-			leaveError = 'Could not do that. Try again.';
+			leaveError = failureMessage(res, 'Could not do that. Try again.');
 		}
 	}
 
