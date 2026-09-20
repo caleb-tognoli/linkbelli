@@ -25,7 +25,7 @@
 	import NsfwBadge from './NsfwBadge.svelte';
 	import KindBadge from './KindBadge.svelte';
 	import { savePrefs } from '$lib/prefs';
-	import { isPlainKey, moveFocus } from '$lib/keyboard';
+	import { isInteractiveTarget, isPlainKey, moveFocus } from '$lib/keyboard';
 	import { describeDrag, dragSet, encodePayload, ITEMS_MIME } from '$lib/dragItems';
 	import { SORT_LABELS, canReorder, modeToServerSort, nextDateSort, nextScoreSort, orderForDisplay, serverSortToMode, type SortMode } from '$lib/sorting';
 	import { confirmDialog } from '$lib/dialog.svelte';
@@ -275,6 +275,11 @@
 	function onKeydown(event: KeyboardEvent) {
 		if (readonly && event.key !== 'j' && event.key !== 'k' && event.key !== 'o') return;
 		if (!isPlainKey(event)) return;
+		// Whatever has the keyboard answers its own keys. Without this, a row picked out with j
+		// left every button on the page inert: Enter on the focused "Paste links" was cancelled
+		// here and opened the row's link in a new tab instead of opening the dialog — and e and x
+		// quietly acted on a row while somebody was trying to press something else.
+		if (isInteractiveTarget(event.target)) return;
 
 		switch (event.key) {
 			case 'j':

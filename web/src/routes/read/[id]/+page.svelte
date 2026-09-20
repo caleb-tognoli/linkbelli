@@ -12,6 +12,7 @@
 	import { offsetIn, tidy, toSegments, type Highlight } from '$lib/highlights';
 	import { readingMinutes } from '$lib/reading';
 	import { scrollBehavior } from '$lib/motion';
+	import { isInteractiveTarget, isPlainKey } from '$lib/keyboard';
 	import {
 		FONTS,
 		FONT_CSS,
@@ -379,10 +380,11 @@
 	 * screen somebody working through a queue actually lives on — had none of it.
 	 */
 	function onKeydown(event: KeyboardEvent) {
-		const target = event.target as HTMLElement | null;
-		if (event.metaKey || event.ctrlKey || event.altKey) return;
-		if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable)
-			return;
+		if (!isPlainKey(event)) return;
+		// Whatever has the keyboard answers its own keys — e on a focused "Next" button marked the
+		// article done rather than moving on. Escape is the exception: it belongs to the page, and
+		// closes whatever is open before it leaves.
+		if (event.key !== 'Escape' && isInteractiveTarget(event.target)) return;
 
 		switch (event.key) {
 			case 'j':

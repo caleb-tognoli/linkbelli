@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPlainKey, isTypingTarget, moveFocus } from './keyboard';
+import { isInteractiveTarget, isPlainKey, isTypingTarget, moveFocus } from './keyboard';
 
 function element(tag: string, contentEditable = false): HTMLElement {
 	const node = document.createElement(tag);
@@ -30,6 +30,47 @@ describe('isTypingTarget', () => {
 
 	it('copes with no target at all', () => {
 		expect(isTypingTarget(null)).toBe(false);
+	});
+});
+
+describe('isInteractiveTarget', () => {
+	it.each(['button', 'summary'])('treats %s as answering its own keys', (tag) => {
+		expect(isInteractiveTarget(element(tag))).toBe(true);
+	});
+
+	it('treats a link with an address as answering its own keys', () => {
+		const link = element('a');
+		link.setAttribute('href', '/playlists');
+		expect(isInteractiveTarget(link)).toBe(true);
+	});
+
+	it('treats a link without an address as ordinary text', () => {
+		expect(isInteractiveTarget(element('a'))).toBe(false);
+	});
+
+	it.each(['menuitem', 'option', 'switch', 'tab'])('treats role=%s as answering its own keys', (role) => {
+		const node = element('div');
+		node.setAttribute('role', role);
+		expect(isInteractiveTarget(node)).toBe(true);
+	});
+
+	it('looks up from whatever the event landed on', () => {
+		const button = element('button');
+		const icon = element('span');
+		button.append(icon);
+		expect(isInteractiveTarget(icon)).toBe(true);
+	});
+
+	it.each(['input', 'textarea'])('still counts %s, which is being typed into', (tag) => {
+		expect(isInteractiveTarget(element(tag))).toBe(true);
+	});
+
+	it.each(['div', 'p', 'body'])('leaves %s to the page', (tag) => {
+		expect(isInteractiveTarget(element(tag))).toBe(false);
+	});
+
+	it('has nothing to say about a target that is not an element', () => {
+		expect(isInteractiveTarget(null)).toBe(false);
 	});
 });
 

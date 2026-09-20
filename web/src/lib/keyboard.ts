@@ -17,6 +17,24 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 /**
+ * Whether a keystroke was meant for the control that has the keyboard.
+ *
+ * A button, a link or a menu item answers Enter and Space itself, and a page-level shortcut that
+ * takes those keys takes them away from it: with a row picked out by j, Enter on the focused
+ * "Paste links" button called preventDefault and opened the row's link in a new tab instead of
+ * opening the dialog. Broader than isTypingTarget, which only asks whether something is being
+ * written into.
+ */
+export function isInteractiveTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) return false;
+	if (isTypingTarget(target)) return true;
+
+	return !!target.closest(
+		'button, a[href], summary, [role="button"], [role="link"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="tab"], [role="radio"], [role="switch"], [role="checkbox"]'
+	);
+}
+
+/**
  * True when a keystroke should be treated as a bare shortcut. A modifier means the browser or the
  * operating system has its own claim on it.
  */
