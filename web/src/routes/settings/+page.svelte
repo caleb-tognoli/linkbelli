@@ -177,7 +177,7 @@
 		     stay in view while the page scrolls. -->
 		<nav
 			aria-label="Settings sections"
-			class="sticky top-0 z-(--z-sticky) -mx-4 mb-8 overflow-x-auto border-b bg-bg px-4 md:top-8 md:mx-0 md:mb-0 md:self-start md:overflow-visible md:border-b-0 md:bg-transparent md:px-0"
+			class="sticky top-(--app-bar-h) z-(--z-sticky) -mx-4 mb-8 overflow-x-auto border-b bg-bg px-4 md:top-8 md:mx-0 md:mb-0 md:self-start md:overflow-visible md:border-b-0 md:bg-transparent md:px-0"
 		>
 			<ul class="flex gap-1 py-2 md:flex-col md:py-0">
 				{#each SECTIONS as section (section.id)}

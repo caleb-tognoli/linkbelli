@@ -362,9 +362,12 @@
 	{@render children()}
 {:else if data.user}
 	<div class="flex min-h-screen flex-col md:flex-row">
-		<!-- Mobile top bar with hamburger; hidden at md+ where the sidebar shows. -->
+		<!-- Mobile top bar with hamburger; hidden at md+ where the sidebar shows.
+		     Sticky, like the sidebar it stands in for: it used to scroll away with the page, so on
+		     a phone reaching the navigation from the bottom of Settings — five screens down — meant
+		     scrolling all the way back up first. -->
 		<header
-			class="flex items-center gap-3 border-b px-4 py-3 md:hidden"
+			class="sticky top-0 z-(--z-app-bar) flex h-(--app-bar-h) items-center gap-3 border-b px-4 md:hidden"
 			style="border-color: var(--color-border); background: var(--color-surface)"
 		>
 			<Dialog.Root bind:open={drawerOpen}>
@@ -452,7 +455,10 @@
 	</main>
 {:else}
 	<div class="flex min-h-screen flex-col">
-		<header class="flex items-center justify-between border-b px-6 py-3" style="border-color: var(--color-border)">
+		<header
+			class="sticky top-0 z-(--z-app-bar) flex h-(--app-bar-h) items-center justify-between border-b bg-bg px-6"
+			style="border-color: var(--color-border)"
+		>
 			<a href="/" class="text-lg font-semibold">Linkbelli</a>
 			<!-- Signing in was the only thing on offer to somebody who has no account yet. -->
 			<span class="flex items-center gap-2">

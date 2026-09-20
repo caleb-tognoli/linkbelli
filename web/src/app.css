@@ -83,7 +83,13 @@
 :root {
 	color-scheme: light dark;
 
+	/* How tall the phone's top bar is. Published, because it is sticky and anything else that
+	   sticks to the top of a page has to start below it rather than under it. */
+	--app-bar-h: 3.8rem;
+
 	--z-sticky: 20;
+	/* The top bar outranks a page's own sticky chrome: it holds the way to everywhere else. */
+	--z-app-bar: 25;
 	--z-popover: 30;
 	--z-overlay: 40;
 	--z-modal: 50;
