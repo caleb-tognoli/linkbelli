@@ -27,6 +27,26 @@
 	let open = $state(false);
 	let submitting = $state(false);
 	let inlineError = $state<string | null>(null);
+	let name = $state(form?.name ?? '');
+	/**
+	 * What is wrong with the name, once it has been asked for.
+	 *
+	 * The form used to lean on the browser's own `required`, which pops an OS-styled bubble over
+	 * the dialog — light grey on a dark page, gone again on its own, and nothing to do with the
+	 * error channel every other form here uses. Field already has one, and it announces itself.
+	 */
+	let nameError = $state<string | null>(null);
+
+	/** True when the form may go. Fills in the error and moves the keyboard there when not. */
+	function nameIsGiven(formEl: HTMLFormElement): boolean {
+		if (name.trim()) {
+			nameError = null;
+			return true;
+		}
+		nameError = 'Give the playlist a name.';
+		formEl.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+		return false;
+	}
 
 	// Held here rather than read off the form, because the choice is a radio group now and its
 	// value has to reach the server action in a field of its own.
@@ -77,6 +97,7 @@
 
 	async function handleInlineCreate(e: SubmitEvent) {
 		e.preventDefault();
+		if (!nameIsGiven(e.target as HTMLFormElement)) return;
 		const fd = new FormData(e.target as HTMLFormElement);
 		const tagsRaw = (fd.get('tags') as string | null) ?? '';
 		submitting = true;
@@ -106,10 +127,18 @@
 </script>
 
 {#snippet fields(values: CreateForm)}
-	<Field label="Name" required>
+	<Field label="Name" required error={nameError}>
 		{#snippet children(f)}
 			<!-- svelte-ignore a11y_autofocus -- a dialog opened to be typed into -->
-			<Input id={f.id} name="name" required autofocus value={values?.name ?? ''} aria-describedby={f.describedby} />
+			<Input
+				id={f.id}
+				name="name"
+				autofocus
+				bind:value={name}
+				invalid={f.invalid}
+				aria-required="true"
+				aria-describedby={f.describedby}
+			/>
 		{/snippet}
 	</Field>
 
@@ -193,7 +222,7 @@
 	{/snippet}
 
 	{#if folderId}
-		<form class="flex flex-col gap-3" onsubmit={handleInlineCreate}>
+		<form class="flex flex-col gap-3" novalidate onsubmit={handleInlineCreate}>
 			{@render fields(null)}
 
 			{#if inlineError}
@@ -207,7 +236,12 @@
 			method="post"
 			action="?/create"
 			class="flex flex-col gap-3"
-			use:enhance={() => {
+			novalidate
+			use:enhance={({ cancel, formElement }) => {
+				if (!nameIsGiven(formElement)) {
+					cancel();
+					return;
+				}
 				submitting = true;
 				return async ({ update }) => {
 					await update();
