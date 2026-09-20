@@ -145,11 +145,21 @@ button,
 
 /* App-wide keyboard focus ring. Custom controls are styled with inline `style`
    attributes and carry no Tailwind focus utilities, so they relied on the UA outline
-   (often invisible against the accent fill). :focus-visible keeps it keyboard-only. */
-:focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: 2px;
-	border-radius: 2px;
+   (often invisible against the accent fill). :focus-visible keeps it keyboard-only.
+
+   In @layer base, and with no border-radius of its own. Unlayered it outranked every
+   Tailwind utility — which is not a specificity question, it is that unlayered rules beat
+   layered ones outright — so `border-radius: 2px` was applied to whatever had the keyboard
+   on it, over rounded-control and the rest. An outline follows the element's own corners, so
+   every focused input, button and card squared itself off the moment it was tabbed to, and
+   the ring was drawn as a sharp rectangle around a rounded control. Layered, it also lets the
+   handful of elements that silence the ring on purpose (outline-none on <main>, on a menu row,
+   on the palette's box) actually do so. */
+@layer base {
+	:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
 }
 
 /* Type roles.
