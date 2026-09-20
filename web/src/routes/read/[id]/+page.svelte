@@ -67,6 +67,21 @@
 	let lastSaved = 0;
 
 	/** A selection that could become a highlight, and where to offer it. */
+	/**
+	 * Whether this is being read with a finger.
+	 *
+	 * Decided by the pointer rather than the width: a tablet is wide and still has the same
+	 * native selection callout to stay out of the way of.
+	 */
+	let touch = $state(false);
+	$effect(() => {
+		const coarse = window.matchMedia('(pointer: coarse)');
+		touch = coarse.matches;
+		const onchange = (event: MediaQueryListEvent) => (touch = event.matches);
+		coarse.addEventListener('change', onchange);
+		return () => coarse.removeEventListener('change', onchange);
+	});
+
 	let selection = $state<{
 		paragraphIndex: number;
 		start: number;
@@ -674,11 +689,21 @@
 </article>
 
 {#if selection && toolbarAt}
-	<!-- mousedown is swallowed so pressing a button does not throw away the selection it is
-	     about to act on. -->
+	<!--
+		mousedown is swallowed so pressing a button does not throw away the selection it is about
+		to act on.
+
+		Above the selection with a mouse; a bar across the bottom under a finger. Directly above a
+		selection is exactly where iOS and Android draw their own Copy / Look Up callout, so the
+		two sat on top of each other and neither could be used.
+	-->
 	<div
-		class="popover-surface fixed z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-lg border p-1 text-sm shadow-lg"
-		style="left: {toolbarAt.x}px; top: {toolbarAt.y - 8}px"
+		class="popover-surface fixed z-30 flex items-center gap-0.5 rounded-lg border p-1 text-sm shadow-lg {touch
+			? 'inset-x-3 justify-center'
+			: '-translate-x-1/2 -translate-y-full'}"
+		style={touch
+			? 'bottom: max(0.75rem, env(safe-area-inset-bottom))'
+			: `left: ${toolbarAt.x}px; top: ${toolbarAt.y - 8}px`}
 		role="toolbar"
 		aria-label="Highlight the selection"
 		tabindex="-1"
