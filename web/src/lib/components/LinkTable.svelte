@@ -111,6 +111,8 @@
 	 * is what appears — the layout holds still and nothing looks broken.
 	 */
 	let thumbnailFailed = new SvelteSet<string>();
+	/** Icons that would not load: the slot keeps its size and shows the kind instead. */
+	let faviconFailed = new SvelteSet<string>();
 
 	// Multi-select. Every action below already exists per item; the point is doing it to a
 	// selection without repeating yourself forty times.
@@ -594,34 +596,44 @@
 					{@const thumb =
 						(item.metadata?.thumbnail ?? item.link.thumbnailUrl) &&
 						!thumbnailFailed.has(item.link.id)}
-					{#if thumb}
-						<!-- Served through our own host rather than hotlinked: rendering the origin
-						     URL told every site in this playlist the viewer's IP and what they were
-						     looking at, and broke whenever a host refused hotlinking. -->
-						<img
-							src={`/api/v1/thumbnails/${item.link.id}`}
-							alt=""
-							class="shrink-0 rounded object-cover"
-							style="height: 5em; width: auto{item.status === 'Watched' ? '; opacity: 0.6' : ''}"
-							loading="lazy"
-							onerror={() => thumbnailFailed.add(item.link.id)}
-						/>
-					{:else if item.link.favicon}
-						<!-- No page image: the site's own icon keeps the row's left edge aligned
-						     with its neighbours instead of leaving a ragged gap. -->
-						<span
-							class="flex shrink-0 items-center justify-center rounded"
-							style="height: 5em; width: 5em; background: var(--color-surface)"
-						>
+					<!--
+						One slot, always the same size, always drawn.
+
+						A 5em-tall image of unknown width, a 5em square for a favicon, or nothing at
+						all — whichever a row happened to get — made every row a different height and
+						shifted the whole list as the pictures arrived. The box is fixed and the
+						picture fills it; when there is no picture the site's icon or the kind sits
+						in the same box.
+					-->
+					<span
+						class="flex h-[2.8rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded bg-surface sm:h-[3.5rem] sm:w-[5.6rem]"
+						class:opacity-60={item.status === 'Watched'}
+					>
+						{#if thumb}
+							<!-- Served through our own host rather than hotlinked: rendering the origin
+							     URL told every site in this playlist the viewer's IP and what they were
+							     looking at, and broke whenever a host refused hotlinking. -->
+							<img
+								src={`/api/v1/thumbnails/${item.link.id}`}
+								alt=""
+								class="size-full object-cover"
+								loading="lazy"
+								decoding="async"
+								onerror={() => thumbnailFailed.add(item.link.id)}
+							/>
+						{:else if item.link.favicon && !faviconFailed.has(item.link.id)}
 							<img
 								src={item.link.favicon}
 								alt=""
 								class="size-6 object-contain"
 								loading="lazy"
-								onerror={(e) => e.currentTarget.parentElement?.remove()}
+								decoding="async"
+								onerror={() => faviconFailed.add(item.link.id)}
 							/>
-						</span>
-					{/if}
+						{:else}
+							<span class="text-muted"><KindBadge kind={item.link.kind} size={18} /></span>
+						{/if}
+					</span>
 				{/if}
 				<div class="min-w-0">
 					<a
