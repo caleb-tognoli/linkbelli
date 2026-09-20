@@ -1,5 +1,6 @@
 <script lang="ts">
 	import OnboardingChecklist from './OnboardingChecklist.svelte';
+	import SiteMark from '$lib/components/SiteMark.svelte';
 	import ConfirmEmailNotice from './ConfirmEmailNotice.svelte';
 	import { ArrowRight, BookOpen, Link2, ListMusic, Rss } from '@lucide/svelte';
 	import Button from './ui/Button.svelte';
@@ -104,11 +105,7 @@
 			<ul class="mt-3 flex flex-col divide-y rounded-card border border-border">
 				{#each upNext.items as hit (hit.itemId)}
 					<li class="flex items-start gap-3 p-3">
-						{#if hit.link.favicon}
-							<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
-						{:else}
-							<span class="mt-0.5 size-4 shrink-0 rounded-mark bg-border"></span>
-						{/if}
+						<SiteMark src={hit.link.favicon} class="mt-0.5" />
 						<div class="min-w-0 flex-1">
 							<a
 								href={hit.link.url}

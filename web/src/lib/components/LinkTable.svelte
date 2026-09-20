@@ -19,11 +19,11 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, CopyPlus, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus, ArrowUpToLine, Square, SquareCheck } from '@lucide/svelte';
+	import { AlertCircle, Archive, ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Check, CopyPlus, Globe, Link2, ChevronDown, Clock, Eye, EyeOff, FolderInput, GripVertical, Image, LayoutGrid, MoreVertical, Rows3, Rss, Star, StickyNote, Trash2, Type, X, ListPlus, ArrowUpToLine, Square, SquareCheck } from '@lucide/svelte';
 	import PlaylistPickerDialog from './PlaylistPickerDialog.svelte';
 	import PlaylistDropTray from './PlaylistDropTray.svelte';
 	import NsfwBadge from './NsfwBadge.svelte';
-	import KindBadge from './KindBadge.svelte';
+	import KindBadge, { hasKindBadge } from './KindBadge.svelte';
 	import { filterChipClass } from '$lib/components/ui/chips';
 	import { savePrefs } from '$lib/prefs';
 	import { isInteractiveTarget, isPlainKey, moveFocus } from '$lib/keyboard';
@@ -667,8 +667,16 @@
 								decoding="async"
 								onerror={() => faviconFailed.add(item.link.id)}
 							/>
-						{:else}
+						{:else if hasKindBadge(item.link.kind)}
 							<span class="text-muted"><KindBadge kind={item.link.kind} size={18} /></span>
+						{:else}
+							<!-- The slot is drawn whether or not there is a picture, so that the rows
+							     keep their height as the pictures arrive. That meant an article with
+							     no thumbnail and no favicon — which is most of a freshly imported
+							     list — got a blank grey rectangle, and a list of them read as broken.
+							     KindBadge draws nothing for an article on purpose, so the last resort
+							     has to be here. -->
+							<Globe size={18} aria-hidden="true" class="text-muted" />
 						{/if}
 					</span>
 				{/if}

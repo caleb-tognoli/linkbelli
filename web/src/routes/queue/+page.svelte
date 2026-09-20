@@ -2,6 +2,7 @@
 
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import SiteMark from '$lib/components/SiteMark.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import type { Paged, SearchHit } from '$lib/types';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
@@ -265,11 +266,7 @@
 		style="border-color: var(--color-border)"
 	>
 		<div class="flex min-w-0 flex-1 items-start gap-3">
-					{#if hit.link.favicon}
-						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
-					{:else}
-						<span class="mt-0.5 size-4 shrink-0 rounded-mark" style="background: var(--color-border)"></span>
-					{/if}
+					<SiteMark src={hit.link.favicon} class="mt-0.5" />
 
 					<div class="min-w-0 flex-1">
 						<a

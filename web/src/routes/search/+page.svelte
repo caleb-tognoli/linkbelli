@@ -2,6 +2,7 @@
 
 <script lang="ts">
 	import { pageTitle } from '$lib/title';
+	import SiteMark from '$lib/components/SiteMark.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -456,11 +457,7 @@
 					class="flex items-start gap-3 p-3 transition-colors hover:bg-chip/60"
 					style="border-color: var(--color-border)"
 				>
-					{#if hit.link.favicon}
-						<img src={hit.link.favicon} alt="" class="mt-0.5 size-4 shrink-0 object-contain" loading="lazy" />
-					{:else}
-						<span class="mt-0.5 size-4 shrink-0 rounded-mark" style="background: var(--color-border)"></span>
-					{/if}
+					<SiteMark src={hit.link.favicon} class="mt-0.5" />
 
 					<div class="min-w-0 flex-1">
 						<a
