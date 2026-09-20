@@ -1,6 +1,7 @@
-<svelte:head><title>Confirm your address - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Confirm your address')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Button from '$lib/components/ui/Button.svelte';

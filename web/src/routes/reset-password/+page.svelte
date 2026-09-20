@@ -1,6 +1,7 @@
-<svelte:head><title>Choose a new password - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Choose a new password')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { PASSWORD_MIN, passwordAcceptable } from '$lib/accountRules';
 	import PasswordRules from '$lib/components/PasswordRules.svelte';
 	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';

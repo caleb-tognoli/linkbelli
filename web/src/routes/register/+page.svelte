@@ -1,6 +1,7 @@
-﻿<svelte:head><title>Create account - linkbelli</title></svelte:head>
+﻿<svelte:head><title>{pageTitle('Create account')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { PASSWORD_MIN, USERNAME_HINT, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN, passwordAcceptable, usernameProblem } from '$lib/accountRules';
 	import PasswordRules from '$lib/components/PasswordRules.svelte';
 	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';

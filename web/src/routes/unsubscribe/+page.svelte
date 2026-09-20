@@ -1,6 +1,7 @@
-<svelte:head><title>Unsubscribed - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Unsubscribed')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { Check, X } from '@lucide/svelte';
 	import type { PageData } from './$types';
 

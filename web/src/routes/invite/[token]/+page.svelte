@@ -1,6 +1,7 @@
-<svelte:head><title>An invitation - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('An invitation')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { MailX, UserPlus } from '@lucide/svelte';

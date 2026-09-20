@@ -1,4 +1,5 @@
 ﻿<script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -59,7 +60,7 @@
 	}
 </script>
 
-<svelte:head><title>{data.folder.name} - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle(`${data.folder.name}`)}</title></svelte:head>
 
 <section class="mx-auto max-w-5xl">
 	<!-- Breadcrumb trail: Playlists / ancestors / current -->

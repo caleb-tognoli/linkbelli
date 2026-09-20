@@ -1,6 +1,7 @@
-<svelte:head><title>Up next - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Up next')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Button from '$lib/components/ui/Button.svelte';
 	import type { Paged, SearchHit } from '$lib/types';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';

@@ -1,6 +1,7 @@
-﻿<svelte:head><title>Import - linkbelli</title></svelte:head>
+﻿<svelte:head><title>{pageTitle('Import')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';

@@ -1,6 +1,7 @@
-<svelte:head><title>{data.dashboard ? 'Home - linkbelli' : 'linkbelli'}</title></svelte:head>
+<svelte:head><title>{data.dashboard ? pageTitle('Home') : pageTitle()}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Page from '$lib/components/ui/Page.svelte';
 	import Dashboard from '$lib/components/Dashboard.svelte';
 	import Button from '$lib/components/ui/Button.svelte';

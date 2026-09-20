@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { page } from '$app/state';
 	import PlaylistView from '$lib/components/PlaylistView.svelte';
 	import PlaylistCard from '$lib/components/PlaylistCard.svelte';
@@ -9,7 +10,7 @@
 	const backHref = $derived(page.url.searchParams.get('from') ?? '/discover');
 	const backLabel = $derived(page.url.searchParams.get('fromLabel') ?? 'Discover');
 
-	const pageTitle = $derived(`${data.playlist.name} by ${data.username} - linkbelli`);
+	const title = $derived(pageTitle(`${data.playlist.name} by ${data.username}`));
 
 	// Its own description if the owner wrote one; otherwise say what the page actually holds,
 	// which still beats an empty unfurl.
@@ -49,7 +50,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle}</title>
+	<title>{title}</title>
 	<meta name="description" content={description} />
 	<link rel="canonical" href={canonical} />
 

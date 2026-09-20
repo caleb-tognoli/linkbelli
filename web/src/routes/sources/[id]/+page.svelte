@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { formatDate, formatExact } from '$lib/dates';
 	import { plural } from '$lib/labels';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -301,7 +302,7 @@
 	}
 </script>
 
-<svelte:head><title>{data.source.name} - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle(`${data.source.name}`)}</title></svelte:head>
 
 <section class="mx-auto max-w-4xl">
 	<BackLink href={backHref} label={backLabel} />

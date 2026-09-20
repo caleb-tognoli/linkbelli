@@ -1,6 +1,7 @@
-<svelte:head><title>Settings - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Settings')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';

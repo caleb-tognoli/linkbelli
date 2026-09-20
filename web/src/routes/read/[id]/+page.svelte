@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import { toast } from '$lib/toast.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
@@ -467,7 +468,7 @@
 	});
 </script>
 
-<svelte:head><title>{data.content.title ?? 'Reading'} - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle(`${data.content.title ?? 'Reading'}`)}</title></svelte:head>
 
 <!-- Where you are, pinned to the top. The one thing a long article never told you. -->
 <div
@@ -622,7 +623,7 @@
 
 	{#if data.content.truncated}
 		<p class="mt-6 border-t pt-4 text-sm" style="border-color: var(--color-border); color: var(--color-muted)">
-			This article was longer than linkbelli keeps. The rest is still at the
+			This article was longer than Linkbelli keeps. The rest is still at the
 			<a href={data.content.url} target="_blank" rel="noreferrer" class="underline">original</a>.
 		</p>
 	{/if}

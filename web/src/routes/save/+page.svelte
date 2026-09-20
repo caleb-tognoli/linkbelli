@@ -1,6 +1,7 @@
-<svelte:head><title>Save a link - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Save a link')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Input from '$lib/components/ui/Input.svelte';

@@ -1,6 +1,7 @@
-<svelte:head><title>Sources - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Sources')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';

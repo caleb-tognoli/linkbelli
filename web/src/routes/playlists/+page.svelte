@@ -1,6 +1,7 @@
-<svelte:head><title>Playlists - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Playlists')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { X } from '@lucide/svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';

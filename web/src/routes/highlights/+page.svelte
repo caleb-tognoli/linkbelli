@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import LoadMore from '$lib/components/ui/LoadMore.svelte';
@@ -39,7 +40,7 @@
 	}
 </script>
 
-<svelte:head><title>Highlights - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Highlights')}</title></svelte:head>
 
 <!-- Everything marked, across the whole library. The highest-signal text somebody has: it is the
      part they stopped at and chose, and until now it had nowhere to be read back together. -->

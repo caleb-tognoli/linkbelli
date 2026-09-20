@@ -1,6 +1,7 @@
-<svelte:head><title>Sign in - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Sign in')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';

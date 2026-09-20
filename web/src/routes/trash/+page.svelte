@@ -1,6 +1,7 @@
-<svelte:head><title>Trash - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Trash')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { plural } from '$lib/labels';
 	import { failureMessage } from '$lib/api/errors';
 	import Button from '$lib/components/ui/Button.svelte';

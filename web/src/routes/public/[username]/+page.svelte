@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import type { Paged, PublicPlaylistSummary } from '$lib/types';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
@@ -84,7 +85,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.profile.username} - linkbelli</title>
+	<title>{pageTitle(`${data.profile.username}`)}</title>
 	<meta name="description" content={description} />
 	<link rel="canonical" href={canonical} />
 

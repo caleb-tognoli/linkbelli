@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { formatDate } from '$lib/dates';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -62,7 +63,7 @@
 	const when = formatDate;
 </script>
 
-<svelte:head><title>Feed - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Feed')}</title></svelte:head>
 
 <Page width="narrow">
 	<PageHeader title="Feed">

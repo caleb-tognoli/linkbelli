@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { page } from '$app/state';
 	import KindBadge from '$lib/components/KindBadge.svelte';
@@ -24,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>{title} - shared on linkbelli</title>
+	<title>{pageTitle(`${title} — shared`)}</title>
 	<meta name="description" content={description} />
 	<!-- A shared link exists to be pasted somewhere. Without these it unfurls as a bare URL and
 	     the note that came with it is lost. -->

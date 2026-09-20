@@ -1,6 +1,7 @@
-<svelte:head><title>New source - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('New source')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Page from '$lib/components/ui/Page.svelte';
 	import BackLink from '$lib/components/ui/BackLink.svelte';

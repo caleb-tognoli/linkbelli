@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { formatDate, formatExact } from '$lib/dates';
 	import { failureMessage } from '$lib/api/errors';
 	import { toast } from '$lib/toast.svelte';
@@ -72,7 +73,7 @@
 	}
 </script>
 
-<svelte:head><title>Admin - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Admin')}</title></svelte:head>
 
 <Page width="medium">
 	<PageHeader title="Instance" description="Everything below was already being recorded. This is where it can be seen." />

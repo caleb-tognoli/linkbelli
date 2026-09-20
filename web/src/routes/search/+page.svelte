@@ -1,6 +1,7 @@
-<svelte:head><title>Search - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Search')}</title></svelte:head>
 
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import { buttonClass } from '$lib/components/ui/Button.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';

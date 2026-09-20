@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import { scrollBehavior } from '$lib/motion';
 	import { tick } from 'svelte';
 	import { failureMessage } from '$lib/api/errors';
@@ -323,7 +324,7 @@
 
 </script>
 
-<svelte:head><title>Rules - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle('Rules')}</title></svelte:head>
 
 <Page width="narrow">
 	<PageHeader

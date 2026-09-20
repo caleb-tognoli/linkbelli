@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/title';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { page } from '$app/state';
 
@@ -36,7 +37,7 @@
 	});
 </script>
 
-<svelte:head><title>{heading} - linkbelli</title></svelte:head>
+<svelte:head><title>{pageTitle(`${heading}`)}</title></svelte:head>
 
 <section class="mx-auto max-w-md py-16 text-center">
 	<p class="text-5xl font-semibold" style="color: var(--color-muted)">{status}</p>
