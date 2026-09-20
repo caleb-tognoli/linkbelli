@@ -2,6 +2,9 @@
 	import { pageTitle } from '$lib/title';
 	import BackLink from '$lib/components/ui/BackLink.svelte';
 	import { toast } from '$lib/toast.svelte';
+	import { shortcuts } from '$lib/overlays.svelte';
+	import { failureMessage } from '$lib/api/errors';
+	import { doneToggleLabel } from '$lib/labels';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -22,18 +25,7 @@
 		WIDTH_CSS,
 		readerSettings
 	} from '$lib/readerSettings.svelte';
-	import {
-		Check,
-		ChevronLeft,
-		ChevronRight,
-		ExternalLink,
-		Highlighter,
-		MessageSquarePlus,
-		Pencil,
-		Settings2,
-		Trash2,
-		X
-	} from '@lucide/svelte';
+	import { Check, ChevronLeft, ChevronRight, ExternalLink, EyeOff, Highlighter, MessageSquarePlus, Pencil, Settings2, Trash2, X } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -176,11 +168,29 @@
 		await api.put(`/links/${data.content.id}/progress`, { progress });
 	}
 
-	async function markFinished() {
-		progress = 1;
-		finished = true;
-		lastSaved = 1;
-		await api.put(`/links/${data.content.id}/progress`, { progress: 1 });
+	/**
+	 * Marks the article done, or takes the mark off again.
+	 *
+	 * It used to be one-way: the button disabled itself once pressed and there was nothing here
+	 * to undo it, so a misfired `e` — one keystroke — could only be put right by leaving the
+	 * reader and finding the row. Everywhere else this is a toggle, and says so with the same
+	 * pair of words.
+	 */
+	async function toggleFinished() {
+		const next = !finished;
+		const before = { progress, finished: finished, lastSaved };
+
+		progress = next ? 1 : 0;
+		finished = next;
+		lastSaved = progress;
+
+		const res = await api.put(`/links/${data.content.id}/progress`, { progress });
+		if (!res.ok) {
+			progress = before.progress;
+			finished = before.finished;
+			lastSaved = before.lastSaved;
+			toast.error(failureMessage(res, next ? 'Could not mark it done.' : 'Could not undo that.'));
+		}
 	}
 
 	function open(linkId: string) {
@@ -400,7 +410,7 @@
 				if (data.previous) open(data.previous.linkId);
 				break;
 			case 'e':
-				void markFinished();
+				void toggleFinished();
 				break;
 			case 'h':
 				// Read now rather than waiting out the settle delay: somebody who selects and
@@ -555,8 +565,15 @@
 				Text settings
 			</Button>
 
-			<Button size="sm" icon={Check} onclick={markFinished} disabled={finished} title="Mark done (e)">
-				{finished ? 'Done' : 'Mark done'}
+			<Button
+				size="sm"
+				icon={finished ? EyeOff : Check}
+				onclick={toggleFinished}
+				aria-pressed={finished}
+				class={finished ? 'border-accent text-accent' : ''}
+				title={finished ? 'Mark as not done (e)' : 'Mark done (e)'}
+			>
+				{doneToggleLabel(finished)}
 			</Button>
 
 			{#if data.previous}
@@ -699,6 +716,19 @@
 			</ul>
 		</section>
 	{/if}
+
+	<!-- The keys this page answers were listed inside a panel called Text settings, which is not
+	     where anybody looks for them, and said again what the shortcuts dialog already says. One
+	     list, and a way to reach it from the page with the most keys on it. -->
+	<p class="mt-10 text-xs">
+		<button
+			type="button"
+			onclick={() => shortcuts.show()}
+			class="text-muted underline-offset-2 hover:underline"
+		>
+			Keyboard shortcuts (<kbd>?</kbd>)
+		</button>
+	</p>
 </article>
 
 {#if selection && toolbarAt}
