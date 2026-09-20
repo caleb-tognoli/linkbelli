@@ -343,7 +343,13 @@
 						<!-- A javascript: href is exactly what a bookmarklet is; it never runs from this page. -->
 						<a
 							href={bookmarklet}
-							onclick={(e) => e.preventDefault()}
+							onclick={(e) => {
+								// A javascript: href only does anything from the bookmarks bar, so the
+								// click is cancelled — and used to be cancelled in silence, which from
+								// a thing shaped like a button reads as broken.
+								e.preventDefault();
+								toast.info('Drag this to your bookmarks bar — it only works from there.');
+							}}
 							class="inline-flex cursor-grab items-center gap-1.5 rounded-control border border-accent px-3 py-2 text-sm font-medium text-accent"
 							title="Drag me to your bookmarks bar"
 						>
