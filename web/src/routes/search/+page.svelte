@@ -12,7 +12,10 @@
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import { readingLabel } from '$lib/reading';
-	import { AlertCircle, BookOpen, Bookmark, Pin, Search, Eye, Star, X } from '@lucide/svelte';
+	import { AlertCircle, BookOpen, Bookmark, Check, Pin, Search, Eye, SlidersHorizontal, Star, X } from '@lucide/svelte';
+	import { Dialog } from 'bits-ui';
+	import Modal, { MODAL_FOOTER } from '$lib/components/ui/Modal.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import KindBadge from '$lib/components/KindBadge.svelte';
 	import NsfwBadge from '$lib/components/NsfwBadge.svelte';
 	import type { Paged, SavedSearch, SearchHit } from '$lib/types';
@@ -22,6 +25,9 @@
 	import { activeFilterCount, pageQuery, resultsPath, type SearchFilters } from '$lib/searchParams';
 
 	let { data }: { data: PageData } = $props();
+
+	/** The sheet the filters fold into on a narrow screen. */
+	let filtersOpen = $state(false);
 
 	let term = $state(data.q);
 	let hits = $state<SearchHit[]>(data.results.items);
@@ -72,7 +78,8 @@
 	// built from. The save button and the empty state each used to keep their own list, and
 	// both had gaps: a tag or "finished this week" hid the save button, and "videos only" with
 	// no hits was greeted as though nothing had been asked yet.
-	const canSave = $derived(activeFilterCount(filters) > 0);
+	const activeCount = $derived(activeFilterCount(filters));
+	const canSave = $derived(activeCount > 0);
 	const hasFilters = $derived(canSave || !!data.savedId);
 
 	/** The kinds worth offering as a filter. Image and Social exist but are rarely what is sought. */
@@ -180,56 +187,7 @@
 	}
 </script>
 
-<Page width="medium">
-	<PageHeader title={openedSaved?.name ?? 'Search'}>
-		{#snippet details()}
-			{#if openedSaved}
-				<!-- Said plainly, because the boxes and chips below show the empty search rather
-				     than this one — the saved search is run by id, not unpacked into them. -->
-				A saved search, run just now. <a href="/search" class="underline underline-offset-2">Start a new one</a>
-			{:else}
-				Across every playlist you own — titles, descriptions, notes, addresses and the article text.
-			{/if}
-		{/snippet}
-	</PageHeader>
-
-	<Input
-		icon={Search}
-		class="mt-5"
-		type="search"
-		bind:value={term}
-		oninput={onInput}
-		placeholder="Search your links, or try site:bbc.co.uk under:10"
-		aria-label="Search your links"
-	/>
-
-	<details class="mt-2">
-		<summary class="cursor-pointer text-xs" style="color: var(--color-muted)">
-			Things you can type
-		</summary>
-		<!-- The same filters as the buttons below, typed. Which matters because a typed search is
-		     one you can put in a URL, send to somebody, or save as a sentence. -->
-		<ul class="mt-2 grid gap-1 text-xs sm:grid-cols-2" style="color: var(--color-muted)">
-			<li><code>site:bbc.co.uk</code> — only that site</li>
-			<li><code>tag:rust</code> — only links you tagged that</li>
-			<li><code>is:unread</code>, <code>is:read</code> — where you got to</li>
-			<li><code>is:broken</code> — links whose page has gone</li>
-			<li><code>is:highlighted</code> — articles you marked a passage in</li>
-			<li><code>kind:video</code> — article, video, paper, audio…</li>
-			<li><code>under:10</code> — readable in ten minutes</li>
-			<li><code>score:&gt;80</code> — at least that well rated</li>
-			<li><code>"exact phrase"</code> and <code>-exclude</code></li>
-		</ul>
-	</details>
-
-	<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
-		<SegmentedControl
-			label="Status"
-			options={statuses}
-			value={data.status}
-			onchange={(status) => navigate({ status })}
-		/>
-
+{#snippet filterControls()}
 		<button
 			type="button"
 			onclick={() => navigate({ finished: data.finished ? '' : '7', status: '' })}
@@ -277,6 +235,92 @@
 			aria-pressed={!!data.broken}
 			title="Links whose page is gone or can no longer be read"
 		>Broken</button>
+{/snippet}
+
+<Page width="medium">
+	<PageHeader title={openedSaved?.name ?? 'Search'}>
+		{#snippet details()}
+			{#if openedSaved}
+				<!-- Said plainly, because the boxes and chips below show the empty search rather
+				     than this one — the saved search is run by id, not unpacked into them. -->
+				A saved search, run just now. <a href="/search" class="underline underline-offset-2">Start a new one</a>
+			{:else}
+				Across every playlist you own — titles, descriptions, notes, addresses and the article text.
+			{/if}
+		{/snippet}
+	</PageHeader>
+
+	<!-- "Search your links, or try site:bbc.co.uk under:10" was cut off mid-word at 375px as
+	     "site:bbc.co.u"; the syntax has its own list under the box. -->
+	<Input
+		icon={Search}
+		class="mt-5"
+		type="search"
+		bind:value={term}
+		oninput={onInput}
+		placeholder="Search your links…"
+		aria-label="Search your links"
+	/>
+
+	<details class="mt-2">
+		<summary class="cursor-pointer text-xs" style="color: var(--color-muted)">
+			Things you can type
+		</summary>
+		<!-- The same filters as the buttons below, typed. Which matters because a typed search is
+		     one you can put in a URL, send to somebody, or save as a sentence. -->
+		<ul class="mt-2 grid gap-1 text-xs sm:grid-cols-2" style="color: var(--color-muted)">
+			<li><code>site:bbc.co.uk</code> — only that site</li>
+			<li><code>tag:rust</code> — only links you tagged that</li>
+			<li><code>is:unread</code>, <code>is:read</code> — where you got to</li>
+			<li><code>is:broken</code> — links whose page has gone</li>
+			<li><code>is:highlighted</code> — articles you marked a passage in</li>
+			<li><code>kind:video</code> — article, video, paper, audio…</li>
+			<li><code>under:10</code> — readable in ten minutes</li>
+			<li><code>score:&gt;80</code> — at least that well rated</li>
+			<li><code>"exact phrase"</code> and <code>-exclude</code></li>
+		</ul>
+	</details>
+
+	<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+		<SegmentedControl
+			label="Status"
+			options={statuses}
+			value={data.status}
+			onchange={(status) => navigate({ status })}
+		/>
+
+		<!-- Beyond the status control these take two rows to themselves at 375px, which pushed the
+		     first result below the fold. They keep their row on a wider screen and fold into a
+		     sheet on a narrow one. -->
+		<div class="hidden flex-wrap items-center gap-2 sm:flex">
+			{@render filterControls()}
+		</div>
+
+		<Modal bind:open={filtersOpen} title="Filters" size="sm">
+			{#snippet trigger()}
+				<Dialog.Trigger class={buttonClass('secondary', 'sm', false, 'sm:hidden')}>
+					<SlidersHorizontal size={15} aria-hidden="true" />
+					Filters{activeCount > 0 ? ` (${activeCount})` : ''}
+				</Dialog.Trigger>
+			{/snippet}
+			<div class="flex flex-wrap items-center gap-2 text-sm">
+				{@render filterControls()}
+			</div>
+			{#if activeCount > 0}
+				<div class={MODAL_FOOTER}>
+					<Button
+						icon={X}
+						onclick={() => {
+							filtersOpen = false;
+							void goto('/search');
+						}}
+					>
+						Clear filters
+					</Button>
+					<Button variant="primary" icon={Check} onclick={() => (filtersOpen = false)}>Done</Button>
+				</div>
+			{/if}
+		</Modal>
 
 		{#if data.host}
 			<Chip tone="accent" onremove={() => navigate({ host: '' })} removeLabel={`Stop filtering to ${data.host}`}>
