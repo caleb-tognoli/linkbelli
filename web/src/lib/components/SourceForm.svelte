@@ -657,12 +657,19 @@
 						</button>
 					</div>
 					{#each headers as header, i (i)}
-						<div class="flex gap-2">
-							<Input bind:value={header.name} placeholder="Name" aria-label="Header name" class="flex-1" />
-							<Input bind:value={header.value} placeholder="Value" aria-label="Header value" class="flex-1" />
-							<button type="button" onclick={() => (headers = headers.filter((_, j) => j !== i))} class="inline-flex items-center rounded p-1 hover:bg-black/5 dark:hover:bg-white/10" style="color: var(--color-danger)" title="Remove header" aria-label="Remove header">
-								<X size={17} aria-hidden="true" />
-							</button>
+						<!-- Name over value on a phone: side by side they were about seventy pixels
+						     each, which shows neither. -->
+						<div class="flex flex-wrap items-start gap-2 sm:flex-nowrap">
+							<Input bind:value={header.name} placeholder="Name" aria-label="Header name" class="min-w-[9rem] flex-1" />
+							<Input bind:value={header.value} placeholder="Value" aria-label="Header value" class="min-w-[9rem] flex-1" />
+							<Button
+								variant="ghost-danger"
+								size="sm"
+								icon={X}
+								iconOnly
+								label={`Remove header ${header.name || i + 1}`}
+								onclick={() => (headers = headers.filter((_, j) => j !== i))}
+							/>
 						</div>
 					{/each}
 				</div>
@@ -691,7 +698,7 @@
 								/>
 							{/snippet}
 						</Field>
-						<div class="flex gap-2">
+						<div class="grid gap-2 sm:grid-cols-2">
 							<Field label="Username" class="flex-1">
 								{#snippet children(f)}
 									<Input
@@ -719,7 +726,10 @@
 				{#if type === 'Scraper'}
 					<div class="flex flex-col gap-3 rounded-lg border p-4" style="border-color: var(--color-border); background: var(--color-surface)">
 						<span class="text-sm font-medium">Metadata</span>
-						<div class="grid grid-cols-[4.5rem_1.4fr_0.8fr_1.4fr_1fr] items-center gap-x-2 gap-y-2 text-sm">
+						<!-- Stacked into a card per field below `md`: as a five-column grid on a phone
+						     each input was about fifty pixels wide, which is unusable for a CSS
+						     selector or a regular expression. -->
+						<div class="hidden md:grid md:grid-cols-[4.5rem_1.4fr_0.8fr_1.4fr_1fr] md:items-center md:gap-x-2 md:gap-y-2 md:text-sm">
 							<span class="text-xs font-medium" style="color: var(--color-muted)">Field</span>
 							<span class="text-xs font-medium" style="color: var(--color-muted)">Selector</span>
 							<span class="text-xs font-medium" style="color: var(--color-muted)">Attribute</span>
@@ -741,6 +751,48 @@
 									spellcheck="false"
 									class="font-mono"
 								/>
+							{/each}
+						</div>
+
+						<div class="flex flex-col gap-4 md:hidden">
+							{#each META_FIELD_NAMES as name (name)}
+								<fieldset class="flex flex-col gap-2 rounded-card border p-3">
+									<legend class="px-1 text-xs font-medium capitalize" style="color: var(--color-muted)">
+										{name}
+									</legend>
+									<Field label="Selector">
+										{#snippet children(f)}
+											<Input id={f.id} bind:value={values[`meta.${name}`]} aria-describedby={f.describedby} />
+										{/snippet}
+									</Field>
+									<Field label="Attribute">
+										{#snippet children(f)}
+											<Input id={f.id} bind:value={values[`meta.${name}.attr`]} aria-describedby={f.describedby} />
+										{/snippet}
+									</Field>
+									<Field label="Pattern">
+										{#snippet children(f)}
+											<Input
+												id={f.id}
+												bind:value={values[`meta.${name}.regex`]}
+												spellcheck="false"
+												class="font-mono"
+												aria-describedby={f.describedby}
+											/>
+										{/snippet}
+									</Field>
+									<Field label="Replacement">
+										{#snippet children(f)}
+											<Input
+												id={f.id}
+												bind:value={values[`meta.${name}.replacement`]}
+												spellcheck="false"
+												class="font-mono"
+												aria-describedby={f.describedby}
+											/>
+										{/snippet}
+									</Field>
+								</fieldset>
 							{/each}
 						</div>
 						<!-- What used to hide in hover-only tips beside each column heading, where a
