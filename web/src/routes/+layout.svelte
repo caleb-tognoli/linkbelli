@@ -360,11 +360,16 @@
 				</Dialog.Trigger>
 				<Dialog.Portal>
 					<Dialog.Overlay class="anim-fade fixed inset-0 z-(--z-overlay) bg-black/40" />
+					<!-- overflow-y-auto, because the list is taller than a phone: at 375×812 the drawer
+					     ran 954px and the container did not scroll, so Trash, the account link and Sign
+					     out simply had nowhere to be — and the page behind is scroll-locked, so there was
+					     no way to reach them at all. On a 667px screen six destinations were off the
+					     bottom. overscroll-contain keeps the swipe from chaining to that locked page. -->
 					<Dialog.Content
-						class="anim-slide-left fixed inset-y-0 left-0 z-(--z-modal) flex w-72 flex-col gap-1 border-r p-4"
+						class="anim-slide-left fixed inset-y-0 left-0 z-(--z-modal) flex w-72 flex-col gap-1 overflow-y-auto overscroll-contain border-r p-4"
 						style="border-color: var(--color-border); background: var(--color-surface)"
 					>
-						<div class="flex items-center justify-between gap-2 px-2 pb-4">
+						<div class="flex shrink-0 items-center justify-between gap-2 px-2 pb-4">
 							<Dialog.Title class="text-lg font-semibold">Linkbelli</Dialog.Title>
 							<!-- A visible way out: closing by Escape or a tap outside is not obvious, and
 							     not always available to a screen-reader user. -->
