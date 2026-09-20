@@ -403,7 +403,16 @@
 	<div class="flex min-h-screen flex-col">
 		<header class="flex items-center justify-between border-b px-6 py-3" style="border-color: var(--color-border)">
 			<a href="/" class="text-lg font-semibold">Linkbelli</a>
-			<a href="/login" class="text-sm font-medium" style="color: var(--color-accent)">Sign in</a>
+			<!-- Signing in was the only thing on offer to somebody who has no account yet. -->
+			<span class="flex items-center gap-2">
+				<a href="/login" class="text-sm font-medium" style="color: var(--color-accent)">Sign in</a>
+				<a
+					href="/register"
+					class="rounded-control bg-accent-solid px-3 py-1.5 text-sm font-medium text-on-solid hover:brightness-110"
+				>
+					Create account
+				</a>
+			</span>
 		</header>
 		<main id="main" tabindex="-1" class="mx-auto w-full max-w-5xl flex-1 p-6 outline-none">
 			{@render children()}

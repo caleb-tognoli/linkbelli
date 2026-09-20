@@ -57,22 +57,64 @@
 	</Page>
 {:else}
 	<div class="mx-auto flex max-w-5xl flex-col gap-14">
-		<section>
-			<h1 class="text-3xl font-semibold">Linkbelli</h1>
-			<p class="mt-3 max-w-2xl text-lg" style="color: var(--color-muted)">
-				A home for the links you collect. Gather them into playlists, let sources keep those
-				playlists filled on their own, and publish the ones you want to share.
-			</p>
+		<!-- The heading said "Linkbelli" directly under a bar that says "Linkbelli", so the first
+		     line of the page was the one thing a visitor already knew. -->
+		<section class="grid items-center gap-8 md:grid-cols-[1.1fr_1fr]">
+			<div>
+				<h1 class="text-3xl font-semibold">Collect links. Let sources fill your lists.</h1>
+				<p class="mt-3 max-w-2xl text-lg" style="color: var(--color-muted)">
+					A home for the links you collect. Gather them into playlists, let sources keep those
+					playlists filled on their own, and publish the ones you want to share.
+				</p>
 
-			<div class="mt-6 flex flex-wrap items-center gap-2 text-sm">
-				{#if data.user}
-					<Button href="/playlists" variant="primary" icon={ListMusic}>Your playlists</Button>
-					<Button href="/sources" icon={Rss}>Your sources</Button>
-				{:else}
-					<Button href="/register" variant="primary" icon={UserPlus}>Create account</Button>
-					<Button href="/login" icon={LogIn}>Sign in</Button>
-				{/if}
+				<div class="mt-6 flex flex-wrap items-center gap-2 text-sm">
+					{#if data.user}
+						<Button href="/playlists" variant="primary" icon={ListMusic}>Your playlists</Button>
+						<Button href="/sources" icon={Rss}>Your sources</Button>
+					{:else}
+						<Button href="/register" variant="primary" icon={UserPlus}>Create account</Button>
+						<Button href="/login" icon={LogIn}>Sign in</Button>
+					{/if}
+				</div>
 			</div>
+
+			<!-- A drawing rather than a screenshot: it says the same thing — a source on the left
+			     feeding a list on the right — and cannot go stale the next time a button moves. -->
+			<figure class="hidden md:block">
+				<svg
+					viewBox="0 0 320 200"
+					class="w-full rounded-card border border-border bg-surface"
+					role="img"
+					aria-labelledby="hero-illustration-title"
+				>
+					<title id="hero-illustration-title">
+						A source on the left feeding new links into a playlist on the right
+					</title>
+					<!-- The source -->
+					<rect x="14" y="58" width="86" height="84" rx="10" fill="var(--color-bg)" stroke="var(--color-border)" />
+					<circle cx="40" cy="120" r="4" fill="var(--color-accent)" />
+					<path d="M32 104a24 24 0 0 1 24 24" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" />
+					<path d="M32 88a40 40 0 0 1 40 40" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" />
+					<rect x="30" y="72" width="40" height="6" rx="3" fill="var(--color-border)" />
+
+					<!-- What it carries across -->
+					<path d="M108 100h84" fill="none" stroke="var(--color-border-strong)" stroke-width="2" stroke-dasharray="6 6" />
+					<path d="M186 94l10 6-10 6z" fill="var(--color-border-strong)" />
+
+					<!-- The playlist -->
+					<rect x="204" y="34" width="102" height="132" rx="10" fill="var(--color-bg)" stroke="var(--color-border)" />
+					<rect x="216" y="48" width="52" height="7" rx="3.5" fill="var(--color-text)" opacity="0.7" />
+					{#each [70, 92, 114, 136] as y, i (y)}
+						<rect x="216" y={y} width="20" height="14" rx="3" fill="var(--color-border)" />
+						<rect x="242" y={y + 2} width={i === 0 ? 52 : 44} height="5" rx="2.5" fill="var(--color-text)" opacity="0.55" />
+						<rect x="242" y={y + 10} width="30" height="4" rx="2" fill="var(--color-muted)" opacity="0.5" />
+					{/each}
+					<circle cx="296" cy="70" r="5" fill="var(--color-accent)" />
+				</svg>
+				<figcaption class="mt-2 text-xs" style="color: var(--color-muted)">
+					A source on the left; the playlist it keeps filled on the right.
+				</figcaption>
+			</figure>
 		</section>
 
 		<section>
