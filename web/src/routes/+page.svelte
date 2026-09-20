@@ -125,8 +125,7 @@
 				{#each features as feature (feature.href)}
 					<a
 						href={feature.href}
-						class="group flex flex-col rounded-card border p-5 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
-						style="border-color: var(--color-border); background: var(--color-surface)"
+						class="group flex flex-col rounded-card border border-border bg-surface p-5 transition-colors hover:border-accent hover:bg-black/5 dark:hover:bg-white/10"
 					>
 						<span class="flex items-center gap-2.5">
 							<feature.Icon size={20} aria-hidden="true" />
