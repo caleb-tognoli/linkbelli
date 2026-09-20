@@ -166,16 +166,25 @@
 		<DestinationPicker {playlists} bind:value={destination} bind:newName={newPlaylistName} />
 
 		{#each chosen.fields as field (field.key)}
-			<label class="flex flex-col gap-1 text-sm">
-				{field.label}{#if !field.required}<span style="color: var(--color-muted)"> (optional)</span>{/if}
-				<Input
-					bind:value={values[field.key]}
-					placeholder={field.placeholder ?? ''}
-				/>
-				{#if field.help}
-					<span class="text-xs" style="color: var(--color-muted)">{field.help}</span>
-				{/if}
-			</label>
+			<!-- A Field, like the two above it: built by hand, a template's required variable was
+			     the one field on this page with no asterisk beside it, which is exactly the field
+			     the disabled Create button was waiting on. -->
+			<Field
+				label={field.label}
+				hint={field.help ?? undefined}
+				required={field.required}
+				optional={!field.required}
+			>
+				{#snippet children(f)}
+					<Input
+						id={f.id}
+						bind:value={values[field.key]}
+						placeholder={field.placeholder ?? ''}
+						required={field.required}
+						aria-describedby={f.describedby}
+					/>
+				{/snippet}
+			</Field>
 		{/each}
 
 		{#if error}

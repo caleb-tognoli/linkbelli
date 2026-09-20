@@ -520,17 +520,20 @@
 							/>
 						{/snippet}
 					</Field>
-					<label class="flex flex-col gap-1 text-sm">
-						<!-- Search could ask this from the day it shipped, off the same stored
-						     word count; rules could not. -->
-						<span>Takes at least (minutes)</span>
-						<Input
-							bind:value={draft.minMinutes}
-							type="number"
-							min={1}
-							placeholder="20"
-						/>
-					</label>
+					<!-- Search could ask this from the day it shipped, off the same stored word
+					     count; rules could not. -->
+					<Field label="Takes at least (minutes)">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={draft.minMinutes}
+								type="number"
+								min={1}
+								placeholder="5"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 					<Field label="And at most (minutes)">
 						{#snippet children(f)}
 							<Input
@@ -607,18 +610,21 @@
 				</div>
 
 				<div class="mt-3 grid gap-3 sm:grid-cols-2">
-					<label class="flex flex-col gap-1 text-sm">
-						<!-- The queue sorts on score, so this is how a rule says "this source is
-						     worth my time" without rating every item by hand. -->
-						<span>Score it</span>
-						<Input
-							bind:value={draft.setScore}
-							type="number"
-							min={0}
-							max={100}
-							placeholder="Leave it unrated"
-						/>
-					</label>
+					<!-- The queue sorts on score, so this is how a rule says "this source is worth
+					     my time" without rating every item by hand. -->
+					<Field label="Score it">
+						{#snippet children(f)}
+							<Input
+								id={f.id}
+								bind:value={draft.setScore}
+								type="number"
+								min={0}
+								max={100}
+								placeholder="Leave it unrated"
+								aria-describedby={f.describedby}
+							/>
+						{/snippet}
+					</Field>
 				</div>
 
 				<div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
