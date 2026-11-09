@@ -119,10 +119,10 @@ public class LinkEnricherYouTubeTests
 
     // --- test infrastructure ---
 
-    private static (LinkEnricher enricher, TestDbContext db, StubHandler handler) BuildEnricher(
-        HttpStatusCode status, string body)
+    internal static (LinkEnricher enricher, TestDbContext db, StubHandler handler) BuildEnricher(
+        HttpStatusCode status, string body, string contentType = "application/json")
     {
-        var handler = new StubHandler(status, body);
+        var handler = new StubHandler(status, body, contentType);
         var client = new HttpClient(handler);
         var factory = new SingleClientFactory(client);
         var db = new TestDbContext();
@@ -137,7 +137,7 @@ public class LinkEnricherYouTubeTests
         return (enricher, db, handler);
     }
 
-    private sealed class StubHandler(HttpStatusCode status, string body) : HttpMessageHandler
+    internal sealed class StubHandler(HttpStatusCode status, string body, string contentType) : HttpMessageHandler
     {
         public List<HttpRequestMessage> Requests { get; } = new();
 
@@ -146,7 +146,7 @@ public class LinkEnricherYouTubeTests
             Requests.Add(request);
             var response = new HttpResponseMessage(status)
             {
-                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                Content = new StringContent(body, Encoding.UTF8, contentType),
             };
             return Task.FromResult(response);
         }

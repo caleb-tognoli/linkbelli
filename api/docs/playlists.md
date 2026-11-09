@@ -221,8 +221,8 @@ from one that was:
 | `enrichmentStatus` | Meaning |
 |--------------------|---------|
 | `Pending`   | Not fetched yet |
-| `Succeeded` | Fetched and read |
-| `Failed`    | The fetch went wrong — blocked, not a web page, a 4xx |
+| `Succeeded` | Fetched and read. A direct image link succeeds too, as its own thumbnail |
+| `Failed`    | The fetch went wrong — blocked, not a web page or image, a 4xx |
 | `Broken`    | The page is gone (404/410). The link is fine; the thing it pointed at isn't |
 
 `enrichmentError` carries the reason in words worth showing someone. Previously a permanent

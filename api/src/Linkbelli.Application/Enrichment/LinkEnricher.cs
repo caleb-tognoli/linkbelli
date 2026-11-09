@@ -79,6 +79,20 @@ public class LinkEnricher(
             }
 
             var mediaType = response.Content.Headers.ContentType?.MediaType;
+
+            // A direct image link is not a broken page: it is its own preview. Treating it as a
+            // failure left whole playlists of artwork showing an error and no picture.
+            if (mediaType is not null && mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                RecordWhereItLanded(link, response);
+                link.ThumbnailUrl = link.CanonicalUrl;
+                link.Kind = ContentClassifier.Classify(link.CanonicalUrl, link.Host.Hostname, mediaType: mediaType);
+                StampSuccess(link);
+                await db.SaveChangesAsync(cancellationToken);
+                Record(link, started);
+                return;
+            }
+
             if (mediaType is not null && !mediaType.Contains("html", StringComparison.OrdinalIgnoreCase))
             {
                 StampFailure(link, $"That address is not a web page ({mediaType}).");
