@@ -12,7 +12,9 @@ namespace Linkbelli.Application.Sources;
 /// Fetches a JSON API and extracts links via JSONPath (through the SSRF-protected client).
 /// Config: { url, itemsPath, urlPath?, urlTemplate?, titlePath?, header.*, auth.* }. <c>itemsPath</c>
 /// selects the item nodes; <c>urlPath</c>/<c>titlePath</c> are JSONPaths evaluated relative to each
-/// item. Either <c>urlPath</c> or <c>urlTemplate</c> must be set. <c>urlTemplate</c> builds each
+/// item. Either <c>urlPath</c> or <c>urlTemplate</c> must be set. A <c>urlPath</c> that matches
+/// several values on one item (<c>images[*].url</c>) yields one link per value, titled
+/// "Title (2 of 3)" so they can be told apart. <c>urlTemplate</c> builds each
 /// URL from item fields via <c>{jsonpath}</c> placeholders — e.g.
 /// <c>https://site.tld/movie/{id}</c> or <c>https://site.tld/{lang}/movie/{id}/{slug}</c>. Each
 /// placeholder is evaluated per-item; if any resolves empty, the item is skipped. Keys prefixed
@@ -108,24 +110,31 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
         var results = new List<DiscoveredLink>();
         foreach (var item in root.SelectTokens(itemsPath))
         {
-            string? url;
-            if (!string.IsNullOrWhiteSpace(urlTemplate))
+            // urlPath may match several values on one item (e.g. images[*].url): each becomes a
+            // link. A template always yields at most one.
+            IEnumerable<string?> urls = !string.IsNullOrWhiteSpace(urlTemplate)
+                ? new[] { ExpandTemplate(urlTemplate, item) }
+                : item.SelectTokens(urlPath!).Select(string? (t) => t.ToString());
+
+            var distinct = urls
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => u!.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            var title = string.IsNullOrWhiteSpace(titlePath) ? null : item.SelectToken(titlePath)?.ToString()?.Trim();
+            if (string.IsNullOrWhiteSpace(title))
             {
-                url = ExpandTemplate(urlTemplate, item);
-            }
-            else
-            {
-                url = item.SelectToken(urlPath!)?.ToString();
+                title = null;
             }
 
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                continue;
-            }
-
-            var title = string.IsNullOrWhiteSpace(titlePath) ? null : item.SelectToken(titlePath)?.ToString();
             // No cap here: SourceRunner applies the owner's MaxItemsPerRun quota after filtering.
-            results.Add(new DiscoveredLink(url.Trim(), string.IsNullOrWhiteSpace(title) ? null : title!.Trim()));
+            for (var i = 0; i < distinct.Count; i++)
+            {
+                // Several links sharing one item's title would be indistinguishable in a list.
+                var linkTitle = title is not null && distinct.Count > 1 ? $"{title} ({i + 1} of {distinct.Count})" : title;
+                results.Add(new DiscoveredLink(distinct[i], linkTitle));
+            }
         }
 
         return results;

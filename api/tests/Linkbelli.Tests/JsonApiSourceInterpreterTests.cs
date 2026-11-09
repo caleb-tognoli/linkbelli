@@ -49,6 +49,31 @@ public class JsonApiSourceInterpreterTests
     }
 
     [Fact]
+    public void A_url_path_matching_several_values_yields_one_numbered_link_each()
+    {
+        const string json = """
+            { "data": [
+              { "name": "Number 39: Utopia", "card_images": [ { "u": "https://i/1" }, { "u": "https://i/2" }, { "u": "https://i/3" } ] },
+              { "name": "Number 9: Dyson Sphere", "card_images": [ { "u": "https://i/9" } ] },
+              { "name": "No art", "card_images": [] }
+            ] }
+            """;
+        var config = new Dictionary<string, string>
+        {
+            [JsonApiSourceInterpreter.ItemsPathKey] = "$.data[*]",
+            [JsonApiSourceInterpreter.UrlPathKey] = "card_images[*].u",
+            [JsonApiSourceInterpreter.TitlePathKey] = "name",
+        };
+
+        var links = JsonApiSourceInterpreter.Parse(json, config);
+
+        Assert.Equal(
+            ["Number 39: Utopia (1 of 3)", "Number 39: Utopia (2 of 3)", "Number 39: Utopia (3 of 3)", "Number 9: Dyson Sphere"],
+            links.Select(l => l.Title));
+        Assert.Equal(["https://i/1", "https://i/2", "https://i/3", "https://i/9"], links.Select(l => l.Url));
+    }
+
+    [Fact]
     public void Header_keys_are_secret_others_are_not()
     {
         var interpreter = new JsonApiSourceInterpreter(null!);
