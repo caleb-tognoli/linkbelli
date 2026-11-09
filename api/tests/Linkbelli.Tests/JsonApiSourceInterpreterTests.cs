@@ -36,6 +36,19 @@ public class JsonApiSourceInterpreterTests
     }
 
     [Fact]
+    public void Returns_every_item_leaving_the_cap_to_the_owner_quota()
+    {
+        var json = "[" + string.Join(",", Enumerable.Range(1, 250).Select(i => $$"""{ "u": "https://example.com/{{i}}" }""")) + "]";
+        var config = new Dictionary<string, string>
+        {
+            [JsonApiSourceInterpreter.ItemsPathKey] = "$[*]",
+            [JsonApiSourceInterpreter.UrlPathKey] = "u",
+        };
+
+        Assert.Equal(250, JsonApiSourceInterpreter.Parse(json, config).Count);
+    }
+
+    [Fact]
     public void Header_keys_are_secret_others_are_not()
     {
         var interpreter = new JsonApiSourceInterpreter(null!);

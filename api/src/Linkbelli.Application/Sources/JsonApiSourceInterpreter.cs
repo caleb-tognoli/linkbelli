@@ -29,7 +29,6 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
     public const string TitlePathKey = "titlePath";
     public const string HeaderPrefix = "header.";
     private static readonly Regex PlaceholderRegex = new(@"\{([^{}]+)\}", RegexOptions.Compiled);
-    private const int MaxItemsPerRun = 100;
 
     public SourceType Type => SourceType.JsonApi;
 
@@ -125,11 +124,8 @@ public sealed class JsonApiSourceInterpreter(IHttpClientFactory httpClientFactor
             }
 
             var title = string.IsNullOrWhiteSpace(titlePath) ? null : item.SelectToken(titlePath)?.ToString();
+            // No cap here: SourceRunner applies the owner's MaxItemsPerRun quota after filtering.
             results.Add(new DiscoveredLink(url.Trim(), string.IsNullOrWhiteSpace(title) ? null : title!.Trim()));
-            if (results.Count >= MaxItemsPerRun)
-            {
-                break;
-            }
         }
 
         return results;
