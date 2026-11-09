@@ -79,8 +79,8 @@
       },
       "BouncyCastle.Cryptography": {
         "type": "Transitive",
-        "resolved": "2.6.2",
-        "contentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w=="
+        "resolved": "2.7.0",
+        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
       },
       "Dapper": {
         "type": "Transitive",
@@ -120,11 +120,11 @@
       },
       "MimeKit": {
         "type": "Transitive",
-        "resolved": "4.17.0",
-        "contentHash": "h/KXsCreJf8RpR/PSAtlbvYtZFndp9N8Wn1Bs248AL7ITyhn+AiIY5bLTvt60tbN2mu6g8KadtBNWygTji2lqg==",
+        "resolved": "4.18.2",
+        "contentHash": "aYnwCCq+ZgQIsnHSJd3TMeGqf/Rz/9jYEItXpOoG3E2REOCZtLishwBSDFl2wQ/W2SB5wBsvE38DgHZ0IEyz4Q==",
         "dependencies": {
-          "BouncyCastle.Cryptography": "2.6.2",
-          "System.Security.Cryptography.Pkcs": "10.0.0"
+          "BouncyCastle.Cryptography": "2.7.0",
+          "System.Security.Cryptography.Pkcs": "10.0.13"
         }
       },
       "Npgsql": {
@@ -155,8 +155,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "10.0.0",
-        "contentHash": "UPWqLSygJlFerRi9XNIuM0a1VC8gHUIufyP24xQ0sc+XimqUAEcjpOz9DhKpyDjH+5B/wO3RpC0KpkEeDj/ddg=="
+        "resolved": "10.0.13",
+        "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw=="
       },
       "linkbelli.application": {
         "type": "Project",
@@ -164,8 +164,8 @@
           "AngleSharp": "[1.5.1, )",
           "CodeHollow.FeedReader": "[1.2.6, )",
           "Cronos": "[0.13.0, )",
-          "Linkbelli.Contracts": "[1.0.0, )",
-          "Linkbelli.Core": "[1.0.0, )",
+          "Linkbelli.Contracts": "[0.1.0, )",
+          "Linkbelli.Core": "[0.1.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.9, )",
           "Newtonsoft.Json": "[13.0.3, )"
         }
@@ -173,7 +173,7 @@
       "linkbelli.contracts": {
         "type": "Project",
         "dependencies": {
-          "Linkbelli.Core": "[1.0.0, )"
+          "Linkbelli.Core": "[0.1.0, )"
         }
       },
       "linkbelli.core": {
@@ -184,9 +184,9 @@
         "dependencies": {
           "Hangfire.AspNetCore": "[1.8.23, )",
           "Hangfire.PostgreSql": "[1.21.1, )",
-          "Linkbelli.Application": "[1.0.0, )",
-          "Linkbelli.Core": "[1.0.0, )",
-          "MailKit": "[4.17.0, )",
+          "Linkbelli.Application": "[0.1.0, )",
+          "Linkbelli.Core": "[0.1.0, )",
+          "MailKit": "[4.18.2, )",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.9, )",
           "Microsoft.EntityFrameworkCore": "[10.0.9, )",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.9, )",
@@ -236,11 +236,11 @@
       },
       "MailKit": {
         "type": "CentralTransitive",
-        "requested": "[4.17.0, )",
-        "resolved": "4.17.0",
-        "contentHash": "1nUAVLxM9fhT/78we6/AGsCesnpn5dRNLLeRqOfr52Wnk87pzVwo5YMTMyqnmoXrYc7piGhmayiMA/OgDluIjg==",
+        "requested": "[4.18.2, )",
+        "resolved": "4.18.2",
+        "contentHash": "ofqddpSbdrD00NqTD0ZyVfKvrl/ZZ70VFFEQ+DuR8r8CdbY3U02/sdb0CSQBNUqJifsXfVHIwRe1ToR2MvJJkw==",
         "dependencies": {
-          "MimeKit": "4.17.0"
+          "MimeKit": "4.18.2"
         }
       },
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
